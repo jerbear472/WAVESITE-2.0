@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wavesight-ingress
+  namespace: wavesight
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  tls:
+  - hosts:
+    - wavesight.yourdomain.com
+    - api.wavesight.yourdomain.com
+    secretName: wavesight-tls
+  rules:
+  - host: wavesight.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wavesight-web-service
+            port:
+              number: 80
+  - host: api.wavesight.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wavesight-backend-service
+            port:
+              number: 80

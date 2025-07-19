@@ -2,8 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wavesight-web
+  namespace: wavesight
   labels:
     app: wavesight-web
+    tier: frontend
 spec:
   replicas: 2
   selector:
@@ -43,6 +45,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: wavesight-web-service
+  namespace: wavesight
 spec:
   selector:
     app: wavesight-web
