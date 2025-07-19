@@ -40,7 +40,7 @@ export default function Dashboard() {
         >
           <h1 className="text-4xl font-bold mb-2">Trend Intelligence</h1>
           <p className="text-gray-400">
-            Real-time insights from {trendData?.participantCount || '0'} trend spotters
+            Real-time insights from {trendData?.length || '0'} trending topics
           </p>
         </motion.div>
 
@@ -90,7 +90,7 @@ export default function Dashboard() {
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
                 </div>
               ) : (
-                <TrendRadar data={trendData?.trends || []} />
+                <TrendRadar data={trendData || []} />
               )}
             </motion.div>
           </div>
