@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wavesight-web
+  labels:
+    app: wavesight-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wavesight-web
+  template:
+    metadata:
+      labels:
+        app: wavesight-web
+    spec:
+      containers:
+      - name: web
+        image: wavesight/web:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: NEXT_PUBLIC_SUPABASE_URL
+          value: "https://achuavagkhjenaypawij.supabase.co"
+        - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wavesight-secrets
+              key: supabase-anon-key
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://wavesight-backend-service"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wavesight-web-service
+spec:
+  selector:
+    app: wavesight-web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
