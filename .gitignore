@@ -61,4 +61,4 @@ ios/
 # Infrastructure
 *.tfstate
 *.tfstate.*
-.terraform/
+.terraform/.env
