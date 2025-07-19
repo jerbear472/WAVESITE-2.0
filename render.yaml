@@ -2,7 +2,7 @@ services:
   # Web Dashboard
   - type: web
     name: wavesight-dashboard
-    runtime: node
+    env: node
     region: oregon # optional
     buildCommand: cd web && npm install && npm run build
     startCommand: cd web && npm start
