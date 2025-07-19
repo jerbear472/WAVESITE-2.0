@@ -8,6 +8,7 @@ import { InsightsFeed } from '@/components/InsightsFeed';
 import { CompetitorTracker } from '@/components/CompetitorTracker';
 import { PredictiveAlerts } from '@/components/PredictiveAlerts';
 import { api } from '@/lib/api';
+import { DebugSupabase } from './debug';
 
 export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -42,6 +43,9 @@ export default function Dashboard() {
             Real-time insights from {trendData?.participantCount || '0'} trend spotters
           </p>
         </motion.div>
+
+        {/* Debug Component */}
+        <DebugSupabase />
 
         {/* Filters */}
         <div className="flex gap-4 mb-8">
