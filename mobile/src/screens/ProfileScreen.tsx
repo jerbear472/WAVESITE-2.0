@@ -43,6 +43,15 @@ export const ProfileScreen: React.FC = () => {
   const userPoints = user?.points || 0;
   const userLevel = PointsService.getUserLevel(userPoints);
   const progressToNext = PointsService.getPointsToNextLevel(userPoints);
+  
+  // Add emoji mapping for levels
+  const levelEmojis: Record<string, string> = {
+    bronze: '🥉',
+    silver: '🥈',
+    gold: '🥇',
+    diamond: '💎',
+    platinum: '👑'
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -107,11 +116,7 @@ export const ProfileScreen: React.FC = () => {
                   colors={enhancedTheme.colors.primaryGradient}
                   style={styles.avatarGradient}
                 >
-                  <Icon 
-                    name="account" 
-                    size={48} 
-                    color="#FFFFFF" 
-                  />
+                  <Text style={styles.avatarEmoji}>👤</Text>
                 </LinearGradient>
               </Animated.View>
             </Pressable>
@@ -131,7 +136,7 @@ export const ProfileScreen: React.FC = () => {
                 colors={[userLevel.color + '40', userLevel.color + '20']}
                 style={styles.levelBadgeGradient}
               >
-                <Icon name={userLevel.icon} size={20} color={userLevel.color} />
+                <Text style={styles.levelEmoji}>{levelEmojis[userLevel.level] || '🏆'}</Text>
                 <Text style={[styles.levelText, { color: userLevel.color }]}>
                   {userLevel.level.toUpperCase()}
                 </Text>
@@ -195,7 +200,7 @@ export const ProfileScreen: React.FC = () => {
               >
                 <View style={styles.earningsRow}>
                   <View style={styles.earningsItem}>
-                    <Icon name="wallet" size={20} color={enhancedTheme.colors.success} />
+                    <Text style={styles.earningsEmoji}>💰</Text>
                     <Text style={styles.earningsLabel}>Available Balance</Text>
                   </View>
                   <Text style={styles.earningsValue}>
@@ -205,7 +210,7 @@ export const ProfileScreen: React.FC = () => {
                 <View style={styles.earningsDivider} />
                 <View style={styles.earningsRow}>
                   <View style={styles.earningsItem}>
-                    <Icon name="clock-outline" size={20} color={enhancedTheme.colors.warning} />
+                    <Text style={styles.earningsEmoji}>⏰</Text>
                     <Text style={styles.earningsLabel}>Pending</Text>
                   </View>
                   <Text style={styles.earningsPending}>
@@ -219,20 +224,20 @@ export const ProfileScreen: React.FC = () => {
               onPress={() => Alert.alert('Withdraw', 'Withdrawal feature coming soon!')}
               variant="success"
               size="large"
-              icon={<Icon name="cash-multiple" size={20} color="#FFFFFF" />}
+              icon={<Text style={styles.buttonEmoji}>💸</Text>}
               style={styles.withdrawButton}
             />
           </Animated.View>
 
           <View style={styles.menuSection}>
             {[
-              { icon: 'folder-multiple', label: 'My Trends', color: enhancedTheme.colors.accent, onPress: () => navigation.navigate('MyTrends') },
-              { icon: 'trophy', label: 'Achievements', color: enhancedTheme.colors.warning, onPress: () => navigation.navigate('Achievements') },
-              { icon: 'target', label: 'Build Your Persona', color: enhancedTheme.colors.accent, onPress: () => navigation.navigate('PersonaBuilder') },
-              { icon: 'bell', label: 'Notifications', color: enhancedTheme.colors.primary },
-              { icon: 'cog', label: 'Settings', color: enhancedTheme.colors.textSecondary },
-              { icon: 'help-circle', label: 'Help & Support', color: enhancedTheme.colors.primary },
-              { icon: 'shield-lock', label: 'Terms & Privacy', color: enhancedTheme.colors.textTertiary },
+              { icon: 'folder-multiple', label: 'My Trends', color: enhancedTheme.colors.accent, emoji: '📁', onPress: () => navigation.navigate('MyTrends') },
+              { icon: 'trophy', label: 'Achievements', color: enhancedTheme.colors.warning, emoji: '🏆', onPress: () => navigation.navigate('Achievements') },
+              { icon: 'target', label: 'Build Your Persona', color: enhancedTheme.colors.accent, emoji: '🎯', onPress: () => navigation.navigate('PersonaBuilder') },
+              { icon: 'bell', label: 'Notifications', color: enhancedTheme.colors.primary, emoji: '🔔' },
+              { icon: 'cog', label: 'Settings', color: enhancedTheme.colors.textSecondary, emoji: '⚙️' },
+              { icon: 'help-circle', label: 'Help & Support', color: enhancedTheme.colors.primary, emoji: '❓' },
+              { icon: 'shield-lock', label: 'Terms & Privacy', color: enhancedTheme.colors.textTertiary, emoji: '🔒' },
             ].map((item, index) => (
               <Animated.View
                 key={item.label}
@@ -248,7 +253,11 @@ export const ProfileScreen: React.FC = () => {
                   <GlassCard style={styles.menuItemCard}>
                     <View style={styles.menuItemContent}>
                       <View style={[styles.menuIconContainer, { backgroundColor: item.color + '20' }]}>
-                        <Icon name={item.icon} size={20} color={item.color} />
+                        {item.emoji ? (
+                          <Text style={styles.menuEmoji}>{item.emoji}</Text>
+                        ) : (
+                          <Icon name={item.icon} size={20} color={item.color} />
+                        )}
                       </View>
                       <Text style={styles.menuItemText}>{item.label}</Text>
                     </View>
@@ -517,6 +526,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  menuEmoji: {
+    fontSize: 20,
   },
   menuItemText: {
     ...enhancedTheme.typography.bodyLarge,

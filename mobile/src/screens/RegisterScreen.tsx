@@ -14,7 +14,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AuthNavigator';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components/Logo';
 import { Button } from '../components/Button';
 
@@ -250,7 +250,8 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 30,
+    marginTop: 20,
+    marginBottom: 40,
   },
   footerText: {
     color: '#4da8ff80',

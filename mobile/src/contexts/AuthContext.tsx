@@ -65,26 +65,84 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loadUserProfile = async (userId: string) => {
     try {
-      const { data: profile, error } = await supabase
+      // First try user_profiles table (original schema)
+      let { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
-      
-      // Ensure username is set, use email prefix as fallback
-      if (profile && !profile.username) {
-        const { data: authUser } = await supabase.auth.getUser();
-        if (authUser?.user?.email) {
-          profile.username = authUser.user.email.split('@')[0];
+      // If user_profiles doesn't exist or no profile found, try users table
+      if (error) {
+        console.log('user_profiles not found, trying users table');
+        const { data: userProfile, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (!userError && userProfile) {
+          // Map users table to expected profile format
+          profile = {
+            ...userProfile,
+            role: userProfile.role || 'participant',
+            total_earnings: userProfile.total_earnings || 0,
+            pending_earnings: userProfile.pending_earnings || 0,
+            level: userProfile.level || 'bronze',
+            referrals_count: userProfile.referrals_count || 0,
+          };
+        } else if (userError && userError.code === 'PGRST116') {
+          // User doesn't exist in either table, create in users table
+          console.log('Creating user profile in users table');
+          const { data: authUser } = await supabase.auth.getUser();
+          const username = authUser?.user?.email?.split('@')[0] || 'user';
+          
+          const { data: newProfile, error: createError } = await supabase
+            .from('users')
+            .insert({
+              id: userId,
+              username,
+              email: authUser?.user?.email || '',
+              points: 0,
+              trends_spotted: 0,
+              validations_count: 0,
+              validated_trends: 0,
+              accuracy_score: 0,
+              streak_days: 0,
+            })
+            .select()
+            .single();
+          
+          if (!createError && newProfile) {
+            profile = {
+              ...newProfile,
+              role: 'participant',
+              total_earnings: 0,
+              pending_earnings: 0,
+              validation_score: 0,
+              level: 'bronze',
+              referrals_count: 0,
+            };
+          }
         }
       }
       
-      setUser(profile);
+      if (profile) {
+        // Ensure username is set, use email prefix as fallback
+        if (!profile.username) {
+          const { data: authUser } = await supabase.auth.getUser();
+          if (authUser?.user?.email) {
+            profile.username = authUser.user.email.split('@')[0];
+          }
+        }
+        
+        setUser(profile);
+      } else {
+        throw new Error('Failed to load or create user profile');
+      }
     } catch (error) {
       console.error('Error loading user profile:', error);
-      // Try to get basic info from auth if profile load fails
+      // Set basic user info from auth
       const { data: authUser } = await supabase.auth.getUser();
       if (authUser?.user) {
         setUser({

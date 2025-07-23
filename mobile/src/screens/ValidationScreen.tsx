@@ -41,33 +41,49 @@ export const ValidationScreen: React.FC = () => {
   const successScale = useSharedValue(0);
 
   useEffect(() => {
+    console.log('ValidationScreen mounted, user:', user);
     loadNextTrend();
     loadStats();
   }, []);
 
   const loadStats = async () => {
     if (user?.id) {
-      const userStats = await ValidationService.getValidationStats(user.id);
-      setStats(userStats);
+      console.log('Loading stats for user:', user.id);
+      try {
+        const userStats = await ValidationService.getValidationStats(user.id);
+        console.log('Stats loaded:', userStats);
+        setStats(userStats);
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    } else {
+      console.log('No user ID available for loading stats');
     }
   };
 
   const loadNextTrend = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('No user ID available for loading trends');
+      setIsLoading(false);
+      return;
+    }
     
+    console.log('Loading next trend for user:', user.id);
     setIsLoading(true);
     try {
       const nextTrend = await ValidationService.getNextValidationItem(user.id);
+      console.log('Next trend loaded:', nextTrend);
       if (nextTrend) {
         setCurrentTrend(nextTrend);
         cardScale.value = withSpring(1);
         cardOpacity.value = withSpring(1);
       } else {
+        console.log('No trends available for validation');
         setCurrentTrend(null);
       }
     } catch (error) {
       console.error('Error loading trend:', error);
-      Alert.alert('Error', 'Failed to load validation item');
+      Alert.alert('Error', 'Failed to load validation item: ' + (error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }

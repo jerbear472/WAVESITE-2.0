@@ -7,7 +7,11 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "setup:validation": "node scripts/setup-validation.js",
+    "setup:database": "node scripts/setup-database.js",
+    "debug:validation": "node scripts/debug-validation.js",
+    "fix:validation": "node scripts/fix-validation-data.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.19.0",
@@ -38,7 +42,8 @@
     "react-native-vector-icons": "^10.2.0",
     "react-native-video": "^6.0.0",
     "react-native-view-shot": "^3.7.0",
-    "react-native-vision-camera": "^3.0.0"
+    "react-native-vision-camera": "^3.0.0",
+    "react-native-webview": "^13.15.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

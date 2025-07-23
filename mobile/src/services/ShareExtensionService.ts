@@ -7,6 +7,7 @@ interface SharedContent {
   platform: string;
   timestamp: number;
   title?: string;
+  text?: string;
   captureMethod?: 'manual' | 'share_extension';
 }
 

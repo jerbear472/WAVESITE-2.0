@@ -10,7 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AuthNavigator';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components/Logo';
 import { SafeScreen } from '../components/SafeScreen';
 import { Button } from '../components/Button';
@@ -54,7 +54,7 @@ export const LoginScreen: React.FC = () => {
         <View style={styles.header}>
           <Logo size="medium" showText={false} />
           <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+          <Text style={styles.subtitle}>Track trends, earn rewards</Text>
         </View>
 
         <View style={styles.form}>
@@ -181,9 +181,9 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 'auto',
-    marginBottom: theme.spacing.xl,
-    paddingTop: theme.spacing.xl,
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.xxl,
+    paddingTop: theme.spacing.lg,
   },
   footerText: {
     ...theme.typography.body,

@@ -1,7 +1,22 @@
 import React from 'react';
 import { View, Image, Text, StyleSheet, Platform } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+
+let Animated: any;
+let FadeIn: any;
+
+try {
+  const reanimated = require('react-native-reanimated');
+  Animated = reanimated.default;
+  FadeIn = reanimated.FadeIn;
+} catch (error) {
+  console.log('React Native Reanimated not available, using fallback');
+  // Fallback to regular View
+  Animated = {
+    View: View
+  };
+  FadeIn = null;
+}
 
 interface LogoProps {
   showText?: boolean;
@@ -65,9 +80,18 @@ export const Logo: React.FC<LogoProps> = ({ showText = true, size = 'medium', an
     </View>
   );
 
-  if (animated) {
+  if (animated && FadeIn) {
     return (
       <Animated.View entering={FadeIn.duration(1000).springify()}>
+        {LogoContent}
+      </Animated.View>
+    );
+  }
+
+  // If animation is disabled or FadeIn is not available, wrap in Animated.View without animation
+  if (animated && Animated.View !== View) {
+    return (
+      <Animated.View>
         {LogoContent}
       </Animated.View>
     );

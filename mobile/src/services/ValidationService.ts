@@ -42,22 +42,25 @@ class ValidationService {
    */
   async getNextValidationItem(userId: string): Promise<ValidationQueueItem | null> {
     try {
+      console.log('Getting next validation item for user:', userId);
+      
       // Get user's voting history to exclude already voted trends
-      const { data: votedTrends } = await supabase
+      const { data: votedTrends, error: votedError } = await supabase
         .from('validations')
         .select('trend_id')
         .eq('user_id', userId);
       
+      if (votedError) {
+        console.error('Error fetching voted trends:', votedError);
+      }
+      
       const votedIds = votedTrends?.map(v => v.trend_id) || [];
+      console.log('User has voted on', votedIds.length, 'trends');
       
       // Get trends that need validation
       let query = supabase
         .from('captured_trends')
-        .select(`
-          *,
-          validations (count),
-          users!user_id (username)
-        `)
+        .select('*')
         .eq('status', 'pending_validation')
         .lt('validation_count', 10) // Need at least 10 votes
         .order('captured_at', { ascending: true }); // Time decay - older first
@@ -68,8 +71,16 @@ class ValidationService {
       
       const { data: trends, error } = await query.limit(10);
       
-      if (error) throw error;
-      if (!trends || trends.length === 0) return null;
+      console.log('Query result:', { trends: trends?.length || 0, error });
+      
+      if (error) {
+        console.error('Error fetching trends:', error);
+        throw error;
+      }
+      if (!trends || trends.length === 0) {
+        console.log('No trends available for validation');
+        return null;
+      }
       
       // Smart ordering algorithm
       const scoredTrends = trends.map(trend => {
@@ -80,7 +91,8 @@ class ValidationService {
         score += Math.min(ageInHours * 2, 100);
         
         // Mix new and established users
-        const isNewUser = trend.users?.trends_spotted < 5;
+        const userProfile = trend.users;
+        const isNewUser = !userProfile || userProfile.trends_spotted < 5;
         score += isNewUser ? 20 : 10;
         
         // Category rotation (pseudo-random based on user ID and date)
@@ -107,7 +119,7 @@ class ValidationService {
         title: selected.title,
         description: selected.description,
         hashtags: selected.hashtags,
-        submitted_by: selected.users?.username || 'Anonymous',
+        submitted_by: 'Anonymous', // Will be updated when we have user data
         submitted_at: selected.captured_at,
         validation_count: selected.validation_count || 0,
         positive_votes: selected.positive_votes || 0,
@@ -115,8 +127,8 @@ class ValidationService {
         category: selected.category,
       };
     } catch (error) {
-      console.error('Error getting validation item:', error);
-      return null;
+      console.error('Error in getNextValidationItem:', error);
+      throw error; // Re-throw to see the error in the UI
     }
   }
 
@@ -153,15 +165,24 @@ class ValidationService {
       
       if (voteError) throw voteError;
       
-      // Update trend statistics
+      // Get current trend data first
+      const { data: currentTrend, error: fetchError } = await supabase
+        .from('captured_trends')
+        .select('validation_count, positive_votes, skip_count')
+        .eq('id', trendId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Calculate new values
       const updates: any = {
-        validation_count: supabase.sql`validation_count + 1`,
+        validation_count: (currentTrend.validation_count || 0) + 1,
       };
       
       if (vote === 'yes') {
-        updates.positive_votes = supabase.sql`positive_votes + 1`;
+        updates.positive_votes = (currentTrend.positive_votes || 0) + 1;
       } else if (vote === 'skip') {
-        updates.skip_count = supabase.sql`skip_count + 1`;
+        updates.skip_count = (currentTrend.skip_count || 0) + 1;
       }
       
       const { data: updatedTrend, error: updateError } = await supabase
@@ -252,12 +273,21 @@ class ValidationService {
       });
       
       // Update submitter's stats
-      await supabase
+      // Get current user data
+      const { data: userData } = await supabase
         .from('users')
-        .update({
-          validated_trends: supabase.sql`validated_trends + 1`,
-        })
-        .eq('id', submitterId);
+        .select('validated_trends')
+        .eq('id', submitterId)
+        .single();
+      
+      if (userData) {
+        await supabase
+          .from('users')
+          .update({
+            validated_trends: (userData.validated_trends || 0) + 1,
+          })
+          .eq('id', submitterId);
+      }
     } catch (error) {
       console.error('Error validating trend:', error);
     }
@@ -286,12 +316,29 @@ class ValidationService {
   private async updateUserValidationStats(userId: string, vote: string): Promise<void> {
     try {
       if (vote !== 'skip') {
-        await supabase
+        // Get current user data
+        const { data: userData } = await supabase
           .from('users')
-          .update({
-            validations_count: supabase.sql`validations_count + 1`,
-          })
-          .eq('id', userId);
+          .select('validations_count')
+          .eq('id', userId)
+          .single();
+        
+        if (userData) {
+          await supabase
+            .from('users')
+            .update({
+              validations_count: (userData.validations_count || 0) + 1,
+            })
+            .eq('id', userId);
+        } else {
+          // Create user profile if it doesn't exist
+          await supabase
+            .from('users')
+            .insert({
+              id: userId,
+              validations_count: 1,
+            });
+        }
       }
     } catch (error) {
       console.error('Error updating user validation stats:', error);

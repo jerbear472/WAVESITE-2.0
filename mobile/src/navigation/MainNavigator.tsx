@@ -7,9 +7,10 @@ import {
   Platform,
 } from 'react-native';
 import CaptureTrendsScreen from '../screens/CaptureTrendsScreen';
-import TrendTimelineScreen from '../screens/TrendTimelineScreen';
+import { TrendsScreen } from '../screens/TrendsScreen';
 import MyTimelineScreen from '../screens/MyTimelineScreen';
-import ValidateScreen from '../screens/ValidateScreen';
+import { ValidationScreen } from '../screens/ValidationScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
 
 type TabType = 'capture' | 'validate' | 'trends' | 'my-timeline' | 'profile';
 type ScreenType = TabType;
@@ -23,18 +24,13 @@ const MainNavigator: React.FC = () => {
       case 'capture':
         return <CaptureTrendsScreen />;
       case 'trends':
-        return <TrendTimelineScreen />;
+        return <TrendsScreen />;
       case 'my-timeline':
         return <MyTimelineScreen onBack={() => setActiveTab('capture')} />;
       case 'validate':
-        return <ValidateScreen />;
+        return <ValidationScreen />;
       case 'profile':
-        return (
-          <View style={styles.placeholderScreen}>
-            <Text style={styles.placeholderText}>Profile Screen</Text>
-            <Text style={styles.placeholderSubtext}>Coming Soon</Text>
-          </View>
-        );
+        return <ProfileScreen />;
       default:
         return <CaptureTrendsScreen />;
     }
@@ -84,7 +80,7 @@ const MainNavigator: React.FC = () => {
             <Text style={styles.navIconText}>📊</Text>
           </View>
           <Text style={[styles.navLabel, activeTab === 'trends' && styles.activeNavLabel]}>
-            Timeline
+            Trends
           </Text>
         </TouchableOpacity>
 

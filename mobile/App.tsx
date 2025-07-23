@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -10,17 +10,19 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MainNavigator from './src/navigation/MainNavigator';
-import LoadingScreen from './src/screens/LoadingScreen';
-import AuthNavigator from './src/navigation/AuthNavigator';
+import { LoadingScreen } from './src/screens/LoadingScreen';
+import { AuthNavigator } from './src/navigation/AuthNavigator';
 import ShareExtensionService from './src/services/ShareExtensionService';
 import TrendStorageService from './src/services/TrendStorageService';
 import TrendExtractorService from './src/services/TrendExtractorService';
+import { AuthProvider, AuthContext } from './src/contexts/AuthContext';
 
-function App(): React.JSX.Element {
-  const [currentScreen, setCurrentScreen] = useState<'loading' | 'auth' | 'home' | 'capture'>('loading');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+function AppContent(): React.JSX.Element {
+  const { user } = useContext(AuthContext);
+  const [currentScreen, setCurrentScreen] = useState<'auth' | 'home' | 'capture'>(user ? 'home' : 'auth');
 
   const processSharedUrl = async (url: string) => {
     try {
@@ -32,13 +34,20 @@ function App(): React.JSX.Element {
         url,
         title: extractedData.title,
         description: extractedData.description,
+        platform: extractedData.platform,
       });
 
       Alert.alert(
         'Trend Added!',
         `"${extractedData.title}" has been added to your timeline.`,
         [
-          { text: 'View Timeline', onPress: () => setCurrentScreen('capture') },
+          { text: 'View My Timeline', onPress: () => {
+            setCurrentScreen('capture');
+            // Navigate to My Timeline tab after a short delay
+            setTimeout(() => {
+              // This will be handled by the MainNavigator
+            }, 100);
+          }},
           { text: 'OK', style: 'default' }
         ]
       );
@@ -49,20 +58,22 @@ function App(): React.JSX.Element {
   };
 
   useEffect(() => {
-    // Show loading screen on app start
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      // Check authentication status (for now, always show auth)
+    // Update screen based on auth status
+    if (user) {
+      setCurrentScreen('home');
+    } else {
       setCurrentScreen('auth');
-    }, 3500);
+    }
+  }, [user]);
 
+  useEffect(() => {
     // Handle deep links
     const handleDeepLink = (url: string | null) => {
       if (url) {
         const urlObj = new URL(url);
-        if (urlObj.protocol === 'wavesite:' && urlObj.host === 'addtrend') {
+        if (urlObj.protocol === 'wavesight:' && urlObj.host === 'capture') {
           const sharedUrl = urlObj.searchParams.get('url');
-          if (sharedUrl && isAuthenticated) {
+          if (sharedUrl && user) {
             // Process the shared URL
             processSharedUrl(decodeURIComponent(sharedUrl));
           }
@@ -79,61 +90,62 @@ function App(): React.JSX.Element {
     });
 
     return () => {
-      clearTimeout(timer);
       urlListener.remove();
     };
-  }, [isAuthenticated]);
+  }, [user]);
 
   useEffect(() => {
     // Start checking for shared data when authenticated
-    if (isAuthenticated) {
-      ShareExtensionService.startChecking((items) => {
-        if (items.length > 0) {
+    if (user) {
+      const shareService = ShareExtensionService.getInstance();
+      const unsubscribe = shareService.addListener(async (sharedContent) => {
+        try {
+          // Save the trend using TrendStorageService
+          await TrendStorageService.saveTrend({
+            url: sharedContent.url,
+            title: sharedContent.title || `Trend from ${sharedContent.platform}`,
+            description: sharedContent.text,
+            platform: sharedContent.platform,
+          });
+          
           Alert.alert(
-            'New Trends Captured!',
-            `${items.length} new trend${items.length > 1 ? 's' : ''} added to your timeline.`,
+            'Trend Added!',
+            `Successfully captured from ${sharedContent.platform}`,
             [
-              { text: 'View Timeline', onPress: () => setCurrentScreen('capture') },
+              { text: 'View My Timeline', onPress: () => setCurrentScreen('capture') },
               { text: 'OK', style: 'default' }
             ]
           );
+        } catch (error) {
+          console.error('Error saving shared trend:', error);
+          Alert.alert('Error', 'Failed to save trend');
         }
       });
-    }
 
-    return () => {
-      ShareExtensionService.stopChecking();
-    };
-  }, [isAuthenticated]);
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [user]);
 
   const handleGoToCapture = () => {
     setCurrentScreen('capture');
   };
 
-  if (currentScreen === 'loading' || isLoading) {
+  if (currentScreen === 'auth' && !user) {
     return (
-      <LoadingScreen 
-        onLoadingComplete={() => {
-          setIsLoading(false);
-          setCurrentScreen('auth');
-        }} 
-      />
-    );
-  }
-
-  if (currentScreen === 'auth') {
-    return (
-      <AuthNavigator 
-        onAuthComplete={() => {
-          setIsAuthenticated(true);
-          setCurrentScreen('home');
-        }}
-      />
+      <NavigationContainer>
+        <AuthNavigator />
+      </NavigationContainer>
     );
   }
 
   if (currentScreen === 'capture') {
-    return <MainNavigator />;
+    return (
+      <NavigationContainer>
+        <MainNavigator />
+      </NavigationContainer>
+    );
   }
 
   return (
@@ -302,5 +314,50 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
+function App(): React.JSX.Element {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppWrapper />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+
+function AppWrapper(): React.JSX.Element {
+  const { user, loading } = useContext(AuthContext);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  if (isLoading || loading) {
+    return (
+      <LoadingScreen 
+        onLoadingComplete={() => {
+          setIsLoading(false);
+        }} 
+      />
+    );
+  }
+  
+  return <AppContent />;
+}
 
 export default App;

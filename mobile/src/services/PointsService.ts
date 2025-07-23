@@ -35,10 +35,10 @@ class PointsService {
       
       // Record points in database
       const { data: pointsLog, error: logError } = await supabase
-        .from('points_log')
+        .from('points_transactions')
         .insert({
           user_id: userId,
-          action_type: actionType,
+          transaction_type: actionType,
           points,
           metadata,
           created_at: new Date().toISOString(),
@@ -48,14 +48,26 @@ class PointsService {
       
       if (logError) throw logError;
       
-      // Update user's total points
-      const { data: user, error: userError } = await supabase
+      // Get or create user profile
+      let { data: user, error: userError } = await supabase
         .from('users')
         .select('points')
         .eq('id', userId)
         .single();
       
-      if (userError) throw userError;
+      if (userError && userError.code === 'PGRST116') {
+        // User doesn't exist, create profile
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({ id: userId, points: 0 })
+          .select()
+          .single();
+        
+        if (createError) throw createError;
+        user = newUser;
+      } else if (userError) {
+        throw userError;
+      }
       
       const oldTotal = user?.points || 0;
       const newTotal = oldTotal + points;
@@ -144,13 +156,13 @@ class PointsService {
   async getUserStreak(userId: string): Promise<number> {
     try {
       const { data, error } = await supabase
-        .from('user_streaks')
-        .select('current_streak')
-        .eq('user_id', userId)
+        .from('users')
+        .select('streak_days')
+        .eq('id', userId)
         .single();
       
       if (error && error.code !== 'PGRST116') throw error;
-      return data?.current_streak || 0;
+      return data?.streak_days || 0;
     } catch (error) {
       console.error('Error fetching user streak:', error);
       return 0;
@@ -164,10 +176,10 @@ class PointsService {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const { data: streakData, error: fetchError } = await supabase
-        .from('user_streaks')
-        .select('*')
-        .eq('user_id', userId)
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('streak_days, last_activity_date')
+        .eq('id', userId)
         .single();
       
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
@@ -175,37 +187,35 @@ class PointsService {
       let streak = 1;
       let pointsAwarded = 0;
       
-      if (streakData) {
-        const lastActive = new Date(streakData.last_active_date);
+      if (userData) {
+        const lastActive = userData.last_activity_date ? new Date(userData.last_activity_date) : null;
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
         
-        if (lastActive.toISOString().split('T')[0] === yesterday.toISOString().split('T')[0]) {
+        if (lastActive && lastActive.toISOString().split('T')[0] === yesterday.toISOString().split('T')[0]) {
           // Continue streak
-          streak = streakData.current_streak + 1;
-        } else if (lastActive.toISOString().split('T')[0] === today) {
+          streak = (userData.streak_days || 0) + 1;
+        } else if (lastActive && lastActive.toISOString().split('T')[0] === today) {
           // Already updated today
-          return { streak: streakData.current_streak };
+          return { streak: userData.streak_days || 0 };
         }
         
         // Update existing streak
         await supabase
-          .from('user_streaks')
+          .from('users')
           .update({
-            current_streak: streak,
-            last_active_date: today,
-            longest_streak: Math.max(streak, streakData.longest_streak || 0),
+            streak_days: streak,
+            last_activity_date: today,
           })
-          .eq('user_id', userId);
+          .eq('id', userId);
       } else {
-        // Create new streak record
+        // Create new user record
         await supabase
-          .from('user_streaks')
+          .from('users')
           .insert({
-            user_id: userId,
-            current_streak: streak,
-            longest_streak: streak,
-            last_active_date: today,
+            id: userId,
+            streak_days: streak,
+            last_activity_date: today,
           });
       }
       
@@ -240,15 +250,15 @@ class PointsService {
       
       // Get user's current achievements
       const { data: userAchievements } = await supabase
-        .from('user_achievements')
-        .select('achievement_id')
+        .from('achievements')
+        .select('achievement_type')
         .eq('user_id', userId);
       
-      const unlockedIds = userAchievements?.map(a => a.achievement_id) || [];
+      const unlockedTypes = userAchievements?.map(a => a.achievement_type) || [];
       
       // Check each achievement
       for (const achievement of ACHIEVEMENTS) {
-        if (unlockedIds.includes(achievement.id)) continue;
+        if (unlockedTypes.includes(achievement.id)) continue;
         
         let qualified = false;
         
@@ -274,11 +284,11 @@ class PointsService {
         if (qualified) {
           // Unlock achievement
           await supabase
-            .from('user_achievements')
+            .from('achievements')
             .insert({
               user_id: userId,
-              achievement_id: achievement.id,
-              unlocked_at: new Date().toISOString(),
+              achievement_type: achievement.id,
+              achieved_at: new Date().toISOString(),
             });
           
           // Award points

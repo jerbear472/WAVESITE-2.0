@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -8,51 +8,88 @@ import {
   View,
   Alert,
   ActivityIndicator,
+  Image,
+  Linking,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import TrendStorageService from '../services/TrendStorageService';
 import TrendExtractorService from '../services/TrendExtractorService';
+import ShareExtensionService from '../services/ShareExtensionService';
+import HiddenWebViewExtractor, { HiddenWebViewExtractorRef } from '../components/HiddenWebViewExtractor';
 
 const CaptureTrendsScreen: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleCaptureTrend = () => {
-    Alert.alert(
-      'Capture Trend',
-      'Share content directly from TikTok or Instagram',
-      [
-        { text: 'Open TikTok', onPress: () => console.log('Opening TikTok...') },
-        { text: 'Open Instagram', onPress: () => console.log('Opening Instagram...') },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+  const webViewExtractorRef = useRef<HiddenWebViewExtractorRef>(null);
+  
+  useEffect(() => {
+    // Set up share extension listener
+    const shareService = ShareExtensionService.getInstance();
+    const unsubscribe = shareService.addListener(async (content) => {
+      // Handle shared content from share extension
+      await processSharedUrl(content.url);
+    });
+    
+    // Check for any pending shares on mount
+    checkPendingShares();
+    
+    // Set the WebView extractor reference
+    if (webViewExtractorRef.current) {
+      TrendExtractorService.setWebViewExtractor(webViewExtractorRef.current);
+    }
+    
+    return () => {
+      unsubscribe();
+      TrendExtractorService.setWebViewExtractor(null);
+    };
+  }, []);
+  
+  const checkPendingShares = async () => {
+    const shareService = ShareExtensionService.getInstance();
+    const sharedContent = await shareService.getSharedContent();
+    if (sharedContent.length > 0) {
+      const latestShare = sharedContent[0];
+      if (Date.now() - latestShare.timestamp < 60000) { // Within last minute
+        await processSharedUrl(latestShare.url);
+      }
+    }
   };
-
-  const handlePasteLink = async () => {
+  
+  const processSharedUrl = async (url: string) => {
     try {
-      const content = await Clipboard.getString();
-      if (content && content.trim()) {
-        // Check if it's a valid URL
-        const urlPattern = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
-        if (!urlPattern.test(content)) {
-          Alert.alert('Invalid URL', 'Please copy a valid link from TikTok or Instagram');
-          return;
-        }
-
-        setIsProcessing(true);
-        
-        // Extract data from URL
-        const extractedData = await TrendExtractorService.extractDataFromUrl(content);
-        
-        // Save the trend
-        const savedTrend = await TrendStorageService.saveTrend({
-          url: content,
-          title: extractedData.title,
-          description: extractedData.description,
-        });
-
-        setIsProcessing(false);
-        
+      if (!url || typeof url !== 'string') {
+        Alert.alert('Error', 'Invalid URL provided');
+        return;
+      }
+      
+      setIsProcessing(true);
+      
+      // Extract data from URL (this will try to fetch actual post data)
+      const extractedData = await TrendExtractorService.extractDataFromUrl(url);
+      
+      // Validate extracted data
+      if (!extractedData || !extractedData.title) {
+        throw new Error('Failed to extract data from URL');
+      }
+      
+      // Save the trend with metadata
+      const savedTrend = await TrendStorageService.saveTrend({
+        url: url,
+        title: extractedData.title || 'Untitled Trend',
+        description: extractedData.description || '',
+        platform: extractedData.platform || 'Unknown',
+        metadata: {
+          creator: extractedData.creator,
+          caption: extractedData.caption,
+          likes: extractedData.likes,
+          comments: extractedData.comments,
+          shares: extractedData.shares,
+          views: extractedData.views,
+        },
+      });
+      
+      setIsProcessing(false);
+      
+      if (savedTrend && savedTrend.title) {
         Alert.alert(
           'Trend Captured! 🎉',
           `"${savedTrend.title}" has been saved to your collection.`,
@@ -63,16 +100,72 @@ const CaptureTrendsScreen: React.FC = () => {
                 // Navigation handled by bottom nav
               },
             },
-            { text: 'Capture Another', style: 'default' },
+            { text: 'OK', style: 'default' },
           ]
         );
       } else {
-        Alert.alert('No Link', 'No link found in clipboard');
+        Alert.alert('Success', 'Trend has been saved to your collection.');
       }
     } catch (error) {
       setIsProcessing(false);
-      console.error('Error pasting link:', error);
+      console.error('Error processing shared URL:', error);
       Alert.alert('Error', 'Failed to capture trend. Please try again.');
+    }
+  };
+
+  const handleCaptureTrend = () => {
+    Alert.alert(
+      'Capture Trend',
+      'Share content directly from TikTok or Instagram',
+      [
+        { 
+          text: 'Open TikTok', 
+          onPress: () => {
+            Linking.openURL('tiktok://').catch(() => {
+              Linking.openURL('https://www.tiktok.com/');
+            });
+          }
+        },
+        { 
+          text: 'Open Instagram', 
+          onPress: () => {
+            Linking.openURL('instagram://').catch(() => {
+              Linking.openURL('https://www.instagram.com/');
+            });
+          }
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handlePasteLink = async () => {
+    try {
+      const content = await Clipboard.getString();
+      
+      // Check if clipboard has content
+      if (!content || !content.trim()) {
+        Alert.alert('No Link', 'No link found in clipboard. Please copy a link first.');
+        return;
+      }
+      
+      const trimmedContent = content.trim();
+      
+      // Check if it's a valid URL
+      const urlPattern = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/[\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/;
+      if (!urlPattern.test(trimmedContent)) {
+        Alert.alert('Invalid URL', 'Please copy a valid link from TikTok, Instagram, or other supported platforms.');
+        return;
+      }
+      
+      // Ensure the URL has a protocol
+      const urlWithProtocol = trimmedContent.startsWith('http') ? trimmedContent : `https://${trimmedContent}`;
+      
+      // Process the URL using the shared function
+      await processSharedUrl(urlWithProtocol);
+    } catch (error) {
+      console.error('Error accessing clipboard:', error);
+      Alert.alert('Error', 'Failed to access clipboard. Please try again.');
     }
   };
 
@@ -80,7 +173,7 @@ const CaptureTrendsScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {/* Top Navigation Bar */}
       <View style={styles.topNav}>
-        <Text style={styles.brandName}>〰️  WAVESIGHT</Text>
+        {/* Empty top nav for spacing */}
       </View>
 
       <ScrollView 
@@ -90,8 +183,13 @@ const CaptureTrendsScreen: React.FC = () => {
         
         {/* Main Icon */}
         <View style={styles.mainIconContainer}>
-          <View style={styles.mainIcon}>
-            <Text style={styles.mainIconText}>〰️</Text>
+          <View style={styles.logoRow}>
+            <Image 
+              source={require('../assets/images/logo2.png')} 
+              style={styles.mainLogo}
+              resizeMode="contain"
+            />
+            <Text style={styles.wavesiteText}>WAVESITE</Text>
           </View>
         </View>
 
@@ -156,6 +254,9 @@ const CaptureTrendsScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+      
+      {/* Hidden WebView for data extraction */}
+      <HiddenWebViewExtractor ref={webViewExtractorRef} />
     </SafeAreaView>
   );
 };
@@ -178,6 +279,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  logo: {
+    height: 40,
+    width: 150,
+  },
   scrollView: {
     flex: 1,
   },
@@ -199,6 +304,21 @@ const styles = StyleSheet.create({
   },
   mainIconText: {
     fontSize: 50,
+  },
+  mainLogo: {
+    width: 80,
+    height: 60,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  wavesiteText: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 2,
   },
   title: {
     fontSize: 48,

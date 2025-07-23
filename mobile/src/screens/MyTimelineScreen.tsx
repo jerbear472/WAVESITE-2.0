@@ -105,11 +105,46 @@ const MyTimelineScreen: React.FC<MyTimelineScreenProps> = ({ onBack }) => {
         <Text style={styles.trendTitle} numberOfLines={2}>
           {trend.title}
         </Text>
-
-        {trend.description && (
-          <Text style={styles.trendDescription} numberOfLines={2}>
-            {trend.description}
+        
+        {trend.metadata?.creator && (
+          <Text style={styles.creatorText}>
+            {trend.metadata.creator}
           </Text>
+        )}
+
+        {(trend.metadata?.caption || trend.description) && (
+          <Text style={styles.trendDescription} numberOfLines={3}>
+            {trend.metadata?.caption || trend.description}
+          </Text>
+        )}
+        
+        {trend.metadata && (trend.metadata.likes || trend.metadata.comments || trend.metadata.views) && (
+          <View style={styles.engagementContainer}>
+            {trend.metadata.likes !== undefined && (
+              <View style={styles.engagementItem}>
+                <Text style={styles.engagementIcon}>❤️</Text>
+                <Text style={styles.engagementText}>{formatEngagementNumber(trend.metadata.likes)}</Text>
+              </View>
+            )}
+            {trend.metadata.comments !== undefined && (
+              <View style={styles.engagementItem}>
+                <Text style={styles.engagementIcon}>💬</Text>
+                <Text style={styles.engagementText}>{formatEngagementNumber(trend.metadata.comments)}</Text>
+              </View>
+            )}
+            {trend.metadata.shares !== undefined && (
+              <View style={styles.engagementItem}>
+                <Text style={styles.engagementIcon}>🔁</Text>
+                <Text style={styles.engagementText}>{formatEngagementNumber(trend.metadata.shares)}</Text>
+              </View>
+            )}
+            {trend.metadata.views !== undefined && (
+              <View style={styles.engagementItem}>
+                <Text style={styles.engagementIcon}>👀</Text>
+                <Text style={styles.engagementText}>{formatEngagementNumber(trend.metadata.views)}</Text>
+              </View>
+            )}
+          </View>
         )}
 
         <View style={styles.trendFooter}>
@@ -141,6 +176,15 @@ const MyTimelineScreen: React.FC<MyTimelineScreenProps> = ({ onBack }) => {
     );
   };
 
+  const formatEngagementNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K`;
+    }
+    return num.toString();
+  };
+  
   const getTimeAgo = (date: Date): string => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -239,7 +283,7 @@ const MyTimelineScreen: React.FC<MyTimelineScreenProps> = ({ onBack }) => {
             </View>
             <Text style={styles.emptyTitle}>No trends captured yet</Text>
             <Text style={styles.emptyText}>
-              Share content from TikTok or Instagram{\n}to build your personal trend timeline
+              Share content from TikTok or Instagram{'\n'}to build your personal trend timeline
             </Text>
             <TouchableOpacity style={styles.emptyButton}>
               <Text style={styles.emptyButtonText}>Learn How →</Text>
@@ -409,6 +453,30 @@ const styles = StyleSheet.create({
     color: '#999',
     lineHeight: 20,
     marginBottom: 12,
+  },
+  creatorText: {
+    fontSize: 14,
+    color: '#0066ff',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  engagementContainer: {
+    flexDirection: 'row',
+    gap: 20,
+    marginBottom: 12,
+  },
+  engagementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  engagementIcon: {
+    fontSize: 14,
+  },
+  engagementText: {
+    fontSize: 14,
+    color: '#999',
+    fontWeight: '500',
   },
   trendFooter: {
     gap: 10,

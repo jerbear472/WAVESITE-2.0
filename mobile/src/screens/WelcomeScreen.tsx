@@ -29,16 +29,16 @@ export const WelcomeScreen: React.FC = () => {
 
         <View style={styles.features}>
           <View style={styles.feature}>
-            <Text style={styles.featureIcon}>📹</Text>
-            <Text style={styles.featureText}>Record social media sessions</Text>
+            <Text style={styles.featureIcon}>📈</Text>
+            <Text style={styles.featureText}>Track trending content across platforms</Text>
           </View>
           <View style={styles.feature}>
             <Text style={styles.featureIcon}>🎯</Text>
-            <Text style={styles.featureText}>Spot emerging trends early</Text>
+            <Text style={styles.featureText}>Spot viral content before it explodes</Text>
           </View>
           <View style={styles.feature}>
             <Text style={styles.featureIcon}>💰</Text>
-            <Text style={styles.featureText}>Earn rewards for discoveries</Text>
+            <Text style={styles.featureText}>Earn rewards for early trend discovery</Text>
           </View>
         </View>
 
@@ -72,12 +72,13 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    justifyContent: 'space-between',
-    paddingVertical: 40,
+    paddingTop: 30,
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginTop: 60,
+    marginTop: 40,
+    marginBottom: 50,
   },
   logo: {
     fontSize: 100,
@@ -90,42 +91,36 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 20,
     color: '#4da8ff',
     marginTop: 5,
+    fontWeight: '500',
   },
   features: {
-    marginVertical: 40,
+    marginBottom: 50,
   },
   feature: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 15,
-    paddingHorizontal: 20,
+    marginVertical: 12,
+    paddingHorizontal: 10,
   },
   featureIcon: {
-    fontSize: 32,
+    fontSize: 28,
     marginRight: 15,
+    width: 40,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#ffffff',
     flex: 1,
+    lineHeight: 22,
   },
   buttons: {
-    marginBottom: 20,
+    marginTop: 'auto',
   },
   primaryButton: {
-    backgroundColor: '#0080ff',
-    paddingVertical: 18,
-    borderRadius: 30,
-    alignItems: 'center',
     marginBottom: 15,
-    shadowColor: '#0080ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
   },
   primaryButtonText: {
     color: '#ffffff',
