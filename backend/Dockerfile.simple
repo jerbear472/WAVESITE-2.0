@@ -1,0 +1,43 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Create a simple FastAPI app
+RUN pip install fastapi uvicorn
+
+# Create a simple main.py
+RUN echo 'from fastapi import FastAPI\n\
+from fastapi.middleware.cors import CORSMiddleware\n\
+import os\n\
+\n\
+app = FastAPI()\n\
+\n\
+app.add_middleware(\n\
+    CORSMiddleware,\n\
+    allow_origins=["*"],\n\
+    allow_credentials=True,\n\
+    allow_methods=["*"],\n\
+    allow_headers=["*"],\n\
+)\n\
+\n\
+@app.get("/")\n\
+def read_root():\n\
+    return {"message": "WaveSight Backend API"}\n\
+\n\
+@app.get("/api/trends")\n\
+def get_trends():\n\
+    return {\n\
+        "trends": [\n\
+            {"id": 1, "name": "AI Apps", "category": "Technology", "waveScore": 85},\n\
+            {"id": 2, "name": "Short-form Content", "category": "Content", "waveScore": 92},\n\
+            {"id": 3, "name": "Climate Tech", "category": "Sustainability", "waveScore": 78}\n\
+        ]\n\
+    }\n\
+\n\
+@app.get("/health")\n\
+def health_check():\n\
+    return {"status": "healthy"}' > main.py
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

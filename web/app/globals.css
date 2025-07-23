@@ -4,16 +4,265 @@
 
 :root {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 10, 10;
-  --background-end-rgb: 10, 10, 10;
+  --background-start-rgb: 0, 13, 26;
+  --background-end-rgb: 0, 26, 51;
+  --wave-primary: #0080ff;
+  --wave-secondary: #0066cc;
+  --wave-accent: #4da8ff;
+  --wave-glow: #00a6ff;
+  --wave-dark: #003d7a;
+  --logo-silver: #c0c0c0;
+  --logo-white: #ffffff;
+  --logo-glow-silver: rgba(192, 192, 192, 0.6);
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+@layer base {
+  body {
+    color: rgb(var(--foreground-rgb));
+    background: linear-gradient(
+      135deg,
+      rgb(var(--background-start-rgb)) 0%,
+      rgb(var(--background-end-rgb)) 100%
+    );
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .wave-card {
+    @apply bg-gradient-to-br from-gray-900/70 to-gray-800/50 backdrop-blur-2xl border border-wave-700/20 rounded-3xl shadow-2xl hover:shadow-wave-500/20 transition-all duration-500 hover:border-wave-600/30;
+    position: relative;
+    overflow: hidden;
+    background-image: 
+      radial-gradient(ellipse 100% 100% at 0% 0%, rgba(0, 128, 255, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 100% at 100% 100%, rgba(0, 102, 204, 0.05) 0%, transparent 50%);
+  }
+  
+  .wave-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--wave-glow) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  
+  .wave-card:hover::before {
+    opacity: 0.05;
+  }
+  
+  .wave-button {
+    @apply bg-gradient-to-r from-wave-600 via-wave-500 to-wave-400 hover:shadow-wave-500/60 hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-white font-bold rounded-2xl px-8 py-4 relative overflow-hidden;
+  }
+  
+  .wave-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+  }
+  
+  .wave-button:hover::before {
+    left: 100%;
+  }
+  
+  .wave-text-gradient {
+    @apply bg-gradient-to-r from-wave-400 via-wave-300 to-wave-500 text-transparent bg-clip-text font-black tracking-tight;
+    filter: drop-shadow(0 2px 4px rgba(0, 128, 255, 0.2));
+  }
+  
+  .wave-border-gradient {
+    @apply relative before:absolute before:inset-0 before:p-[2px] before:bg-gradient-to-r before:from-wave-600 before:via-wave-400 before:to-wave-600 before:rounded-3xl before:-z-10;
+  }
+  
+  .wave-glow {
+    @apply shadow-[0_0_40px_rgba(0,128,255,0.4)] hover:shadow-[0_0_60px_rgba(0,166,255,0.6)] transition-shadow duration-500;
+  }
+  
+  .wave-glow-text {
+    text-shadow: 0 0 20px rgba(0, 128, 255, 0.5), 0 0 40px rgba(0, 128, 255, 0.3);
+  }
+}
+
+@layer utilities {
+  @keyframes wave {
+    0%, 100% {
+      transform: translateX(0) translateY(0);
+    }
+    25% {
+      transform: translateX(-5px) translateY(-5px);
+    }
+    50% {
+      transform: translateX(5px) translateY(-3px);
+    }
+    75% {
+      transform: translateX(-3px) translateY(2px);
+    }
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+  
+  .animate-wave {
+    animation: wave 6s ease-in-out infinite;
+  }
+  
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  .animate-shimmer {
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background-color: rgba(0, 30, 60, 0.5);
+    border: 1px solid rgba(77, 168, 255, 0.2);
+  }
+  
+  /* Logo-specific enhancements */
+  .logo-silver-glow {
+    filter: drop-shadow(0 0 30px var(--logo-glow-silver)) 
+            drop-shadow(0 0 60px rgba(192, 192, 192, 0.3));
+  }
+  
+  /* Enhanced hover transitions */
+  * {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Better focus states */
+  *:focus-visible {
+    outline: 2px solid var(--wave-accent);
+    outline-offset: 3px;
+    border-radius: 0.5rem;
+  }
+
+  /* Ensure tooltips don't block interactions and are properly hidden */
+  .trend-radar-tooltip {
+    pointer-events: none !important;
+  }
+
+  /* Force remove any orphaned tooltips */
+  body > .tooltip,
+  body > .trend-radar-tooltip,
+  body > div[style*="position: absolute"][style*="background: rgba(0, 0, 0"],
+  body > div[style*="position: absolute"][style*="background: rgba(15, 23, 42"] {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease-out;
+  }
+  
+  /* Subtle page animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+  
+  /* Futuristic title styling */
+  .futuristic-title {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-shadow: 
+      0 0 20px rgba(255, 255, 255, 0.3),
+      0 0 40px rgba(192, 192, 192, 0.2),
+      0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .logo-metallic {
+    background: linear-gradient(135deg, 
+      var(--logo-white) 0%, 
+      var(--logo-silver) 25%, 
+      var(--logo-white) 50%, 
+      var(--logo-silver) 75%, 
+      var(--logo-white) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 200%;
+    animation: metallic-shine 4s ease-in-out infinite;
+  }
+  
+  @keyframes metallic-shine {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
+  .logo-3d-effect {
+    text-shadow: 
+      0 1px 0 #ccc,
+      0 2px 0 #c9c9c9,
+      0 3px 0 #bbb,
+      0 4px 0 #b9b9b9,
+      0 5px 0 #aaa,
+      0 6px 1px rgba(0,0,0,.1),
+      0 0 5px rgba(0,0,0,.1),
+      0 1px 3px rgba(0,0,0,.3),
+      0 3px 5px rgba(0,0,0,.2),
+      0 5px 10px rgba(0,0,0,.25),
+      0 10px 10px rgba(0,0,0,.2),
+      0 20px 20px rgba(0,0,0,.15);
+  }
 }

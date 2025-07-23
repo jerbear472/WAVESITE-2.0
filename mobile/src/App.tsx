@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationService } from './services/NotificationService';
 import { RootNavigator } from './navigation/RootNavigator';
 import { PrivacyOverlay } from './components/PrivacyOverlay';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,16 +23,18 @@ export default function App() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <AuthProvider>
-          <NavigationContainer>
-            <PrivacyOverlay>
-              <RootNavigator />
-            </PrivacyOverlay>
-          </NavigationContainer>
-        </AuthProvider>
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <NavigationContainer>
+              <PrivacyOverlay>
+                <RootNavigator />
+              </PrivacyOverlay>
+            </NavigationContainer>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

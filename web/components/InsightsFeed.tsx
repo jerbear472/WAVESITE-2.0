@@ -43,9 +43,18 @@ export function InsightsFeed({ insights }: InsightsFeedProps) {
             <p className="text-gray-400 text-sm mb-3">{insight.description}</p>
             <div className="flex items-center justify-between text-xs text-gray-500">
               <span className="bg-gray-700 px-2 py-1 rounded">
-                {insight.category.replace('_', ' ')}
+                {insight.category?.replace(/_/g, ' ') || 'General'}
               </span>
-              <span>{format(new Date(insight.createdAt), 'MMM d, h:mm a')}</span>
+              <span>{(() => {
+                try {
+                  const dateValue = insight.createdAt || (insight as any).timestamp;
+                  if (!dateValue) return 'Just now';
+                  const date = new Date(dateValue);
+                  return !isNaN(date.getTime()) ? format(date, 'MMM d, h:mm a') : 'Just now';
+                } catch {
+                  return 'Just now';
+                }
+              })()}</span>
             </div>
           </motion.div>
         ))

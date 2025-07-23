@@ -10,8 +10,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-"docker.io/wavesight"}
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-"wavesight"}
 IMAGE_TAG=${IMAGE_TAG:-"latest"}
+DOCKER_USERNAME=${DOCKER_USERNAME:-"your-dockerhub-username"}
 
 echo -e "${BLUE}Building Docker images...${NC}"
 

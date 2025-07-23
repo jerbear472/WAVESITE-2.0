@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wavesight
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wavesight-secrets
+  namespace: wavesight
+type: Opaque
+stringData:
+  supabase-url: "https://achuavagkhjenaypawij.supabase.co"
+  supabase-anon-key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjaHVhdmFna2hqZW5heXBhd2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1OTY0MjQsImV4cCI6MjA2ODE3MjQyNH0.L4J5SIVGZDYAFAwNuR9b_hIvcpTJWGfu0Dvry7Umg2g"
+  database-url: "postgresql://postgres:qIvwos-vujzy1-dopzeb@db.achuavagkhjenaypawij.supabase.co:5432/postgres"
+  jwt-secret: "your-jwt-secret-key"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wavesight-web
+  namespace: wavesight
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wavesight-web
+  template:
+    metadata:
+      labels:
+        app: wavesight-web
+    spec:
+      containers:
+      - name: web
+        image: jerbear472/wavesight-web:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: NEXT_PUBLIC_SUPABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: wavesight-secrets
+              key: supabase-url
+        - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wavesight-secrets
+              key: supabase-anon-key
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://wavesight-backend-service"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wavesight-web-service
+  namespace: wavesight
+spec:
+  selector:
+    app: wavesight-web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wavesight-backend
+  namespace: wavesight
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wavesight-backend
+  template:
+    metadata:
+      labels:
+        app: wavesight-backend
+    spec:
+      containers:
+      - name: backend
+        image: jerbear472/wavesight-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: wavesight-secrets
+              key: database-url
+        - name: SUPABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: wavesight-secrets
+              key: supabase-url
+        - name: SUPABASE_SERVICE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wavesight-secrets
+              key: supabase-anon-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wavesight-backend-service
+  namespace: wavesight
+spec:
+  selector:
+    app: wavesight-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wavesight-ingress
+  namespace: wavesight
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: wavesight-backend-service
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wavesight-web-service
+            port:
+              number: 80

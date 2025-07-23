@@ -1,181 +1,278 @@
-import axios from 'axios';
-import { supabase } from './supabase';
+import { supabase } from './supabase'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add auth token to requests
-apiClient.interceptors.request.use(async (config) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
-  }
-  return config;
-});
-
-// Helper functions
-const calculateGrowthRate = (timeline: any[]) => {
-  if (!timeline || timeline.length < 2) return 0;
-  
-  const sortedTimeline = timeline.sort((a, b) => 
-    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
-  
-  const firstValue = sortedTimeline[0].wave_score || 0;
-  const lastValue = sortedTimeline[sortedTimeline.length - 1].wave_score || 0;
-  
-  if (firstValue === 0) return 0;
-  return ((lastValue - firstValue) / firstValue) * 100;
-};
-
-const extractInsightTitle = (description: string) => {
-  // Extract a concise title from the description
-  const firstPart = description.split('-')[0];
-  return firstPart.length > 60 ? firstPart.substring(0, 60) + '...' : firstPart;
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export const api = {
-  // Trends with timeline data
-  getTrends: async ({ category = 'all', timeframe = 'week' }) => {
-    // Calculate date range based on timeframe
-    const now = new Date();
-    const startDate = new Date();
-    switch (timeframe) {
-      case 'day':
-        startDate.setDate(now.getDate() - 1);
-        break;
-      case 'week':
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        startDate.setMonth(now.getMonth() - 1);
-        break;
-      default:
-        startDate.setDate(now.getDate() - 7);
+  // Authentication
+  async register(userData: {
+    email: string
+    password: string
+    username: string
+    demographics?: any
+    interests?: any
+  }) {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Registration failed')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Registration error:', error)
+      throw error
     }
+  },
 
-    // Build query
-    let query = supabase
-      .from('trend_submissions')
-      .select(`
-        *,
-        spotter:users!spotter_id(username, display_name),
-        timeline:trend_timeline(
-          timestamp,
-          wave_score,
-          validation_count,
-          engagement_rate,
-          platform_reach
-        )
-      `)
-      .gte('created_at', startDate.toISOString())
-      .order('wave_score', { ascending: false });
+  async login(credentials: { email: string; password: string }) {
+    try {
+      const formData = new FormData()
+      formData.append('username', credentials.email) // OAuth2 expects username field
+      formData.append('password', credentials.password)
 
-    // Apply category filter
-    if (category !== 'all') {
-      query = query.eq('category', category);
-    }
+      const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+        method: 'POST',
+        body: formData,
+      })
 
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('Error fetching trends:', error);
-      return [];
-    }
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Login failed')
+      }
 
-    // Transform data to match expected format
-    return data?.map(trend => {
-      // Get the latest wave score from timeline
-      const sortedTimeline = trend.timeline?.sort((a: any, b: any) => 
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      const latestWaveScore = sortedTimeline?.[0]?.wave_score || 0;
+      const data = await response.json()
       
-      return {
+      // Store the token
+      if (data.access_token) {
+        localStorage.setItem('access_token', data.access_token)
+      }
+
+      return data
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
+    }
+  },
+
+  async logout() {
+    try {
+      const token = localStorage.getItem('access_token')
+      await fetch(`${API_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      
+      localStorage.removeItem('access_token')
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  },
+
+  async getCurrentUser() {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return null
+
+      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('access_token')
+          return null
+        }
+        throw new Error('Failed to get user')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Get user error:', error)
+      return null
+    }
+  },
+  // Get trending discoveries
+  async getTrends({ category, timeframe }: { category?: string; timeframe: string }) {
+    try {
+      // For MVP, get data directly from Supabase
+      let query = supabase
+        .from('trend_submissions')
+        .select('*')
+        .in('status', ['approved', 'viral'])
+        .order('validation_count', { ascending: false })
+        .limit(50)
+
+      if (category && category !== 'all') {
+        query = query.eq('category', category)
+      }
+
+      // Filter by timeframe
+      const now = new Date()
+      let since = new Date()
+      
+      switch (timeframe) {
+        case 'day':
+          since.setDate(now.getDate() - 1)
+          break
+        case 'week':
+          since.setDate(now.getDate() - 7)
+          break
+        case 'month':
+          since.setMonth(now.getMonth() - 1)
+          break
+      }
+
+      query = query.gte('created_at', since.toISOString())
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      // Transform data to include wave score
+      return data?.map(trend => ({
+        ...trend,
+        waveScore: trend.quality_score * 10 // Convert to 0-10 scale
+      })) || []
+    } catch (error) {
+      console.error('Error fetching trends:', error)
+      return []
+    }
+  },
+
+  // Get insights
+  async getInsights({ timeframe }: { timeframe: string }) {
+    try {
+      // For MVP, generate insights from trend data
+      const { data: trends } = await supabase
+        .from('trend_submissions')
+        .select('*')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      // Transform trends into insights
+      return trends?.map(trend => ({
         id: trend.id,
-        name: trend.description.substring(0, 50) + '...',
+        title: `${trend.category.replace('_', ' ')} trend spotted`,
+        description: trend.description,
         category: trend.category,
-        waveScore: latestWaveScore,
-        growth: calculateGrowthRate(trend.timeline),
-        timeline: trend.timeline
-          ?.sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-          ?.map((point: any) => ({
-            timestamp: point.timestamp,
-            value: point.wave_score
-          })) || []
-      };
-    }) || [];
-  },
-
-  // Insights from trend data
-  getInsights: async ({ timeframe = 'week' }) => {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - (timeframe === 'week' ? 7 : 30));
-
-    const { data, error } = await supabase
-      .from('trend_submissions')
-      .select('*')
-      .gte('created_at', startDate.toISOString())
-      .in('status', ['approved', 'viral'])
-      .order('virality_prediction', { ascending: false })
-      .limit(10);
-
-    if (error) {
-      console.error('Error fetching insights:', error);
-      return [];
+        impact: trend.quality_score > 0.7 ? 'high' : trend.quality_score > 0.4 ? 'medium' : 'low',
+        timestamp: trend.created_at
+      })) || []
+    } catch (error) {
+      console.error('Error fetching insights:', error)
+      return []
     }
-
-    return data?.map(trend => ({
-      id: trend.id,
-      title: extractInsightTitle(trend.description),
-      description: trend.description,
-      category: trend.category,
-      impact: trend.virality_prediction >= 8 ? 'high' : trend.virality_prediction >= 6 ? 'medium' : 'low',
-      createdAt: trend.created_at,
-    })) || [];
   },
 
-  // Top trend spotters
-  getCompetitors: async () => {
-    const { data, error } = await supabase
-      .from('users')
-      .select(`
-        *,
-        trend_count:trend_submissions(count)
-      `)
-      .order('reputation_score', { ascending: false })
-      .limit(10);
+  // Get competitors/top spotters
+  async getCompetitors() {
+    try {
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .order('trends_spotted', { ascending: false })
+        .limit(10)
 
-    if (error) {
-      console.error('Error fetching competitors:', error);
-      return [];
+      return profiles?.map(profile => ({
+        id: profile.id,
+        name: profile.username,
+        platform: 'WaveSite',
+        trendCount: profile.trends_spotted,
+        lastActive: profile.created_at,
+        recentActivity: `Spotted ${profile.trends_spotted} trends`
+      })) || []
+    } catch (error) {
+      console.error('Error fetching competitors:', error)
+      return []
     }
-
-    return data?.map(user => ({
-      id: user.id,
-      name: user.username || user.display_name || 'Anonymous',
-      platform: 'Multi-platform',
-      recentActivity: `${user.trend_count?.[0]?.count || 0} trends spotted`,
-      trendCount: user.trend_count?.[0]?.count || 0,
-      lastActive: new Date(user.last_active || user.created_at).toLocaleString(),
-    })) || [];
   },
 
-  // Submit trend
-  submitTrend: async (trendData: any) => {
-    const response = await apiClient.post('/api/v1/trends/submit', trendData);
-    return response.data;
+  // Submit a new trend
+  async submitTrend(trendData: {
+    category: string
+    description: string
+    screenshot?: File
+    evidence: string[]
+    viralityPrediction: number
+  }) {
+    try {
+      // Upload screenshot if provided
+      let screenshotUrl = null
+      if (trendData.screenshot) {
+        const fileName = `${Date.now()}-${trendData.screenshot.name}`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('screenshots')
+          .upload(fileName, trendData.screenshot)
+
+        if (uploadError) throw uploadError
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('screenshots')
+          .getPublicUrl(fileName)
+          
+        screenshotUrl = publicUrl
+      }
+
+      // Submit to backend API
+      const token = localStorage.getItem('access_token')
+      const response = await fetch(`${API_URL}/api/v1/trends/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...trendData,
+          screenshot_url: screenshotUrl
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to submit trend')
+      
+      return await response.json()
+    } catch (error) {
+      console.error('Error submitting trend:', error)
+      throw error
+    }
   },
 
-  // Validate trend
-  validateTrend: async (trendId: string, validation: any) => {
-    const response = await apiClient.post(`/api/v1/trends/validate/${trendId}`, validation);
-    return response.data;
-  },
-};
+  // Validate a trend
+  async validateTrend(trendId: string, validation: {
+    confirmed: boolean
+    evidence_url?: string
+    notes?: string
+  }) {
+    try {
+      const token = localStorage.getItem('access_token')
+      const response = await fetch(`${API_URL}/api/v1/trends/validate/${trendId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(validation)
+      })
+
+      if (!response.ok) throw new Error('Failed to validate trend')
+      
+      return await response.json()
+    } catch (error) {
+      console.error('Error validating trend:', error)
+      throw error
+    }
+  }
+}
