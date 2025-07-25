@@ -292,7 +292,7 @@ export function TrendRadar({ data }: TrendRadarProps) {
 
     // Add hover interactions - attach to circles directly
     bubbles.select('circle')
-      .on('mouseover', function (event, d) {
+      .on('mouseover', function (this: any, event: any, d: any) {
         // Highlight the bubble
         d3.select(this)
           .transition()
@@ -301,7 +301,10 @@ export function TrendRadar({ data }: TrendRadarProps) {
           .attr('stroke-width', 3);
         
         // Bring parent group to front
-        d3.select(this.parentNode).raise();
+        const parentNode = this.parentNode;
+        if (parentNode) {
+          d3.select(parentNode).raise();
+        }
         
         // Remove any existing tooltips first
         d3.selectAll('.trend-radar-tooltip').remove();
@@ -333,7 +336,7 @@ export function TrendRadar({ data }: TrendRadarProps) {
           }
         })() : 'Unknown';
 
-        const categoryColors = {
+        const categoryColors: { [key: string]: string } = {
           'visual_style': '#8B5CF6',
           'audio_music': '#EC4899',
           'creator_technique': '#10B981',
@@ -388,7 +391,7 @@ export function TrendRadar({ data }: TrendRadarProps) {
           .duration(200)
           .style('opacity', 1);
       })
-      .on('mouseout', function () {
+      .on('mouseout', function (this: any) {
         // Reset bubble
         d3.select(this)
           .transition()

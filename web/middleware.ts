@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
     }
     
     // Only redirect away from login/register if we have a confirmed session
-    if (session && session.user && (pathname === '/login' || pathname === '/register')) {
+    if (session?.user && (pathname === '/login' || pathname === '/register')) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   } catch (error) {

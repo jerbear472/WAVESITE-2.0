@@ -93,10 +93,10 @@ export function TrendTimeline({ trends, dateRange }: TrendTimelineProps) {
       .attr('class', 'grid x-grid')
       .attr('transform', `translate(0, ${height - margin.bottom})`)
       .call(
-        d3.axisBottom(xScale)
+        (d3.axisBottom(xScale)
           .tickSize(-(height - margin.top - margin.bottom))
           .tickFormat(() => '')
-          .ticks(d3.timeDay.every(1))
+          .ticks(d3.timeDay.every(1)) as any)
       );
 
     xGrid.selectAll('line')
@@ -110,10 +110,10 @@ export function TrendTimeline({ trends, dateRange }: TrendTimelineProps) {
       .attr('class', 'grid y-grid')
       .attr('transform', `translate(${margin.left}, 0)`)
       .call(
-        d3.axisLeft(yScale)
+        (d3.axisLeft(yScale)
           .tickSize(-(width - margin.left - margin.right))
           .tickFormat(() => '')
-          .ticks(5)
+          .ticks(5) as any)
       );
 
     yGrid.selectAll('line')
@@ -265,6 +265,7 @@ export function TrendTimeline({ trends, dateRange }: TrendTimelineProps) {
       trend.data.forEach((point, i) => {
         dotsGroup
           .append('circle')
+          .datum({ point, trend }) // Attach both point and trend data
           .attr('cx', xScale(point.date))
           .attr('cy', yScale(point.virality))
           .attr('r', 0)
@@ -281,7 +282,9 @@ export function TrendTimeline({ trends, dateRange }: TrendTimelineProps) {
       
       // Add hover effect to dots
       dotsGroup.selectAll('circle')
-        .on('mouseover', function(event) {
+        .on('mouseover', function(this: any, event: any, d: any) {
+          const { point, trend } = d;
+          
           // Highlight this trend
           svg.selectAll('.trend-wave').style('opacity', 0.3);
           svg.selectAll(`.trend-dots-${trend.id} circle`).attr('r', 5).attr('stroke-width', 2);
@@ -439,9 +442,9 @@ export function TrendTimeline({ trends, dateRange }: TrendTimelineProps) {
       .append('g')
       .attr('transform', `translate(0, ${height - margin.bottom})`)
       .call(
-        d3.axisBottom(xScale)
-          .tickFormat(d3.timeFormat('%b %d'))
-          .ticks(d3.timeDay.every(1))
+        (d3.axisBottom(xScale)
+          .tickFormat(d3.timeFormat('%b %d') as any)
+          .ticks(d3.timeDay.every(1) as any) as any)
       );
 
     xAxis.selectAll('text')
@@ -455,9 +458,9 @@ export function TrendTimeline({ trends, dateRange }: TrendTimelineProps) {
       .append('g')
       .attr('transform', `translate(${margin.left}, 0)`)
       .call(
-        d3.axisLeft(yScale)
+        (d3.axisLeft(yScale)
           .tickFormat(d => `${d}%`)
-          .ticks(5)
+          .ticks(5) as any)
       );
 
     yAxis.selectAll('text').style('fill', '#94a3b8');

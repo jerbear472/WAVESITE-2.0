@@ -3,17 +3,32 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { clearAllAuthState } from '@/lib/auth-utils';
 
 interface User {
   id: number;
   email: string;
   username: string;
   role: string;
+  view_mode?: 'user' | 'professional';
+  permissions?: {
+    can_manage_users?: boolean;
+    can_switch_views?: boolean;
+    can_access_all_data?: boolean;
+    can_manage_permissions?: boolean;
+    [key: string]: boolean | undefined;
+  };
   total_earnings: number;
   pending_earnings: number;
   trends_spotted: number;
   accuracy_score: number;
   validation_score: number;
+  // Business user fields
+  is_business?: boolean;
+  business_id?: string;
+  business_name?: string;
+  business_role?: 'admin' | 'analyst' | 'viewer';
+  subscription_tier?: 'free' | 'starter' | 'pro' | 'enterprise';
 }
 
 interface AuthContextType {
@@ -26,9 +41,10 @@ interface AuthContextType {
     username: string;
     demographics?: any;
     interests?: any;
-  }) => Promise<void>;
-  logout: () => Promise<void>;
+  }) => Promise<{ needsEmailConfirmation: boolean }>;
+  logout: () => Promise<{ success: boolean; error?: any }>;
   refreshUser: () => Promise<void>;
+  switchViewMode: (mode: 'user' | 'professional') => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,7 +73,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(profile);
         }
       } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out, clearing state');
         setUser(null);
+        // Clear any cached data
+        localStorage.removeItem('access_token');
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed');
+      } else if (event === 'USER_UPDATED') {
+        // Re-fetch user profile on user update
+        if (session) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (profile) {
+            setUser(profile);
+          }
+        }
       }
     });
 
@@ -152,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (authError) throw authError;
 
       // Check if email confirmation is required
-      const needsEmailConfirmation = authData.user && !authData.session;
+      const needsEmailConfirmation = !!(authData.user && !authData.session);
 
       // Create user profile in database (if not created by trigger)
       if (authData.user) {
@@ -201,15 +235,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Clear user state immediately
       setUser(null);
+      
+      // Use the utility to clear all auth state
+      await clearAllAuthState();
+      
+      return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
+      // Try to force clear even on error
+      try {
+        setUser(null);
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.error('Force clear error:', e);
+      }
+      return { success: false, error };
     }
   };
 
   const refreshUser = async () => {
     await checkUser();
+  };
+
+  const switchViewMode = async (mode: 'user' | 'professional') => {
+    if (!user) return;
+    
+    try {
+      // Update view mode in database
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ view_mode: mode })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setUser({ ...user, view_mode: mode });
+    } catch (error) {
+      console.error('Error switching view mode:', error);
+      throw error;
+    }
   };
 
   return (
@@ -221,6 +289,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         refreshUser,
+        switchViewMode,
       }}
     >
       {children}
