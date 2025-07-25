@@ -38,3 +38,4 @@
  ✓ Compiled /submit in 362ms (3485 modules)
 
  ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ✓ Compiled in 631ms (1720 modules)
