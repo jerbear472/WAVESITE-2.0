@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { MetadataExtractor } from '@/lib/metadataExtractor';
+import { TrendDuplicateChecker } from '@/lib/trendDuplicateChecker';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -23,6 +25,14 @@ interface TrendData {
   category: string;
   image?: File | string;
   platform: string;
+  creator_handle?: string;
+  creator_name?: string;
+  post_caption?: string;
+  likes_count?: number;
+  comments_count?: number;
+  shares_count?: number;
+  views_count?: number;
+  hashtags?: string[];
 }
 
 const categories = [
@@ -42,24 +52,76 @@ const platforms = [
   { id: 'other', label: 'Other', color: 'bg-gray-600' }
 ];
 
-export default function TrendSubmissionForm({ onClose, onSubmit }: { 
-  onClose: () => void; 
-  onSubmit: (data: TrendData) => Promise<void>; 
-}) {
+interface TrendSubmissionFormProps {
+  onClose: () => void;
+  onSubmit: (data: TrendData) => Promise<void>;
+  initialUrl?: string;
+}
+
+export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = '' }: TrendSubmissionFormProps) {
   const { user } = useAuth();
-  const [formData, setFormData] = useState<TrendData>({
-    url: '',
-    title: '',
-    description: '',
-    category: '',
-    platform: ''
-  });
+  const DRAFT_KEY = 'wavesight_trend_draft';
+  
+  // Load draft from localStorage
+  const loadDraft = (): TrendData => {
+    if (typeof window !== 'undefined') {
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        try {
+          return JSON.parse(draft);
+        } catch (e) {
+          console.error('Error loading draft:', e);
+        }
+      }
+    }
+    return {
+      url: initialUrl,
+      title: '',
+      description: '',
+      category: '',
+      platform: '',
+      creator_handle: '',
+      creator_name: '',
+      post_caption: '',
+      likes_count: 0,
+      comments_count: 0,
+      shares_count: 0,
+      views_count: 0,
+      hashtags: []
+    };
+  };
+  
+  const [formData, setFormData] = useState<TrendData>(loadDraft());
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [step, setStep] = useState(1);
+  const [extractingMetadata, setExtractingMetadata] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [duplicateWarning, setDuplicateWarning] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const draftSaveTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Save draft to localStorage when form data changes
+  useEffect(() => {
+    if (draftSaveTimeoutRef.current) {
+      clearTimeout(draftSaveTimeoutRef.current);
+    }
+    
+    draftSaveTimeoutRef.current = setTimeout(() => {
+      if (formData.url || formData.title || formData.description) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+      }
+    }, 1000); // Debounce for 1 second
+    
+    return () => {
+      if (draftSaveTimeoutRef.current) {
+        clearTimeout(draftSaveTimeoutRef.current);
+      }
+    };
+  }, [formData]);
+  
   // Auto-detect clipboard content on mount
   useEffect(() => {
     const checkClipboard = async () => {
@@ -94,19 +156,41 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
     }
   };
 
+  // Auto-extract metadata if initialUrl is provided
+  useEffect(() => {
+    if (initialUrl && isValidUrl(initialUrl) && !formData.title) {
+      extractMetadataFromUrl(initialUrl);
+    }
+  }, [initialUrl]);
+
   const extractMetadataFromUrl = async (url: string) => {
-    // Auto-detect platform from URL
-    let platform = '';
-    if (url.includes('tiktok.com')) platform = 'tiktok';
-    else if (url.includes('instagram.com')) platform = 'instagram';
-    else if (url.includes('youtube.com')) platform = 'youtube';
-    else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'twitter';
-    else platform = 'other';
-
-    setFormData(prev => ({ ...prev, platform }));
-
-    // In a real app, you'd call an API to extract metadata
-    // For now, we'll just set the platform
+    setExtractingMetadata(true);
+    try {
+      const extractedData = await MetadataExtractor.extractFromUrl(url);
+      
+      setFormData(prev => ({
+        ...prev,
+        platform: extractedData.platform,
+        title: prev.title || '', // Keep title empty for manual input
+        description: prev.description || extractedData.description || '',
+        creator_handle: extractedData.metadata.creator_handle || prev.creator_handle || '',
+        // For TikTok, use handle as creator name if no name is provided
+        creator_name: extractedData.metadata.creator_name || 
+                     (extractedData.platform === 'tiktok' && extractedData.metadata.creator_handle ? 
+                      `@${extractedData.metadata.creator_handle}` : prev.creator_name || ''),
+        post_caption: extractedData.metadata.post_caption || prev.post_caption || '',
+        likes_count: extractedData.metadata.likes_count || prev.likes_count || 0,
+        comments_count: extractedData.metadata.comments_count || prev.comments_count || 0,
+        shares_count: extractedData.metadata.shares_count || prev.shares_count || 0,
+        views_count: extractedData.metadata.views_count || prev.views_count || 0,
+        hashtags: extractedData.metadata.hashtags || prev.hashtags || [],
+        thumbnail_url: extractedData.metadata.thumbnail_url || prev.thumbnail_url
+      }));
+    } catch (error) {
+      console.error('Error extracting metadata:', error);
+    } finally {
+      setExtractingMetadata(false);
+    }
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,35 +215,105 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!formData.url) {
+      errors.url = 'URL is required';
+    } else if (!isValidUrl(formData.url)) {
+      errors.url = 'Please enter a valid social media URL';
+    }
+    
+    if (!formData.title || formData.title.trim().length < 3) {
+      errors.title = 'Title must be at least 3 characters';
+    }
+    
+    if (!formData.category) {
+      errors.category = 'Please select a category';
+    }
+    
+    if (!formData.platform) {
+      errors.platform = 'Please select a platform';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+    
+    if (!validateForm()) {
+      setError('Please fix the errors below');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      // Validation
-      if (!formData.url || !formData.title || !formData.category || !formData.platform) {
-        throw new Error('Please fill in all required fields');
-      }
-
-      if (!isValidUrl(formData.url)) {
-        throw new Error('Please enter a valid social media URL');
-      }
-
       await onSubmit(formData);
-      onClose();
+      setSuccess('Trend submitted successfully!');
+      
+      // Clear the draft on successful submission
+      localStorage.removeItem(DRAFT_KEY);
+      
+      // Show success for a moment before closing
+      setTimeout(() => {
+        onClose();
+      }, 1500);
     } catch (err: any) {
-      setError(err.message || 'Failed to submit trend');
+      setError(err.message || 'Failed to submit trend. Please try again.');
+      // Auto-clear error after 5 seconds
+      setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
     }
   };
 
   const nextStep = () => {
-    if (step === 1 && (!formData.url || !formData.title)) {
-      setError('Please enter both URL and title to continue');
-      return;
+    setError('');
+    
+    if (step === 1) {
+      const errors: {[key: string]: string} = {};
+      
+      if (!formData.url) {
+        errors.url = 'URL is required';
+      } else if (!isValidUrl(formData.url)) {
+        errors.url = 'Please enter a valid social media URL';
+      }
+      
+      if (!formData.title || formData.title.trim().length < 3) {
+        errors.title = 'Title must be at least 3 characters';
+      }
+      
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        setError('Please fix the errors before continuing');
+        return;
+      }
     }
+    
+    if (step === 2) {
+      const errors: {[key: string]: string} = {};
+      
+      if (!formData.platform) {
+        errors.platform = 'Please select a platform';
+      }
+      
+      if (!formData.category) {
+        errors.category = 'Please select a category';
+      }
+      
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        setError('Please complete all required fields');
+        return;
+      }
+    }
+    
+    setValidationErrors({});
     if (step < 3) setStep(step + 1);
   };
 
@@ -181,12 +335,25 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
             <h2 className="text-2xl font-bold text-white">Submit New Trend</h2>
             <p className="text-wave-400 text-sm">Step {step} of 3</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-wave-800/50 transition-all"
-          >
-            <XIcon className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {(formData.url || formData.title) && (
+              <span className="text-xs text-wave-500">Draft saved</span>
+            )}
+            <button
+              onClick={() => {
+                if (formData.url || formData.title || formData.description) {
+                  if (confirm('Are you sure? Your draft will be saved.')) {
+                    onClose();
+                  }
+                } else {
+                  onClose();
+                }
+              }}
+              className="p-2 rounded-lg hover:bg-wave-800/50 transition-all"
+            >
+              <XIcon className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Progress Bar */}
@@ -225,13 +392,27 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
                   <input
                     type="url"
                     value={formData.url}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, url: e.target.value }));
-                      if (isValidUrl(e.target.value)) {
-                        extractMetadataFromUrl(e.target.value);
+                    onChange={async (e) => {
+                      const newUrl = e.target.value;
+                      setFormData(prev => ({ ...prev, url: newUrl }));
+                      setDuplicateWarning('');
+                      
+                      if (isValidUrl(newUrl)) {
+                        // Check for duplicates
+                        const duplicateCheck = await TrendDuplicateChecker.checkDuplicateUrl(newUrl, user?.id);
+                        if (duplicateCheck.isDuplicate) {
+                          setDuplicateWarning(duplicateCheck.message || 'This trend has already been submitted');
+                        }
+                        
+                        // Extract metadata
+                        extractMetadataFromUrl(newUrl);
                       }
                     }}
-                    className="w-full px-4 py-3 rounded-xl bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none focus:ring-2 focus:ring-wave-500/20"
+                    className={`w-full px-4 py-3 rounded-xl bg-wave-800/50 border text-white placeholder-wave-500 focus:outline-none focus:ring-2 ${
+                      validationErrors.url 
+                        ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' 
+                        : 'border-wave-700/30 focus:border-wave-500 focus:ring-wave-500/20'
+                    }`}
                     placeholder="https://tiktok.com/@user/video/123..."
                     required
                   />
@@ -242,35 +423,117 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
                         const clipboardText = await navigator.clipboard.readText();
                         if (isValidUrl(clipboardText)) {
                           setFormData(prev => ({ ...prev, url: clipboardText }));
+                          setDuplicateWarning('');
+                          
+                          // Check for duplicates
+                          const duplicateCheck = await TrendDuplicateChecker.checkDuplicateUrl(clipboardText, user?.id);
+                          if (duplicateCheck.isDuplicate) {
+                            setDuplicateWarning(duplicateCheck.message || 'This trend has already been submitted');
+                          }
+                          
                           extractMetadataFromUrl(clipboardText);
+                        } else if (clipboardText) {
+                          setError('Invalid URL. Please paste a link from TikTok, Instagram, YouTube, or Twitter/X');
+                          setTimeout(() => setError(''), 3000);
                         }
                       } catch (error) {
                         console.log('Clipboard access denied');
                       }
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-wave-700/50 transition-all"
+                    disabled={extractingMetadata}
                   >
-                    <ClipboardIcon className="w-4 h-4 text-wave-400" />
+                    {extractingMetadata ? (
+                      <LoaderIcon className="w-4 h-4 text-wave-400 animate-spin" />
+                    ) : (
+                      <ClipboardIcon className="w-4 h-4 text-wave-400" />
+                    )}
                   </button>
                 </div>
-                <p className="text-xs text-wave-500 mt-1">
-                  Paste a link from TikTok, Instagram, YouTube, or Twitter/X
-                </p>
+                {validationErrors.url ? (
+                  <p className="text-xs text-red-400 mt-1">{validationErrors.url}</p>
+                ) : (
+                  <p className="text-xs text-wave-500 mt-1">
+                    Paste a link from TikTok, Instagram, YouTube, or Twitter/X
+                  </p>
+                )}
+                {extractingMetadata && (
+                  <p className="text-xs text-wave-400 mt-1 animate-pulse">
+                    Extracting post metadata...
+                  </p>
+                )}
+                {duplicateWarning && (
+                  <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-xs text-yellow-400 flex items-start gap-1">
+                      <AlertCircleIcon className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      {duplicateWarning}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Show extracted metadata immediately */}
+                {(formData.creator_handle || formData.post_caption) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-3 p-3 bg-wave-600/20 border border-wave-600/40 rounded-lg"
+                  >
+                    <div className="flex items-start gap-2">
+                      <CheckIcon className="w-4 h-4 text-wave-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 space-y-1">
+                        <p className="text-xs text-wave-300 font-medium">Metadata captured successfully!</p>
+                        {formData.creator_handle && (
+                          <p className="text-xs text-wave-400">
+                            Creator: <span className="text-wave-200">{formData.creator_handle}</span>
+                            {formData.creator_name && formData.creator_name !== formData.creator_handle && 
+                              <span className="text-wave-300"> ({formData.creator_name})</span>
+                            }
+                          </p>
+                        )}
+                        {formData.post_caption && (
+                          <p className="text-xs text-wave-400">
+                            Caption: <span className="text-wave-200 line-clamp-2">{formData.post_caption}</span>
+                          </p>
+                        )}
+                        {formData.hashtags && formData.hashtags.length > 0 && (
+                          <p className="text-xs text-wave-400">
+                            Hashtags: <span className="text-wave-300">{formData.hashtags.slice(0, 5).map(tag => `#${tag}`).join(' ')}</span>
+                            {formData.hashtags.length > 5 && <span className="text-wave-500"> +{formData.hashtags.length - 5} more</span>}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </div>
 
-              {/* Title */}
+              {/* Trend Umbrella Title */}
               <div>
                 <label className="block text-wave-200 mb-2 font-medium">
-                  Trend Title *
+                  Trend Umbrella Name *
+                  <span className="text-sm text-wave-400 font-normal ml-2">
+                    (Name the overall trend, not this specific video)
+                  </span>
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-4 py-3 rounded-xl bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none focus:ring-2 focus:ring-wave-500/20"
-                  placeholder="Give this trend a catchy name..."
+                  className={`w-full px-4 py-3 rounded-xl bg-wave-800/50 border text-white placeholder-wave-500 focus:outline-none focus:ring-2 ${
+                    validationErrors.title 
+                      ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' 
+                      : 'border-wave-700/30 focus:border-wave-500 focus:ring-wave-500/20'
+                  }`}
+                  placeholder="e.g. 'Winter Arc Challenge', 'Man in Finance', 'Brat Summer'..."
                   required
                 />
+                {validationErrors.title ? (
+                  <p className="text-xs text-red-400 mt-1">{validationErrors.title}</p>
+                ) : (
+                  <p className="text-xs text-wave-400 mt-2">
+                    Videos with similar themes will be grouped under this trend umbrella
+                  </p>
+                )}
               </div>
 
               {/* Description */}
@@ -300,7 +563,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
               {/* Platform Selection */}
               <div>
                 <label className="block text-wave-200 mb-3 font-medium">
-                  Platform *
+                  Platform * {validationErrors.platform && <span className="text-red-400 text-sm font-normal">({validationErrors.platform})</span>}
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {platforms.map((platform) => (
@@ -327,7 +590,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
               <div>
                 <label className="block text-wave-200 mb-3 font-medium">
                   <TagIcon className="w-4 h-4 inline mr-2" />
-                  Category *
+                  Category * {validationErrors.category && <span className="text-red-400 text-sm font-normal">({validationErrors.category})</span>}
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {categories.map((category) => (
@@ -347,6 +610,127 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
                       <div className="text-xs text-wave-400">{category.description}</div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Social Media Metadata */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="text-wave-200 font-medium">Post Details</h3>
+                  {(formData.creator_handle || formData.post_caption) && (
+                    <span className="text-xs bg-wave-600/30 text-wave-300 px-2 py-1 rounded-full">
+                      Auto-filled from URL
+                    </span>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-1">
+                      Creator Handle
+                      {formData.creator_handle && (
+                        <CheckIcon className="w-3 h-3 inline ml-1 text-wave-400" />
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.creator_handle}
+                      onChange={(e) => setFormData(prev => ({ ...prev, creator_handle: e.target.value }))}
+                      className={`w-full px-3 py-2 rounded-lg bg-wave-800/50 border text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm ${
+                        formData.creator_handle ? 'border-wave-600/50' : 'border-wave-700/30'
+                      }`}
+                      placeholder="@username"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-1">Creator Name</label>
+                    <input
+                      type="text"
+                      value={formData.creator_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, creator_name: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
+                      placeholder="Display name"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-wave-300 text-sm mb-1">
+                    Post Caption
+                    {formData.post_caption && (
+                      <CheckIcon className="w-3 h-3 inline ml-1 text-wave-400" />
+                    )}
+                  </label>
+                  <textarea
+                    value={formData.post_caption}
+                    onChange={(e) => setFormData(prev => ({ ...prev, post_caption: e.target.value }))}
+                    rows={2}
+                    className={`w-full px-3 py-2 rounded-lg bg-wave-800/50 border text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm ${
+                      formData.post_caption ? 'border-wave-600/50' : 'border-wave-700/30'
+                    }`}
+                    placeholder="Original post caption..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-1">Likes</label>
+                    <input
+                      type="number"
+                      value={formData.likes_count}
+                      onChange={(e) => setFormData(prev => ({ ...prev, likes_count: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white focus:border-wave-500 focus:outline-none text-sm"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-1">Comments</label>
+                    <input
+                      type="number"
+                      value={formData.comments_count}
+                      onChange={(e) => setFormData(prev => ({ ...prev, comments_count: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white focus:border-wave-500 focus:outline-none text-sm"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-1">Shares</label>
+                    <input
+                      type="number"
+                      value={formData.shares_count}
+                      onChange={(e) => setFormData(prev => ({ ...prev, shares_count: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white focus:border-wave-500 focus:outline-none text-sm"
+                      min="0"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-1">Views</label>
+                    <input
+                      type="number"
+                      value={formData.views_count}
+                      onChange={(e) => setFormData(prev => ({ ...prev, views_count: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white focus:border-wave-500 focus:outline-none text-sm"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-wave-300 text-sm mb-1">Hashtags (comma separated)</label>
+                  <input
+                    type="text"
+                    value={formData.hashtags?.join(', ')}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      hashtags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+                    }))}
+                    className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
+                    placeholder="#trending, #viral, #fyp"
+                  />
                 </div>
               </div>
 
@@ -442,18 +826,60 @@ export default function TrendSubmissionForm({ onClose, onSubmit }: {
                       <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg mt-2" />
                     </div>
                   )}
+
+                  {(formData.creator_handle || formData.creator_name || formData.post_caption) && (
+                    <div className="border-t border-wave-700/30 pt-4 mt-4">
+                      <h4 className="text-wave-200 font-medium mb-2">Post Details</h4>
+                      {formData.creator_handle && (
+                        <p className="text-wave-300 text-sm">Creator: {formData.creator_handle} {formData.creator_name && `(${formData.creator_name})`}</p>
+                      )}
+                      {formData.post_caption && (
+                        <p className="text-wave-300 text-sm mt-1">Caption: {formData.post_caption}</p>
+                      )}
+                      <div className="flex gap-4 mt-2 text-sm text-wave-400">
+                        {formData.likes_count > 0 && <span>❤️ {formData.likes_count.toLocaleString()}</span>}
+                        {formData.comments_count > 0 && <span>💬 {formData.comments_count.toLocaleString()}</span>}
+                        {formData.shares_count > 0 && <span>🔄 {formData.shares_count.toLocaleString()}</span>}
+                        {formData.views_count > 0 && <span>👁️ {formData.views_count.toLocaleString()}</span>}
+                      </div>
+                      {formData.hashtags && formData.hashtags.length > 0 && (
+                        <p className="text-wave-400 text-sm mt-2">
+                          {formData.hashtags.map(tag => `#${tag}`).join(' ')}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
-              <AlertCircleIcon className="w-4 h-4" />
-              <span className="text-sm">{error}</span>
-            </div>
-          )}
+          {/* Error/Success Messages */}
+          <AnimatePresence mode="wait">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400"
+              >
+                <AlertCircleIcon className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
+              </motion.div>
+            )}
+            
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400"
+              >
+                <CheckIcon className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{success}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Navigation Buttons */}
           <div className="flex justify-between pt-4">
