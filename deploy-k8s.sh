@@ -24,6 +24,10 @@ docker build -t $DOCKER_REGISTRY/web:$IMAGE_TAG -f web/Dockerfile.production web
 echo "Building backend service..."
 docker build -t $DOCKER_REGISTRY/backend:$IMAGE_TAG backend/
 
+# Build mobile image
+echo "Building mobile service..."
+docker build -t $DOCKER_REGISTRY/mobile:$IMAGE_TAG mobile/
+
 echo -e "${GREEN}✓ Docker images built successfully${NC}"
 
 # Push images (optional - comment out if using local registry)
@@ -37,6 +41,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]
 then
     docker push $DOCKER_REGISTRY/web:$IMAGE_TAG
     docker push $DOCKER_REGISTRY/backend:$IMAGE_TAG
+    docker push $DOCKER_REGISTRY/mobile:$IMAGE_TAG
     echo -e "${GREEN}✓ Images pushed successfully${NC}"
 fi
 
@@ -61,6 +66,10 @@ kubectl apply -f kubernetes/backend-deployment.yaml
 echo "Deploying web service..."
 kubectl apply -f kubernetes/web-deployment.yaml
 
+# Deploy mobile
+echo "Deploying mobile service..."
+kubectl apply -f kubernetes/mobile-deployment.yaml
+
 # Apply ingress
 echo "Setting up ingress..."
 kubectl apply -f kubernetes/ingress.yaml
@@ -71,6 +80,7 @@ echo -e "${GREEN}✓ Kubernetes resources deployed${NC}"
 echo -e "${BLUE}Waiting for deployments to be ready...${NC}"
 kubectl wait --for=condition=available --timeout=300s deployment/wavesight-web -n wavesight
 kubectl wait --for=condition=available --timeout=300s deployment/wavesight-backend -n wavesight
+kubectl wait --for=condition=available --timeout=300s deployment/wavesight-mobile -n wavesight
 kubectl wait --for=condition=available --timeout=300s deployment/redis -n wavesight
 
 echo -e "${GREEN}✓ All deployments are ready!${NC}"

@@ -12,6 +12,7 @@ spec:
   - hosts:
     - wavesight.yourdomain.com
     - api.wavesight.yourdomain.com
+    - mobile.wavesight.yourdomain.com
     secretName: wavesight-tls
   rules:
   - host: wavesight.yourdomain.com
@@ -32,5 +33,15 @@ spec:
         backend:
           service:
             name: wavesight-backend-service
+            port:
+              number: 80
+  - host: mobile.wavesight.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wavesight-mobile-service
             port:
               number: 80

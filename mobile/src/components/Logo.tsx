@@ -133,12 +133,13 @@ const styles = StyleSheet.create({
       ios: 'AvenirNext-Bold',
       android: 'sans-serif-condensed',
     }),
-    fontWeight: '900',
+    fontWeight: '800',
     color: '#ffffff',
-    letterSpacing: 3,
+    letterSpacing: 2,
     textShadowColor: '#0080ff',
     textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 15,
+    textShadowRadius: 8,
+    textAlign: 'center',
   },
   tagline: {
     fontFamily: Platform.select({

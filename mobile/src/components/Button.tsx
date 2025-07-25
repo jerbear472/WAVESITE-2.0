@@ -100,9 +100,12 @@ const styles = StyleSheet.create({
   },
   medium: {
     paddingVertical: theme.spacing.md + 2,
+    paddingHorizontal: theme.spacing.xl,
   },
   large: {
     paddingVertical: theme.spacing.lg - 4,
+    paddingHorizontal: theme.spacing.xl + 8,
+    minWidth: 250,
   },
   
   // States

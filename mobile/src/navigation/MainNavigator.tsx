@@ -6,11 +6,12 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import CaptureTrendsScreen from '../screens/CaptureTrendsScreen';
+import { CaptureScreenSimple } from '../screens/CaptureScreenSimple';
 import { TrendsScreen } from '../screens/TrendsScreen';
 import MyTimelineScreen from '../screens/MyTimelineScreen';
 import { ValidationScreen } from '../screens/ValidationScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { ScrollDashboard } from '../screens/ScrollDashboard';
 
 type TabType = 'capture' | 'validate' | 'trends' | 'my-timeline' | 'profile';
 type ScreenType = TabType;
@@ -22,7 +23,7 @@ const MainNavigator: React.FC = () => {
   const renderScreen = () => {
     switch (activeTab) {
       case 'capture':
-        return <CaptureTrendsScreen />;
+        return <CaptureScreenSimple />;
       case 'trends':
         return <TrendsScreen />;
       case 'my-timeline':
@@ -32,7 +33,7 @@ const MainNavigator: React.FC = () => {
       case 'profile':
         return <ProfileScreen />;
       default:
-        return <CaptureTrendsScreen />;
+        return <CaptureScreenSimple />;
     }
   };
 
@@ -152,6 +153,7 @@ const styles = StyleSheet.create({
   navItem: {
     flex: 1,
     alignItems: 'center',
+    paddingHorizontal: 5,
   },
   navIcon: {
     marginBottom: 5,
@@ -163,8 +165,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   navLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
+    textAlign: 'center',
+    maxWidth: 80,
   },
   activeNavLabel: {
     color: '#0066ff',

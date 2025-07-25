@@ -315,17 +315,18 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   wavesiteText: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: '#fff',
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
   title: {
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
     marginBottom: 10,
+    paddingHorizontal: 20,
   },
   subtitle: {
     fontSize: 18,
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     paddingHorizontal: 20,
-    gap: 15,
+    gap: 12,
     marginBottom: 40,
   },
   button: {
@@ -344,8 +345,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     paddingVertical: 20,
-    paddingHorizontal: 24,
-    gap: 16,
+    paddingHorizontal: 20,
+    gap: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -354,6 +355,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    minHeight: 80,
   },
   primaryButton: {
     backgroundColor: '#0066ff',
@@ -369,17 +371,19 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonIcon: {
-    fontSize: 40,
+    fontSize: 32,
+    width: 40,
+    textAlign: 'center',
   },
   buttonTextContainer: {
     flex: 1,
   },
   buttonTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     color: '#fff',
     marginBottom: 2,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   buttonSubtitle: {
     fontSize: 14,
