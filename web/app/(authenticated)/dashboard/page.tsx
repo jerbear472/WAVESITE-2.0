@@ -26,11 +26,24 @@ interface RecentTrend {
   status: string;
   created_at: string;
   validation_count: number;
+  screenshot_url?: string;
+  thumbnail_url?: string;
+  evidence?: any;
+  creator_handle?: string;
+  creator_name?: string;
+  post_caption?: string;
+  likes_count?: number;
+  comments_count?: number;
+  shares_count?: number;
+  views_count?: number;
+  hashtags?: string[];
+  post_url?: string;
+  posted_at?: string;
 }
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [timeframe, setTimeframe] = useState('week');
+  const [timeframe, setTimeframe] = useState('all');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     total_earnings: 0,
@@ -67,14 +80,19 @@ export default function Dashboard() {
       }
 
       // Fetch recent trends based on timeframe
-      const dateFilter = getDateFilter(timeframe);
-      const { data: trendsData, error: trendsError } = await supabase
+      let query = supabase
         .from('trend_submissions')
         .select('*')
         .eq('spotter_id', user?.id)
-        .gte('created_at', dateFilter)
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .order('created_at', { ascending: false });
+
+      // Apply date filter only if not "all"
+      if (timeframe !== 'all') {
+        const dateFilter = getDateFilter(timeframe);
+        query = query.gte('created_at', dateFilter);
+      }
+
+      const { data: trendsData, error: trendsError } = await query.limit(10);
 
       if (trendsError) throw trendsError;
       setRecentTrends(trendsData || []);
@@ -171,6 +189,19 @@ export default function Dashboard() {
     return time.toLocaleDateString();
   };
 
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const options: Intl.DateTimeFormatOptions = {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    };
+    return date.toLocaleString('en-US', options);
+  };
+
   const getCategoryEmoji = (category: string) => {
     const emojiMap: { [key: string]: string } = {
       'visual_style': '🎨',
@@ -202,89 +233,90 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
       <div className="container-custom py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-fade-in">
           <div>
-            <h1 className="text-3xl font-light text-gray-900 dark:text-gray-100">
+            <h1 className="text-responsive-2xl font-light text-gray-900 dark:text-gray-100">
               Welcome back, <span className="font-normal text-gradient">{user?.email?.split('@')[0] || 'User'}</span>
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-responsive-sm text-gray-600 dark:text-gray-400 mt-1">
               Here's your trend intelligence overview
             </p>
           </div>
-          <Link href="/submit" className="btn-primary">
+          <Link href="/submit" className="btn-primary btn-responsive w-full sm:w-auto">
             Submit Trend
           </Link>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="card animate-scale-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
+          <div className="card animate-scale-in p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Trends Spotted</p>
-                <p className="text-3xl font-semibold mt-1">{stats.trends_spotted}</p>
-                <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+              <div className="flex-1">
+                <p className="text-responsive-xs text-gray-600 dark:text-gray-400">Trends Spotted</p>
+                <p className="text-responsive-xl font-semibold mt-1">{stats.trends_spotted}</p>
+                <p className="text-responsive-xs text-green-600 dark:text-green-400 mt-2">
                   +{stats.trends_verified} verified
                 </p>
               </div>
-              <div className="text-4xl">📈</div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl">📈</div>
             </div>
           </div>
 
-          <div className="card animate-scale-in" style={{ animationDelay: '0.1s' }}>
+          <div className="card animate-scale-in p-4 sm:p-6" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Current Streak</p>
-                <p className="text-3xl font-semibold mt-1">{stats.current_streak}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+              <div className="flex-1">
+                <p className="text-responsive-xs text-gray-600 dark:text-gray-400">Current Streak</p>
+                <p className="text-responsive-xl font-semibold mt-1">{stats.current_streak}</p>
+                <p className="text-responsive-xs text-gray-500 dark:text-gray-500 mt-2">
                   {stats.current_streak === 1 ? 'day' : 'days'}
                 </p>
               </div>
-              <div className="text-4xl">🔥</div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl">🔥</div>
             </div>
           </div>
 
-          <div className="card animate-scale-in" style={{ animationDelay: '0.2s' }}>
+          <div className="card animate-scale-in p-4 sm:p-6" style={{ animationDelay: '0.2s' }}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Earnings</p>
-                <p className="text-3xl font-semibold mt-1">${stats.total_earnings.toFixed(2)}</p>
-                <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+              <div className="flex-1">
+                <p className="text-responsive-xs text-gray-600 dark:text-gray-400">Total Earnings</p>
+                <p className="text-responsive-xl font-semibold mt-1">${stats.total_earnings.toFixed(2)}</p>
+                <p className="text-responsive-xs text-green-600 dark:text-green-400 mt-2">
                   +${stats.earnings_today.toFixed(2)} today
                 </p>
               </div>
-              <div className="text-4xl">💰</div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl">💰</div>
             </div>
           </div>
 
-          <div className="card animate-scale-in" style={{ animationDelay: '0.3s' }}>
+          <div className="card animate-scale-in p-4 sm:p-6" style={{ animationDelay: '0.3s' }}>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Accuracy Rate</p>
-                <p className="text-3xl font-semibold mt-1">
+              <div className="flex-1">
+                <p className="text-responsive-xs text-gray-600 dark:text-gray-400">Accuracy Rate</p>
+                <p className="text-responsive-xl font-semibold mt-1">
                   {stats.accuracy_score > 0 ? `${stats.accuracy_score}%` : 'N/A'}
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                <p className="text-responsive-xs text-gray-500 dark:text-gray-500 mt-2">
                   {stats.accuracy_score >= 80 ? 'Top performer' : 'Keep improving'}
                 </p>
               </div>
-              <div className="text-4xl">🎯</div>
+              <div className="text-2xl sm:text-3xl lg:text-4xl">🎯</div>
             </div>
           </div>
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Recent Trends */}
           <div className="lg:col-span-2">
-            <div className="card">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">Recent Trends</h2>
+            <div className="card p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                <h2 className="text-responsive-lg font-semibold">Recent Trends</h2>
                 <select 
                   value={timeframe} 
                   onChange={(e) => setTimeframe(e.target.value)}
                   className="text-sm border border-gray-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 bg-white dark:bg-neutral-900"
                 >
+                  <option value="all">All Time</option>
                   <option value="day">Last 24h</option>
                   <option value="week">Last Week</option>
                   <option value="month">Last Month</option>
@@ -294,14 +326,38 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {recentTrends.length > 0 ? (
                   recentTrends.map((trend) => (
-                    <div key={trend.id} className="p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer">
-                      <div className="flex items-center justify-between">
+                    <div key={trend.id} className="p-3 sm:p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                        {/* Thumbnail */}
+                        {(trend.thumbnail_url || trend.screenshot_url) && (
+                          <div className="w-full sm:w-20 h-48 sm:h-20 rounded-lg overflow-hidden flex-shrink-0">
+                            <img 
+                              src={trend.thumbnail_url || trend.screenshot_url} 
+                              alt="Trend"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="text-lg">{getCategoryEmoji(trend.category)}</span>
-                            <h3 className="font-medium">{trend.description.split('\n')[0] || 'Untitled Trend'}</h3>
+                            <h3 className="font-medium text-responsive-sm">{trend.evidence?.title || trend.description.split('\n')[0] || 'Untitled Trend'}</h3>
                           </div>
-                          <div className="flex items-center gap-3 mt-1">
+                          
+                          {/* Creator info */}
+                          {(trend.creator_handle || trend.creator_name) && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                              by @{trend.creator_handle || trend.creator_name}
+                            </p>
+                          )}
+                          
+                          {/* Date */}
+                          <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                            📅 {formatDate(trend.created_at)} ({formatTimeAgo(trend.created_at)})
+                          </p>
+                          
+                          <div className="flex items-center gap-3 mt-2">
                             <span className="text-sm text-gray-600 dark:text-gray-400">
                               {trend.category.replace(/_/g, ' ')}
                             </span>
@@ -316,16 +372,30 @@ export default function Dashboard() {
                                trend.status === 'validating' ? '🔍 Validating' :
                                '📝 Submitted'}
                             </span>
-                            <span className="text-xs text-gray-500">
-                              {formatTimeAgo(trend.created_at)}
-                            </span>
+                            
+                            {/* Engagement stats */}
+                            {(trend.likes_count || trend.views_count) && (
+                              <>
+                                {trend.likes_count > 0 && (
+                                  <span className="text-xs text-gray-500">
+                                    ❤️ {trend.likes_count >= 1000 ? `${(trend.likes_count / 1000).toFixed(1)}k` : trend.likes_count}
+                                  </span>
+                                )}
+                                {trend.views_count > 0 && (
+                                  <span className="text-xs text-gray-500">
+                                    👁 {trend.views_count >= 1000 ? `${(trend.views_count / 1000).toFixed(1)}k` : trend.views_count}
+                                  </span>
+                                )}
+                              </>
+                            )}
                           </div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-semibold text-gradient">
+                        
+                        <div className="text-center flex-shrink-0">
+                          <div className="text-responsive-lg font-semibold text-gradient">
                             {calculateWaveScore(trend)}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-500">Wave Score</div>
+                          <div className="text-responsive-xs text-gray-500 dark:text-gray-500">Wave Score</div>
                         </div>
                       </div>
                     </div>
@@ -347,9 +417,9 @@ export default function Dashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="space-y-6">
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="card p-4 sm:p-6">
+              <h2 className="text-responsive-lg font-semibold mb-4">Quick Actions</h2>
               <div className="space-y-3">
                 <Link href="/scroll" className="block w-full btn-primary text-center">
                   Start Scrolling
@@ -363,8 +433,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">Activity Feed</h2>
+            <div className="card p-4 sm:p-6">
+              <h2 className="text-responsive-lg font-semibold mb-4">Activity Feed</h2>
               <div className="space-y-3">
                 {activityFeed.length > 0 ? (
                   activityFeed.map((activity) => (
@@ -372,8 +442,8 @@ export default function Dashboard() {
                       <div className="text-lg mt-0.5">{activity.icon}</div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm">{activity.message}</p>
-                          <span className="text-sm font-semibold text-green-600">
+                          <p className="text-responsive-xs">{activity.message}</p>
+                          <span className="text-responsive-xs font-semibold text-green-600">
                             +${activity.amount.toFixed(2)}
                           </span>
                         </div>
@@ -404,31 +474,31 @@ export default function Dashboard() {
             </div>
 
             {/* Earnings Summary */}
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">Earnings Summary</h2>
+            <div className="card p-4 sm:p-6">
+              <h2 className="text-responsive-lg font-semibold mb-4">Earnings Summary</h2>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Today</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-responsive-xs text-gray-600 dark:text-gray-400">Today</span>
+                  <span className="text-responsive-xs font-semibold">
                     ${stats.earnings_today.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">This Week</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-responsive-xs text-gray-600 dark:text-gray-400">This Week</span>
+                  <span className="text-responsive-xs font-semibold">
                     ${stats.earnings_this_week.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">This Month</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-responsive-xs text-gray-600 dark:text-gray-400">This Month</span>
+                  <span className="text-responsive-xs font-semibold">
                     ${stats.earnings_this_month.toFixed(2)}
                   </span>
                 </div>
                 <div className="pt-3 mt-3 border-t border-gray-200 dark:border-neutral-700">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Total Earned</span>
-                    <span className="text-lg font-bold text-green-600">
+                    <span className="text-responsive-sm font-medium">Total Earned</span>
+                    <span className="text-responsive-lg font-bold text-green-600">
                       ${stats.total_earnings.toFixed(2)}
                     </span>
                   </div>
