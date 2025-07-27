@@ -1,24 +1,32 @@
 // Category mapper to convert frontend display values to database enum values
 
 // Map of frontend display values to database enum values
+// Database enum values: 'visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'
 export const CATEGORY_MAP: Record<string, string> = {
-  // Frontend -> Database
-  'Fashion & Beauty': 'fashion_beauty',
-  'Food & Drink': 'food_drink',
-  'Humor & Memes': 'humor_memes',
-  'Lifestyle': 'lifestyle',
-  'Politics & Social Issues': 'politics_social',
-  'Music & Dance': 'music_dance',
-  'Sports & Fitness': 'sports_fitness',
-  'Tech & Gaming': 'tech_gaming',
-  'Art & Creativity': 'art_creativity',
-  'Education & Science': 'education_science',
-  // Add any other categories your form uses
-  'Entertainment': 'entertainment',
-  'Travel': 'travel',
-  'Business': 'business',
-  'Health & Wellness': 'health_wellness',
-  'Pets & Animals': 'pets_animals'
+  // Frontend -> Database (matching actual database enum values)
+  'Fashion & Beauty': 'visual_style',
+  'Food & Drink': 'behavior_pattern',
+  'Humor & Memes': 'meme_format',
+  'Lifestyle': 'behavior_pattern',
+  'Politics & Social Issues': 'behavior_pattern',
+  'Music & Dance': 'audio_music',
+  'Sports & Fitness': 'behavior_pattern',
+  'Tech & Gaming': 'creator_technique',
+  'Art & Creativity': 'visual_style',
+  'Education & Science': 'creator_technique',
+  // Additional mappings
+  'Entertainment': 'audio_music',
+  'Travel': 'behavior_pattern',
+  'Business': 'behavior_pattern',
+  'Health & Wellness': 'behavior_pattern',
+  'Pets & Animals': 'behavior_pattern',
+  // Direct mappings for database values
+  'visual_style': 'visual_style',
+  'audio_music': 'audio_music',
+  'creator_technique': 'creator_technique',
+  'meme_format': 'meme_format',
+  'product_brand': 'product_brand',
+  'behavior_pattern': 'behavior_pattern'
 };
 
 /**
