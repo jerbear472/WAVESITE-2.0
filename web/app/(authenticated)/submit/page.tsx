@@ -247,27 +247,9 @@ export default function SubmitTrendPage() {
           }
         }
 
-      // Find or create trend umbrella with error handling
+      // Skip trend umbrella for now - table doesn't exist
       let umbrellaId = null;
-      try {
-        // Check if the column exists first
-        const { data: columnCheck, error: columnError } = await supabase
-          .from('trend_submissions')
-          .select('*')
-          .limit(0);
-        
-        // Only use umbrella if no column error
-        if (!columnError || !columnError.message?.includes('trend_umbrella_id')) {
-          umbrellaId = await TrendUmbrellaService.findOrCreateUmbrella(
-            trendData.trendName,
-            trendData.hashtags,
-            trendData.explanation
-          );
-        }
-      } catch (umbrellaError) {
-        console.error('Error with trend umbrella:', umbrellaError);
-        // Continue without umbrella if service fails
-      }
+      console.log('Skipping trend umbrella creation - feature temporarily disabled');
 
       // Skip profile check for now to avoid errors
 
