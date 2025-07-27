@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
+import { mapCategoryToEnum } from '@/lib/categoryMapper';
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,
@@ -320,7 +321,7 @@ export default function Timeline() {
         // Build the insert data object with all fields
         const insertData: any = {
           spotter_id: user.id,
-          category: trendData.categories?.[0] || 'meme_format', // Use first category
+          category: trendData.categories?.[0] ? mapCategoryToEnum(trendData.categories[0]) : 'meme_format', // Convert category to enum
           description: trendData.explanation || trendData.trendName || 'Untitled Trend',
           screenshot_url: imageUrl || thumbnailUrl,
           evidence: {
