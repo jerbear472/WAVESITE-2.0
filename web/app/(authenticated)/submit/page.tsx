@@ -254,10 +254,25 @@ export default function SubmitTrendPage() {
       // Skip profile check for now to avoid errors
 
       // Build the insert data object with proper defaults and validation
+      console.log('Categories from form:', trendData.categories);
+      console.log('First category:', trendData.categories?.[0]);
+      const mappedCategory = trendData.categories?.[0] ? mapCategoryToEnum(trendData.categories[0]) : 'meme_format';
+      console.log('Mapped category:', mappedCategory);
+      
+      // Validate required fields
+      if (!mappedCategory) {
+        throw new Error('Category is required');
+      }
+      
+      const description = trendData.explanation || trendData.trendName || 'Untitled Trend';
+      if (!description || description.trim() === '') {
+        throw new Error('Description is required');
+      }
+      
       const insertData: any = {
         spotter_id: user?.id,
-        category: trendData.categories?.[0] ? mapCategoryToEnum(trendData.categories[0]) : 'meme_format', // Convert category to enum
-        description: trendData.explanation || trendData.trendName || 'Untitled Trend',
+        category: mappedCategory, // Convert category to enum
+        description: description,
         screenshot_url: imageUrl || trendData.thumbnail_url || null,
         evidence: {
           url: trendData.url || '',
@@ -383,7 +398,12 @@ export default function SubmitTrendPage() {
           errorMessage += error.message || 'Please try again';
         }
         
-        console.error('Final submission error:', errorMessage);
+        console.error('Final submission error:', {
+          errorMessage,
+          originalError: error,
+          insertData,
+          user: user?.id
+        });
         throw new Error(errorMessage);
       }
       
