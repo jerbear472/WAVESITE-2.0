@@ -9,10 +9,13 @@ import { useAuth } from '@/contexts/AuthContext';
 interface ScrollSessionProps {
   onSessionStateChange?: (isActive: boolean) => void;
   onTrendLogged?: () => void;
+  streak?: number;
+  streakMultiplier?: number;
+  onStreakUpdate?: (streakCount: number, multiplier: number) => void;
 }
 
 export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
-  ({ onSessionStateChange, onTrendLogged }, ref) => {
+  ({ onSessionStateChange, onTrendLogged, streak = 0, streakMultiplier = 1, onStreakUpdate }, ref) => {
     const { user } = useAuth();
     const [isActive, setIsActive] = useState(false);
     const [sessionTime, setSessionTime] = useState(0);
@@ -24,7 +27,7 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
     // Calculate earnings
     const calculateEarnings = useCallback(() => {
       const baseRate = 0.10; // $0.10 per minute
-      const trendBonus = 0.25; // $0.25 per trend
+      const trendBonus = 0.10; // $0.10 per trend (corrected from 0.25)
       const minutes = sessionTime / 60;
       const baseEarnings = minutes * baseRate;
       const bonusEarnings = trendsLogged * trendBonus;
@@ -88,7 +91,7 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
             duration_seconds: sessionTime,
             trends_logged: trendsLogged,
             base_earnings: (sessionTime / 60) * 0.10,
-            bonus_earnings: trendsLogged * 0.25,
+            bonus_earnings: trendsLogged * 0.10,
             total_earnings: earnings
           });
 
@@ -121,8 +124,13 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
       if (isActive) {
         setTrendsLogged(prev => prev + 1);
         onTrendLogged?.();
+        
+        // Trigger streak update in parent component
+        if (onStreakUpdate) {
+          onStreakUpdate(streak, streakMultiplier);
+        }
       }
-    }, [isActive, onTrendLogged]);
+    }, [isActive, onTrendLogged, streak, streakMultiplier, onStreakUpdate]);
 
     // Expose methods via ref
     React.useImperativeHandle(ref, () => ({
@@ -134,11 +142,11 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden bg-gradient-to-br from-wave-900/30 to-wave-800/20 backdrop-blur-xl rounded-2xl p-6 border border-wave-700/30"
+        className="relative overflow-hidden bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 shadow-xl"
       >
         {/* Background decoration */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-wave-500 rounded-full blur-3xl" />
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500 rounded-full blur-3xl" />
           <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500 rounded-full blur-3xl" />
         </div>
 
@@ -146,70 +154,37 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-bold text-white mb-1">Scroll Session</h3>
-              <p className="text-sm text-wave-400">
-                Earn while you discover trends
+              <h3 className="text-2xl font-bold text-white mb-1">Scroll Session</h3>
+              <p className="text-sm text-gray-400 font-medium">
+                Track your trend discovery session
               </p>
             </div>
             {isActive && (
               <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
+                animate={{ scale: [1, 1.1, 1] }}
                 transition={{ repeat: Infinity, duration: 2 }}
-                className="flex items-center gap-2 px-3 py-1 bg-green-500/20 rounded-full"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 rounded-full border border-emerald-500/30"
               >
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-green-400">LIVE</span>
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="text-sm font-semibold text-emerald-400">LIVE</span>
               </motion.div>
             )}
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-wave-800/30 rounded-xl">
-              <Clock className="w-5 h-5 text-wave-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-white">{formatTime(sessionTime)}</p>
-              <p className="text-xs text-wave-500">Duration</p>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="text-center p-5 bg-gray-700/50 rounded-xl border border-gray-600">
+              <Clock className="w-6 h-6 text-blue-400 mx-auto mb-3" />
+              <p className="text-3xl font-bold text-white">{formatTime(sessionTime)}</p>
+              <p className="text-sm text-gray-400 font-medium mt-1">Duration</p>
             </div>
-            <div className="text-center p-4 bg-wave-800/30 rounded-xl">
-              <TrendingUp className="w-5 h-5 text-wave-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-white">{trendsLogged}</p>
-              <p className="text-xs text-wave-500">Trends</p>
-            </div>
-            <div className="text-center p-4 bg-wave-800/30 rounded-xl">
-              <DollarSign className="w-5 h-5 text-wave-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-white">${earnings.toFixed(2)}</p>
-              <p className="text-xs text-wave-500">Earned</p>
+            <div className="text-center p-5 bg-gray-700/50 rounded-xl border border-gray-600">
+              <TrendingUp className="w-6 h-6 text-purple-400 mx-auto mb-3" />
+              <p className="text-3xl font-bold text-white">{trendsLogged}</p>
+              <p className="text-sm text-gray-400 font-medium mt-1">Trends Logged</p>
             </div>
           </div>
 
-          {/* Earnings Breakdown */}
-          <AnimatePresence mode="wait">
-            {isActive && sessionTime > 0 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-6 p-4 bg-wave-800/20 rounded-xl"
-              >
-                <p className="text-xs text-wave-400 mb-2">Earnings Breakdown</p>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-wave-300">Base ({formatTime(sessionTime)} @ $0.10/min)</span>
-                    <span className="text-white">${((sessionTime / 60) * 0.10).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-wave-300">Trend Bonus ({trendsLogged} @ $0.25)</span>
-                    <span className="text-white">${(trendsLogged * 0.25).toFixed(2)}</span>
-                  </div>
-                  <div className="h-px bg-wave-700/50 my-2" />
-                  <div className="flex justify-between text-sm font-semibold">
-                    <span className="text-wave-200">Total</span>
-                    <span className="text-green-400">${earnings.toFixed(2)}</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Start/Stop Button */}
           <motion.button
@@ -217,31 +192,52 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
             whileTap={{ scale: 0.98 }}
             onClick={toggleSession}
             className={`
-              w-full py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-3
+              w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-3 shadow-lg
               ${isActive 
-                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30' 
-                : 'bg-gradient-to-r from-wave-600 to-wave-700 hover:from-wave-500 hover:to-wave-600 text-white'
+                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/50' 
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
               }
             `}
           >
             {isActive ? (
               <>
-                <Pause className="w-5 h-5" />
+                <Pause className="w-6 h-6" />
                 End Scroll Session
               </>
             ) : (
               <>
-                <Play className="w-5 h-5" />
+                <Play className="w-6 h-6" />
                 Start Scroll Session
               </>
             )}
           </motion.button>
 
+          {/* Streak Status Display */}
+          {isActive && streak > 0 && (
+            <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-2xl p-4 mt-6 border border-orange-500/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🔥</span>
+                  <div>
+                    <p className="text-lg font-bold text-white">{streak} Streak Active!</p>
+                    <p className="text-sm text-orange-200">{streakMultiplier}x earnings multiplier</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-orange-400">${(0.10 * streakMultiplier).toFixed(2)}</p>
+                  <p className="text-xs text-orange-200">per trend</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Helper Text */}
-          <p className="text-xs text-wave-500 text-center mt-4">
+          <p className="text-sm text-gray-400 text-center mt-4 font-medium">
             {isActive 
-              ? 'Keep scrolling and logging trends to maximize earnings' 
-              : 'Start a session to begin earning while browsing trends'
+              ? (streak > 0 
+                  ? 'Streak active! Keep the momentum going!' 
+                  : 'Log 3 trends in 3 minutes to start a streak')
+              : 'Start a session to track your trend discovery'
             }
           </p>
         </div>

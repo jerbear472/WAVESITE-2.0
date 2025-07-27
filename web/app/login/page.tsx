@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import WaveLogo from '@/components/WaveLogo';
+import WaveSightLogo from '@/components/WaveSightLogo';
+import Header from '@/components/Header';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Login form submitted'); // Debug log
     
     if (!formData.email || !formData.password) {
       setError('Please enter both email and password');
@@ -26,6 +28,7 @@ export default function LoginPage() {
     
     setError('');
     setLoading(true);
+    console.log('Attempting login with email:', formData.email); // Debug log
 
     try {
       await login(formData.email, formData.password);
@@ -33,6 +36,7 @@ export default function LoginPage() {
       const from = searchParams.get('from') || '/dashboard';
       router.push(from);
     } catch (err: any) {
+      console.error('Login error:', err); // Debug log
       setError(err.message || 'Invalid email or password');
     } finally {
       setLoading(false);
@@ -40,21 +44,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-md animate-fade-in">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3 mb-8">
-            <WaveLogo size={48} showTitle={false} />
-            <span className="text-3xl font-light">
-              Wave<span className="text-gradient font-normal">Sight</span>
-            </span>
-          </Link>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Welcome back</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">Sign in to your account</p>
-        </div>
+    <div className="min-h-screen">
+      <Header />
+      <div className="flex items-center justify-center px-4 pt-32 pb-20">
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Welcome back</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">Sign in to your account</p>
+          </div>
 
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="card">
+            <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email address
@@ -108,15 +108,16 @@ export default function LoginPage() {
                 'Sign in'
               )}
             </button>
-          </form>
-        </div>
+            </form>
+          </div>
 
-        <p className="text-center mt-6 text-gray-600 dark:text-gray-400">
-          Don't have an account?{' '}
-          <Link href="/register" className="text-wave-600 hover:text-wave-700 dark:text-wave-400 dark:hover:text-wave-300 font-medium">
-            Sign up
-          </Link>
-        </p>
+          <p className="text-center mt-6 text-gray-600 dark:text-gray-400">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-wave-600 hover:text-wave-700 dark:text-wave-400 dark:hover:text-wave-300 font-medium">
+              Sign up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

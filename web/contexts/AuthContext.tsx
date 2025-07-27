@@ -6,11 +6,12 @@ import { supabase } from '@/lib/supabase';
 import { clearAllAuthState } from '@/lib/auth-utils';
 
 interface User {
-  id: number;
+  id: string;
   email: string;
   username: string;
   role: string;
   view_mode?: 'user' | 'professional';
+  subscription_tier?: 'starter' | 'professional' | 'enterprise' | 'hedge_fund';
   permissions?: {
     can_manage_users?: boolean;
     can_switch_views?: boolean;
@@ -28,7 +29,9 @@ interface User {
   business_id?: string;
   business_name?: string;
   business_role?: 'admin' | 'analyst' | 'viewer';
-  subscription_tier?: 'free' | 'starter' | 'pro' | 'enterprise';
+  // Admin fields
+  is_admin?: boolean;
+  account_type?: 'user' | 'enterprise';
 }
 
 interface AuthContextType {
@@ -39,12 +42,14 @@ interface AuthContextType {
     email: string;
     password: string;
     username: string;
+    birthday?: string;
     demographics?: any;
     interests?: any;
   }) => Promise<{ needsEmailConfirmation: boolean }>;
   logout: () => Promise<{ success: boolean; error?: any }>;
   refreshUser: () => Promise<void>;
   switchViewMode: (mode: 'user' | 'professional') => Promise<void>;
+  updateUserEarnings: (amount: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,34 +69,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' && session) {
         // Fetch user profile when signed in
         const { data: profile } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
           
         if (profile) {
-          setUser(profile);
+          // Fetch user stats including earnings
+          const { data: stats } = await supabase
+            .rpc('get_user_dashboard_stats', { p_user_id: session.user.id });
+          
+          const userStats = stats?.[0] || {};
+          
+          // Check if user is admin
+          const isAdmin = profile.email === 'jeremyuys@gmail.com' || profile.email === 'enterprise@test.com';
+          
+          // Get account type
+          const { data: accountSettings } = await supabase
+            .from('user_account_settings')
+            .select('account_type')
+            .eq('user_id', session.user.id)
+            .single();
+
+          // Map profile to user format expected by app
+          setUser({
+            ...profile,
+            role: 'participant',
+            total_earnings: userStats.total_earnings || profile.total_earnings || 0,
+            pending_earnings: userStats.pending_earnings || profile.pending_earnings || 0,
+            trends_spotted: userStats.trends_spotted || 0,
+            accuracy_score: userStats.accuracy_score || 0,
+            validation_score: userStats.validation_score || 0,
+            view_mode: 'user',
+            subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
+            is_admin: isAdmin,
+            account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
+            permissions: isAdmin ? {
+              can_manage_users: true,
+              can_switch_views: true,
+              can_access_all_data: true,
+              can_manage_permissions: true
+            } : {}
+          });
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('User signed out, clearing state');
         setUser(null);
-        // Clear any cached data
         localStorage.removeItem('access_token');
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('Token refreshed');
-      } else if (event === 'USER_UPDATED') {
-        // Re-fetch user profile on user update
-        if (session) {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (profile) {
-            setUser(profile);
-          }
-        }
       }
     });
 
@@ -108,13 +132,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         // Get user profile from database
         const { data: profile } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
 
         if (profile) {
-          setUser(profile);
+          // Fetch user stats including earnings
+          const { data: stats } = await supabase
+            .rpc('get_user_dashboard_stats', { p_user_id: session.user.id });
+          
+          const userStats = stats?.[0] || {};
+          
+          // Check if user is admin
+          const isAdmin = profile.email === 'jeremyuys@gmail.com' || profile.email === 'enterprise@test.com';
+          
+          // Get account type
+          const { data: accountSettings } = await supabase
+            .from('user_account_settings')
+            .select('account_type')
+            .eq('user_id', session.user.id)
+            .single();
+
+          // Map profile to user format
+          setUser({
+            ...profile,
+            role: 'participant',
+            total_earnings: userStats.total_earnings || profile.total_earnings || 0,
+            pending_earnings: userStats.pending_earnings || profile.pending_earnings || 0,
+            trends_spotted: userStats.trends_spotted || 0,
+            accuracy_score: userStats.accuracy_score || 0,
+            validation_score: userStats.validation_score || 0,
+            view_mode: 'user',
+            subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
+            is_admin: isAdmin,
+            account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
+            permissions: isAdmin ? {
+              can_manage_users: true,
+              can_switch_views: true,
+              can_access_all_data: true,
+              can_manage_permissions: true
+            } : {}
+          });
         }
       }
     } catch (error) {
@@ -136,6 +195,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (authError) {
         console.error('Supabase auth error:', authError);
+        
+        // Provide more specific error messages
+        if (authError.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please check your credentials and try again.');
+        } else if (authError.message.includes('Email not confirmed')) {
+          throw new Error('Please confirm your email address before logging in.');
+        } else if (authError.message.includes('Too many requests')) {
+          throw new Error('Too many login attempts. Please wait a few minutes and try again.');
+        }
+        
         throw authError;
       }
 
@@ -144,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Get user profile from database
       if (authData.user) {
         const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
+          .from('profiles')
           .select('*')
           .eq('id', authData.user.id)
           .single();
@@ -155,7 +224,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (profile) {
           console.log('User profile found:', profile);
-          setUser(profile);
+          
+          // Check if user is admin
+          const isAdmin = profile.email === 'jeremyuys@gmail.com' || profile.email === 'enterprise@test.com';
+          
+          // Get account type
+          const { data: accountSettings } = await supabase
+            .from('user_account_settings')
+            .select('account_type')
+            .eq('user_id', authData.user.id)
+            .single();
+
+          // Map profile to user format
+          setUser({
+            ...profile,
+            role: 'participant',
+            total_earnings: 0,
+            pending_earnings: 0,
+            trends_spotted: 0,
+            accuracy_score: 0,
+            validation_score: 0,
+            view_mode: 'user',
+            subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
+            is_admin: isAdmin,
+            account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
+            permissions: isAdmin ? {
+              can_manage_users: true,
+              can_switch_views: true,
+              can_access_all_data: true,
+              can_manage_permissions: true
+            } : {}
+          });
         }
       }
     } catch (error) {
@@ -168,6 +267,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string;
     password: string;
     username: string;
+    birthday?: string;
     demographics?: any;
     interests?: any;
   }) => {
@@ -179,6 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         options: {
           data: {
             username: userData.username,
+            birthday: userData.birthday,
           }
         }
       });
@@ -190,33 +291,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Create user profile in database (if not created by trigger)
       if (authData.user) {
-        // First check if profile already exists (created by trigger)
-        const { data: existingProfile } = await supabase
-          .from('user_profiles')
-          .select('id')
-          .eq('id', authData.user.id)
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            email: userData.email,
+            username: userData.username,
+            birthday: userData.birthday,
+            age_verified: userData.birthday ? true : false,
+            subscription_tier: 'starter'
+          })
+          .select()
           .single();
 
-        if (!existingProfile) {
-          // Profile doesn't exist, create it manually
-          const { error: profileError } = await supabase
-            .from('user_profiles')
-            .insert({
-              id: authData.user.id,
-              email: userData.email,
-              username: userData.username,
-              role: 'participant',
-              total_earnings: 0,
-              pending_earnings: 0,
-              trends_spotted: 0,
-              accuracy_score: 0,
-              validation_score: 0
-            });
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            // Don't throw here, user is still created
-          }
+        if (profileError && !profileError.message.includes('duplicate')) {
+          console.error('Profile creation error:', profileError);
         }
       }
 
@@ -225,7 +314,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await checkUser();
       }
       
-      // Return whether email confirmation is needed
       return { needsEmailConfirmation };
     } catch (error) {
       console.error('Registration error:', error);
@@ -235,23 +323,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      // Clear user state immediately
       setUser(null);
-      
-      // Use the utility to clear all auth state
       await clearAllAuthState();
-      
       return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
-      // Try to force clear even on error
-      try {
-        setUser(null);
-        localStorage.clear();
-        sessionStorage.clear();
-      } catch (e) {
-        console.error('Force clear error:', e);
-      }
       return { success: false, error };
     }
   };
@@ -264,20 +340,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     
     try {
-      // Update view mode in database
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ view_mode: mode })
-        .eq('id', user.id);
-        
-      if (error) throw error;
-      
-      // Update local state
       setUser({ ...user, view_mode: mode });
     } catch (error) {
       console.error('Error switching view mode:', error);
       throw error;
     }
+  };
+
+  const updateUserEarnings = (amount: number) => {
+    if (!user) return;
+    
+    setUser({
+      ...user,
+      total_earnings: user.total_earnings + amount,
+      trends_spotted: user.trends_spotted + 1
+    });
   };
 
   return (
@@ -290,6 +367,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         refreshUser,
         switchViewMode,
+        updateUserEarnings,
       }}
     >
       {children}

@@ -230,10 +230,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
-      <div className="container-custom py-8">
+    <div className="page-container main-content bg-gray-50 dark:bg-neutral-950">
+      <div className="container-custom py-responsive content-scroll">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8 animate-fade-in mobile-constrain">
           <div>
             <h1 className="text-responsive-2xl font-light text-gray-900 dark:text-gray-100">
               Welcome back, <span className="font-normal text-gradient">{user?.email?.split('@')[0] || 'User'}</span>
@@ -248,7 +248,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8 lg:mb-12 mobile-constrain">
           <div className="card animate-scale-in p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
@@ -305,7 +305,7 @@ export default function Dashboard() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mobile-constrain">
           {/* Recent Trends */}
           <div className="lg:col-span-2">
             <div className="card p-4 sm:p-6">
@@ -411,7 +411,7 @@ export default function Dashboard() {
               </div>
 
               <Link href="/timeline" className="btn-secondary w-full mt-6">
-                View All Trends
+                View Timeline
               </Link>
             </div>
           </div>

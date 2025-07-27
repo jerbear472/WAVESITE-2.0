@@ -59,13 +59,8 @@ export default function AdminDashboard() {
 
   const checkAdminAccess = async () => {
     try {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', user?.id)
-        .single();
-
-      if (profile?.role !== 'admin') {
+      // Check if user is admin through AuthContext
+      if (!user?.is_admin) {
         router.push('/dashboard');
         return;
       }
@@ -194,6 +189,7 @@ export default function AdminDashboard() {
             </button>
           </div>
         </div>
+
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

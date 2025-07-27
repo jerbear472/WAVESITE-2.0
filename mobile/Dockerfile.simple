@@ -1,0 +1,94 @@
+# Simplified Mobile App Dockerfile for Kubernetes deployment
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install express for the server
+RUN npm install -g express
+
+# Create a simple server to serve mobile assets and health check
+COPY <<EOF /app/server.js
+const express = require('express');
+const path = require('path');
+const app = express();
+const PORT = process.env.PORT || 8081;
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy', 
+    service: 'wavesight-mobile',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Mobile app download endpoint
+app.get('/download', (req, res) => {
+  const platform = req.query.platform || 'android';
+  if (platform === 'android') {
+    res.json({
+      downloadUrl: 'https://github.com/facebook/react-native/releases/download/v0.75.4/react-native-0.75.4.tgz',
+      bundleUrl: '/bundle/index.android.bundle',
+      version: '2.0.0',
+      platform: 'android',
+      buildNumber: Date.now()
+    });
+  } else if (platform === 'ios') {
+    res.json({
+      downloadUrl: 'https://github.com/facebook/react-native/releases/download/v0.75.4/react-native-0.75.4.tgz',
+      bundleUrl: '/bundle/index.ios.bundle', 
+      version: '2.0.0',
+      platform: 'ios',
+      buildNumber: Date.now()
+    });
+  } else {
+    res.status(404).json({ error: 'Platform not supported' });
+  }
+});
+
+// App metadata
+app.get('/app-info', (req, res) => {
+  res.json({
+    name: 'WaveSight Mobile',
+    version: '2.0.0',
+    platform: 'React Native',
+    features: ['trend-spotting', 'real-time-updates', 'offline-support'],
+    endpoints: {
+      health: '/health',
+      download: '/download?platform=android',
+      appInfo: '/app-info',
+      bundle: '/bundle/'
+    },
+    backend: process.env.BACKEND_URL || 'https://api.wavesight.yourdomain.com'
+  });
+});
+
+// Bundle endpoint (placeholder)
+app.get('/bundle/:filename', (req, res) => {
+  res.json({
+    message: 'React Native bundle would be served here',
+    filename: req.params.filename,
+    note: 'In production, this would serve the actual JS bundle'
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    service: 'WaveSight Mobile Service',
+    version: '2.0.0',
+    status: 'running',
+    endpoints: ['/health', '/download', '/app-info', '/bundle/']
+  });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(\`Mobile service running on port \${PORT}\`);
+  console.log(\`Health check: http://localhost:\${PORT}/health\`);
+  console.log(\`App info: http://localhost:\${PORT}/app-info\`);
+});
+EOF
+
+EXPOSE 8081
+
+CMD ["node", "server.js"]

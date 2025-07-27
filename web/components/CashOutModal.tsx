@@ -8,12 +8,11 @@ import { supabase } from '@/lib/supabase';
 interface CashOutModalProps {
   isOpen: boolean;
   onClose: () => void;
-  totalEarnings: number;
-  userId: string;
+  availableBalance: number;
   onSuccess?: () => void;
 }
 
-export default function CashOutModal({ isOpen, onClose, totalEarnings, userId, onSuccess }: CashOutModalProps) {
+export default function CashOutModal({ isOpen, onClose, availableBalance, onSuccess }: CashOutModalProps) {
   const [venmoUsername, setVenmoUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,16 +24,28 @@ export default function CashOutModal({ isOpen, onClose, totalEarnings, userId, o
     setLoading(true);
 
     try {
+      // Validate minimum cashout amount
+      const MINIMUM_CASHOUT = 5.00;
+      if (availableBalance < MINIMUM_CASHOUT) {
+        throw new Error(`Minimum cashout amount is $${MINIMUM_CASHOUT.toFixed(2)}. You currently have ${availableBalance.toFixed(2)}.`);
+      }
+
       // Validate Venmo username
       if (!venmoUsername.trim()) {
         throw new Error('Please enter your Venmo username');
+      }
+
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('User not authenticated');
       }
 
       // Check if user has pending cash out requests
       const { data: pendingRequests, error: checkError } = await supabase
         .from('cashout_requests')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .eq('status', 'pending')
         .single();
 
@@ -50,8 +61,8 @@ export default function CashOutModal({ isOpen, onClose, totalEarnings, userId, o
       const { error: insertError } = await supabase
         .from('cashout_requests')
         .insert({
-          user_id: userId,
-          amount: totalEarnings,
+          user_id: user.id,
+          amount: availableBalance,
           venmo_username: venmoUsername.trim().replace('@', ''), // Remove @ if included
           status: 'pending'
         });
@@ -138,7 +149,7 @@ export default function CashOutModal({ isOpen, onClose, totalEarnings, userId, o
                   <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 mb-6">
                     <p className="text-sm text-green-600 dark:text-green-400 mb-1">Amount to Cash Out</p>
                     <p className="text-3xl font-bold text-green-700 dark:text-green-300">
-                      ${totalEarnings.toFixed(2)}
+                      ${availableBalance.toFixed(2)}
                     </p>
                   </div>
 
@@ -170,8 +181,9 @@ export default function CashOutModal({ isOpen, onClose, totalEarnings, userId, o
                     <div className="text-sm text-blue-700 dark:text-blue-300">
                       <p className="font-semibold mb-1">Important Information:</p>
                       <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>Minimum cashout amount is $5.00</li>
                         <li>Cash out requests are processed within 24-48 hours</li>
-                        <li>Your balance will be reset to $0 after approval</li>
+                        <li>Only approved earnings can be cashed out</li>
                         <li>Make sure your Venmo username is correct</li>
                         <li>You can only have one pending request at a time</li>
                       </ul>

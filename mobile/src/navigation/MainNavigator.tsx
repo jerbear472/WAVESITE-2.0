@@ -6,34 +6,34 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { CaptureScreenSimple } from '../screens/CaptureScreenSimple';
-import { TrendsScreen } from '../screens/TrendsScreen';
-import MyTimelineScreen from '../screens/MyTimelineScreen';
+import TrendSpotterScreen from '../screens/TrendSpotterScreen';
+import PerformanceEarningsScreen from '../screens/PerformanceEarningsScreen';
 import { ValidationScreen } from '../screens/ValidationScreen';
+import { TrendRadar } from '../screens/TrendRadar';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { ScrollDashboard } from '../screens/ScrollDashboard';
+import AchievementsScreen from '../components/QualityGamification/AchievementsScreen';
 
-type TabType = 'capture' | 'validate' | 'trends' | 'my-timeline' | 'profile';
+type TabType = 'spot' | 'earnings' | 'validate' | 'radar' | 'profile';
 type ScreenType = TabType;
 
 const MainNavigator: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('capture');
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>('capture');
+  const [activeTab, setActiveTab] = useState<TabType>('spot');
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>('spot');
 
   const renderScreen = () => {
     switch (activeTab) {
-      case 'capture':
-        return <CaptureScreenSimple />;
-      case 'trends':
-        return <TrendsScreen />;
-      case 'my-timeline':
-        return <MyTimelineScreen onBack={() => setActiveTab('capture')} />;
+      case 'spot':
+        return <TrendSpotterScreen />;
+      case 'earnings':
+        return <PerformanceEarningsScreen />;
       case 'validate':
         return <ValidationScreen />;
+      case 'radar':
+        return <TrendRadar />;
       case 'profile':
         return <ProfileScreen />;
       default:
-        return <CaptureScreenSimple />;
+        return <TrendSpotterScreen />;
     }
   };
 
@@ -46,14 +46,28 @@ const MainNavigator: React.FC = () => {
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {
-            setActiveTab('capture');
-            setCurrentScreen('capture');
+            setActiveTab('spot');
+            setCurrentScreen('spot');
           }}>
-          <View style={[styles.navIcon, activeTab === 'capture' && styles.activeNavIcon]}>
-            <Text style={styles.navIconText}>▶️</Text>
+          <View style={[styles.navIcon, activeTab === 'spot' && styles.activeNavIcon]}>
+            <Text style={styles.navIconText}>🎯</Text>
           </View>
-          <Text style={[styles.navLabel, activeTab === 'capture' && styles.activeNavLabel]}>
-            Capture
+          <Text style={[styles.navLabel, activeTab === 'spot' && styles.activeNavLabel]}>
+            Spot
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => {
+            setActiveTab('earnings');
+            setCurrentScreen('earnings');
+          }}>
+          <View style={[styles.navIcon, activeTab === 'earnings' && styles.activeNavIcon]}>
+            <Text style={styles.navIconText}>💰</Text>
+          </View>
+          <Text style={[styles.navLabel, activeTab === 'earnings' && styles.activeNavLabel]}>
+            Earnings
           </Text>
         </TouchableOpacity>
 
@@ -74,28 +88,14 @@ const MainNavigator: React.FC = () => {
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {
-            setActiveTab('trends');
-            setCurrentScreen('trends');
+            setActiveTab('radar');
+            setCurrentScreen('radar');
           }}>
-          <View style={[styles.navIcon, activeTab === 'trends' && styles.activeNavIcon]}>
-            <Text style={styles.navIconText}>📊</Text>
+          <View style={[styles.navIcon, activeTab === 'radar' && styles.activeNavIcon]}>
+            <Text style={styles.navIconText}>📡</Text>
           </View>
-          <Text style={[styles.navLabel, activeTab === 'trends' && styles.activeNavLabel]}>
-            Trends
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab('my-timeline');
-            setCurrentScreen('my-timeline');
-          }}>
-          <View style={[styles.navIcon, activeTab === 'my-timeline' && styles.activeNavIcon]}>
-            <Text style={styles.navIconText}>⭐</Text>
-          </View>
-          <Text style={[styles.navLabel, activeTab === 'my-timeline' && styles.activeNavLabel]}>
-            My Timeline
+          <Text style={[styles.navLabel, activeTab === 'radar' && styles.activeNavLabel]}>
+            Radar
           </Text>
         </TouchableOpacity>
 

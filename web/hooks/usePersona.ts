@@ -89,26 +89,58 @@ export function usePersona() {
       }
 
       try {
-        // In a real app, you would fetch from your API:
-        // const response = await fetch(`/api/personas/${user.id}`);
-        // const data = await response.json();
-        
-        // For now, use mock data or check localStorage
-        const savedPersona = localStorage.getItem(`persona_${user.id}`);
-        
-        if (savedPersona) {
-          const parsedPersona = JSON.parse(savedPersona);
-          setPersonaData(parsedPersona);
-          setHasPersona(true);
+        // Fetch from API with authentication
+        const response = await fetch('/api/v1/persona', {
+          headers: {
+            'Authorization': `Bearer ${user.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data) {
+            // Transform API response to match frontend structure
+            const transformedData: PersonaData = {
+              location: data.location,
+              demographics: data.demographics,
+              professional: data.professional,
+              interests: data.interests,
+              lifestyle: data.lifestyle,
+              tech: data.tech
+            };
+            setPersonaData(transformedData);
+            setHasPersona(true);
+          } else {
+            // No persona found, use defaults
+            setPersonaData(defaultPersonaData);
+            setHasPersona(false);
+          }
+        } else if (response.status === 404) {
+          // No persona found, use defaults
+          setPersonaData(defaultPersonaData);
+          setHasPersona(false);
         } else {
-          // Use mock data for demonstration
-          setPersonaData(mockPersonaData);
-          setHasPersona(true);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
       } catch (error) {
         console.error('Error loading persona data:', error);
-        setPersonaData(defaultPersonaData);
-        setHasPersona(false);
+        // Fallback to localStorage for backward compatibility
+        try {
+          const savedPersona = localStorage.getItem(`persona_${user.id}`);
+          if (savedPersona) {
+            const parsedPersona = JSON.parse(savedPersona);
+            setPersonaData(parsedPersona);
+            setHasPersona(true);
+          } else {
+            setPersonaData(defaultPersonaData);
+            setHasPersona(false);
+          }
+        } catch (localError) {
+          console.error('Error loading from localStorage:', localError);
+          setPersonaData(defaultPersonaData);
+          setHasPersona(false);
+        }
       } finally {
         setLoading(false);
       }
@@ -121,20 +153,46 @@ export function usePersona() {
     if (!user) return;
 
     try {
-      // In a real app, you would save to your API:
-      // await fetch(`/api/personas/${user.id}`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data)
-      // });
+      // Save to API with authentication
+      const response = await fetch('/api/v1/persona', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
 
-      // For now, save to localStorage
-      localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
-      setPersonaData(data);
-      setHasPersona(true);
+      if (response.ok) {
+        const savedData = await response.json();
+        // Transform API response to match frontend structure
+        const transformedData: PersonaData = {
+          location: savedData.location,
+          demographics: savedData.demographics,
+          professional: savedData.professional,
+          interests: savedData.interests,
+          lifestyle: savedData.lifestyle,
+          tech: savedData.tech
+        };
+        setPersonaData(transformedData);
+        setHasPersona(true);
+        
+        // Also save to localStorage as backup
+        localStorage.setItem(`persona_${user.id}`, JSON.stringify(transformedData));
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     } catch (error) {
       console.error('Error saving persona data:', error);
-      throw error;
+      // Fallback to localStorage only
+      try {
+        localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
+        setPersonaData(data);
+        setHasPersona(true);
+      } catch (localError) {
+        console.error('Error saving to localStorage:', localError);
+        throw error;
+      }
     }
   };
 

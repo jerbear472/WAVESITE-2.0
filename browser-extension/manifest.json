@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "WaveSight Trend Capture",
+  "version": "1.0.0",
+  "description": "Capture trend data while browsing social media",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications",
+    "contextMenus",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://*.tiktok.com/*",
+    "https://*.instagram.com/*",
+    "https://*.youtube.com/*",
+    "https://*.twitter.com/*",
+    "https://*.x.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.tiktok.com/*",
+        "https://*.instagram.com/*",
+        "https://*.youtube.com/*",
+        "https://*.twitter.com/*",
+        "https://*.x.com/*"
+      ],
+      "js": ["enhanced-content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wavesight-backend
+  namespace: wavesight
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wavesight-backend
+  template:
+    metadata:
+      labels:
+        app: wavesight-backend
+    spec:
+      containers:
+      - name: backend
+        image: wavesight/wavesight-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:qIvwos-vujzy1-dopzeb@db.achuavagkhjenaypawij.supabase.co:5432/postgres"
+        - name: SUPABASE_URL
+          value: "https://achuavagkhjenaypawij.supabase.co"
+        - name: SUPABASE_SERVICE_KEY
+          value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjaHVhdmFna2hqZW5heXBhd2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1OTY0MjQsImV4cCI6MjA2ODE3MjQyNH0.L4J5SIVGZDYAFAwNuR9b_hIvcpTJWGfu0Dvry7Umg2g"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wavesight-backend-service
+  namespace: wavesight
+spec:
+  selector:
+    app: wavesight-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

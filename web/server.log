@@ -6,36 +6,7 @@
    - Local:        http://localhost:3000
    - Environments: .env.local
 
- ✓ Ready in 1203ms
- ✓ Compiled /middleware in 471ms (197 modules)
- ○ Compiling / ...
- ✓ Compiled / in 2.4s (939 modules)
-
- ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
- ⚠ The "images.domains" configuration is deprecated. Please use "images.remotePatterns" configuration instead.
- ✓ Compiled in 353ms (442 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (116kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
- ✓ Compiled /login in 237ms (934 modules)
-
- ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
- ✓ Compiled /dashboard in 166ms (947 modules)
-
- ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
- ○ Compiling /scroll ...
- ✓ Compiled /scroll in 2.1s (3365 modules)
-
- ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
- ○ Compiling /timeline ...
- ✓ Compiled /timeline in 681ms (3447 modules)
-
- ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
- ✓ Compiled /verify in 238ms (3453 modules)
-
- ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
- ✓ Compiled /earnings in 229ms (3461 modules)
-
- ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
- ✓ Compiled /submit in 362ms (3485 modules)
-
- ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
- ✓ Compiled in 631ms (1720 modules)
+ ✓ Ready in 1175ms
+   Reload env: .env.local
+   Reload env: .env.local
+[?25h

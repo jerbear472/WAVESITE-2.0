@@ -7,6 +7,10 @@ RUN npm ci
 
 COPY . .
 
+# Build the Next.js app for production
+RUN npm run build
+
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+# Use production start command
+CMD ["npm", "start"]

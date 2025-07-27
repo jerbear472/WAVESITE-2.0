@@ -295,7 +295,7 @@ export default function SubmitTrendPage() {
           brandAdoption: trendData.brandAdoption
         },
         virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : trendData.spreadSpeed === 'picking_up' ? 6 : 5,
-        status: 'submitted',
+        status: 'pending',
         quality_score: 0.5,
         validation_count: 0,
         created_at: new Date().toISOString()

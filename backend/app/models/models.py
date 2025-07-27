@@ -106,6 +106,9 @@ class TrendSubmission(Base):
     status = Column(Enum(TrendStatus), default=TrendStatus.SUBMITTED)
     approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
+    # Grouping
+    trend_umbrella_id = Column(String, nullable=True)  # UUID for trend umbrella grouping
+    
     # Scoring
     quality_score = Column(Float, default=0.0)
     validation_count = Column(Integer, default=0)

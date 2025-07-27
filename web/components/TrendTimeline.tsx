@@ -1,661 +1,486 @@
-import { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
+'use client'
 
-interface TrendTimelineData {
-  id: string;
-  title: string;
-  category: string;
-  data: Array<{
-    date: Date;
-    virality: number; // 0-100
-  }>;
+import { useState, useRef, useEffect, useCallback } from 'react'
+
+interface TrendTileData {
+  id: string
+  title: string
+  description?: string
+  waveScore: number
+  category: string
+  status: 'emerging' | 'trending' | 'peak' | 'declining'
+  totalEarnings: number
+  contentCount: number
+  thumbnailUrls: string[]
+  platformDistribution: Record<string, number>
+  isCollaborative: boolean
+  firstContentDate: string
+  lastContentDate: string
+  contentItems?: any[]
 }
 
 interface TrendTimelineProps {
-  trends: TrendTimelineData[];
-  dateRange: { start: Date; end: Date };
+  trends: TrendTileData[]
+  onTrendClick: (trendId: string) => void
+  onAddContent: (trendId: string) => void
+  selectedTrends?: string[]
+  onSelectTrend?: (trendId: string) => void
 }
 
-export function TrendTimeline({ trends, dateRange }: TrendTimelineProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
+const PIXELS_PER_DAY = 100 // Width of one day on the timeline
+const TILE_HEIGHT = 120 // Height of trend tiles
+const TIMELINE_PADDING = 50
+const HEADER_HEIGHT = 60
 
-  useEffect(() => {
-    if (!svgRef.current || !trends.length) return;
+const categoryColors = {
+  Technology: '#3B82F6',
+  Fashion: '#EC4899',
+  Food: '#F59E0B',
+  Entertainment: '#8B5CF6',
+  Lifestyle: '#10B981',
+  Gaming: '#EF4444',
+  Education: '#6366F1',
+  default: '#6B7280'
+}
 
-    const width = 1200;
-    const height = 400;
-    const margin = { top: 40, right: 250, bottom: 60, left: 60 };
+const statusGradients = {
+  emerging: 'from-blue-400/20 to-blue-600/30',
+  trending: 'from-green-400/20 to-green-600/30',
+  peak: 'from-yellow-400/20 to-yellow-600/30',
+  declining: 'from-red-400/20 to-red-600/30'
+}
 
-    // Clear previous chart
-    d3.select(svgRef.current).selectAll('*').remove();
+export default function TrendTimeline({ trends, onTrendClick, onAddContent, selectedTrends = [], onSelectTrend }: TrendTimelineProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const timelineRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeft, setScrollLeft] = useState(0)
+  const [zoomLevel, setZoomLevel] = useState(1)
+  const [hoveredTrend, setHoveredTrend] = useState<string | null>(null)
 
-    const svg = d3
-      .select(svgRef.current)
-      .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('width', '100%')
-      .attr('height', '100%');
+  // Date utility functions
+  const startOfDay = (date: Date) => {
+    const d = new Date(date)
+    d.setHours(0, 0, 0, 0)
+    return d
+  }
 
-    // Add background
-    svg
-      .append('rect')
-      .attr('width', width)
-      .attr('height', height)
-      .attr('fill', '#0f172a')
-      .attr('opacity', 0.5);
+  const endOfDay = (date: Date) => {
+    const d = new Date(date)
+    d.setHours(23, 59, 59, 999)
+    return d
+  }
+
+  const addDays = (date: Date, days: number) => {
+    const d = new Date(date)
+    d.setDate(d.getDate() + days)
+    return d
+  }
+
+  const differenceInDays = (date1: Date, date2: Date) => {
+    const diffTime = date1.getTime() - date2.getTime()
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  }
+
+  const formatDate = (date: Date, format: string) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const d = new Date(date)
+    
+    if (format === 'MMM d') {
+      return `${months[d.getMonth()]} ${d.getDate()}`
+    } else if (format === 'yyyy') {
+      return d.getFullYear().toString()
+    }
+    return d.toLocaleDateString()
+  }
+
+  // Calculate timeline bounds
+  const getTimelineBounds = useCallback(() => {
+    if (trends.length === 0) {
+      const now = new Date()
+      return {
+        start: addDays(now, -30),
+        end: now,
+        totalDays: 30
+      }
+    }
+
+    const allDates = trends.flatMap(t => [
+      new Date(t.firstContentDate),
+      new Date(t.lastContentDate)
+    ])
+    
+    const start = startOfDay(new Date(Math.min(...allDates.map(d => d.getTime()))))
+    const end = endOfDay(new Date(Math.max(...allDates.map(d => d.getTime()))))
+    const totalDays = differenceInDays(end, start) + 1
+
+    // Add some padding days
+    return {
+      start: addDays(start, -7),
+      end: addDays(end, 7),
+      totalDays: totalDays + 14
+    }
+  }, [trends])
+
+  const { start: timelineStart, end: timelineEnd, totalDays } = getTimelineBounds()
+  const timelineWidth = totalDays * PIXELS_PER_DAY * zoomLevel
+
+  // Generate date markers
+  const generateDateMarkers = () => {
+    const markers = []
+    const dayInterval = zoomLevel > 0.5 ? 1 : Math.ceil(1 / zoomLevel)
+    
+    for (let i = 0; i < totalDays; i += dayInterval) {
+      const date = addDays(timelineStart, i)
+      const x = i * PIXELS_PER_DAY * zoomLevel
       
-    // Add active trend indicator text
-    const activeTrendText = svg
-      .append('text')
-      .attr('id', 'active-trend-text')
-      .attr('x', width / 2)
-      .attr('y', 25)
-      .style('text-anchor', 'middle')
-      .style('font-size', '16px')
-      .style('font-weight', '600')
-      .style('fill', '#e2e8f0')
-      .style('opacity', 0);
-
-    // Create scales
-    const xScale = d3
-      .scaleTime()
-      .domain([dateRange.start, dateRange.end])
-      .range([margin.left, width - margin.right]);
-
-    const yScale = d3
-      .scaleLinear()
-      .domain([0, 100])
-      .range([height - margin.bottom, margin.top]);
-
-    // Color scale for categories
-    const colorScale = d3
-      .scaleOrdinal()
-      .domain(['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'])
-      .range(['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#3B82F6', '#EF4444']);
-
-    // Create area generator for the wave effect
-    const area = d3
-      .area<{ date: Date; virality: number }>()
-      .x(d => xScale(d.date))
-      .y0(height - margin.bottom)
-      .y1(d => yScale(d.virality))
-      .curve(d3.curveBasis); // Smooth curves for wave effect
-
-    // Create line generator
-    const line = d3
-      .line<{ date: Date; virality: number }>()
-      .x(d => xScale(d.date))
-      .y(d => yScale(d.virality))
-      .curve(d3.curveBasis);
-
-    // Add grid lines
-    const xGrid = svg
-      .append('g')
-      .attr('class', 'grid x-grid')
-      .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(
-        (d3.axisBottom(xScale)
-          .tickSize(-(height - margin.top - margin.bottom))
-          .tickFormat(() => '')
-          .ticks(d3.timeDay.every(1)) as any)
-      );
-
-    xGrid.selectAll('line')
-      .style('stroke', '#1e293b')
-      .style('stroke-dasharray', '2,2')
-      .style('opacity', 0.5);
-    xGrid.select('.domain').remove();
-
-    const yGrid = svg
-      .append('g')
-      .attr('class', 'grid y-grid')
-      .attr('transform', `translate(${margin.left}, 0)`)
-      .call(
-        (d3.axisLeft(yScale)
-          .tickSize(-(width - margin.left - margin.right))
-          .tickFormat(() => '')
-          .ticks(5) as any)
-      );
-
-    yGrid.selectAll('line')
-      .style('stroke', '#1e293b')
-      .style('stroke-dasharray', '2,2')
-      .style('opacity', 0.5);
-    yGrid.select('.domain').remove();
-
-    // Add wave visualization for each trend
-    const trendGroups = svg
-      .selectAll('.trend-wave')
-      .data(trends)
-      .enter()
-      .append('g')
-      .attr('class', 'trend-wave');
-
-    // Add area fill (the wave) with animation
-    trendGroups
-      .append('path')
-      .attr('class', 'trend-area')
-      .attr('d', d => area(d.data))
-      .attr('fill', d => colorScale(d.category) as string)
-      .attr('opacity', 0)
-      .style('filter', 'blur(1px)')
-      .transition()
-      .duration(1500)
-      .delay((d, i) => i * 100)
-      .attr('opacity', 0.2);
-
-    // Add line with draw animation
-    const lines = trendGroups
-      .append('path')
-      .attr('class', 'trend-line')
-      .attr('d', d => line(d.data))
-      .attr('fill', 'none')
-      .attr('stroke', d => colorScale(d.category) as string)
-      .attr('stroke-width', 2.5)
-      .attr('opacity', 0.8)
-      .style('cursor', 'pointer');
-
-    // Animate line drawing
-    lines.each(function() {
-      const path = d3.select(this);
-      const totalLength = path.node()!.getTotalLength();
-      
-      path
-        .attr('stroke-dasharray', totalLength)
-        .attr('stroke-dashoffset', totalLength)
-        .transition()
-        .duration(2000)
-        .delay((d, i) => i * 100)
-        .attr('stroke-dashoffset', 0);
-    });
-
-    // Add glow effect to lines with fade in
-    trendGroups
-      .append('path')
-      .attr('class', 'trend-line-glow')
-      .attr('d', d => line(d.data))
-      .attr('fill', 'none')
-      .attr('stroke', d => colorScale(d.category) as string)
-      .attr('stroke-width', 4)
-      .attr('opacity', 0)
-      .style('filter', 'blur(4px)')
-      .transition()
-      .duration(1500)
-      .delay((d, i) => i * 100 + 500)
-      .attr('opacity', 0.3);
-
-    // Add hover interactions to lines
-    trendGroups
-      .on('mouseover', function(event, d) {
-        // Dim all other trends
-        svg.selectAll('.trend-wave').style('opacity', 0.3);
-        d3.select(this).style('opacity', 1);
-        
-        // Highlight the line
-        d3.select(this).select('.trend-line')
-          .transition()
-          .duration(200)
-          .attr('stroke-width', 4)
-          .attr('opacity', 1);
-          
-        // Highlight the glow
-        d3.select(this).select('.trend-line-glow')
-          .transition()
-          .duration(200)
-          .attr('stroke-width', 6)
-          .attr('opacity', 0.5);
-          
-        // Highlight the area
-        d3.select(this).select('.trend-area')
-          .transition()
-          .duration(200)
-          .attr('opacity', 0.4);
-          
-        // Highlight in legend
-        legend.selectAll('.legend-row').style('opacity', 0.3);
-        legend.select(`#legend-${d.id}`).style('opacity', 1);
-        
-        // Show active trend text
-        activeTrendText
-          .text(`Currently viewing: ${d.title}`)
-          .style('fill', colorScale(d.category) as string)
-          .transition()
-          .duration(200)
-          .style('opacity', 1);
+      markers.push({
+        date,
+        x,
+        label: formatDate(date, 'MMM d'),
+        isMonthStart: date.getDate() === 1
       })
-      .on('mouseout', function() {
-        // Reset all trends
-        svg.selectAll('.trend-wave').style('opacity', 1);
-        
-        // Reset lines
-        svg.selectAll('.trend-line')
-          .transition()
-          .duration(200)
-          .attr('stroke-width', 2.5)
-          .attr('opacity', 0.8);
-          
-        // Reset glows
-        svg.selectAll('.trend-line-glow')
-          .transition()
-          .duration(200)
-          .attr('stroke-width', 4)
-          .attr('opacity', 0.3);
-          
-        // Reset areas
-        svg.selectAll('.trend-area')
-          .transition()
-          .duration(200)
-          .attr('opacity', 0.2);
-          
-        // Reset legend
-        legend.selectAll('.legend-row').style('opacity', 1);
-        
-        // Hide active trend text
-        activeTrendText
-          .transition()
-          .duration(200)
-          .style('opacity', 0);
-      });
+    }
+    
+    return markers
+  }
 
-    // Add dots along the lines for better visibility
-    trends.forEach((trend, trendIndex) => {
-      const dotsGroup = svg
-        .append('g')
-        .attr('class', `trend-dots trend-dots-${trend.id}`);
-        
-      trend.data.forEach((point, i) => {
-        dotsGroup
-          .append('circle')
-          .datum({ point, trend }) // Attach both point and trend data
-          .attr('cx', xScale(point.date))
-          .attr('cy', yScale(point.virality))
-          .attr('r', 0)
-          .attr('fill', colorScale(trend.category) as string)
-          .attr('stroke', '#fff')
-          .attr('stroke-width', 1.5)
-          .attr('opacity', 0.8)
-          .style('cursor', 'pointer')
-          .transition()
-          .duration(300)
-          .delay(trendIndex * 100 + i * 50 + 2000)
-          .attr('r', 3);
-      });
+  // Calculate tile position and width
+  const getTilePosition = (trend: TrendTileData) => {
+    const startDate = new Date(trend.firstContentDate)
+    const endDate = new Date(trend.lastContentDate)
+    
+    const startOffset = differenceInDays(startDate, timelineStart)
+    const duration = differenceInDays(endDate, startDate) + 1
+    
+    return {
+      x: startOffset * PIXELS_PER_DAY * zoomLevel,
+      width: Math.max(duration * PIXELS_PER_DAY * zoomLevel, 200), // Min width for readability
+      y: 0 // Will be calculated for overlap prevention
+    }
+  }
+
+  // Arrange tiles to prevent overlap
+  const arrangeTiles = () => {
+    const sortedTrends = [...trends].sort((a, b) => 
+      new Date(a.firstContentDate).getTime() - new Date(b.firstContentDate).getTime()
+    )
+    
+    const lanes: Array<{ endX: number }> = []
+    const positions: Record<string, { x: number; y: number; width: number }> = {}
+    
+    sortedTrends.forEach(trend => {
+      const { x, width } = getTilePosition(trend)
       
-      // Add hover effect to dots
-      dotsGroup.selectAll('circle')
-        .on('mouseover', function(this: any, event: any, d: any) {
-          const { point, trend } = d;
-          
-          // Highlight this trend
-          svg.selectAll('.trend-wave').style('opacity', 0.3);
-          svg.selectAll(`.trend-dots-${trend.id} circle`).attr('r', 5).attr('stroke-width', 2);
-          
-          // Find and highlight the corresponding trend line
-          const trendGroup = svg.selectAll('.trend-wave')
-            .filter((d: any) => d.id === trend.id);
-          trendGroup.style('opacity', 1);
-          trendGroup.select('.trend-line')
-            .attr('stroke-width', 4)
-            .attr('opacity', 1);
-          trendGroup.select('.trend-line-glow')
-            .attr('stroke-width', 6)
-            .attr('opacity', 0.5);
-          trendGroup.select('.trend-area')
-            .attr('opacity', 0.4);
-            
-          // Highlight in legend
-          legend.selectAll('.legend-row').style('opacity', 0.3);
-          legend.select(`#legend-${trend.id}`).style('opacity', 1);
-          
-          // Show active trend text
-          activeTrendText
-            .text(`Currently viewing: ${trend.title}`)
-            .style('fill', colorScale(trend.category) as string)
-            .transition()
-            .duration(200)
-            .style('opacity', 1);
-          
-          // Show tooltip
-          d3.selectAll('.timeline-tooltip').remove();
-          
-          const tooltip = d3
-            .select('body')
-            .append('div')
-            .attr('class', 'timeline-tooltip')
-            .style('position', 'absolute')
-            .style('background', 'rgba(15, 23, 42, 0.95)')
-            .style('color', '#fff')
-            .style('padding', '8px 12px')
-            .style('border-radius', '6px')
-            .style('font-size', '12px')
-            .style('pointer-events', 'none')
-            .style('opacity', 0)
-            .style('border', '1px solid')
-            .style('border-color', colorScale(trend.category) as string);
+      // Find first available lane
+      let laneIndex = lanes.findIndex(lane => lane.endX <= x)
+      if (laneIndex === -1) {
+        laneIndex = lanes.length
+        lanes.push({ endX: 0 })
+      }
+      
+      lanes[laneIndex].endX = x + width + 20 // Add gap
+      positions[trend.id] = {
+        x,
+        y: laneIndex * (TILE_HEIGHT + 20),
+        width
+      }
+    })
+    
+    return { positions, totalHeight: lanes.length * (TILE_HEIGHT + 20) }
+  }
 
-          tooltip
-            .html(`
-              <strong>${trend.title}</strong><br/>
-              Virality: ${point.virality.toFixed(1)}%<br/>
-              ${point.date.toLocaleDateString()}
-            `)
-            .style('left', `${event.pageX + 10}px`)
-            .style('top', `${event.pageY - 10}px`)
-            .transition()
-            .duration(200)
-            .style('opacity', 1);
-        })
-        .on('mouseout', function() {
-          // Reset
-          svg.selectAll('.trend-wave').style('opacity', 1);
-          svg.selectAll(`.trend-dots-${trend.id} circle`).attr('r', 3).attr('stroke-width', 1.5);
-          
-          svg.selectAll('.trend-line')
-            .attr('stroke-width', 2.5)
-            .attr('opacity', 0.8);
-          svg.selectAll('.trend-line-glow')
-            .attr('stroke-width', 4)
-            .attr('opacity', 0.3);
-          svg.selectAll('.trend-area')
-            .attr('opacity', 0.2);
-            
-          legend.selectAll('.legend-row').style('opacity', 1);
-          d3.selectAll('.timeline-tooltip').remove();
-          
-          // Hide active trend text
-          activeTrendText
-            .transition()
-            .duration(200)
-            .style('opacity', 0);
-        });
-    });
+  const { positions: tilePositions, totalHeight } = arrangeTiles()
 
-    // Add peak indicators with animation
-    trends.forEach((trend, index) => {
-      const peakPoint = trend.data.reduce((max, point) => 
-        point.virality > max.virality ? point : max
-      );
+  // Scroll to today on mount
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const today = new Date()
+      const daysFromStart = differenceInDays(today, timelineStart)
+      const todayPosition = daysFromStart * PIXELS_PER_DAY * zoomLevel
+      const containerWidth = scrollContainerRef.current.clientWidth
+      
+      // Center today in view
+      scrollContainerRef.current.scrollLeft = todayPosition - containerWidth / 2
+    }
+  }, [timelineStart, zoomLevel])
 
-      const circle = svg
-        .append('circle')
-        .attr('cx', xScale(peakPoint.date))
-        .attr('cy', yScale(peakPoint.virality))
-        .attr('r', 0)
-        .attr('fill', colorScale(trend.category) as string)
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 2)
-        .style('cursor', 'pointer');
+  // Mouse drag handling
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true)
+    setStartX(e.pageX - scrollContainerRef.current!.offsetLeft)
+    setScrollLeft(scrollContainerRef.current!.scrollLeft)
+  }
 
-      // Animate the circle
-      circle
-        .transition()
-        .duration(500)
-        .delay(index * 100 + 2000) // Appear after lines are drawn
-        .attr('r', 6);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return
+    e.preventDefault()
+    const x = e.pageX - scrollContainerRef.current!.offsetLeft
+    const walk = (x - startX) * 1.5
+    scrollContainerRef.current!.scrollLeft = scrollLeft - walk
+  }
 
-      // Add event handlers after transition
-      circle
-        .on('mouseover', function(event) {
-          // Remove any existing tooltips
-          d3.selectAll('.timeline-tooltip').remove();
-          
-          const tooltip = d3
-            .select('body')
-            .append('div')
-            .attr('class', 'timeline-tooltip')
-            .style('position', 'absolute')
-            .style('background', 'rgba(15, 23, 42, 0.95)')
-            .style('color', '#fff')
-            .style('padding', '8px 12px')
-            .style('border-radius', '6px')
-            .style('font-size', '12px')
-            .style('pointer-events', 'none')
-            .style('opacity', 0);
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
 
-          tooltip
-            .html(`
-              <strong>${trend.title}</strong><br/>
-              Peak: ${peakPoint.virality.toFixed(1)}% virality<br/>
-              ${peakPoint.date.toLocaleDateString()}
-            `)
-            .style('left', `${event.pageX + 10}px`)
-            .style('top', `${event.pageY - 10}px`)
-            .transition()
-            .duration(200)
-            .style('opacity', 1);
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      // Zoom with ctrl/cmd + scroll
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? -0.1 : 0.1
+      setZoomLevel(prev => Math.max(0.3, Math.min(2, prev + delta)))
+    }
+  }
 
-          d3.select(this)
-            .transition()
-            .duration(200)
-            .attr('r', 8);
-        })
-        .on('mouseout', function() {
-          d3.selectAll('.timeline-tooltip').remove();
-          d3.select(this)
-            .transition()
-            .duration(200)
-            .attr('r', 6);
-        });
-    });
-
-    // Add axes
-    const xAxis = svg
-      .append('g')
-      .attr('transform', `translate(0, ${height - margin.bottom})`)
-      .call(
-        (d3.axisBottom(xScale)
-          .tickFormat(d3.timeFormat('%b %d') as any)
-          .ticks(d3.timeDay.every(1) as any) as any)
-      );
-
-    xAxis.selectAll('text')
-      .style('fill', '#94a3b8')
-      .attr('transform', 'rotate(-45)')
-      .style('text-anchor', 'end');
-    xAxis.selectAll('line').style('stroke', '#475569');
-    xAxis.select('.domain').style('stroke', '#475569');
-
-    const yAxis = svg
-      .append('g')
-      .attr('transform', `translate(${margin.left}, 0)`)
-      .call(
-        (d3.axisLeft(yScale)
-          .tickFormat(d => `${d}%`)
-          .ticks(5) as any)
-      );
-
-    yAxis.selectAll('text').style('fill', '#94a3b8');
-    yAxis.selectAll('line').style('stroke', '#475569');
-    yAxis.select('.domain').style('stroke', '#475569');
-
-    // Add axis labels
-    svg
-      .append('text')
-      .attr('transform', 'rotate(-90)')
-      .attr('y', margin.left - 40)
-      .attr('x', -(height / 2))
-      .style('text-anchor', 'middle')
-      .style('fill', '#94a3b8')
-      .style('font-size', '14px')
-      .text('Virality %');
-
-    // Add legend with background
-    const legendGroup = svg
-      .append('g')
-      .attr('transform', `translate(${width - margin.right + 10}, ${margin.top - 10})`);
-
-    // Add legend background
-    legendGroup
-      .append('rect')
-      .attr('x', -10)
-      .attr('y', -10)
-      .attr('width', 230)
-      .attr('height', trends.length * 25 + 20)
-      .attr('fill', '#0f172a')
-      .attr('opacity', 0.8)
-      .attr('rx', 8);
-
-    const legend = legendGroup
-      .append('g')
-      .attr('transform', 'translate(0, 0)');
-
-    // Add legend title
-    legend
-      .append('text')
-      .attr('x', 0)
-      .attr('y', -5)
-      .style('font-size', '13px')
-      .style('font-weight', '600')
-      .style('fill', '#e2e8f0')
-      .text('Trends');
-
-    trends.forEach((trend, i) => {
-      const legendRow = legend
-        .append('g')
-        .attr('class', 'legend-row')
-        .attr('id', `legend-${trend.id}`)
-        .attr('transform', `translate(0, ${i * 25 + 15})`)
-        .style('cursor', 'pointer');
-
-      // Add connecting line
-      legendRow
-        .append('line')
-        .attr('x1', 0)
-        .attr('x2', 15)
-        .attr('y1', 0)
-        .attr('y2', 0)
-        .attr('stroke', colorScale(trend.category) as string)
-        .attr('stroke-width', 3);
-        
-      // Add circle to match dots on timeline
-      legendRow
-        .append('circle')
-        .attr('cx', 25)
-        .attr('cy', 0)
-        .attr('r', 4)
-        .attr('fill', colorScale(trend.category) as string)
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1.5);
-
-      legendRow
-        .append('text')
-        .attr('x', 35)
-        .attr('y', 4)
-        .style('font-size', '11px')
-        .style('fill', '#94a3b8')
-        .text(trend.title.length > 20 ? trend.title.substring(0, 20) + '...' : trend.title);
-        
-      // Add hover interaction to legend
-      legendRow
-        .on('mouseover', function() {
-          // Dim all trends
-          svg.selectAll('.trend-wave').style('opacity', 0.3);
-          svg.select(`.trend-wave:nth-child(${i + 1})`).style('opacity', 1);
-          
-          // Highlight all dots for this trend
-          svg.selectAll(`.trend-dots-${trend.id} circle`)
-            .transition()
-            .duration(200)
-            .attr('r', 5)
-            .attr('stroke-width', 2)
-            .attr('opacity', 1);
-          
-          // Dim other dots
-          svg.selectAll(`.trend-dots:not(.trend-dots-${trend.id}) circle`)
-            .transition()
-            .duration(200)
-            .attr('opacity', 0.3);
-          
-          // Highlight the specific trend line
-          const trendGroup = svg.select(`.trend-wave:nth-child(${i + 1})`);
-          trendGroup.select('.trend-line')
-            .transition()
-            .duration(200)
-            .attr('stroke-width', 4)
-            .attr('opacity', 1);
-            
-          trendGroup.select('.trend-line-glow')
-            .transition()
-            .duration(200)
-            .attr('stroke-width', 6)
-            .attr('opacity', 0.5);
-            
-          trendGroup.select('.trend-area')
-            .transition()
-            .duration(200)
-            .attr('opacity', 0.4);
-            
-          // Dim other legend items
-          legend.selectAll('.legend-row').style('opacity', 0.3);
-          d3.select(this).style('opacity', 1);
-          
-          // Highlight circle in legend
-          d3.select(this).select('circle')
-            .transition()
-            .duration(200)
-            .attr('r', 6);
-            
-          // Show active trend text
-          activeTrendText
-            .text(`Currently viewing: ${trend.title}`)
-            .style('fill', colorScale(trend.category) as string)
-            .transition()
-            .duration(200)
-            .style('opacity', 1);
-        })
-        .on('mouseout', function() {
-          // Reset everything
-          svg.selectAll('.trend-wave').style('opacity', 1);
-          
-          // Reset all dots
-          svg.selectAll('.trend-dots circle')
-            .transition()
-            .duration(200)
-            .attr('r', 3)
-            .attr('stroke-width', 1.5)
-            .attr('opacity', 0.8);
-          
-          svg.selectAll('.trend-line')
-            .transition()
-            .duration(200)
-            .attr('stroke-width', 2.5)
-            .attr('opacity', 0.8);
-            
-          svg.selectAll('.trend-line-glow')
-            .transition()
-            .duration(200)
-            .attr('stroke-width', 4)
-            .attr('opacity', 0.3);
-            
-          svg.selectAll('.trend-area')
-            .transition()
-            .duration(200)
-            .attr('opacity', 0.2);
-            
-          legend.selectAll('.legend-row').style('opacity', 1);
-          
-          // Reset circle in legend
-          d3.select(this).select('circle')
-            .transition()
-            .duration(200)
-            .attr('r', 4);
-            
-          // Hide active trend text
-          activeTrendText
-            .transition()
-            .duration(200)
-            .style('opacity', 0);
-        });
-    });
-
-    // Cleanup tooltips on unmount
-    return () => {
-      d3.selectAll('.timeline-tooltip').remove();
-    };
-  }, [trends, dateRange]);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
 
   return (
-    <div className="w-full h-full">
-      <svg ref={svgRef} className="w-full h-full" />
+    <div className="relative bg-gray-50 rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Header with controls */}
+      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <h3 className="text-lg font-semibold text-gray-900">Timeline View</h3>
+          <div className="text-sm text-gray-600">
+            Scroll horizontally to navigate • Ctrl+Scroll to zoom
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {/* Zoom controls */}
+          <button
+            onClick={() => setZoomLevel(prev => Math.max(0.3, prev - 0.2))}
+            className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </button>
+          <span className="text-sm text-gray-600 min-w-[60px] text-center">
+            {Math.round(zoomLevel * 100)}%
+          </span>
+          <button
+            onClick={() => setZoomLevel(prev => Math.min(2, prev + 0.2))}
+            className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+          
+          <div className="w-px h-6 bg-gray-300 mx-2" />
+          
+          {/* Today button */}
+          <button
+            onClick={() => {
+              if (scrollContainerRef.current) {
+                const today = new Date()
+                const daysFromStart = differenceInDays(today, timelineStart)
+                const todayPosition = daysFromStart * PIXELS_PER_DAY * zoomLevel
+                const containerWidth = scrollContainerRef.current.clientWidth
+                scrollContainerRef.current.scrollTo({
+                  left: todayPosition - containerWidth / 2,
+                  behavior: 'smooth'
+                })
+              }
+            }}
+            className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded"
+          >
+            Today
+          </button>
+        </div>
+      </div>
+      
+      {/* Timeline container */}
+      <div
+        ref={scrollContainerRef}
+        className={`relative overflow-x-auto overflow-y-hidden ${
+          isDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        style={{ height: totalHeight + HEADER_HEIGHT + TIMELINE_PADDING * 2 }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
+      >
+        <div
+          ref={timelineRef}
+          className="relative"
+          style={{ 
+            width: timelineWidth,
+            height: totalHeight + HEADER_HEIGHT + TIMELINE_PADDING
+          }}
+        >
+          {/* Date markers and grid */}
+          <div className="absolute top-0 left-0 right-0 h-full pointer-events-none">
+            {generateDateMarkers().map(({ date, x, label, isMonthStart }) => (
+              <div key={x} className="absolute top-0 bottom-0" style={{ left: x }}>
+                {/* Vertical grid line */}
+                <div className={`absolute top-0 bottom-0 w-px ${
+                  isMonthStart ? 'bg-gray-400' : 'bg-gray-200'
+                }`} />
+                
+                {/* Date label */}
+                <div className={`absolute top-0 text-xs ${
+                  isMonthStart ? 'font-semibold text-gray-700' : 'text-gray-500'
+                }`}>
+                  <div className="px-2 py-1">{label}</div>
+                  {isMonthStart && (
+                    <div className="px-2 text-xs font-normal text-gray-400">
+                      {formatDate(date, 'yyyy')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            
+            {/* Today marker */}
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+              style={{
+                left: differenceInDays(new Date(), timelineStart) * PIXELS_PER_DAY * zoomLevel
+              }}
+            >
+              <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-0.5 rounded">
+                Today
+              </div>
+            </div>
+          </div>
+          
+          {/* Trend tiles */}
+          <div className="absolute left-0 right-0" style={{ top: HEADER_HEIGHT }}>
+            {trends.map(trend => {
+              const position = tilePositions[trend.id]
+              if (!position) return null
+              
+              return (
+                <div
+                  key={trend.id}
+                  className={`absolute cursor-pointer transition-all duration-200 ${
+                    hoveredTrend === trend.id ? 'z-10' : 'z-0'
+                  }`}
+                  style={{
+                    left: position.x,
+                    top: position.y + TIMELINE_PADDING,
+                    width: position.width,
+                    height: TILE_HEIGHT
+                  }}
+                  onClick={() => onTrendClick(trend.id)}
+                  onMouseEnter={() => setHoveredTrend(trend.id)}
+                  onMouseLeave={() => setHoveredTrend(null)}
+                >
+                  <div className={`h-full bg-white rounded-lg border-2 overflow-hidden transition-all relative ${
+                    hoveredTrend === trend.id 
+                      ? 'border-blue-400 shadow-lg scale-105' 
+                      : selectedTrends.includes(trend.id)
+                      ? 'border-purple-400 shadow-md'
+                      : 'border-gray-200 shadow-sm'
+                  }`}>
+                    {/* Selection Checkbox */}
+                    {onSelectTrend && (
+                      <input
+                        type="checkbox"
+                        checked={selectedTrends.includes(trend.id)}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          onSelectTrend(trend.id)
+                        }}
+                        className="absolute top-2 right-2 w-4 h-4 text-purple-600 rounded focus:ring-purple-500 z-10"
+                      />
+                    )}
+                    {/* Gradient background based on status */}
+                    <div className={`absolute inset-0 bg-gradient-to-r ${statusGradients[trend.status]} opacity-50`} />
+                    
+                    {/* Category color bar */}
+                    <div
+                      className="absolute top-0 left-0 right-0 h-1"
+                      style={{ 
+                        backgroundColor: categoryColors[trend.category as keyof typeof categoryColors] || categoryColors.default 
+                      }}
+                    />
+                    
+                    {/* Content */}
+                    <div className="relative h-full p-3 flex flex-col">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm text-gray-900 truncate">
+                            {trend.title}
+                          </h4>
+                          <div className="flex items-center space-x-2 text-xs text-gray-600">
+                            <span>{trend.category}</span>
+                            <span>•</span>
+                            <span>{trend.contentCount} items</span>
+                          </div>
+                        </div>
+                        
+                        {/* Wave Score */}
+                        <div className="flex-shrink-0 ml-2">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                            {trend.waveScore}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Thumbnails */}
+                      <div className="flex -space-x-2 mb-2">
+                        {trend.thumbnailUrls.slice(0, 4).map((url, idx) => (
+                          <div
+                            key={idx}
+                            className="w-8 h-8 rounded border-2 border-white bg-gray-200 overflow-hidden"
+                            style={{ zIndex: 4 - idx }}
+                          >
+                            {url && (
+                              <img
+                                src={url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                        ))}
+                        {trend.contentCount > 4 && (
+                          <div className="w-8 h-8 rounded border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                            +{trend.contentCount - 4}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Earnings */}
+                      <div className="mt-auto">
+                        <div className="text-sm font-semibold text-green-600">
+                          {formatCurrency(trend.totalEarnings)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+      
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-3 text-xs">
+        <div className="font-semibold text-gray-700 mb-2">Status</div>
+        <div className="space-y-1">
+          {Object.entries(statusGradients).map(([status, gradient]) => (
+            <div key={status} className="flex items-center space-x-2">
+              <div className={`w-4 h-4 rounded bg-gradient-to-r ${gradient}`} />
+              <span className="text-gray-600 capitalize">{status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  );
+  )
 }

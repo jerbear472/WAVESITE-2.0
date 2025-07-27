@@ -12,3 +12,4 @@ def get_supabase_client() -> Client:
 
 # Create a global instance
 supabase_client = get_supabase_client()
+supabase = supabase_client  # Alias for compatibility

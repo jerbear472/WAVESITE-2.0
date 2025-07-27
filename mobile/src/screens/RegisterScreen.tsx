@@ -47,7 +47,9 @@ export const RegisterScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      await signUp(email, password);
+      await signUp(email, password, username);
+      // After successful signup, the user will be automatically redirected
+      // to the onboarding flow by RootNavigator
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'Failed to create account');
     } finally {

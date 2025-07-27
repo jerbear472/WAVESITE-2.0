@@ -12,25 +12,67 @@ import {
 } from 'react-native';
 import TrendStorageService from '../services/TrendStorageService';
 import { TrendData } from '../types/trend.types';
+import { supabase } from '../config/supabase';
+import { useAuth } from '../hooks/useAuth';
 
 interface MyTimelineScreenProps {
   onBack?: () => void;
 }
 
 const MyTimelineScreen: React.FC<MyTimelineScreenProps> = ({ onBack }) => {
+  const { user } = useAuth();
   const [trends, setTrends] = useState<TrendData[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
 
   useEffect(() => {
-    loadTrends();
-  }, []);
+    if (user?.id) {
+      loadTrends();
+    }
+  }, [user]);
 
   const loadTrends = async () => {
     try {
-      const allTrends = await TrendStorageService.getAllTrends();
+      // Load from Supabase logged_trends table
+      const { data: loggedTrends, error } = await supabase
+        .from('logged_trends')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('timestamp', { ascending: false });
+
+      if (error) throw error;
+
+      // Also load local trends for backward compatibility
+      const localTrends = await TrendStorageService.getAllTrends();
+
+      // Convert logged trends to TrendData format
+      const supabaseTrends: TrendData[] = (loggedTrends || []).map(trend => ({
+        id: trend.id,
+        url: trend.notes || `Trend in ${trend.category}`,
+        title: trend.emoji ? `${trend.emoji} ${trend.category}` : trend.category,
+        description: trend.notes || '',
+        platform: trend.category === 'audio' ? 'tiktok' : 
+                 trend.category === 'fashion' ? 'instagram' : 
+                 trend.category === 'tech' ? 'youtube' : 
+                 trend.category === 'meme' ? 'twitter' : 'other',
+        createdAt: trend.timestamp || trend.created_at,
+        metadata: {
+          hashtags: [],
+          category: trend.category,
+          emoji: trend.emoji,
+          verified: trend.verified,
+          verificationCount: trend.verification_count || 0,
+        },
+      }));
+
+      // Combine and deduplicate trends
+      const allTrends = [...supabaseTrends, ...localTrends];
+      const uniqueTrends = allTrends.filter((trend, index, self) => 
+        index === self.findIndex(t => t.id === trend.id)
+      );
+      
       // Sort by creation date (newest first)
-      const sortedTrends = allTrends.sort((a, b) => 
+      const sortedTrends = uniqueTrends.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       setTrends(sortedTrends);
@@ -55,8 +97,25 @@ const MyTimelineScreen: React.FC<MyTimelineScreenProps> = ({ onBack }) => {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await TrendStorageService.deleteTrend(trendId);
-            loadTrends();
+            try {
+              // Delete from Supabase if it's a logged trend
+              const { error } = await supabase
+                .from('logged_trends')
+                .delete()
+                .eq('id', trendId)
+                .eq('user_id', user?.id);
+              
+              if (error && error.code !== 'PGRST116') {
+                console.error('Error deleting from Supabase:', error);
+              }
+              
+              // Also try to delete from local storage
+              await TrendStorageService.deleteTrend(trendId);
+              
+              loadTrends();
+            } catch (error) {
+              console.error('Error deleting trend:', error);
+            }
           },
         },
       ]

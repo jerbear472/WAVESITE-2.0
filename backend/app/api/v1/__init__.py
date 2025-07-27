@@ -1,3 +1,3 @@
-from . import auth, trends
+from . import auth, trends, metadata, similarity
 
-__all__ = ["auth", "trends"]
+__all__ = ["auth", "trends", "metadata", "similarity"]

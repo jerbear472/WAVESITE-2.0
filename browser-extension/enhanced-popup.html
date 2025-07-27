@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 400px;
+      min-height: 500px;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0F172A;
+      color: #E2E8F0;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      padding: 20px;
+      color: white;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .header p {
+      margin: 4px 0 0 0;
+      opacity: 0.9;
+      font-size: 13px;
+    }
+    
+    .tabs {
+      display: flex;
+      background: #1E293B;
+      border-bottom: 1px solid #334155;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      color: #94A3B8;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .tab:hover {
+      color: #E2E8F0;
+    }
+    
+    .tab.active {
+      color: #fff;
+    }
+    
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #4F46E5;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 16px;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .captured-list {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+    
+    .captured-item {
+      background: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    
+    .captured-item:hover {
+      background: #273548;
+      border-color: #4F46E5;
+    }
+    
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 8px;
+    }
+    
+    .platform-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: #334155;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .platform-badge.tiktok { background: #000; }
+    .platform-badge.instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+    .platform-badge.youtube { background: #FF0000; }
+    .platform-badge.twitter { background: #1DA1F2; }
+    
+    .item-stats {
+      display: flex;
+      gap: 12px;
+      margin: 8px 0;
+      font-size: 13px;
+      color: #94A3B8;
+    }
+    
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .item-caption {
+      font-size: 13px;
+      color: #CBD5E1;
+      line-height: 1.4;
+      max-height: 40px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .item-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .btn-primary {
+      background: #4F46E5;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #4338CA;
+    }
+    
+    .btn-secondary {
+      background: #334155;
+      color: #E2E8F0;
+    }
+    
+    .btn-secondary:hover {
+      background: #475569;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    
+    .empty-state h3 {
+      margin: 0 0 8px 0;
+      color: #CBD5E1;
+    }
+    
+    .empty-state p {
+      margin: 0;
+      color: #64748B;
+      font-size: 14px;
+    }
+    
+    .quick-actions {
+      padding: 16px;
+      background: #1E293B;
+      border-top: 1px solid #334155;
+    }
+    
+    .status-message {
+      padding: 12px;
+      margin: 16px;
+      background: #065F46;
+      color: #D1FAE5;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 13px;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateY(-10px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .instructions {
+      padding: 16px;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    
+    .instruction-step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .step-number {
+      width: 24px;
+      height: 24px;
+      background: #4F46E5;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    
+    .settings-group {
+      margin-bottom: 20px;
+    }
+    
+    .settings-group h3 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: #CBD5E1;
+    }
+    
+    .toggle-setting {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #334155;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    .toggle.active {
+      background: #4F46E5;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    
+    .toggle.active .toggle-slider {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><span>🌊</span> WaveSight Capture</h1>
+    <p>Capture trends from social media instantly</p>
+  </div>
+  
+  <div class="tabs">
+    <button class="tab active" data-tab="captured">Captured</button>
+    <button class="tab" data-tab="instructions">How to Use</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+  
+  <div id="status-message" style="display: none;"></div>
+  
+  <!-- Captured Tab -->
+  <div class="tab-content active" id="captured-tab">
+    <div id="captured-container">
+      <!-- Content will be dynamically added here -->
+    </div>
+  </div>
+  
+  <!-- Instructions Tab -->
+  <div class="tab-content" id="instructions-tab">
+    <div class="instructions">
+      <div class="instruction-step">
+        <div class="step-number">1</div>
+        <div>
+          <strong>Browse normally</strong><br>
+          Visit TikTok, Instagram, YouTube, or Twitter as you usually do.
+        </div>
+      </div>
+      
+      <div class="instruction-step">
+        <div class="step-number">2</div>
+        <div>
+          <strong>Look for the widget</strong><br>
+          A floating WaveSight widget appears when trends are detected.
+        </div>
+      </div>
+      
+      <div class="instruction-step">
+        <div class="step-number">3</div>
+        <div>
+          <strong>Capture or Quick Submit</strong><br>
+          Click "Capture" to save for later, or "Quick Submit" to send directly to WaveSight.
+        </div>
+      </div>
+      
+      <div class="instruction-step">
+        <div class="step-number">4</div>
+        <div>
+          <strong>Automatic data extraction</strong><br>
+          All engagement metrics, captions, and creator info are captured automatically.
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Settings Tab -->
+  <div class="tab-content" id="settings-tab">
+    <div class="instructions">
+      <div class="settings-group">
+        <h3>Auto-Detection</h3>
+        <div class="toggle-setting">
+          <div>
+            <div>Show floating widget</div>
+            <div style="font-size: 12px; color: #64748B;">Display capture widget on supported sites</div>
+          </div>
+          <div class="toggle active" id="widget-toggle">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+        
+        <div class="toggle-setting">
+          <div>
+            <div>Auto-detect trends</div>
+            <div style="font-size: 12px; color: #64748B;">Automatically scan for trend content</div>
+          </div>
+          <div class="toggle active" id="auto-detect-toggle">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="settings-group">
+        <h3>Notifications</h3>
+        <div class="toggle-setting">
+          <div>
+            <div>Show notifications</div>
+            <div style="font-size: 12px; color: #64748B;">Notify when trends are captured</div>
+          </div>
+          <div class="toggle active" id="notifications-toggle">
+            <div class="toggle-slider"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="settings-group">
+        <h3>WaveSight Connection</h3>
+        <div id="connection-status" style="padding: 12px; background: #1E293B; border-radius: 6px; font-size: 13px;">
+          Checking connection...
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="quick-actions">
+    <button class="btn btn-primary" id="open-wavesight" style="width: 100%;">
+      <span>🌊</span> Open WaveSight
+    </button>
+  </div>
+  
+  <script src="enhanced-popup.js"></script>
+</body>
+</html>

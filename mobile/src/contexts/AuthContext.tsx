@@ -17,6 +17,9 @@ interface User {
   validations_count: number;
   validated_trends: number;
   referrals_count: number;
+  persona_completed?: boolean;
+  venmo_username?: string;
+  onboarding_completed?: boolean;
 }
 
 interface AuthContextType {
@@ -25,6 +28,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -204,8 +208,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await AsyncStorage.clear();
   };
 
+  const refreshUser = async () => {
+    if (user?.id) {
+      await loadUserProfile(user.id);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

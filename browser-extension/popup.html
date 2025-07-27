@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 350px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f9fafb;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4F46E5;
+    }
+    
+    .status {
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .status.ready {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+    
+    .status.not-ready {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+    
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #4F46E5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    
+    button:hover {
+      background: #4338CA;
+    }
+    
+    button:disabled {
+      background: #9CA3AF;
+      cursor: not-allowed;
+    }
+    
+    .data-preview {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .data-preview h3 {
+      margin: 0 0 10px 0;
+      color: #374151;
+    }
+    
+    .data-field {
+      margin: 5px 0;
+      color: #6B7280;
+    }
+    
+    .data-field strong {
+      color: #374151;
+    }
+    
+    .instructions {
+      margin-top: 15px;
+      padding: 15px;
+      background: #EEF2FF;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #4F46E5;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🌊 WaveSight Capture</div>
+  </div>
+  
+  <div id="status" class="status not-ready">
+    Navigate to a social media post to capture
+  </div>
+  
+  <button id="captureBtn" disabled>Capture This Post</button>
+  
+  <div id="dataPreview" class="data-preview" style="display: none;">
+    <h3>Captured Data:</h3>
+    <div id="dataContent"></div>
+  </div>
+  
+  <div class="instructions">
+    <strong>How to use:</strong><br>
+    1. Navigate to any TikTok, Instagram, YouTube, or Twitter post<br>
+    2. Click "Capture This Post"<br>
+    3. The data will be sent to WaveSight
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

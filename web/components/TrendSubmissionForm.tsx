@@ -15,13 +15,13 @@ import {
   Clipboard as ClipboardIcon,
   AlertCircle as AlertCircleIcon,
   Check as CheckIcon,
-  Loader as LoaderIcon
+  Loader as LoaderIcon,
+  Trash2 as TrashIcon
 } from 'lucide-react';
 
 interface TrendData {
   url: string;
   title: string;
-  description: string;
   category: string;
   image?: File | string;
   platform: string;
@@ -33,6 +33,8 @@ interface TrendData {
   shares_count?: number;
   views_count?: number;
   hashtags?: string[];
+  thumbnail_url?: string;
+  posted_at?: string;
 }
 
 const categories = [
@@ -77,7 +79,6 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
     return {
       url: initialUrl,
       title: '',
-      description: '',
       category: '',
       platform: '',
       creator_handle: '',
@@ -87,7 +88,9 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
       comments_count: 0,
       shares_count: 0,
       views_count: 0,
-      hashtags: []
+      hashtags: [],
+      thumbnail_url: '',
+      posted_at: ''
     };
   };
   
@@ -110,7 +113,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
     }
     
     draftSaveTimeoutRef.current = setTimeout(() => {
-      if (formData.url || formData.title || formData.description) {
+      if (formData.url || formData.title) {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
       }
     }, 1000); // Debounce for 1 second
@@ -163,6 +166,19 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
     }
   }, [initialUrl]);
 
+  // Auto-detect platform from URL and set it immediately
+  const detectAndSetPlatform = (url: string) => {
+    if (url.includes('tiktok.com')) {
+      setFormData(prev => ({ ...prev, platform: 'tiktok' }));
+    } else if (url.includes('instagram.com')) {
+      setFormData(prev => ({ ...prev, platform: 'instagram' }));
+    } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      setFormData(prev => ({ ...prev, platform: 'youtube' }));
+    } else if (url.includes('twitter.com') || url.includes('x.com')) {
+      setFormData(prev => ({ ...prev, platform: 'twitter' }));
+    }
+  };
+
   const extractMetadataFromUrl = async (url: string) => {
     setExtractingMetadata(true);
     try {
@@ -172,7 +188,6 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
         ...prev,
         platform: extractedData.platform,
         title: prev.title || '', // Keep title empty for manual input
-        description: prev.description || extractedData.description || '',
         creator_handle: extractedData.metadata.creator_handle || prev.creator_handle || '',
         // For TikTok, use handle as creator name if no name is provided
         creator_name: extractedData.metadata.creator_name || 
@@ -184,7 +199,8 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
         shares_count: extractedData.metadata.shares_count || prev.shares_count || 0,
         views_count: extractedData.metadata.views_count || prev.views_count || 0,
         hashtags: extractedData.metadata.hashtags || prev.hashtags || [],
-        thumbnail_url: extractedData.metadata.thumbnail_url || prev.thumbnail_url
+        thumbnail_url: extractedData.metadata.thumbnail_url || prev.thumbnail_url,
+        posted_at: extractedData.metadata.posted_at || prev.posted_at || ''
       }));
     } catch (error) {
       console.error('Error extracting metadata:', error);
@@ -251,6 +267,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
     }
     
     setLoading(true);
+    console.log('Submitting form data:', formData);
 
     try {
       await onSubmit(formData);
@@ -264,6 +281,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
         onClose();
       }, 1500);
     } catch (err: any) {
+      console.error('Form submission error:', err);
       setError(err.message || 'Failed to submit trend. Please try again.');
       // Auto-clear error after 5 seconds
       setTimeout(() => setError(''), 5000);
@@ -320,6 +338,45 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
   const prevStep = () => {
     if (step > 1) setStep(step - 1);
   };
+  
+  const clearDraft = () => {
+    const confirmed = confirm('Are you sure you want to clear all form data?');
+    if (confirmed) {
+      // Clear form data
+      setFormData({
+        url: '',
+        title: '',
+        category: '',
+        platform: '',
+        creator_handle: '',
+        creator_name: '',
+        post_caption: '',
+        likes_count: 0,
+        comments_count: 0,
+        shares_count: 0,
+        views_count: 0,
+        hashtags: [],
+        thumbnail_url: '',
+        posted_at: ''
+      });
+      
+      // Clear other states
+      setImagePreview(null);
+      setError('');
+      setSuccess('');
+      setValidationErrors({});
+      setDuplicateWarning('');
+      setStep(1);
+      
+      // Clear localStorage
+      localStorage.removeItem(DRAFT_KEY);
+      
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -337,11 +394,20 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
           </div>
           <div className="flex items-center gap-2">
             {(formData.url || formData.title) && (
-              <span className="text-xs text-wave-500">Draft saved</span>
+              <>
+                <span className="text-xs text-wave-500">Draft saved</span>
+                <button
+                  onClick={clearDraft}
+                  className="p-2 rounded-lg hover:bg-red-500/20 transition-all group"
+                  title="Clear draft"
+                >
+                  <TrashIcon className="w-4 h-4 text-wave-400 group-hover:text-red-400" />
+                </button>
+              </>
             )}
             <button
               onClick={() => {
-                if (formData.url || formData.title || formData.description) {
+                if (formData.url || formData.title) {
                   if (confirm('Are you sure? Your draft will be saved.')) {
                     onClose();
                   }
@@ -398,6 +464,9 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                       setDuplicateWarning('');
                       
                       if (isValidUrl(newUrl)) {
+                        // Immediately detect and set platform
+                        detectAndSetPlatform(newUrl);
+                        
                         // Check for duplicates
                         const duplicateCheck = await TrendDuplicateChecker.checkDuplicateUrl(newUrl, user?.id);
                         if (duplicateCheck.isDuplicate) {
@@ -471,8 +540,24 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                   </div>
                 )}
                 
+                {/* Platform indicator when URL is entered */}
+                {formData.platform && formData.url && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-wave-700/30 border border-wave-600/40 rounded-full"
+                  >
+                    <div className={`w-3 h-3 rounded-full ${
+                      platforms.find(p => p.id === formData.platform)?.color || 'bg-gray-600'
+                    }`} />
+                    <span className="text-xs text-wave-300 font-medium">
+                      {platforms.find(p => p.id === formData.platform)?.label || 'Platform'} detected
+                    </span>
+                  </motion.div>
+                )}
+                
                 {/* Show extracted metadata immediately */}
-                {(formData.creator_handle || formData.post_caption) && (
+                {(formData.creator_handle || formData.post_caption || formData.posted_at) && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -499,6 +584,11 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                           <p className="text-xs text-wave-400">
                             Hashtags: <span className="text-wave-300">{formData.hashtags.slice(0, 5).map(tag => `#${tag}`).join(' ')}</span>
                             {formData.hashtags.length > 5 && <span className="text-wave-500"> +{formData.hashtags.length - 5} more</span>}
+                          </p>
+                        )}
+                        {formData.posted_at && (
+                          <p className="text-xs text-wave-400">
+                            Posted: <span className="text-wave-300">{new Date(formData.posted_at).toLocaleDateString()}</span>
                           </p>
                         )}
                       </div>
@@ -536,19 +626,6 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                 )}
               </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-wave-200 mb-2 font-medium">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none focus:ring-2 focus:ring-wave-500/20"
-                  placeholder="What makes this trend special? Describe the key elements..."
-                />
-              </div>
             </motion.div>
           )}
 
@@ -678,9 +755,10 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                     <label className="block text-wave-300 text-sm mb-1">Likes</label>
                     <input
                       type="number"
-                      value={formData.likes_count}
-                      onChange={(e) => setFormData(prev => ({ ...prev, likes_count: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white focus:border-wave-500 focus:outline-none text-sm"
+                      value={formData.likes_count || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, likes_count: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-600 focus:border-wave-500 focus:outline-none text-sm"
                       min="0"
                     />
                   </div>
@@ -689,9 +767,10 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                     <label className="block text-wave-300 text-sm mb-1">Comments</label>
                     <input
                       type="number"
-                      value={formData.comments_count}
-                      onChange={(e) => setFormData(prev => ({ ...prev, comments_count: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white focus:border-wave-500 focus:outline-none text-sm"
+                      value={formData.comments_count || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, comments_count: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-600 focus:border-wave-500 focus:outline-none text-sm"
                       min="0"
                     />
                   </div>
@@ -700,9 +779,10 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                     <label className="block text-wave-300 text-sm mb-1">Shares</label>
                     <input
                       type="number"
-                      value={formData.shares_count}
-                      onChange={(e) => setFormData(prev => ({ ...prev, shares_count: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white focus:border-wave-500 focus:outline-none text-sm"
+                      value={formData.shares_count || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, shares_count: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-600 focus:border-wave-500 focus:outline-none text-sm"
                       min="0"
                     />
                   </div>
@@ -711,9 +791,10 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                     <label className="block text-wave-300 text-sm mb-1">Views</label>
                     <input
                       type="number"
-                      value={formData.views_count}
-                      onChange={(e) => setFormData(prev => ({ ...prev, views_count: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white focus:border-wave-500 focus:outline-none text-sm"
+                      value={formData.views_count || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, views_count: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-600 focus:border-wave-500 focus:outline-none text-sm"
                       min="0"
                     />
                   </div>
@@ -800,12 +881,6 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                     <p className="text-wave-200">{formData.title}</p>
                   </div>
                   
-                  {formData.description && (
-                    <div>
-                      <span className="text-wave-400 text-sm">Description:</span>
-                      <p className="text-wave-200">{formData.description}</p>
-                    </div>
-                  )}
                   
                   <div className="flex gap-4">
                     <div>
@@ -836,12 +911,14 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                       {formData.post_caption && (
                         <p className="text-wave-300 text-sm mt-1">Caption: {formData.post_caption}</p>
                       )}
-                      <div className="flex gap-4 mt-2 text-sm text-wave-400">
-                        {formData.likes_count > 0 && <span>❤️ {formData.likes_count.toLocaleString()}</span>}
-                        {formData.comments_count > 0 && <span>💬 {formData.comments_count.toLocaleString()}</span>}
-                        {formData.shares_count > 0 && <span>🔄 {formData.shares_count.toLocaleString()}</span>}
-                        {formData.views_count > 0 && <span>👁️ {formData.views_count.toLocaleString()}</span>}
-                      </div>
+                      {(formData.likes_count > 0 || formData.comments_count > 0 || formData.shares_count > 0 || formData.views_count > 0) && (
+                        <div className="flex gap-4 mt-2 text-sm text-wave-400">
+                          {formData.likes_count > 0 && <span>❤️ {formData.likes_count.toLocaleString()}</span>}
+                          {formData.comments_count > 0 && <span>💬 {formData.comments_count.toLocaleString()}</span>}
+                          {formData.shares_count > 0 && <span>🔄 {formData.shares_count.toLocaleString()}</span>}
+                          {formData.views_count > 0 && <span>👁️ {formData.views_count.toLocaleString()}</span>}
+                        </div>
+                      )}
                       {formData.hashtags && formData.hashtags.length > 0 && (
                         <p className="text-wave-400 text-sm mt-2">
                           {formData.hashtags.map(tag => `#${tag}`).join(' ')}

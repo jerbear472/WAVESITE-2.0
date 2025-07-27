@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { 
   Link as LinkIcon,
   Camera as CameraIcon,
@@ -18,10 +19,17 @@ import {
 interface TrendData {
   url: string;
   title: string;
-  description: string;
   category: string;
   image?: File | string;
   platform: string;
+  creator_handle?: string;
+  creator_name?: string;
+  post_caption?: string;
+  likes_count?: number;
+  comments_count?: number;
+  shares_count?: number;
+  views_count?: number;
+  hashtags?: string[];
 }
 
 const categories = [
@@ -51,7 +59,6 @@ export default function MobileTrendSubmission({ onClose, onSubmit }: MobileTrend
   const [formData, setFormData] = useState<TrendData>({
     url: '',
     title: '',
-    description: '',
     category: '',
     platform: ''
   });
@@ -60,6 +67,7 @@ export default function MobileTrendSubmission({ onClose, onSubmit }: MobileTrend
   const [error, setError] = useState('');
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
+  const [extractingMetadata, setExtractingMetadata] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,14 +103,28 @@ export default function MobileTrendSubmission({ onClose, onSubmit }: MobileTrend
   };
 
   const extractMetadataFromUrl = async (url: string) => {
-    let platform = '';
-    if (url.includes('tiktok.com')) platform = 'tiktok';
-    else if (url.includes('instagram.com')) platform = 'instagram';
-    else if (url.includes('youtube.com')) platform = 'youtube';
-    else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'twitter';
-    else platform = 'other';
-
-    setFormData(prev => ({ ...prev, platform }));
+    setExtractingMetadata(true);
+    try {
+      const extractedData = await MetadataExtractor.extractFromUrl(url);
+      
+      setFormData(prev => ({
+        ...prev,
+        platform: extractedData.platform,
+        title: prev.title || extractedData.title || '',
+        creator_handle: extractedData.metadata.creator_handle || '',
+        creator_name: extractedData.metadata.creator_name || '',
+        post_caption: extractedData.metadata.post_caption || '',
+        likes_count: extractedData.metadata.likes_count || 0,
+        comments_count: extractedData.metadata.comments_count || 0,
+        shares_count: extractedData.metadata.shares_count || 0,
+        views_count: extractedData.metadata.views_count || 0,
+        hashtags: extractedData.metadata.hashtags || []
+      }));
+    } catch (error) {
+      console.error('Error extracting metadata:', error);
+    } finally {
+      setExtractingMetadata(false);
+    }
   };
 
   const handleImageCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,12 +172,19 @@ export default function MobileTrendSubmission({ onClose, onSubmit }: MobileTrend
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900 z-50 overflow-hidden">
+      {/* Fixed Close Button for Mobile */}
+      <button
+        onClick={onClose}
+        className="fixed top-4 left-4 z-50 p-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-600 shadow-lg safe-area-top"
+        aria-label="Close"
+      >
+        <XIcon className="w-6 h-6 text-white" />
+      </button>
+      
       {/* Mobile Header */}
       <div className="safe-area-top bg-wave-900/90 backdrop-blur-lg border-b border-wave-700/30">
         <div className="flex items-center justify-between p-4">
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-wave-800/50">
-            <XIcon className="w-6 h-6 text-white" />
-          </button>
+          <div className="w-12">{/* Spacer for close button */}</div>
           <h1 className="text-lg font-semibold text-white">Submit Trend</h1>
           <button
             onClick={handleSubmit}
@@ -249,19 +278,6 @@ export default function MobileTrendSubmission({ onClose, onSubmit }: MobileTrend
             />
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-wave-200 mb-3 font-medium text-lg">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              className="w-full px-4 py-4 text-lg rounded-2xl bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none resize-none"
-              placeholder="What makes this trend special?"
-            />
-          </div>
 
           {/* Category Selection */}
           <div>

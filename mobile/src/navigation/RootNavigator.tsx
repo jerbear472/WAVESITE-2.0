@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { AuthNavigator } from './AuthNavigator';
 import { AppNavigator } from './AppNavigator';
+import { OnboardingNavigator } from './OnboardingNavigator';
 import { LoadingScreenEnhanced } from '../screens/LoadingScreenEnhanced';
 import { PersonaBuilderScreen } from '../screens/PersonaBuilderScreen';
 import { AchievementsScreen } from '../screens/AchievementsScreen';
@@ -11,6 +12,7 @@ import { enhancedTheme } from '../styles/theme.enhanced';
 
 export type RootStackParamList = {
   Auth: undefined;
+  Onboarding: undefined;
   App: undefined;
   PersonaBuilder: undefined;
   Achievements: undefined;
@@ -26,6 +28,8 @@ export const RootNavigator: React.FC = () => {
     return <LoadingScreenEnhanced />;
   }
 
+  const needsOnboarding = user && (!user.persona_completed || !user.onboarding_completed);
+
   return (
     <Stack.Navigator 
       screenOptions={{ 
@@ -35,14 +39,23 @@ export const RootNavigator: React.FC = () => {
       }}
     >
       {user ? (
-        <>
+        needsOnboarding ? (
           <Stack.Screen 
-            name="App" 
-            component={AppNavigator}
+            name="Onboarding" 
+            component={OnboardingNavigator}
             options={{
               animation: 'fade',
             }}
           />
+        ) : (
+          <>
+            <Stack.Screen 
+              name="App" 
+              component={AppNavigator}
+              options={{
+                animation: 'fade',
+              }}
+            />
           <Stack.Screen 
             name="PersonaBuilder" 
             component={PersonaBuilderScreen}
@@ -118,7 +131,8 @@ export const RootNavigator: React.FC = () => {
               },
             }}
           />
-        </>
+          </>
+        )
       ) : (
         <Stack.Screen 
           name="Auth" 

@@ -34,6 +34,17 @@ class TrendResponse(TrendBase):
     class Config:
         orm_mode = True
 
+class TrendSubmissionCreate(TrendBase):
+    title: str
+    url: Optional[str] = None
+    platform: Optional[str] = None
+    screenshot_url: Optional[str] = None
+
+class TrendSubmissionResponse(TrendResponse):
+    title: str
+    url: Optional[str]
+    platform: Optional[str]
+
 class TrendValidation(BaseModel):
     confirmed: bool
     evidence_url: Optional[str] = None
@@ -73,3 +84,27 @@ class LeaderboardEntry(BaseModel):
     trends_spotted: int
     accuracy_score: float
     category_specialties: List[str]
+
+# Trend Umbrella schemas
+class TrendUmbrellaCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    keywords: Optional[List[str]] = []
+    submission_ids: Optional[List[str]] = []
+
+class TrendUmbrellaResponse(BaseModel):
+    id: str
+    name: str
+    description: Optional[str]
+    submission_count: int
+    total_engagement: int
+    avg_virality_score: float
+    status: str
+    common_hashtags: List[str]
+    keywords: List[str]
+    first_seen_at: Optional[datetime]
+    last_updated_at: Optional[datetime]
+    categories: Optional[str]
+
+    class Config:
+        orm_mode = True

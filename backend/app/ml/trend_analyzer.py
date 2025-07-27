@@ -6,7 +6,9 @@ from datetime import datetime, timedelta
 import asyncio
 from typing import List, Dict, Optional
 
-from app.core.redis_client import redis_client
+# from app.core.redis_client import redis_client
+import redis
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
 from app.ml.models import TrendPredictionModel, ViralityDetector
 from app.models.models import TrendSubmission
 

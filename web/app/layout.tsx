@@ -20,13 +20,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body className="h-full antialiased bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100">
+    <html lang="en" className="h-full smooth-scroll">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+      <body className="h-full antialiased bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 responsive-container">
         <Providers>
-          <div className="min-h-full">
+          <div className="min-h-full dynamic-vh">
             {children}
           </div>
         </Providers>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Set viewport height for mobile
+              function setVH() {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', vh + 'px');
+              }
+              setVH();
+              window.addEventListener('resize', setVH);
+              window.addEventListener('orientationchange', () => setTimeout(setVH, 100));
+            `,
+          }}
+        />
       </body>
     </html>
   );

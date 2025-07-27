@@ -32,9 +32,13 @@ export default function AuthenticatedLayout({
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main>{children}</main>
-    </>
+      <main className="flex-1 overflow-x-hidden">
+        <div className="min-h-full">
+          {children}
+        </div>
+      </main>
+    </div>
   );
 }

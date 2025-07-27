@@ -1,19 +1,18 @@
 import Link from 'next/link'
-import WaveLogo from '@/components/WaveLogo'
+import WaveSightLogo from '@/components/WaveSightLogo'
+import Header from '@/components/Header'
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
+      <Header />
       {/* Hero Section */}
-      <section className="flex-1 flex items-center justify-center px-4 py-20">
+      <section className="flex-1 flex items-center justify-center px-4 py-20 pt-32">
         <div className="text-center max-w-4xl mx-auto animate-fade-in">
-          {/* Logo and Title */}
-          <div className="flex justify-center items-center gap-4 mb-8">
-            <WaveLogo size={80} showTitle={false} />
-            <h1 className="text-5xl md:text-7xl font-light tracking-tight">
-              Wave<span className="text-gradient font-normal">Sight</span>
-            </h1>
-          </div>
+          {/* Title */}
+          <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-8">
+            Wave<span className="text-blue-600 font-normal">Sight</span>
+          </h1>
           
           {/* Tagline */}
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-4">
@@ -61,36 +60,67 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Two Modes Section */}
       <section className="py-20 bg-gray-50 dark:bg-neutral-900">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            Why Wave<span className="text-gradient font-normal">Sight</span>?
+            Two Ways to Use Wave<span className="text-gradient font-normal">Sight</span>
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="card card-hover text-center">
-              <div className="text-4xl mb-4">📊</div>
-              <h3 className="text-xl font-semibold mb-2">Real-Time Analytics</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Track engagement metrics across all major social platforms instantly
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="card card-hover">
+              <div className="p-6">
+                <div className="text-4xl mb-4 text-center">💰</div>
+                <h3 className="text-xl font-semibold mb-3 text-center">User Mode</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-center mb-4">Earn money by spotting trends</p>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li className="flex items-center">
+                    <span className="text-green-500 mr-2">✓</span>
+                    Submit trending content you discover
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-green-500 mr-2">✓</span>
+                    Validate other users' submissions
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-green-500 mr-2">✓</span>
+                    Get paid for accurate predictions
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-green-500 mr-2">✓</span>
+                    Track your earnings & performance
+                  </li>
+                </ul>
+              </div>
             </div>
             
-            <div className="card card-hover text-center">
-              <div className="text-4xl mb-4">🎯</div>
-              <h3 className="text-xl font-semibold mb-2">AI Predictions</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Our Wave Score™ algorithm predicts content virality with high accuracy
-              </p>
-            </div>
-            
-            <div className="card card-hover text-center">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3 className="text-xl font-semibold mb-2">Early Detection</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Spot emerging trends hours or days before mainstream adoption
-              </p>
+            <div className="card card-hover">
+              <div className="p-6">
+                <div className="text-4xl mb-4 text-center">📊</div>
+                <h3 className="text-xl font-semibold mb-3 text-center">Enterprise Dashboard</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-center mb-4">Business analytics & insights</p>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li className="flex items-center">
+                    <span className="text-cyan-500 mr-2">✓</span>
+                    View validated trend analytics
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-cyan-500 mr-2">✓</span>
+                    Access industry-specific insights
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-cyan-500 mr-2">✓</span>
+                    Export data & generate reports
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-cyan-500 mr-2">✓</span>
+                    API access for integration
+                  </li>
+                </ul>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-4 text-center">
+                  *Requires enterprise access via account settings
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -122,9 +152,9 @@ export default function Home() {
         <div className="container-custom">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <WaveLogo size={24} showTitle={false} />
+              <WaveSightLogo size="sm" showIcon={true} />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                © 2024 WaveSight. All rights reserved.
+                © 2024 All rights reserved.
               </span>
             </div>
             <div className="flex gap-6 text-sm text-gray-600 dark:text-gray-400">

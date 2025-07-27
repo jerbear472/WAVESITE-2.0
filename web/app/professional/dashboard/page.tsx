@@ -102,7 +102,7 @@ export default function ProfessionalDashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Professional Dashboard</h1>
-        <p className="text-gray-600 mt-2">Advanced analytics and trend insights</p>
+        <p className="text-gray-800 mt-2">Advanced analytics and trend insights</p>
       </div>
 
       {/* Timeframe Selector */}
@@ -126,25 +126,25 @@ export default function ProfessionalDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="text-2xl font-bold text-gray-900">{trends.length}</div>
-          <div className="text-sm text-gray-500">Active Trends</div>
+          <div className="text-sm text-gray-700">Active Trends</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="text-2xl font-bold text-gray-900">
             {trends.filter(t => t.virality_prediction >= 8).length}
           </div>
-          <div className="text-sm text-gray-500">High Potential</div>
+          <div className="text-sm text-gray-700">High Potential</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="text-2xl font-bold text-gray-900">
             {(trends.reduce((sum, t) => sum + t.quality_score, 0) / trends.length * 100).toFixed(0)}%
           </div>
-          <div className="text-sm text-gray-500">Avg Quality Score</div>
+          <div className="text-sm text-gray-700">Avg Quality Score</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="text-2xl font-bold text-gray-900">
             {trends.reduce((sum, t) => sum + t.validation_count, 0)}
           </div>
-          <div className="text-sm text-gray-500">Total Validations</div>
+          <div className="text-sm text-gray-700">Total Validations</div>
         </div>
       </div>
 
@@ -176,10 +176,10 @@ export default function ProfessionalDashboard() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Top Trends</h2>
           <Link
-            href="/professional/trends"
+            href="/timeline"
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
-            View All →
+            View Timeline →
           </Link>
         </div>
         <div className="space-y-4">
@@ -191,7 +191,7 @@ export default function ProfessionalDashboard() {
                     <span className="text-lg mr-2">{getCategoryIcon(trend.category)}</span>
                     <h3 className="font-medium text-gray-900">{trend.description}</h3>
                   </div>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <div className="flex items-center space-x-4 text-sm text-gray-700">
                     <span>Virality: {trend.virality_prediction}/10</span>
                     <span>Quality: {(trend.quality_score * 100).toFixed(0)}%</span>
                     <span>{trend.validation_count} validations</span>
