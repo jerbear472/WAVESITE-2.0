@@ -7,7 +7,7 @@ import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
 import MobileTrendSubmission from '@/components/MobileTrendSubmission';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { TrendUmbrellaService } from '@/lib/trendUmbrellaService';
+// import { TrendUmbrellaService } from '@/lib/trendUmbrellaService'; // Not needed
 import { mapCategoryToEnum } from '@/lib/categoryMapper';
 import { 
   TrendingUp as TrendingUpIcon,
@@ -300,10 +300,7 @@ export default function SubmitTrendPage() {
         insertData.posted_at = new Date().toISOString();
       }
       
-      // Only add trend_umbrella_id if we have one
-      if (umbrellaId) {
-        insertData.trend_umbrella_id = umbrellaId;
-      }
+      // Removed trend_umbrella_id - not needed
 
       console.log('Submitting data to database:', insertData);
 
