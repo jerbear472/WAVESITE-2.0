@@ -333,7 +333,26 @@ export default function SubmitTrendPage() {
         .single();
 
       if (error) {
-        console.error('Database error:', error);
+        console.error('Database error details:', {
+          error: error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          insertData: insertData
+        });
+        
+        // Provide more specific error messages
+        if (error.message?.includes('violates foreign key constraint')) {
+          throw new Error('User authentication issue. Please log out and log back in.');
+        } else if (error.message?.includes('null value in column')) {
+          const columnMatch = error.message.match(/column "(\w+)"/);
+          const columnName = columnMatch ? columnMatch[1] : 'unknown';
+          throw new Error(`Missing required field: ${columnName}. Please fill in all required fields.`);
+        } else if (error.message?.includes('permission denied')) {
+          throw new Error('Permission denied. Please ensure you are logged in.');
+        }
+        
         throw error;
       }
 
