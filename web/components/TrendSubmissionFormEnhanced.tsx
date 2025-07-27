@@ -468,7 +468,12 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       setSuccess('Trend submitted successfully! 🎉');
       setTimeout(() => onClose(), 1500);
     } catch (err: any) {
-      console.error('Form submission error:', err);
+      console.error('Form submission error - Full details:', {
+        error: err,
+        message: err.message,
+        stack: err.stack,
+        details: err.details
+      });
       setError(err.message || 'Failed to submit trend');
     } finally {
       setLoading(false);
