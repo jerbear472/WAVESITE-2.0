@@ -23,7 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
-import { TrendUmbrellaService } from '@/lib/trendUmbrellaService';
+// import { TrendUmbrellaService } from '@/lib/trendUmbrellaService'; // Not needed
 
 export default function ScrollDashboard() {
   const router = useRouter();
@@ -162,14 +162,8 @@ export default function ScrollDashboard() {
         imageUrl = publicUrl;
       }
 
-      // Find or create trend umbrella
-      console.log('Creating trend umbrella for:', trendData.trendName);
-      const umbrellaId = await TrendUmbrellaService.findOrCreateUmbrella(
-        trendData.trendName,
-        trendData.hashtags,
-        trendData.explanation
-      );
-      console.log('Created umbrella ID:', umbrellaId);
+      // Trend umbrella feature removed
+      const umbrellaId = null;
 
       // Save trend to database
       console.log('Inserting trend submission to database...');
@@ -216,7 +210,7 @@ export default function ScrollDashboard() {
           posted_at: trendData.posted_at || new Date().toISOString(),
           created_at: new Date().toISOString(),
           // Link to trend umbrella
-          trend_umbrella_id: umbrellaId
+          // trend_umbrella_id removed
         })
         .select()
         .single();

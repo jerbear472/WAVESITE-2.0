@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { TrendUmbrellaService } from '@/lib/trendUmbrellaService';
+// import { TrendUmbrellaService } from '@/lib/trendUmbrellaService'; // Not needed
 import { OCRApiService as OCRService } from '@/lib/ocrApiService';
 import { 
   Upload as UploadIcon,
@@ -181,12 +181,8 @@ export default function TrendScreenshotUpload({ onClose, onSubmit }: TrendScreen
         .from('trend-images')
         .getPublicUrl(fileName);
 
-      // Find or create trend umbrella
-      const umbrellaId = await TrendUmbrellaService.findOrCreateUmbrella(
-        formData.trendName,
-        formData.hashtags,
-        `Screenshot submission from ${formData.platform}`
-      );
+      // Trend umbrella feature removed
+      const umbrellaId = null;
 
       // Save trend to database
       const { data, error } = await supabase
@@ -210,7 +206,7 @@ export default function TrendScreenshotUpload({ onClose, onSubmit }: TrendScreen
           hashtags: formData.hashtags,
           thumbnail_url: publicUrl,
           posted_at: new Date().toISOString(),
-          trend_umbrella_id: umbrellaId
+          // trend_umbrella_id removed
         })
         .select()
         .single();
