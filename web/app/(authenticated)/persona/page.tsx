@@ -28,10 +28,13 @@ export default function PersonaPage() {
   const handlePersonaComplete = async (newPersonaData: any) => {
     try {
       await savePersonaData(newPersonaData);
-      setPersonaSummary(newPersonaData);
-      setIsComplete(true);
+      // Redirect directly to profile page after saving
+      router.push('/profile');
     } catch (error) {
       console.error('Error saving persona:', error);
+      // Still show completion screen if there's an error but data was saved locally
+      setPersonaSummary(newPersonaData);
+      setIsComplete(true);
     }
   };
 

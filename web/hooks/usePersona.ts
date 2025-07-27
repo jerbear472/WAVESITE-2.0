@@ -167,12 +167,12 @@ export function usePersona() {
         const savedData = await response.json();
         // Transform API response to match frontend structure
         const transformedData: PersonaData = {
-          location: savedData.location,
-          demographics: savedData.demographics,
-          professional: savedData.professional,
-          interests: savedData.interests,
-          lifestyle: savedData.lifestyle,
-          tech: savedData.tech
+          location: savedData.location || data.location,
+          demographics: savedData.demographics || data.demographics,
+          professional: savedData.professional || data.professional,
+          interests: savedData.interests || data.interests,
+          lifestyle: savedData.lifestyle || data.lifestyle,
+          tech: savedData.tech || data.tech
         };
         setPersonaData(transformedData);
         setHasPersona(true);
@@ -184,7 +184,7 @@ export function usePersona() {
       }
     } catch (error) {
       console.error('Error saving persona data:', error);
-      // Fallback to localStorage only
+      // Always save to localStorage and set hasPersona to true when saving
       try {
         localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
         setPersonaData(data);

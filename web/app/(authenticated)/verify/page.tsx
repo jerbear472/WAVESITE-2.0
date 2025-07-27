@@ -241,7 +241,7 @@ export default function Verify() {
       const { data: existingValidation, error: checkError } = await supabase
         .from('trend_validations')
         .select('id')
-        .eq('trend_submission_id', trend.id)
+        .eq('trend_id', trend.id)
         .eq('validator_id', user?.id)
         .single();
 
@@ -264,7 +264,7 @@ export default function Verify() {
       const { data: insertData, error: insertError } = await supabase
         .from('trend_validations')
         .insert({
-          trend_submission_id: trend.id,
+          trend_id: trend.id,
           validator_id: user?.id,
           vote: isValid ? 'verify' : 'reject',
           created_at: new Date().toISOString(),

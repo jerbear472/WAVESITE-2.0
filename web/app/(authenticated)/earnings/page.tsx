@@ -38,7 +38,7 @@ interface EarningTransaction {
   created_at: string;
   approved_at?: string;
   notes?: string;
-  trend_submission?: {
+  trend?: {
     id: string;
     description: string;
     category: string;
@@ -82,7 +82,7 @@ export default function Earnings() {
         .from('earnings_ledger')
         .select(`
           *,
-          trend_submission:trend_submissions(
+          trend:trend_submissions(
             id,
             description,
             category
@@ -291,7 +291,7 @@ export default function Earnings() {
                         {transaction.earning_type === 'submission' ? 'Trend Submission' : 'Validation Reward'}
                       </div>
                       <div className="text-sm text-gray-400">
-                        {transaction.trend_submission?.description.substring(0, 50)}...
+                        {transaction.trend?.description.substring(0, 50)}...
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {format(new Date(transaction.created_at), 'MMM d, yyyy h:mm a')}
