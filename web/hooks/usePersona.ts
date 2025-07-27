@@ -75,6 +75,21 @@ const mockPersonaData: PersonaData = {
   }
 };
 
+// Helper function to validate persona data
+const isValidPersona = (data: PersonaData): boolean => {
+  // Check if all required fields are filled
+  return !!(
+    data &&
+    data.location?.country &&
+    data.location?.city &&
+    data.demographics?.ageRange &&
+    data.demographics?.educationLevel &&
+    data.professional?.employmentStatus &&
+    data.professional?.industry &&
+    data.interests?.length > 0
+  );
+};
+
 export function usePersona() {
   const { user } = useAuth();
   const [personaData, setPersonaData] = useState<PersonaData>(defaultPersonaData);
@@ -92,11 +107,23 @@ export function usePersona() {
         // First check localStorage since API endpoint doesn't exist yet
         const savedPersona = localStorage.getItem(`persona_${user.id}`);
         if (savedPersona) {
-          const parsedPersona = JSON.parse(savedPersona);
-          setPersonaData(parsedPersona);
-          setHasPersona(true);
-          setLoading(false);
-          return;
+          try {
+            const parsedPersona = JSON.parse(savedPersona);
+            // Validate the persona data before considering it valid
+            if (isValidPersona(parsedPersona)) {
+              setPersonaData(parsedPersona);
+              setHasPersona(true);
+              setLoading(false);
+              return;
+            } else {
+              // Invalid persona data, clear it
+              console.log('Invalid persona data found in localStorage, clearing...');
+              localStorage.removeItem(`persona_${user.id}`);
+            }
+          } catch (parseError) {
+            console.error('Error parsing persona from localStorage:', parseError);
+            localStorage.removeItem(`persona_${user.id}`);
+          }
         }
 
         // Try API as fallback (for future implementation)
@@ -120,10 +147,18 @@ export function usePersona() {
                 lifestyle: data.lifestyle,
                 tech: data.tech
               };
-              setPersonaData(transformedData);
-              setHasPersona(true);
-              // Save to localStorage
-              localStorage.setItem(`persona_${user.id}`, JSON.stringify(transformedData));
+              
+              // Validate the transformed data
+              if (isValidPersona(transformedData)) {
+                setPersonaData(transformedData);
+                setHasPersona(true);
+                // Save to localStorage
+                localStorage.setItem(`persona_${user.id}`, JSON.stringify(transformedData));
+              } else {
+                // Invalid persona data from API
+                setPersonaData(defaultPersonaData);
+                setHasPersona(false);
+              }
             } else {
               // No persona found, use defaults
               setPersonaData(defaultPersonaData);
@@ -187,11 +222,16 @@ export function usePersona() {
       }
     } catch (error) {
       console.error('Error saving persona data:', error);
-      // Always save to localStorage and set hasPersona to true when saving
+      // Always save to localStorage if data is valid
       try {
-        localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
-        setPersonaData(data);
-        setHasPersona(true);
+        if (isValidPersona(data)) {
+          localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
+          setPersonaData(data);
+          setHasPersona(true);
+        } else {
+          console.error('Invalid persona data, not saving');
+          throw new Error('Invalid persona data');
+        }
       } catch (localError) {
         console.error('Error saving to localStorage:', localError);
         throw error;
