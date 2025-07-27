@@ -114,43 +114,8 @@ export default function ProfilePage() {
     );
   }
 
-  if (!hasPersona) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-neutral-950">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md"
-        >
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-lg">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-wave-400 to-wave-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <UserIcon className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Complete Your Persona</h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Build your persona to unlock personalized insights and see your complete profile.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={() => router.push('/persona')}
-                className="px-6 py-3 bg-gradient-to-r from-wave-500 to-wave-600 text-white rounded-xl hover:from-wave-600 hover:to-wave-700 transition-all font-medium shadow-sm hover:shadow-md"
-              >
-                Build My Persona
-              </button>
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="px-6 py-3 bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-white rounded-xl hover:bg-gray-200 dark:hover:bg-neutral-700 transition-all font-medium"
-              >
-                Back to Dashboard
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
+  // Remove the persona check - show profile regardless
+  // Users can still click "Build My Persona" button if they want to create one
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
@@ -180,9 +145,33 @@ export default function ProfilePage() {
             className="px-5 py-2.5 bg-gradient-to-r from-wave-500 to-wave-600 text-white rounded-xl hover:from-wave-600 hover:to-wave-700 transition-all flex items-center gap-2 font-medium shadow-sm hover:shadow-md"
           >
             <EditIcon className="w-4 h-4" />
-            Edit Persona
+            {hasPersona ? 'Edit Persona' : 'Build Persona'}
           </button>
         </motion.div>
+
+        {/* Persona Notice */}
+        {!hasPersona && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl p-4 mb-6"
+          >
+            <div className="flex items-center gap-3">
+              <SparklesIcon className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-amber-800 dark:text-amber-200 font-medium">
+                  Build your persona to unlock personalized insights and complete your profile
+                </p>
+              </div>
+              <button
+                onClick={() => router.push('/persona')}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
+              >
+                Build Persona
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* User Overview Card */}
         <motion.div
@@ -277,123 +266,171 @@ export default function ProfilePage() {
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Location & Demographics */}
-          <ProfileSection title="Location & Demographics" icon={MapPinIcon}>
-            <DataGrid
-              data={[
-                { 
-                  label: 'Location', 
-                  value: `${personaData.location.city}, ${personaData.location.country}`,
-                  icon: GlobeIcon
-                },
-                { 
-                  label: 'Area Type', 
-                  value: personaData.location.urbanType.charAt(0).toUpperCase() + personaData.location.urbanType.slice(1),
-                  icon: MapPinIcon
-                },
-                { 
-                  label: 'Age Range', 
-                  value: personaData.demographics.ageRange,
-                  icon: ClockIcon
-                },
-                { 
-                  label: 'Education', 
-                  value: personaData.demographics.educationLevel,
-                  icon: SparklesIcon
-                }
-              ]}
-            />
-          </ProfileSection>
+          {hasPersona && personaData.location?.city ? (
+            <ProfileSection title="Location & Demographics" icon={MapPinIcon}>
+              <DataGrid
+                data={[
+                  { 
+                    label: 'Location', 
+                    value: `${personaData.location.city}, ${personaData.location.country}`,
+                    icon: GlobeIcon
+                  },
+                  { 
+                    label: 'Area Type', 
+                    value: personaData.location.urbanType ? personaData.location.urbanType.charAt(0).toUpperCase() + personaData.location.urbanType.slice(1) : 'Not specified',
+                    icon: MapPinIcon
+                  },
+                  { 
+                    label: 'Age Range', 
+                    value: personaData.demographics?.ageRange || 'Not specified',
+                    icon: ClockIcon
+                  },
+                  { 
+                    label: 'Education', 
+                    value: personaData.demographics?.educationLevel || 'Not specified',
+                    icon: SparklesIcon
+                  }
+                ]}
+              />
+            </ProfileSection>
+          ) : (
+            <ProfileSection title="Location & Demographics" icon={MapPinIcon}>
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400 mb-4">No persona data available</p>
+                <button
+                  onClick={() => router.push('/persona')}
+                  className="px-4 py-2 bg-wave-500 text-white rounded-lg hover:bg-wave-600 transition-colors text-sm"
+                >
+                  Build Your Persona
+                </button>
+              </div>
+            </ProfileSection>
+          )}
 
           {/* Professional Information */}
-          <ProfileSection title="Professional Information" icon={BriefcaseIcon}>
-            <DataGrid
-              data={[
-                { 
-                  label: 'Employment', 
-                  value: personaData.professional.employmentStatus.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                  icon: BriefcaseIcon
-                },
-                { 
-                  label: 'Industry', 
-                  value: personaData.professional.industry,
-                  icon: ZapIcon
-                },
-                { 
-                  label: 'Income Range', 
-                  value: personaData.professional.incomeRange,
-                  icon: TrendingUpIcon
-                },
-                { 
-                  label: 'Work Style', 
-                  value: personaData.professional.workStyle.charAt(0).toUpperCase() + personaData.professional.workStyle.slice(1),
-                  icon: ClockIcon
-                }
-              ]}
-            />
-          </ProfileSection>
+          {hasPersona && personaData.professional?.employmentStatus ? (
+            <ProfileSection title="Professional Information" icon={BriefcaseIcon}>
+              <DataGrid
+                data={[
+                  { 
+                    label: 'Employment', 
+                    value: personaData.professional.employmentStatus ? personaData.professional.employmentStatus.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Not specified',
+                    icon: BriefcaseIcon
+                  },
+                  { 
+                    label: 'Industry', 
+                    value: personaData.professional?.industry || 'Not specified',
+                    icon: ZapIcon
+                  },
+                  { 
+                    label: 'Income Range', 
+                    value: personaData.professional?.incomeRange || 'Not specified',
+                    icon: TrendingUpIcon
+                  },
+                  { 
+                    label: 'Work Style', 
+                    value: personaData.professional?.workStyle ? personaData.professional.workStyle.charAt(0).toUpperCase() + personaData.professional.workStyle.slice(1) : 'Not specified',
+                    icon: ClockIcon
+                  }
+                ]}
+              />
+            </ProfileSection>
+          ) : (
+            <ProfileSection title="Professional Information" icon={BriefcaseIcon}>
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400 mb-4">No professional data available</p>
+                <button
+                  onClick={() => router.push('/persona')}
+                  className="px-4 py-2 bg-wave-500 text-white rounded-lg hover:bg-wave-600 transition-colors text-sm"
+                >
+                  Add Professional Info
+                </button>
+              </div>
+            </ProfileSection>
+          )}
 
           {/* Interests */}
           <ProfileSection title="Interests & Hobbies" icon={HeartIcon}>
-            <TagList items={personaData.interests} type="interest" />
+            {hasPersona && personaData.interests?.length > 0 ? (
+              <TagList items={personaData.interests} type="interest" />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">No interests added yet</p>
+              </div>
+            )}
           </ProfileSection>
 
           {/* Technology & Social Media */}
           <ProfileSection title="Technology & Social Media" icon={SmartphoneIcon}>
-            <div className="space-y-6">
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3">Tech Proficiency</p>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 bg-gray-200 dark:bg-neutral-800 rounded-full h-4 overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ 
-                        width: personaData.tech.proficiency === 'basic' ? '25%' : 
-                               personaData.tech.proficiency === 'intermediate' ? '50%' : 
-                               personaData.tech.proficiency === 'advanced' ? '75%' : '100%' 
-                      }}
-                      transition={{ duration: 1, ease: "easeOut" }}
-                      className="bg-gradient-to-r from-wave-500 to-wave-600 h-4"
-                    />
+            {hasPersona && personaData.tech ? (
+              <div className="space-y-6">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3">Tech Proficiency</p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 bg-gray-200 dark:bg-neutral-800 rounded-full h-4 overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ 
+                          width: personaData.tech?.proficiency === 'basic' ? '25%' : 
+                                 personaData.tech?.proficiency === 'intermediate' ? '50%' : 
+                                 personaData.tech?.proficiency === 'advanced' ? '75%' : '100%' 
+                        }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="bg-gradient-to-r from-wave-500 to-wave-600 h-4"
+                      />
+                    </div>
+                    <span className="text-gray-900 dark:text-white capitalize font-medium bg-gray-100 dark:bg-neutral-800 px-3 py-1 rounded-lg">
+                      {personaData.tech?.proficiency || 'intermediate'}
+                    </span>
                   </div>
-                  <span className="text-gray-900 dark:text-white capitalize font-medium bg-gray-100 dark:bg-neutral-800 px-3 py-1 rounded-lg">
-                    {personaData.tech.proficiency}
-                  </span>
+                </div>
+                
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3">Primary Devices</p>
+                  <TagList items={personaData.tech?.primaryDevices || []} type="tech" />
+                </div>
+                
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3">Active Social Platforms</p>
+                  <TagList items={personaData.tech?.socialPlatforms || []} type="social" />
                 </div>
               </div>
-              
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3">Primary Devices</p>
-                <TagList items={personaData.tech.primaryDevices} type="tech" />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">No technology preferences added yet</p>
               </div>
-              
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3">Active Social Platforms</p>
-                <TagList items={personaData.tech.socialPlatforms} type="social" />
-              </div>
-            </div>
+            )}
           </ProfileSection>
         </div>
 
         {/* Full Width Section */}
-        <ProfileSection title="Lifestyle & Values" icon={SparklesIcon} className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3 flex items-center gap-2">
-                <ShoppingBagIcon className="w-4 h-4" />
-                Shopping Habits
-              </p>
-              <TagList items={personaData.lifestyle.shoppingHabits} type="shopping" />
+        {hasPersona && personaData.lifestyle ? (
+          <ProfileSection title="Lifestyle & Values" icon={SparklesIcon} className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3 flex items-center gap-2">
+                  <ShoppingBagIcon className="w-4 h-4" />
+                  Shopping Habits
+                </p>
+                <TagList items={personaData.lifestyle?.shoppingHabits || []} type="shopping" />
+              </div>
+              
+              <div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3 flex items-center gap-2">
+                  <HeartIcon className="w-4 h-4" />
+                  Core Values
+                </p>
+                <TagList items={personaData.lifestyle?.values || []} type="value" />
+              </div>
             </div>
-            
-            <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-3 flex items-center gap-2">
-                <HeartIcon className="w-4 h-4" />
-                Core Values
-              </p>
-              <TagList items={personaData.lifestyle.values} type="value" />
+          </ProfileSection>
+        ) : (
+          <ProfileSection title="Lifestyle & Values" icon={SparklesIcon} className="mt-6">
+            <div className="text-center py-8">
+              <p className="text-gray-500 dark:text-gray-400">No lifestyle preferences added yet</p>
             </div>
-          </div>
-        </ProfileSection>
+          </ProfileSection>
+        )}
 
         {/* Actions */}
         <motion.div
@@ -406,7 +443,7 @@ export default function ProfilePage() {
             className="px-6 py-3 bg-gradient-to-r from-wave-500 to-wave-600 text-white rounded-xl hover:from-wave-600 hover:to-wave-700 transition-all flex items-center justify-center gap-2 font-medium shadow-sm hover:shadow-md"
           >
             <EditIcon className="w-5 h-5" />
-            Update My Persona
+            {hasPersona ? 'Update My Persona' : 'Build My Persona'}
           </button>
           <button
             onClick={() => router.push('/dashboard')}
