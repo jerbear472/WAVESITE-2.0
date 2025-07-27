@@ -134,7 +134,7 @@ export default function ScrollDashboard() {
   // Handle trend submission via popup form
   const handleTrendSubmit = async (trendData: any) => {
     try {
-      console.log('Starting trend submission with data:', trendData);
+      console.log('Starting trend submission (SCROLL v3 - NO UMBRELLAS) with data:', trendData);
       console.log('User ID:', user?.id);
 
       // Check if user is authenticated
@@ -162,7 +162,8 @@ export default function ScrollDashboard() {
         imageUrl = publicUrl;
       }
 
-      // Trend umbrella feature removed
+      // Trend umbrella feature removed - v3 no umbrellas
+      console.log('Scroll page v3 - umbrellas disabled');
       const umbrellaId = null;
 
       // Save trend to database
