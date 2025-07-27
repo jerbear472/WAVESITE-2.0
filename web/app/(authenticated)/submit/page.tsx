@@ -200,7 +200,7 @@ export default function SubmitTrendPage() {
   };
 
   const handleTrendSubmit = async (trendData: TrendData) => {
-    console.log('Starting trend submission with data:', trendData);
+    console.log('Starting trend submission (v2 - no umbrellas) with data:', trendData);
     let retryCount = 0;
     const maxRetries = 3;
     
@@ -247,9 +247,9 @@ export default function SubmitTrendPage() {
           }
         }
 
-      // Skip trend umbrella for now - table doesn't exist
+      // Trend umbrella feature removed - not needed
       let umbrellaId = null;
-      console.log('Skipping trend umbrella creation - feature temporarily disabled');
+      console.log('Trend umbrella feature has been removed');
 
       // Skip profile check for now to avoid errors
 
