@@ -48,7 +48,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Add RLS policy to ensure only 18+ users can access certain features
 CREATE POLICY "Only verified 18+ users can create trends" ON trend_submissions
     FOR INSERT 
-    USING (
+    WITH CHECK (
         EXISTS (
             SELECT 1 FROM profiles 
             WHERE profiles.id = auth.uid() 

@@ -89,58 +89,61 @@ export function usePersona() {
       }
 
       try {
-        // Fetch from API with authentication
-        const response = await fetch('/api/v1/persona', {
-          headers: {
-            'Authorization': `Bearer ${user.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        // First check localStorage since API endpoint doesn't exist yet
+        const savedPersona = localStorage.getItem(`persona_${user.id}`);
+        if (savedPersona) {
+          const parsedPersona = JSON.parse(savedPersona);
+          setPersonaData(parsedPersona);
+          setHasPersona(true);
+          setLoading(false);
+          return;
+        }
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data) {
-            // Transform API response to match frontend structure
-            const transformedData: PersonaData = {
-              location: data.location,
-              demographics: data.demographics,
-              professional: data.professional,
-              interests: data.interests,
-              lifestyle: data.lifestyle,
-              tech: data.tech
-            };
-            setPersonaData(transformedData);
-            setHasPersona(true);
+        // Try API as fallback (for future implementation)
+        try {
+          const response = await fetch('/api/v1/persona', {
+            headers: {
+              'Authorization': `Bearer ${user.access_token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data) {
+              // Transform API response to match frontend structure
+              const transformedData: PersonaData = {
+                location: data.location,
+                demographics: data.demographics,
+                professional: data.professional,
+                interests: data.interests,
+                lifestyle: data.lifestyle,
+                tech: data.tech
+              };
+              setPersonaData(transformedData);
+              setHasPersona(true);
+              // Save to localStorage
+              localStorage.setItem(`persona_${user.id}`, JSON.stringify(transformedData));
+            } else {
+              // No persona found, use defaults
+              setPersonaData(defaultPersonaData);
+              setHasPersona(false);
+            }
           } else {
             // No persona found, use defaults
             setPersonaData(defaultPersonaData);
             setHasPersona(false);
           }
-        } else if (response.status === 404) {
-          // No persona found, use defaults
+        } catch (apiError) {
+          // API call failed, persona doesn't exist
+          console.log('Persona API not available, using localStorage only');
           setPersonaData(defaultPersonaData);
           setHasPersona(false);
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
         }
       } catch (error) {
         console.error('Error loading persona data:', error);
-        // Fallback to localStorage for backward compatibility
-        try {
-          const savedPersona = localStorage.getItem(`persona_${user.id}`);
-          if (savedPersona) {
-            const parsedPersona = JSON.parse(savedPersona);
-            setPersonaData(parsedPersona);
-            setHasPersona(true);
-          } else {
-            setPersonaData(defaultPersonaData);
-            setHasPersona(false);
-          }
-        } catch (localError) {
-          console.error('Error loading from localStorage:', localError);
-          setPersonaData(defaultPersonaData);
-          setHasPersona(false);
-        }
+        setPersonaData(defaultPersonaData);
+        setHasPersona(false);
       } finally {
         setLoading(false);
       }

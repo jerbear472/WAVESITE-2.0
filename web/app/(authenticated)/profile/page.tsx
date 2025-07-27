@@ -32,6 +32,16 @@ export default function ProfilePage() {
   const { personaData, loading: personaLoading, hasPersona } = usePersona();
   const [showCashOutModal, setShowCashOutModal] = useState(false);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Profile Page Debug:', {
+      user: user?.id,
+      hasPersona,
+      personaLoading,
+      personaData: personaData
+    });
+  }, [user, hasPersona, personaLoading, personaData]);
+
   const ProfileSection = ({ title, icon: Icon, children, className = "" }: any) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
