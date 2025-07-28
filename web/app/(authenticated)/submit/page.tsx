@@ -1,4 +1,5 @@
 'use client';
+// Force rebuild: 2024-01-20-v1
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 
 import { useState, useEffect } from 'react';
@@ -201,6 +202,7 @@ export default function SubmitTrendPage() {
 
   const handleTrendSubmit = async (trendData: TrendData) => {
     console.log('Starting trend submission (v2 - no umbrellas) with data:', trendData);
+    console.log('TrendData stringified:', JSON.stringify(trendData, null, 2));
     
     // Check if trendData contains a status field
     if ('status' in trendData) {
@@ -339,10 +341,10 @@ export default function SubmitTrendPage() {
         dataToSubmit.status = 'submitted';
       }
       
-      console.log('Data to submit - category:', dataToSubmit.category);
-      console.log('Data to submit - status:', dataToSubmit.status);
-      console.log('Submitting data to database (stringified):', JSON.stringify(dataToSubmit, null, 2));
-      console.log('Submitting data to database (object):', dataToSubmit);
+      console.log('=== DATA TO SUBMIT ===');
+      console.log('Category:', dataToSubmit.category);
+      console.log('Status:', dataToSubmit.status);
+      console.log('Full data stringified:', JSON.stringify(dataToSubmit, null, 2));
       
       // ULTRA PARANOID: Log every field
       console.log('=== FIELD BY FIELD CHECK ===');
