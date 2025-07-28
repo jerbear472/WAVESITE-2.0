@@ -347,7 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Also ensure user settings exist
         try {
-          await supabase
+          const { error: settingsError } = await supabase
             .from('user_settings')
             .insert({
               user_id: authData.user.id,
@@ -356,13 +356,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })
             .select()
             .single();
+          
+          if (settingsError) {
+            console.log('User settings might already exist:', settingsError);
+          }
         } catch (err) {
-          console.log('User settings might already exist:', err);
+          console.log('Error creating user settings:', err);
         }
 
         // And user account settings
         try {
-          await supabase
+          const { error: accountError } = await supabase
             .from('user_account_settings')
             .insert({
               user_id: authData.user.id,
@@ -370,8 +374,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })
             .select()
             .single();
+          
+          if (accountError) {
+            console.log('Account settings might already exist:', accountError);
+          }
         } catch (err) {
-          console.log('Account settings might already exist:', err);
+          console.log('Error creating account settings:', err);
         }
       }
 
