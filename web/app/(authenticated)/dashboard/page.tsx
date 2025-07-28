@@ -28,6 +28,7 @@ interface DashboardStats {
   earnings_today: number;
   earnings_this_week: number;
   earnings_this_month: number;
+  total_cashed_out: number;
 }
 
 interface RecentTrend {
@@ -76,6 +77,7 @@ export default function Dashboard() {
     earnings_today: 0,
     earnings_this_week: 0,
     earnings_this_month: 0,
+    total_cashed_out: 0,
   });
   const [recentTrends, setRecentTrends] = useState<RecentTrend[]>([]);
   const [activityFeed, setActivityFeed] = useState<any[]>([]);
@@ -448,13 +450,13 @@ export default function Dashboard() {
                 </span>
               )}
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Total Earnings</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Total Cashed Out</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-              {formatCurrency(stats.total_earnings)}
+              {formatCurrency(stats.total_cashed_out)}
             </p>
-            {stats.pending_earnings > 0 && (
-              <p className="text-sm text-yellow-600 mt-2">
-                {formatCurrency(stats.pending_earnings)} pending
+            {stats.total_earnings > 0 && (
+              <p className="text-sm text-green-600 mt-2">
+                {formatCurrency(stats.total_earnings)} available
               </p>
             )}
           </motion.div>
@@ -742,7 +744,7 @@ export default function Dashboard() {
                 </div>
                 <div className="pt-3 mt-3 border-t border-white/20">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Total Earned</span>
+                    <span className="font-medium">Available to Cash Out</span>
                     <span className="text-2xl font-bold">
                       {formatCurrency(stats.total_earnings)}
                     </span>
