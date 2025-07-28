@@ -34,14 +34,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('POST /api/v1/persona - Request received');
+  
   try {
     const authHeader = request.headers.get('authorization');
+    console.log('Auth header present:', !!authHeader);
     
     if (!authHeader) {
+      console.error('No authorization token provided');
       return NextResponse.json({ error: 'No authorization token' }, { status: 401 });
     }
 
     const body = await request.json();
+    console.log('Request body:', JSON.stringify(body, null, 2));
 
     // Transform frontend format to backend format
     const backendData = {
@@ -77,6 +82,9 @@ export async function POST(request: NextRequest) {
       is_complete: true
     };
 
+    console.log('Sending to backend API:', `${API_URL}/api/v1/persona`);
+    console.log('Backend data:', JSON.stringify(backendData, null, 2));
+    
     const response = await fetch(`${API_URL}/api/v1/persona`, {
       method: 'POST',
       headers: {
@@ -86,8 +94,11 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(backendData),
     });
 
+    console.log('Backend response status:', response.status);
+
     if (!response.ok) {
       const error = await response.text();
+      console.error('Backend error:', error);
       return NextResponse.json({ error }, { status: response.status });
     }
 

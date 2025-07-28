@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export interface PersonaData {
   location: {
@@ -128,9 +129,17 @@ export function usePersona() {
 
         // Try API as fallback (for future implementation)
         try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            console.log('No session available for API call');
+            setPersonaData(defaultPersonaData);
+            setHasPersona(false);
+            return;
+          }
+
           const response = await fetch('/api/v1/persona', {
             headers: {
-              'Authorization': `Bearer ${user.access_token}`,
+              'Authorization': `Bearer ${session.access_token}`,
               'Content-Type': 'application/json',
             },
           });
@@ -188,21 +197,47 @@ export function usePersona() {
   }, [user]);
 
   const savePersonaData = async (data: PersonaData) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found when trying to save persona');
+      return;
+    }
+
+    console.log('Saving persona data:', data);
+    console.log('User ID:', user.id);
+    
+    // Get the current session to access the token
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error('No session found:', sessionError);
+      // Still save to localStorage
+      if (isValidPersona(data)) {
+        localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
+        setPersonaData(data);
+        setHasPersona(true);
+        console.log('Saved to localStorage only (no session)');
+      }
+      return;
+    }
+
+    console.log('Has access token:', !!session.access_token);
 
     try {
       // Save to API with authentication
       const response = await fetch('/api/v1/persona', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data)
       });
 
+      console.log('API Response status:', response.status);
+
       if (response.ok) {
         const savedData = await response.json();
+        console.log('API Response data:', savedData);
         // Transform API response to match frontend structure
         const transformedData: PersonaData = {
           location: savedData.location || data.location,
@@ -217,8 +252,11 @@ export function usePersona() {
         
         // Also save to localStorage as backup
         localStorage.setItem(`persona_${user.id}`, JSON.stringify(transformedData));
+        console.log('Persona saved successfully to API and localStorage');
       } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
     } catch (error) {
       console.error('Error saving persona data:', error);
@@ -228,8 +266,10 @@ export function usePersona() {
           localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
           setPersonaData(data);
           setHasPersona(true);
+          console.log('Persona saved to localStorage as fallback');
         } else {
           console.error('Invalid persona data, not saving');
+          console.log('Validation failed for:', data);
           throw new Error('Invalid persona data');
         }
       } catch (localError) {

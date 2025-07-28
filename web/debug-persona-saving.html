@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Persona Saving</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+        .log { margin: 10px 0; padding: 10px; background: #2a2a2a; border-radius: 5px; }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .info { color: #74c0fc; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Persona Saving Debug Tool</h1>
+    <div id="logs"></div>
+    
+    <script>
+        const log = (message, type = 'info') => {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toISOString()}] ${message}`;
+            document.getElementById('logs').appendChild(div);
+            console.log(message);
+        };
+
+        const debugPersonaSaving = async () => {
+            log('Starting persona saving debug...', 'info');
+            
+            // 1. Check localStorage
+            const keys = Object.keys(localStorage).filter(k => k.includes('persona'));
+            log(`Found ${keys.length} persona-related localStorage keys: ${keys.join(', ')}`, 'info');
+            
+            // 2. Check if we have a user
+            const userDataKeys = Object.keys(localStorage).filter(k => k.includes('supabase'));
+            log(`Found ${userDataKeys.length} Supabase auth keys`, 'info');
+            
+            // 3. Try to get auth data
+            let authData = null;
+            for (const key of userDataKeys) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    if (data?.access_token) {
+                        authData = data;
+                        log('Found auth data with access token', 'success');
+                        break;
+                    }
+                } catch (e) {}
+            }
+            
+            if (!authData) {
+                log('No auth data found - please log in first', 'error');
+                return;
+            }
+            
+            // 4. Test API connectivity
+            log('Testing API connectivity...', 'info');
+            
+            const testPersona = {
+                location: { country: 'Test Country', city: 'Test City', urbanType: 'urban' },
+                demographics: { ageRange: '25-34', educationLevel: 'Bachelor\'s' },
+                professional: { employmentStatus: 'full-time', industry: 'Technology' },
+                interests: ['Technology', 'Gaming'],
+                lifestyle: { shoppingHabits: ['Online-first'], mediaConsumption: ['Streaming'], values: ['Innovation'] },
+                tech: { proficiency: 'advanced', primaryDevices: ['Smartphone'], socialPlatforms: ['Twitter/X'] }
+            };
+            
+            try {
+                log('Sending POST to /api/v1/persona...', 'info');
+                const response = await fetch('/api/v1/persona', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authData.access_token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testPersona)
+                });
+                
+                log(`Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                const responseText = await response.text();
+                log(`Response body: ${responseText}`, 'info');
+                
+                if (response.ok) {
+                    log('✅ Persona API is working correctly!', 'success');
+                } else {
+                    log('❌ Persona API returned an error', 'error');
+                }
+            } catch (error) {
+                log(`❌ Failed to reach API: ${error.message}`, 'error');
+            }
+            
+            // 5. Check backend directly
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+            log(`Checking backend directly at ${apiUrl}...`, 'info');
+            
+            try {
+                const backendResponse = await fetch(`${apiUrl}/api/v1/persona`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authData.access_token}`,
+                    }
+                });
+                log(`Direct backend status: ${backendResponse.status}`, 'info');
+            } catch (error) {
+                log(`Cannot reach backend directly: ${error.message}`, 'error');
+            }
+        };
+
+        // Run debug on page load
+        debugPersonaSaving();
+    </script>
+</body>
+</html>
