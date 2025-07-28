@@ -33,6 +33,11 @@ interface TrendToVerify {
   thumbnail_url?: string;
   post_url?: string;
   spotter_id: string;
+  // Evidence field which contains the title
+  evidence?: {
+    title?: string;
+    [key: string]: any;
+  };
   // Social media metadata
   creator_handle?: string;
   creator_name?: string;
@@ -470,7 +475,7 @@ export default function Verify() {
             <div className="p-4 sm:p-6 lg:p-8">
               <div className="mb-4 sm:mb-6">
                 <h2 className="text-responsive-xl font-bold text-white mb-2 sm:mb-3">
-                  {extractTitleFromDescription(currentTrend.description)}
+                  {currentTrend.evidence?.title || extractTitleFromDescription(currentTrend.description)}
                 </h2>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-responsive-xs text-gray-400">
                   <div className="flex items-center gap-2">
