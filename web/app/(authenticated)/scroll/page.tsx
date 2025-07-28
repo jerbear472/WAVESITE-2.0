@@ -1,5 +1,5 @@
 'use client';
-import { getSafeCategory } from '@/lib/safeCategory';
+import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -279,7 +279,7 @@ export default function ScrollDashboard() {
             submitted_by: user?.username || user?.email
           },
           virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : trendData.spreadSpeed === 'picking_up' ? 6 : 5,
-          status: 'submitted', // Use 'submitted' to match the enum
+          status: getSafeStatus('submitted'), // Use safe function to ensure valid enum
           quality_score: 0.5,
           validation_count: 0,
           // Social media metadata

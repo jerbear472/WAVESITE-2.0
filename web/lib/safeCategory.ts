@@ -48,7 +48,27 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
   return 'meme_format';
 }
 
-// Test the function
+// Safe status function to ensure we NEVER use 'pending'
+export function getSafeStatus(status: string | undefined | null): string {
+  // ONLY valid enum values from the RLS policies
+  const validStatuses = ['submitted', 'validating', 'approved', 'rejected', 'viral'];
+  
+  // If status is 'pending', change it to 'submitted'
+  if (status === 'pending') {
+    console.warn('[getSafeStatus] Changing pending to submitted');
+    return 'submitted';
+  }
+  
+  // If it's already valid, use it
+  if (status && validStatuses.includes(status)) {
+    return status;
+  }
+  
+  // Default to submitted
+  return 'submitted';
+}
+
+// Test the functions
 if (typeof window !== 'undefined') {
   (window as any).testSafeCategory = () => {
     console.log('Testing getSafeCategory...');
@@ -57,5 +77,13 @@ if (typeof window !== 'undefined') {
     console.log('invalid:', getSafeCategory('invalid'));
     console.log('null:', getSafeCategory(null));
     console.log('visual_style:', getSafeCategory('visual_style'));
+  };
+  
+  (window as any).testSafeStatus = () => {
+    console.log('Testing getSafeStatus...');
+    console.log('pending:', getSafeStatus('pending'));
+    console.log('submitted:', getSafeStatus('submitted'));
+    console.log('invalid:', getSafeStatus('invalid'));
+    console.log('null:', getSafeStatus(null));
   };
 }

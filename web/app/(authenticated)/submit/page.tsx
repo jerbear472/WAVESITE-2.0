@@ -1,5 +1,5 @@
 'use client';
-import { getSafeCategory } from '@/lib/safeCategory';
+import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -323,7 +323,7 @@ export default function SubmitTrendPage() {
           platform: trendData.platform || 'other'
         },
         virality_prediction: 5,
-        status: 'submitted', // MUST be 'submitted', not 'pending'
+        status: getSafeStatus('submitted'), // Use safe function to ensure valid status
         quality_score: 0.5,
         validation_count: 0
       };
@@ -424,7 +424,7 @@ export default function SubmitTrendPage() {
       const finalInsertData = {
         ...dataToSubmit,
         category: getSafeCategory(dataToSubmit.category),
-        status: 'submitted' // FORCE status to be submitted
+        status: getSafeStatus('submitted') // FORCE status to be valid enum value
       };
       
       console.log('=== ABSOLUTE FINAL INSERT DATA ===');
