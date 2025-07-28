@@ -136,7 +136,7 @@ export default function Navigation() {
           {/* User Menu */}
           <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             {/* Enterprise View Switcher */}
-            <EnterpriseViewSwitcher className="hidden md:block" />
+            <EnterpriseViewSwitcher className="hidden lg:block" />
             
             {/* User info - visible on larger screens */}
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-800">

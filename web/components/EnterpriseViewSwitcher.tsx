@@ -104,7 +104,7 @@ export default function EnterpriseViewSwitcher({ className = '', mobile = false 
           <>
             {/* Backdrop */}
             <div 
-              className="fixed inset-0 z-10" 
+              className="fixed inset-0 z-40" 
               onClick={() => setIsOpen(false)}
             />
             
@@ -114,7 +114,8 @@ export default function EnterpriseViewSwitcher({ className = '', mobile = false 
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 mt-2 w-64 rounded-xl shadow-lg bg-white dark:bg-gray-900 ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-20 overflow-hidden"
+              className="absolute top-full right-0 xl:right-auto xl:left-0 mt-2 w-64 rounded-xl shadow-lg bg-white dark:bg-gray-900 ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50 overflow-hidden"
+              style={{ transformOrigin: 'top' }}
             >
               <div className="py-1">
                 <button
