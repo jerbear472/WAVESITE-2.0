@@ -140,7 +140,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
   
   const [formData, setFormData] = useState<TrendData>({
     url: initialUrl,
-    trendName: '',
+    trendName: '', // Always starts empty - user must input this
     platform: '',
     explanation: '',
     ageRanges: [],
@@ -206,8 +206,8 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
           hashtags: metadata.hashtags || prev.hashtags || [],
           thumbnail_url: metadata.thumbnail_url || prev.thumbnail_url,
           
-          // Smart trend name extraction
-          trendName: prev.trendName || metadata.title || metadata.post_caption?.split(' ').slice(0, 5).join(' ') || '',
+          // Don't auto-capture trend name - user must input this
+          trendName: prev.trendName || '',
           
           // Auto-populate explanation if we have a caption
           explanation: prev.explanation || (metadata.post_caption ? `Trending ${detectedPlatform} content: "${metadata.post_caption.substring(0, 100)}${metadata.post_caption.length > 100 ? '...' : ''}"` : ''),
@@ -602,10 +602,10 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                   value={formData.trendName}
                   onChange={(e) => setFormData(prev => ({ ...prev, trendName: e.target.value }))}
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="e.g., Mob Wife Aesthetic, Girl Dinner, Deinfluencing"
+                  placeholder="Give this trend a catchy name (e.g., Mob Wife Aesthetic, Girl Dinner, Deinfluencing)"
                   required
                 />
-                <p className="text-xs text-slate-500 mt-1">Short, catchy name that captures the essence</p>
+                <p className="text-xs text-slate-500 mt-1">Create a memorable name that captures the essence of this trend</p>
               </div>
 
               {/* Platform & URL */}
