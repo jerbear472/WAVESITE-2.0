@@ -96,6 +96,7 @@ export function usePersona() {
   const [personaData, setPersonaData] = useState<PersonaData>(defaultPersonaData);
   const [loading, setLoading] = useState(true);
   const [hasPersona, setHasPersona] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadPersonaData = async () => {
@@ -197,85 +198,105 @@ export function usePersona() {
   }, [user]);
 
   const savePersonaData = async (data: PersonaData) => {
-    if (!user) {
-      console.error('No user found when trying to save persona');
-      return;
+    if (!user?.id) {
+      console.error('No user ID available');
+      return false;
     }
 
-    console.log('Saving persona data:', data);
-    console.log('User ID:', user.id);
+    console.log('Saving persona for user:', user.id);
     
-    // Get the current session to access the token
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
-      console.error('No session found:', sessionError);
-      // Still save to localStorage
-      if (isValidPersona(data)) {
+    try {
+      // Transform frontend format to database format
+      const dbData = {
+        user_id: user.id,
+        location_country: data.location.country,
+        location_city: data.location.city,
+        location_urban_type: data.location.urbanType,
+        age_range: data.demographics.ageRange,
+        gender: data.demographics.gender,
+        education_level: data.demographics.educationLevel,
+        relationship_status: data.demographics.relationshipStatus,
+        has_children: data.demographics.hasChildren,
+        employment_status: data.professional.employmentStatus,
+        industry: data.professional.industry,
+        income_range: data.professional.incomeRange,
+        work_style: data.professional.workStyle,
+        interests: data.interests,
+        shopping_habits: data.lifestyle.shoppingHabits,
+        media_consumption: data.lifestyle.mediaConsumption,
+        values: data.lifestyle.values,
+        tech_proficiency: data.tech.proficiency,
+        primary_devices: data.tech.primaryDevices,
+        social_platforms: data.tech.socialPlatforms,
+        is_complete: true,
+        completion_date: new Date().toISOString()
+      };
+
+      // Save directly to database using Supabase client
+      const { data: savedData, error: saveError } = await supabase
+        .from('user_personas')
+        .upsert(dbData, {
+          onConflict: 'user_id'
+        })
+        .select()
+        .single();
+
+      if (saveError) {
+        console.error('Database error saving persona:', saveError);
+        
+        // Still save to localStorage as fallback
         localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
         setPersonaData(data);
         setHasPersona(true);
-        console.log('Saved to localStorage only (no session)');
-      }
-      return;
-    }
-
-    console.log('Has access token:', !!session.access_token);
-
-    try {
-      // Save to API with authentication
-      const response = await fetch('/api/v1/persona', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-      });
-
-      console.log('API Response status:', response.status);
-
-      if (response.ok) {
-        const savedData = await response.json();
-        console.log('API Response data:', savedData);
-        // Transform API response to match frontend structure
-        const transformedData: PersonaData = {
-          location: savedData.location || data.location,
-          demographics: savedData.demographics || data.demographics,
-          professional: savedData.professional || data.professional,
-          interests: savedData.interests || data.interests,
-          lifestyle: savedData.lifestyle || data.lifestyle,
-          tech: savedData.tech || data.tech
-        };
-        setPersonaData(transformedData);
-        setHasPersona(true);
+        console.log('Saved to localStorage as fallback');
         
-        // Also save to localStorage as backup
-        localStorage.setItem(`persona_${user.id}`, JSON.stringify(transformedData));
-        console.log('Persona saved successfully to API and localStorage');
-      } else {
-        const errorText = await response.text();
-        console.error('API Error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-    } catch (error) {
-      console.error('Error saving persona data:', error);
-      // Always save to localStorage if data is valid
-      try {
-        if (isValidPersona(data)) {
-          localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
-          setPersonaData(data);
-          setHasPersona(true);
-          console.log('Persona saved to localStorage as fallback');
-        } else {
-          console.error('Invalid persona data, not saving');
-          console.log('Validation failed for:', data);
-          throw new Error('Invalid persona data');
+        // Try API as secondary fallback
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const response = await fetch('/api/v1/persona', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+              console.log('Saved via API as fallback');
+              return true;
+            }
+          }
+        } catch (apiError) {
+          console.error('API fallback also failed:', apiError);
         }
-      } catch (localError) {
-        console.error('Error saving to localStorage:', localError);
-        throw error;
+        
+        return false;
       }
+
+      console.log('Persona saved to database successfully');
+      
+      // Also save to localStorage as backup
+      localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
+      setPersonaData(data);
+      setHasPersona(true);
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving persona:', error);
+      
+      // Try to at least save to localStorage
+      try {
+        localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
+        setPersonaData(data);
+        setHasPersona(true);
+        console.log('Saved to localStorage as fallback');
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+      }
+      
+      return false;
     }
   };
 
@@ -289,6 +310,7 @@ export function usePersona() {
     savePersonaData,
     updatePersonaData,
     loading,
-    hasPersona
+    hasPersona,
+    error
   };
 }
