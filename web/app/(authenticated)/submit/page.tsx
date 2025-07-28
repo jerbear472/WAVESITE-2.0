@@ -335,8 +335,15 @@ export default function SubmitTrendPage() {
       }
       
       console.log('Data to submit - category:', dataToSubmit.category);
+      console.log('Data to submit - status:', dataToSubmit.status);
       console.log('Submitting data to database (stringified):', JSON.stringify(dataToSubmit, null, 2));
       console.log('Submitting data to database (object):', dataToSubmit);
+      
+      // ULTRA PARANOID: Log every field
+      console.log('=== FIELD BY FIELD CHECK ===');
+      Object.keys(dataToSubmit).forEach(key => {
+        console.log(`${key}:`, (dataToSubmit as any)[key]);
+      });
 
       // Save trend to database with shorter timeout
       const timeoutPromise = new Promise((_, reject) => 
@@ -413,16 +420,24 @@ export default function SubmitTrendPage() {
         'Education & Science': 'creator_technique'
       };
       
-      // Create final insert object with SAFE mapping
+      // Create final insert object with SAFE mapping and FORCED status
       const finalInsertData = {
         ...dataToSubmit,
-        category: getSafeCategory(dataToSubmit.category)
+        category: getSafeCategory(dataToSubmit.category),
+        status: 'submitted' // FORCE status to be submitted
       };
       
       console.log('=== ABSOLUTE FINAL INSERT DATA ===');
       console.log('Original category:', dataToSubmit.category);
       console.log('Final category:', finalInsertData.category);
+      console.log('Final status:', finalInsertData.status);
       console.log('Full final data:', JSON.stringify(finalInsertData, null, 2));
+      
+      // One more paranoid check
+      if (finalInsertData.status !== 'submitted') {
+        console.error('CRITICAL: Final status is not submitted!', finalInsertData.status);
+        finalInsertData.status = 'submitted';
+      }
       
       // LAST DITCH CHECK
       if (Object.keys(finalCategoryMapping).includes(finalInsertData.category)) {
@@ -454,8 +469,11 @@ export default function SubmitTrendPage() {
           details: error.details,
           hint: error.hint,
           code: error.code,
-          dataToSubmit: dataToSubmit
+          dataToSubmit: dataToSubmit,
+          finalInsertData: finalInsertData
         });
+        console.error('Error message:', error.message);
+        console.error('Final category was:', finalInsertData.category);
         
         // Provide more specific error messages
         if (error.message?.includes('Request timed out')) {
