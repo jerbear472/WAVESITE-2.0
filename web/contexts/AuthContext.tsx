@@ -209,13 +209,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Provide more specific error messages
         if (authError.message.includes('Invalid login credentials')) {
           throw new Error('Invalid email or password. Please check your credentials and try again.');
-        } else if (authError.message.includes('Email not confirmed')) {
-          throw new Error('Please confirm your email address before logging in.');
+        } else if (authError.message.includes('Email not confirmed') || authError.message.includes('email_not_confirmed')) {
+          throw new Error('Please confirm your email address before logging in. Check your inbox for the confirmation link.');
         } else if (authError.message.includes('Too many requests')) {
           throw new Error('Too many login attempts. Please wait a few minutes and try again.');
         }
         
         throw authError;
+      }
+      
+      // Additional check: if we get a user but no session, email might not be confirmed
+      if (authData.user && !authData.session) {
+        throw new Error('Please confirm your email address before logging in. Check your inbox for the confirmation link.');
       }
 
       console.log('Login successful, user:', authData.user?.id);
@@ -341,27 +346,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // Also ensure user settings exist
-        await supabase
-          .from('user_settings')
-          .insert({
-            user_id: authData.user.id,
-            notification_preferences: { email: true, push: true, trends: true },
-            privacy_settings: { profile_visibility: 'public', show_earnings: false }
-          })
-          .select()
-          .single()
-          .catch(err => console.log('User settings might already exist:', err));
+        try {
+          await supabase
+            .from('user_settings')
+            .insert({
+              user_id: authData.user.id,
+              notification_preferences: { email: true, push: true, trends: true },
+              privacy_settings: { profile_visibility: 'public', show_earnings: false }
+            })
+            .select()
+            .single();
+        } catch (err) {
+          console.log('User settings might already exist:', err);
+        }
 
         // And user account settings
-        await supabase
-          .from('user_account_settings')
-          .insert({
-            user_id: authData.user.id,
-            account_type: 'user'
-          })
-          .select()
-          .single()
-          .catch(err => console.log('Account settings might already exist:', err));
+        try {
+          await supabase
+            .from('user_account_settings')
+            .insert({
+              user_id: authData.user.id,
+              account_type: 'user'
+            })
+            .select()
+            .single();
+        } catch (err) {
+          console.log('Account settings might already exist:', err);
+        }
       }
 
       // If session exists (email confirmation disabled), auto-login
