@@ -7,6 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePersona } from '@/hooks/usePersona';
 import WaveLogo from '@/components/WaveLogo';
 import CashOutModal from '@/components/CashOutModal';
+import { formatCurrency } from '@/lib/formatters';
+import { EARNINGS } from '@/lib/constants';
 import { 
   User as UserIcon,
   MapPin as MapPinIcon,
@@ -232,13 +234,13 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="text-sm text-green-100">Total Earnings</p>
-                      <p className="text-3xl font-bold text-green-300">${(user.total_earnings || 0).toFixed(2)}</p>
+                      <p className="text-3xl font-bold text-green-300">{formatCurrency(user.total_earnings)}</p>
                     </div>
                   </div>
                   {user.pending_earnings > 0 && (
                     <div className="text-right">
                       <p className="text-sm text-yellow-100">Pending</p>
-                      <p className="text-xl font-semibold text-yellow-300">${user.pending_earnings.toFixed(2)}</p>
+                      <p className="text-xl font-semibold text-yellow-300">{formatCurrency(user.pending_earnings)}</p>
                     </div>
                   )}
                 </div>
@@ -250,12 +252,12 @@ export default function ProfilePage() {
                     className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                   >
                     <DollarSignIcon className="w-5 h-5" />
-                    Cash Out ${(user.total_earnings || 0).toFixed(2)}
+                    Cash Out {formatCurrency(user.total_earnings)}
                   </button>
                 )}
                 
                 <div className="mt-3 text-sm text-green-100">
-                  <p>💡 Each trend submission earns $0.10</p>
+                  <p>💡 Each trend submission earns {formatCurrency(EARNINGS.SUBMISSION_REWARD)}</p>
                   <p>🎯 Keep spotting trends to increase your earnings!</p>
                 </div>
               </div>

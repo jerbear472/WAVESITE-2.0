@@ -8,9 +8,21 @@
  * @param showSymbol - Whether to include the $ symbol (default: true)
  * @returns Formatted currency string
  */
-export function formatCurrency(amount: number, showSymbol: boolean = true): string {
-  const formatted = amount.toFixed(2);
-  return showSymbol ? `$${formatted}` : formatted;
+export function formatCurrency(amount: number | null | undefined, showSymbol: boolean = true): string {
+  // Handle null/undefined values
+  const value = amount ?? 0;
+  
+  // Use Intl.NumberFormat for proper locale-aware formatting
+  if (showSymbol) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  } else {
+    return value.toFixed(2);
+  }
 }
 
 /**

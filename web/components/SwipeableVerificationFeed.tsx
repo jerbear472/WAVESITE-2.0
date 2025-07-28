@@ -5,6 +5,8 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { Check, X, TrendingUp, Calendar, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency } from '@/lib/formatters';
+import { EARNINGS } from '@/lib/constants';
 
 interface Trend {
   id: string;
@@ -158,7 +160,7 @@ export const SwipeableVerificationFeed: React.FC = () => {
         <div className="mt-6 p-4 bg-wave-800/30 rounded-xl inline-block">
           <p className="text-sm text-wave-300 mb-1">Session Summary</p>
           <p className="text-2xl font-bold text-white">{verifiedCount} verified</p>
-          <p className="text-green-400 font-medium">${earnings.toFixed(2)} earned</p>
+          <p className="text-green-400 font-medium">{formatCurrency(earnings)} earned</p>
         </div>
       </div>
     );
@@ -173,7 +175,7 @@ export const SwipeableVerificationFeed: React.FC = () => {
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold text-white">Verify Trends</h3>
           <div className="text-sm text-wave-400">
-            ${earnings.toFixed(2)} earned
+            {formatCurrency(earnings)} earned
           </div>
         </div>
         <div className="h-2 bg-wave-800/50 rounded-full overflow-hidden">

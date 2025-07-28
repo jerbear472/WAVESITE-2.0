@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, TrendingUp, Clock, DollarSign } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency } from '@/lib/formatters';
+import { EARNINGS } from '@/lib/constants';
 
 interface ScrollSessionProps {
   onSessionStateChange?: (isActive: boolean) => void;
@@ -224,7 +226,7 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-orange-400">${(0.10 * streakMultiplier).toFixed(2)}</p>
+                  <p className="text-lg font-bold text-orange-400">{formatCurrency(EARNINGS.SUBMISSION_REWARD * streakMultiplier)}</p>
                   <p className="text-xs text-orange-200">per trend</p>
                 </div>
               </div>

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X as XIcon, DollarSign as DollarSignIcon, AlertCircle as AlertCircleIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { formatCurrency } from '@/lib/formatters';
+import { EARNINGS } from '@/lib/constants';
 
 interface CashOutModalProps {
   isOpen: boolean;
@@ -25,9 +27,9 @@ export default function CashOutModal({ isOpen, onClose, availableBalance, onSucc
 
     try {
       // Validate minimum cashout amount
-      const MINIMUM_CASHOUT = 5.00;
+      const MINIMUM_CASHOUT = EARNINGS.MINIMUM_CASHOUT;
       if (availableBalance < MINIMUM_CASHOUT) {
-        throw new Error(`Minimum cashout amount is $${MINIMUM_CASHOUT.toFixed(2)}. You currently have ${availableBalance.toFixed(2)}.`);
+        throw new Error(`Minimum cashout amount is ${formatCurrency(MINIMUM_CASHOUT)}. You currently have ${formatCurrency(availableBalance)}.`);
       }
 
       // Validate Venmo username
@@ -149,7 +151,7 @@ export default function CashOutModal({ isOpen, onClose, availableBalance, onSucc
                   <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 mb-6">
                     <p className="text-sm text-green-600 dark:text-green-400 mb-1">Amount to Cash Out</p>
                     <p className="text-3xl font-bold text-green-700 dark:text-green-300">
-                      ${availableBalance.toFixed(2)}
+                      {formatCurrency(availableBalance)}
                     </p>
                   </div>
 
@@ -181,8 +183,8 @@ export default function CashOutModal({ isOpen, onClose, availableBalance, onSucc
                     <div className="text-sm text-blue-700 dark:text-blue-300">
                       <p className="font-semibold mb-1">Important Information:</p>
                       <ul className="list-disc list-inside space-y-1 text-xs">
-                        <li>Minimum cashout amount is $5.00</li>
-                        <li>Cash out requests are processed within 24-48 hours</li>
+                        <li>Minimum cashout amount is {formatCurrency(EARNINGS.MINIMUM_CASHOUT)}</li>
+                        <li>Cash out requests are processed within {EARNINGS.CASHOUT_PROCESSING_HOURS} hours</li>
                         <li>Only approved earnings can be cashed out</li>
                         <li>Make sure your Venmo username is correct</li>
                         <li>You can only have one pending request at a time</li>

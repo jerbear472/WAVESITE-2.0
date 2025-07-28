@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { formatCurrency as formatCurrencyLib } from '@/lib/formatters';
+import { EARNINGS } from '@/lib/constants';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -349,13 +351,7 @@ export default function Dashboard() {
     return time.toLocaleDateString();
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount);
-  };
+  const formatCurrency = formatCurrencyLib;
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;

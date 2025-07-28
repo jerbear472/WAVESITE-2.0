@@ -14,6 +14,8 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency } from '@/lib/formatters';
+import { EARNINGS } from '@/lib/constants';
 
 interface Session {
   id: string;
@@ -88,7 +90,7 @@ export const EarningsDashboard: React.FC = () => {
 
       // Calculate total earnings
       const sessionEarnings = sessions.reduce((sum, s) => sum + s.total_earnings, 0);
-      const verificationEarnings = (verificationsCount || 0) * 0.05;
+      const verificationEarnings = (verificationsCount || 0) * EARNINGS.VERIFICATION_REWARD;
       setTotalEarnings(sessionEarnings + verificationEarnings);
 
       // Calculate stats
@@ -202,12 +204,12 @@ export const EarningsDashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-wave-300 text-sm font-medium mb-2">Total Earnings</p>
-            <p className="text-5xl font-bold text-white mb-2">${totalEarnings.toFixed(2)}</p>
+            <p className="text-5xl font-bold text-white mb-2">{formatCurrency(totalEarnings)}</p>
             <div className="flex items-center gap-2 text-sm">
               {totalEarnings > 0 ? (
                 <>
                   <ArrowUpRight className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400">+${(totalEarnings * 0.12).toFixed(2)} (12%)</span>
+                  <span className="text-green-400">+{formatCurrency(totalEarnings * 0.12)} (12%)</span>
                 </>
               ) : (
                 <span className="text-wave-500">Start scrolling to earn!</span>
@@ -249,7 +251,7 @@ export const EarningsDashboard: React.FC = () => {
             </div>
             <p className="text-sm text-wave-400">Avg/Session</p>
           </div>
-          <p className="text-2xl font-bold text-white">${stats.avgPerSession.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-white">{formatCurrency(stats.avgPerSession)}</p>
         </motion.div>
 
         <motion.div
@@ -279,7 +281,7 @@ export const EarningsDashboard: React.FC = () => {
             </div>
             <p className="text-sm text-wave-400">Bonuses</p>
           </div>
-          <p className="text-2xl font-bold text-white">${stats.totalBonus.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-white">{formatCurrency(stats.totalBonus)}</p>
         </motion.div>
       </div>
 
@@ -312,7 +314,7 @@ export const EarningsDashboard: React.FC = () => {
                   borderRadius: '8px'
                 }}
                 labelStyle={{ color: '#94a3b8' }}
-                formatter={(value: number) => [`$${value.toFixed(2)}`, 'Earnings']}
+                formatter={(value: number) => [formatCurrency(value), 'Earnings']}
               />
               <Line
                 type="monotone"
@@ -362,11 +364,11 @@ export const EarningsDashboard: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-semibold text-white">
-                    ${session.total_earnings.toFixed(2)}
+                    {formatCurrency(session.total_earnings)}
                   </p>
                   {session.bonus_earnings > 0 && (
                     <p className="text-xs text-green-400">
-                      +${session.bonus_earnings.toFixed(2)} bonus
+                      +{formatCurrency(session.bonus_earnings)} bonus
                     </p>
                   )}
                 </div>

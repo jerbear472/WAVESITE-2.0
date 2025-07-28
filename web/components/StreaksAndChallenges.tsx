@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatCurrency } from '@/lib/formatters';
+import { EARNINGS } from '@/lib/constants';
 import { 
   Flame, 
   Trophy, 
@@ -306,7 +308,7 @@ export const StreaksAndChallenges: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-4 h-4 text-green-400" />
                         <span className="text-green-400 font-semibold">
-                          ${challenge.reward.toFixed(2)}
+                          {formatCurrency(challenge.reward)}
                         </span>
                       </div>
                     </div>

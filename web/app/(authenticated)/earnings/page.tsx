@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/formatters';
+import { EARNINGS } from '@/lib/constants';
 import CashOutModal from '@/components/CashOutModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -180,10 +181,10 @@ export default function Earnings() {
             <div className="text-green-100 text-sm">Available to Cash Out</div>
             <button
               onClick={() => setShowCashOutModal(true)}
-              disabled={totalAvailable < 5}
+              disabled={totalAvailable < EARNINGS.MINIMUM_CASHOUT}
               className="mt-4 w-full bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg py-2 text-sm font-medium transition-colors"
             >
-              {totalAvailable >= 5 ? 'Cash Out' : `Need ${formatCurrency(5 - totalAvailable)} more`}
+              {totalAvailable >= EARNINGS.MINIMUM_CASHOUT ? 'Cash Out' : `Need ${formatCurrency(EARNINGS.MINIMUM_CASHOUT - totalAvailable)} more`}
             </button>
           </motion.div>
 
@@ -319,10 +320,10 @@ export default function Earnings() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">How Earnings Work</h3>
               <ul className="space-y-2 text-gray-300 text-sm">
-                <li>• Submit a trend to earn $0.10 (pending verification)</li>
-                <li>• When 3+ people vote and majority verify your trend, earnings become approved</li>
-                <li>• Participate in verifications to earn $0.02 per vote</li>
-                <li>• Cash out when you reach $5.00 in approved earnings</li>
+                <li>• Submit a trend to earn {formatCurrency(EARNINGS.SUBMISSION_REWARD)} (pending verification)</li>
+                <li>• When {EARNINGS.MIN_VOTES_REQUIRED}+ people vote and majority verify your trend, earnings become approved</li>
+                <li>• Participate in verifications to earn {formatCurrency(EARNINGS.VERIFICATION_REWARD)} per vote</li>
+                <li>• Cash out when you reach {formatCurrency(EARNINGS.MINIMUM_CASHOUT)} in approved earnings</li>
                 <li>• Tie votes go in favor of the trend submitter</li>
               </ul>
             </div>
