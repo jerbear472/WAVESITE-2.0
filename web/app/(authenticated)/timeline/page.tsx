@@ -804,26 +804,45 @@ export default function Timeline() {
                           )}
 
                           {/* Bottom Stats */}
-                          <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-1">
-                                <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                <span className="text-xs text-gray-400">{trend.virality_prediction || 0}/10</span>
+                          <div className="pt-4 border-t border-gray-800 space-y-3">
+                            {/* Stats Row */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                  <BarChartIcon className="w-4 h-4 text-yellow-400" />
+                                  <span className="text-xs text-gray-400">Wave: {trend.virality_prediction || 0}/10</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <AwardIcon className="w-4 h-4 text-blue-400" />
+                                  <span className="text-xs text-gray-400">Approval: {trend.validation_count}</span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <AwardIcon className="w-4 h-4 text-blue-400" />
-                                <span className="text-xs text-gray-400">{trend.validation_count}</span>
-                              </div>
+                              
+                              {trend.bounty_amount > 0 && (
+                                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                                  trend.bounty_paid 
+                                    ? 'bg-green-500/20 text-green-400' 
+                                    : 'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                  <DollarSignIcon className="w-3 h-3" />
+                                  <span>${trend.bounty_amount}</span>
+                                </div>
+                              )}
                             </div>
                             
-                            {trend.bounty_amount > 0 && (
-                              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                trend.bounty_paid 
-                                  ? 'bg-green-500/20 text-green-400' 
-                                  : 'bg-yellow-500/20 text-yellow-400'
-                              }`}>
-                                <DollarSignIcon className="w-3 h-3" />
-                                <span>${trend.bounty_amount}</span>
+                            {/* Marketing Tags */}
+                            {(trend.evidence?.categories?.length > 0 || trend.evidence?.moods?.length > 0) && (
+                              <div className="flex flex-wrap gap-1">
+                                {trend.evidence?.categories?.map((cat: string, i: number) => (
+                                  <span key={`cat-${i}`} className="text-xs px-2 py-1 bg-purple-500/10 text-purple-400 rounded-full border border-purple-500/20">
+                                    {cat}
+                                  </span>
+                                ))}
+                                {trend.evidence?.moods?.map((mood: string, i: number) => (
+                                  <span key={`mood-${i}`} className="text-xs px-2 py-1 bg-pink-500/10 text-pink-400 rounded-full border border-pink-500/20">
+                                    {mood}
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -949,11 +968,11 @@ export default function Timeline() {
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span>Virality: {trend.virality_prediction || 0}/10</span>
+                                  <span>Wave: {trend.virality_prediction || 0}/10</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
-                                  <span>Validations: {trend.validation_count}</span>
+                                  <span>Approval: {trend.validation_count}</span>
                                 </div>
                               </div>
 
@@ -969,15 +988,24 @@ export default function Timeline() {
                               )}
                             </div>
 
-                            {trend.hashtags && trend.hashtags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-3">
-                                {trend.hashtags.map((tag, i) => (
-                                  <span key={i} className="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full">
-                                    #{tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                            {/* Marketing Tags and Hashtags */}
+                            <div className="flex flex-wrap gap-1 mt-3">
+                              {trend.evidence?.categories?.map((cat: string, i: number) => (
+                                <span key={`cat-${i}`} className="text-xs px-2 py-1 bg-purple-500/10 text-purple-400 rounded-full border border-purple-500/20">
+                                  {cat}
+                                </span>
+                              ))}
+                              {trend.evidence?.moods?.map((mood: string, i: number) => (
+                                <span key={`mood-${i}`} className="text-xs px-2 py-1 bg-pink-500/10 text-pink-400 rounded-full border border-pink-500/20">
+                                  {mood}
+                                </span>
+                              ))}
+                              {trend.hashtags?.map((tag, i) => (
+                                <span key={`tag-${i}`} className="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full">
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1112,13 +1140,15 @@ export default function Timeline() {
                                   </div>
                                 )}
 
-                                <div className="flex items-center justify-between">
-                                  <div className="flex flex-wrap gap-1">
-                                    {trend.hashtags?.slice(0, 5).map((tag, i) => (
-                                      <span key={i} className="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full">
-                                        #{tag}
-                                      </span>
-                                    ))}
+                                {/* Stats Row */}
+                                <div className="flex items-center gap-3 mb-3 text-sm">
+                                  <div className="flex items-center gap-1 text-gray-400">
+                                    <BarChartIcon className="w-4 h-4 text-yellow-400" />
+                                    <span>Wave: {trend.virality_prediction || 0}/10</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-gray-400">
+                                    <AwardIcon className="w-4 h-4 text-blue-400" />
+                                    <span>Approval: {trend.validation_count}</span>
                                   </div>
                                   {trend.bounty_amount > 0 && (
                                     <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
@@ -1126,10 +1156,29 @@ export default function Timeline() {
                                         ? 'bg-green-500/20 text-green-400' 
                                         : 'bg-yellow-500/20 text-yellow-400'
                                     }`}>
-                                      <DollarSignIcon className="w-4 h-4" />
+                                      <DollarSignIcon className="w-3 h-3" />
                                       <span>${trend.bounty_amount}</span>
                                     </div>
                                   )}
+                                </div>
+
+                                {/* Marketing Tags and Hashtags */}
+                                <div className="flex flex-wrap gap-1">
+                                  {trend.evidence?.categories?.map((cat: string, i: number) => (
+                                    <span key={`cat-${i}`} className="text-xs px-2 py-1 bg-purple-500/10 text-purple-400 rounded-full border border-purple-500/20">
+                                      {cat}
+                                    </span>
+                                  ))}
+                                  {trend.evidence?.moods?.map((mood: string, i: number) => (
+                                    <span key={`mood-${i}`} className="text-xs px-2 py-1 bg-pink-500/10 text-pink-400 rounded-full border border-pink-500/20">
+                                      {mood}
+                                    </span>
+                                  ))}
+                                  {trend.hashtags?.slice(0, 5).map((tag, i) => (
+                                    <span key={`tag-${i}`} className="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full">
+                                      #{tag}
+                                    </span>
+                                  ))}
                                 </div>
                               </div>
                             </div>

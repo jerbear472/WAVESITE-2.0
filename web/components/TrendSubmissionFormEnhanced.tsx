@@ -383,10 +383,10 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       detectedMoods.push('Chill');
     }
     
-    // Playful
-    if (content.match(/playful|silly|goofy|cute|adorable|funny/)) {
-      detectedMoods.push('Playful');
-    }
+    // Playful - commented out to prevent auto-detection
+    // if (content.match(/playful|silly|goofy|cute|adorable|funny/)) {
+    //   detectedMoods.push('Playful');
+    // }
     
     // Don't add default mood - let user choose
     // if (detectedMoods.length === 0) {

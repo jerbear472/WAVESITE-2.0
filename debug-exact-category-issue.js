@@ -12,7 +12,7 @@ window.fetch = async function(...args) {
       const body = JSON.parse(args[1].body);
       console.log('🔴 FULL REQUEST TO SUPABASE:', {
         url: url,
-        method: args[1].method,
+        method: args[1].methoda,
         body: body
       });
       
