@@ -445,6 +445,17 @@ export default function SubmitTrendPage() {
         finalInsertData.category = 'meme_format';
       }
       
+      // ABSOLUTE FINAL CHECK - Log exactly what we're sending
+      console.log('=== FINAL CHECK BEFORE INSERT ===');
+      console.log('Category:', finalInsertData.category);
+      console.log('Status:', finalInsertData.status);
+      
+      // If somehow status is still wrong, fix it
+      if (finalInsertData.status === 'pending' || !finalInsertData.status) {
+        console.error('EMERGENCY: Status was pending or empty!');
+        finalInsertData.status = 'submitted';
+      }
+      
       // Try insert without select to avoid hanging issues
       const { data, error } = await Promise.race([
         supabase.from('trend_submissions').insert(finalInsertData),
