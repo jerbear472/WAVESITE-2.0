@@ -72,13 +72,13 @@ export default function RegisterPage() {
         birthday: formData.birthday,
       });
       
-      // Check if email confirmation is needed
-      if (result?.needsEmailConfirmation) {
-        setShowConfirmation(true);
-      } else {
-        // Email confirmation disabled, redirect to dashboard
-        router.push('/dashboard');
-      }
+      // Always show confirmation message for new registrations
+      // This prevents the redirect loop issue
+      setShowConfirmation(true);
+      
+      // Note: Even if Supabase auto-signs in the user,
+      // we'll show the confirmation message and handle
+      // the session in the AuthContext
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
     } finally {

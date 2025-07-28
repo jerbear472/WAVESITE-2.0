@@ -1,0 +1,121 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+
+export default function ConfirmEmail() {
+  const router = useRouter();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const handleEmailConfirmation = async () => {
+      try {
+        // Get the token_hash and type from URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const token_hash = hashParams.get('token_hash');
+        const type = hashParams.get('type');
+
+        if (!token_hash || type !== 'email') {
+          throw new Error('Invalid confirmation link');
+        }
+
+        // Verify the email using the token
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash,
+          type: 'email',
+        });
+
+        if (error) throw error;
+
+        setStatus('success');
+        setMessage('Email confirmed successfully! Redirecting to login...');
+        
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          router.push('/login?confirmed=true');
+        }, 2000);
+
+      } catch (error: any) {
+        console.error('Email confirmation error:', error);
+        setStatus('error');
+        setMessage(error.message || 'Failed to confirm email. The link may be invalid or expired.');
+      }
+    };
+
+    handleEmailConfirmation();
+  }, [router]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl p-8">
+          <div className="text-center">
+            {status === 'loading' && (
+              <>
+                <Loader2 className="w-16 h-16 text-wave-500 mx-auto mb-4 animate-spin" />
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Confirming your email...
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Please wait while we verify your email address.
+                </p>
+              </>
+            )}
+
+            {status === 'success' && (
+              <>
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Email Confirmed!
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {message}
+                </p>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-wave-500 to-wave-600 text-white rounded-xl hover:from-wave-600 hover:to-wave-700 transition-all font-medium"
+                >
+                  Go to Login
+                </Link>
+              </>
+            )}
+
+            {status === 'error' && (
+              <>
+                <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Confirmation Failed
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {message}
+                </p>
+                <div className="space-y-3">
+                  <Link
+                    href="/register"
+                    className="block w-full px-6 py-3 bg-gradient-to-r from-wave-500 to-wave-600 text-white rounded-xl hover:from-wave-600 hover:to-wave-700 transition-all font-medium text-center"
+                  >
+                    Try Again
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="block w-full px-6 py-3 bg-gray-200 dark:bg-neutral-800 text-gray-900 dark:text-white rounded-xl hover:bg-gray-300 dark:hover:bg-neutral-700 transition-all font-medium text-center"
+                  >
+                    Go to Login
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        <p className="text-center mt-6 text-gray-400 text-sm">
+          Having trouble? <a href="mailto:support@wavesight.com" className="text-wave-500 hover:text-wave-400">Contact support</a>
+        </p>
+      </div>
+    </div>
+  );
+}

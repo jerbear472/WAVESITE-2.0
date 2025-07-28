@@ -66,7 +66,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
+      // Skip auto-login if user just registered and needs email confirmation
       if (event === 'SIGNED_IN' && session) {
+        // Check if this is a new registration that needs confirmation
+        const isNewRegistration = session.user?.email_confirmed_at === null;
+        if (isNewRegistration) {
+          console.log('New registration detected, skipping auto-login until email confirmed');
+          // Sign out to prevent auto-login before email confirmation
+          await supabase.auth.signOut();
+          return;
+        }
+        
         // Fetch user profile when signed in
         const { data: profile } = await supabase
           .from('profiles')
@@ -287,26 +297,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (authError) throw authError;
 
       // Check if email confirmation is required
-      const needsEmailConfirmation = !!(authData.user && !authData.session);
+      const needsEmailConfirmation = !!(authData.user && !authData.session) || 
+                                      (authData.user && !authData.user.email_confirmed_at);
+
+      // If a session was created but email not confirmed, sign out to show confirmation message
+      if (authData.session && !authData.user?.email_confirmed_at) {
+        await supabase.auth.signOut();
+      }
 
       // Create user profile in database (if not created by trigger)
       if (authData.user) {
-        const { error: profileError } = await supabase
+        // First check if profile already exists
+        const { data: existingProfile } = await supabase
           .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: userData.email,
-            username: userData.username,
-            birthday: userData.birthday,
-            age_verified: userData.birthday ? true : false,
-            subscription_tier: 'starter'
-          })
-          .select()
+          .select('*')
+          .eq('id', authData.user.id)
           .single();
 
-        if (profileError && !profileError.message.includes('duplicate')) {
-          console.error('Profile creation error:', profileError);
+        if (!existingProfile) {
+          // Try to create profile
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              email: userData.email,
+              username: userData.username,
+              birthday: userData.birthday,
+              age_verified: userData.birthday ? true : false,
+              subscription_tier: 'starter',
+              total_earnings: 0,
+              pending_earnings: 0,
+              trends_spotted: 0,
+              accuracy_score: 0,
+              validation_score: 0
+            })
+            .select()
+            .single();
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Don't throw - the trigger might have created it
+          }
         }
+
+        // Also ensure user settings exist
+        await supabase
+          .from('user_settings')
+          .insert({
+            user_id: authData.user.id,
+            notification_preferences: { email: true, push: true, trends: true },
+            privacy_settings: { profile_visibility: 'public', show_earnings: false }
+          })
+          .select()
+          .single()
+          .catch(err => console.log('User settings might already exist:', err));
+
+        // And user account settings
+        await supabase
+          .from('user_account_settings')
+          .insert({
+            user_id: authData.user.id,
+            account_type: 'user'
+          })
+          .select()
+          .single()
+          .catch(err => console.log('Account settings might already exist:', err));
       }
 
       // If session exists (email confirmation disabled), auto-login

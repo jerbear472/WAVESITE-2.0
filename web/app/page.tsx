@@ -19,17 +19,35 @@ export default function Home() {
             Spot trends before they break
           </p>
           
-          <p className="text-lg text-gray-500 dark:text-gray-500 mb-12 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-500 dark:text-gray-500 mb-8 max-w-2xl mx-auto">
             AI-powered analytics to identify viral content across social media platforms
           </p>
+          
+          {/* Earning Highlight Box */}
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-2xl p-6 mb-10 max-w-2xl mx-auto border border-green-200 dark:border-green-800">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="text-4xl">💰</div>
+              <div className="text-center sm:text-left">
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Earn Money Spotting Trends
+                </p>
+                <p className="text-gray-700 dark:text-gray-300">
+                  Get paid for accurately predicting viral content • Join thousands earning daily
+                </p>
+              </div>
+            </div>
+          </div>
           
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
-              href="/dashboard"
-              className="btn-primary px-8 py-4 text-lg hover-lift"
+              href="/register"
+              className="btn-primary px-8 py-4 text-lg hover-lift inline-flex items-center gap-2"
             >
-              Get Started
+              Create Account & Start Earning
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
             </Link>
             
             <Link 
@@ -133,17 +151,28 @@ export default function Home() {
             Ready to ride the wave?
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-            Join thousands of creators and brands using WaveSight
+            Join thousands of trend spotters and enterprises using WaveSight
           </p>
-          <Link 
-            href="/register"
-            className="btn-primary px-8 py-4 text-lg hover-lift inline-flex items-center gap-2"
-          >
-            Start Free Trial
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link 
+              href="/register"
+              className="btn-primary px-8 py-4 text-lg hover-lift inline-flex items-center gap-2"
+            >
+              Start Spotting Trends
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+            <Link 
+              href="/register?enterprise=true"
+              className="btn-secondary px-8 py-4 text-lg inline-flex items-center gap-2"
+            >
+              Enterprise Access
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </Link>
+          </div>
         </div>
       </section>
 
