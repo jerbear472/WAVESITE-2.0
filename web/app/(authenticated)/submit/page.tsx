@@ -273,8 +273,16 @@ export default function SubmitTrendPage() {
         'Pets & Animals': 'behavior_pattern'
       };
       
-      const mappedCategory = categoryMapping[trendData.categories?.[0]] || 'meme_format';
+      let mappedCategory = categoryMapping[trendData.categories?.[0]] || 'meme_format';
       console.log('Direct mapping result:', trendData.categories?.[0], '→', mappedCategory);
+      
+      // FORCE OVERRIDE - If we still have display value, force it
+      if (mappedCategory === 'Humor & Memes' || !['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'].includes(mappedCategory)) {
+        console.error('CRITICAL: Mapping failed! Forcing to meme_format');
+        console.error('Original:', trendData.categories?.[0]);
+        console.error('Mapped to:', mappedCategory);
+        mappedCategory = 'meme_format';
+      }
       
       // Double-check the mapping worked
       const validCategories = ['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'];
@@ -377,6 +385,32 @@ export default function SubmitTrendPage() {
       // Log the exact request being made
       console.log('Making Supabase request at:', new Date().toISOString());
       console.log('Using status:', dataToSubmit.status); // Added for debugging
+      
+      // FINAL SAFETY CHECK - Ensure category is NEVER a display value
+      const displayCategories = [
+        'Fashion & Beauty',
+        'Food & Drink',
+        'Humor & Memes',
+        'Lifestyle',
+        'Politics & Social Issues',
+        'Music & Dance',
+        'Sports & Fitness',
+        'Tech & Gaming',
+        'Art & Creativity',
+        'Education & Science',
+        'Entertainment',
+        'Travel',
+        'Business',
+        'Health & Wellness',
+        'Pets & Animals'
+      ];
+      
+      if (displayCategories.includes(dataToSubmit.category)) {
+        console.error('EMERGENCY OVERRIDE: Display category detected in final submission!', dataToSubmit.category);
+        // Re-map it one more time as emergency fallback
+        dataToSubmit.category = categoryMapping[dataToSubmit.category] || 'meme_format';
+        console.log('Emergency remapped to:', dataToSubmit.category);
+      }
       
       // Try insert without select to avoid hanging issues
       const { data, error } = await Promise.race([

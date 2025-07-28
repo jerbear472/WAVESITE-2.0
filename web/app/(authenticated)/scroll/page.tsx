@@ -208,6 +208,32 @@ export default function ScrollDashboard() {
       console.log('Inserting trend submission to database...');
       console.log('Final category being submitted:', mappedCategory);
       
+      // FINAL SAFETY CHECK - Ensure mappedCategory is NEVER a display value
+      const displayCategories = [
+        'Fashion & Beauty',
+        'Food & Drink',
+        'Humor & Memes',
+        'Lifestyle',
+        'Politics & Social Issues',
+        'Music & Dance',
+        'Sports & Fitness',
+        'Tech & Gaming',
+        'Art & Creativity',
+        'Education & Science',
+        'Entertainment',
+        'Travel',
+        'Business',
+        'Health & Wellness',
+        'Pets & Animals'
+      ];
+      
+      if (displayCategories.includes(mappedCategory)) {
+        console.error('EMERGENCY OVERRIDE: Display category detected in final submission!', mappedCategory);
+        // Re-map it one more time as emergency fallback
+        mappedCategory = categoryMapping[mappedCategory] || 'meme_format';
+        console.log('Emergency remapped to:', mappedCategory);
+      }
+      
       const { data, error } = await supabase
         .from('trend_submissions')
         .insert({
