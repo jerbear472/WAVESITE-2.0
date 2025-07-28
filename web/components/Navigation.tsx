@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/formatters';
+import { supabase } from '@/lib/supabase';
 import WaveSightLogo from '@/components/WaveSightLogo';
 import EnterpriseViewSwitcher from '@/components/EnterpriseViewSwitcher';
 
@@ -15,6 +16,56 @@ export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewSwitcherOpen, setViewSwitcherOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [totalEarnings, setTotalEarnings] = useState<number>(0);
+
+  // Fetch correct total earnings
+  useEffect(() => {
+    const fetchEarnings = async () => {
+      if (!user) return;
+      
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('earnings_pending, earnings_approved, earnings_paid')
+          .eq('id', user.id)
+          .single();
+
+        if (!error && profile) {
+          // Calculate total earnings (all earnings ever earned)
+          const total = (profile.earnings_pending || 0) + 
+                       (profile.earnings_approved || 0) + 
+                       (profile.earnings_paid || 0);
+          setTotalEarnings(total);
+        }
+      } catch (error) {
+        console.error('Error fetching earnings:', error);
+      }
+    };
+
+    fetchEarnings();
+
+    // Subscribe to earnings changes
+    const subscription = supabase
+      .channel('nav-earnings')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user?.id}`
+        },
+        (payload) => {
+          // Re-fetch earnings when profile changes
+          fetchEarnings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [user]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return; // Prevent multiple clicks
@@ -133,9 +184,9 @@ export default function Navigation() {
             {/* User info - visible on larger screens */}
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-800">
               <span className="max-w-[120px] xl:max-w-[200px] truncate">{user.email}</span>
-              {!isBusinessUser && user.total_earnings !== undefined && (
+              {!isBusinessUser && totalEarnings > 0 && (
                 <span className="font-medium text-green-600">
-                  {formatCurrency(user.total_earnings)}
+                  {formatCurrency(totalEarnings)}
                 </span>
               )}
             </div>
@@ -199,9 +250,9 @@ export default function Navigation() {
             <div className="border-t border-gray-200 pt-2">
               <div className="px-3 py-2 text-sm text-gray-600">
                 <p className="truncate">{user.email}</p>
-                {!isBusinessUser && user.total_earnings !== undefined && (
+                {!isBusinessUser && totalEarnings > 0 && (
                   <p className="font-medium text-green-600 mt-1">
-                    {formatCurrency(user.total_earnings)}
+                    {formatCurrency(totalEarnings)}
                   </p>
                 )}
               </div>
