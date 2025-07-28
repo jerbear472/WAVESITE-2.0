@@ -254,6 +254,7 @@ export default function SubmitTrendPage() {
       console.log('First category:', trendData.categories?.[0]);
       
       // Direct inline mapping - don't rely on imports
+      // Map to the original 6 database enums
       const categoryMapping: Record<string, string> = {
         'Fashion & Beauty': 'visual_style',
         'Food & Drink': 'behavior_pattern',
@@ -410,6 +411,7 @@ export default function SubmitTrendPage() {
       console.log('dataToSubmit.category before check:', dataToSubmit.category);
       console.log('Is it a display category?', displayCategories.includes(dataToSubmit.category));
       
+      // ALWAYS ensure we have a mapped category, not a display value
       if (displayCategories.includes(dataToSubmit.category)) {
         console.error('EMERGENCY OVERRIDE: Display category detected in final submission!', dataToSubmit.category);
         // Re-map it one more time as emergency fallback
@@ -419,10 +421,12 @@ export default function SubmitTrendPage() {
         console.log('Emergency remapped to:', dataToSubmit.category);
       }
       
-      // ULTRA PARANOID CHECK - Force mapping for Music & Dance specifically
-      if (dataToSubmit.category === 'Music & Dance') {
-        console.error('CRITICAL: Music & Dance still present after all checks!');
-        dataToSubmit.category = 'audio_music';
+      // ULTRA PARANOID CHECK - Force mapping for any remaining display values
+      const finalCheck = Object.keys(categoryMapping);
+      if (finalCheck.includes(dataToSubmit.category)) {
+        console.error('CRITICAL: Display category STILL present after emergency override!', dataToSubmit.category);
+        dataToSubmit.category = categoryMapping[dataToSubmit.category] || 'meme_format';
+        console.log('FORCED remap to:', dataToSubmit.category);
       }
       
       console.log('=== FINAL CATEGORY RESULT ===');

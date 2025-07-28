@@ -232,6 +232,7 @@ export default function ScrollDashboard() {
       console.log('mappedCategory before check:', mappedCategory);
       console.log('Is it a display category?', displayCategories.includes(mappedCategory));
       
+      // ALWAYS ensure we have a mapped category, not a display value
       if (displayCategories.includes(mappedCategory)) {
         console.error('EMERGENCY OVERRIDE: Display category detected in final submission!', mappedCategory);
         // Re-map it one more time as emergency fallback
@@ -241,10 +242,12 @@ export default function ScrollDashboard() {
         console.log('Emergency remapped to:', mappedCategory);
       }
       
-      // ULTRA PARANOID CHECK - Force mapping for Music & Dance specifically
-      if (mappedCategory === 'Music & Dance') {
-        console.error('CRITICAL: Music & Dance still present after all checks!');
-        mappedCategory = 'audio_music';
+      // ULTRA PARANOID CHECK - Force mapping for any remaining display values
+      const finalCheck = Object.keys(categoryMapping);
+      if (finalCheck.includes(mappedCategory)) {
+        console.error('CRITICAL: Display category STILL present after emergency override!', mappedCategory);
+        mappedCategory = categoryMapping[mappedCategory] || 'meme_format';
+        console.log('FORCED remap to:', mappedCategory);
       }
       
       console.log('=== FINAL CATEGORY RESULT (SCROLL) ===');
