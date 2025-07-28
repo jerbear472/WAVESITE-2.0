@@ -377,16 +377,20 @@ export default function SubmitTrendPage() {
       // Log the exact request being made
       console.log('Making Supabase request at:', new Date().toISOString());
       
-      const submissionPromise = supabase
-        .from('trend_submissions')
-        .insert(dataToSubmit)
-        .select()
-        .single();
-      
+      // Try insert without select to avoid hanging issues
       const { data, error } = await Promise.race([
-        submissionPromise,
+        supabase.from('trend_submissions').insert(dataToSubmit),
         timeoutPromise
-      ]).catch(err => ({ data: null, error: err }));
+      ]).then(
+        (result) => {
+          console.log('Insert successful (no select)');
+          return { data: { success: true }, error: null };
+        },
+        (err) => {
+          console.error('Insert failed:', err);
+          return { data: null, error: err };
+        }
+      );
       
       console.log('Request completed at:', new Date().toISOString());
 

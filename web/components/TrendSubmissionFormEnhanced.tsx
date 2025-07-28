@@ -388,10 +388,10 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       detectedMoods.push('Playful');
     }
     
-    // Default mood if nothing detected
-    if (detectedMoods.length === 0) {
-      detectedMoods.push('Playful');
-    }
+    // Don't add default mood - let user choose
+    // if (detectedMoods.length === 0) {
+    //   detectedMoods.push('Playful');
+    // }
     
     return detectedMoods.slice(0, 2); // Max 2 moods
   };
