@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Users, ChevronDown, Sparkles } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface EnterpriseViewSwitcherProps {
   className?: string;
@@ -15,6 +16,23 @@ export default function EnterpriseViewSwitcher({ className = '', mobile = false 
   const router = useRouter();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, [isOpen]);
 
   // Check if user has enterprise access
   const hasEnterpriseAccess = (user?.subscription_tier && 
@@ -76,8 +94,9 @@ export default function EnterpriseViewSwitcher({ className = '', mobile = false 
   return (
     <div className={`relative ${className}`}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+        className={`inline-flex items-center px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap ${
           isEnterpriseView
             ? 'bg-gradient-to-r from-cyan-500/10 to-purple-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800'
             : 'bg-gradient-to-r from-green-500/10 to-blue-500/10 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
@@ -85,38 +104,44 @@ export default function EnterpriseViewSwitcher({ className = '', mobile = false 
       >
         {isEnterpriseView ? (
           <>
-            <Building2 className="w-4 h-4 mr-2" />
-            <span>Enterprise Dashboard</span>
-            <Sparkles className="w-3 h-3 ml-1" />
+            <Building2 className="w-3 h-3 mr-1.5" />
+            <span className="hidden lg:inline">Enterprise</span>
+            <span className="lg:hidden">Ent</span>
           </>
         ) : (
           <>
-            <Users className="w-4 h-4 mr-2" />
-            <span>User Mode</span>
+            <Users className="w-3 h-3 mr-1.5" />
+            <span className="hidden lg:inline">User Mode</span>
+            <span className="lg:hidden">User</span>
             <span className="text-xs ml-1">(Earn)</span>
           </>
         )}
         <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <div 
-              className="fixed inset-0 z-40" 
-              onClick={() => setIsOpen(false)}
-            />
-            
-            {/* Dropdown */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.15 }}
-              className="absolute top-full right-0 xl:right-auto xl:left-0 mt-2 w-64 rounded-xl shadow-lg bg-white dark:bg-gray-900 ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50 overflow-hidden"
-              style={{ transformOrigin: 'top' }}
-            >
+      {mounted && isOpen && createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 z-[999]" 
+                onClick={() => setIsOpen(false)}
+              />
+              
+              {/* Dropdown */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.15 }}
+                className="fixed w-64 rounded-xl shadow-2xl bg-white dark:bg-gray-900 ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-[1000] overflow-hidden border border-gray-200 dark:border-gray-700"
+                style={{ 
+                  top: `${dropdownPosition.top}px`,
+                  right: `${dropdownPosition.right}px`,
+                  transformOrigin: 'top right'
+                }}
+              >
               <div className="py-1">
                 <button
                   onClick={() => handleViewSwitch(false)}
@@ -173,8 +198,10 @@ export default function EnterpriseViewSwitcher({ className = '', mobile = false 
               </div>
             </motion.div>
           </>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

@@ -77,12 +77,8 @@ export default function Navigation() {
     { href: '/settings', label: 'Settings', icon: '⚙️' },
   ];
 
-  const adminNavItems = userNavItems; // Admins see the same navigation as regular users
-
   let navItems = userNavItems;
-  if (isAdmin) {
-    navItems = adminNavItems;
-  } else if (isProfessionalView) {
+  if (isProfessionalView) {
     navItems = professionalNavItems;
   } else if (isBusinessUser) {
     navItems = businessNavItems;
@@ -93,9 +89,9 @@ export default function Navigation() {
   if (!user) return null;
 
   return (
-    <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 safe-area-top overflow-x-hidden">
+    <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 safe-area-top">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between min-h-14 sm:min-h-16 py-2 overflow-x-hidden">
+        <div className="flex items-center justify-between min-h-14 sm:min-h-16 py-2">
           <div className="flex flex-1 min-w-0">
             {/* Logo */}
             <div className="flex items-center flex-shrink-0">
@@ -107,21 +103,20 @@ export default function Navigation() {
               {isBusinessUser && <span className="text-xs sm:text-sm text-gray-500 ml-1 sm:ml-2">Business</span>}
             </div>
 
-            {/* Desktop Navigation - Responsive */}
-            <div className="hidden sm:ml-2 md:ml-16 sm:flex flex-1 min-w-0 overflow-hidden">
-              <div className="flex space-x-0.5 md:space-x-2">
+            {/* Desktop Navigation - Responsive with horizontal scroll */}
+            <div className="hidden sm:ml-2 md:ml-8 sm:flex flex-1 min-w-0 overflow-x-auto overflow-y-visible scrollbar-hide">
+              <div className="flex space-x-1 md:space-x-2 pr-4">
                 {navItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`inline-flex items-center justify-center px-1.5 sm:px-2 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                    className={`inline-flex items-center justify-center px-2 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap flex-shrink-0 relative z-10 ${
                       isActive(item.href)
                         ? 'bg-blue-50 text-blue-700'
                         : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                     title={item.label}
                   >
-                    {/* Progressive text display based on screen size */}
                     <span className="text-base">{item.icon}</span>
                     <span className="hidden xl:inline ml-2 text-sm">{item.label}</span>
                     <span className="hidden lg:inline xl:hidden ml-1 text-xs font-medium">
@@ -135,18 +130,18 @@ export default function Navigation() {
 
           {/* User Menu */}
           <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-            {/* Enterprise View Switcher */}
-            <EnterpriseViewSwitcher className="hidden lg:block" />
-            
             {/* User info - visible on larger screens */}
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-800">
               <span className="max-w-[120px] xl:max-w-[200px] truncate">{user.email}</span>
               {!isBusinessUser && user.total_earnings !== undefined && (
-                <span className="font-medium text-green-600">
-                  {formatCurrency(user.total_earnings)}
+                <span className="font-medium text-green-600" title="Available to cash out">
+                  💰 {formatCurrency(user.total_earnings)}
                 </span>
               )}
             </div>
+            
+            {/* Enterprise View Switcher */}
+            <EnterpriseViewSwitcher className="hidden lg:block relative" />
             
             {/* Logout button - always visible */}
             <button
@@ -206,7 +201,7 @@ export default function Navigation() {
                 <p className="truncate">{user.email}</p>
                 {!isBusinessUser && user.total_earnings !== undefined && (
                   <p className="font-medium text-green-600 mt-1">
-                    Total: {formatCurrency(user.total_earnings)}
+                    💰 Available: {formatCurrency(user.total_earnings)}
                   </p>
                 )}
               </div>

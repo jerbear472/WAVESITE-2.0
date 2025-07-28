@@ -16,6 +16,17 @@
   }
 }
 
+/* Hide scrollbar for navigation */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}
+
 /* Custom slider styles for Wave Score */
 @layer components {
   /* Webkit browsers */

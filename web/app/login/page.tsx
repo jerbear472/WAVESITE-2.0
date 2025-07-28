@@ -25,9 +25,19 @@ export default function LoginPage() {
     if (searchParams.get('confirmed') === 'true') {
       setSuccessMessage('Email confirmed successfully! You can now log in.');
     }
+    // Check for custom message
+    const message = searchParams.get('message');
+    if (message) {
+      setSuccessMessage(message);
+    }
     // Check for errors
-    if (searchParams.get('error') === 'callback_failed') {
+    const error = searchParams.get('error');
+    if (error === 'callback_failed') {
       setError('Authentication failed. Please try again.');
+    } else if (error === 'confirmation_failed') {
+      setError('Email confirmation failed. The link may be expired or invalid.');
+    } else if (error) {
+      setError(decodeURIComponent(error));
     }
   }, [searchParams]);
 
