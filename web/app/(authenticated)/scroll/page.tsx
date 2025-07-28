@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
+import { mapCategoryToEnum } from '@/lib/categoryMapper';
 // import { TrendUmbrellaService } from '@/lib/trendUmbrellaService'; // Not needed
 
 export default function ScrollDashboard() {
@@ -166,13 +167,17 @@ export default function ScrollDashboard() {
       console.log('Scroll page v3 - umbrellas disabled');
       const umbrellaId = null;
 
+      // Map category to enum value
+      const mappedCategory = trendData.categories?.[0] ? mapCategoryToEnum(trendData.categories[0]) : 'meme_format';
+      console.log('Category mapping:', trendData.categories?.[0], '→', mappedCategory);
+      
       // Save trend to database
       console.log('Inserting trend submission to database...');
       const { data, error } = await supabase
         .from('trend_submissions')
         .insert({
           spotter_id: user?.id,
-          category: trendData.categories?.[0] || 'meme_format',
+          category: mappedCategory, // Use mapped category
           description: trendData.explanation || trendData.trendName || 'Untitled Trend',
           screenshot_url: imageUrl || trendData.thumbnail_url || null,
           evidence: {
@@ -194,7 +199,7 @@ export default function ScrollDashboard() {
             submitted_by: user?.username || user?.email
           },
           virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : trendData.spreadSpeed === 'picking_up' ? 6 : 5,
-          status: 'submitted',
+          status: 'pending', // Changed from 'submitted' to 'pending'
           quality_score: 0.5,
           validation_count: 0,
           // Social media metadata
@@ -218,6 +223,16 @@ export default function ScrollDashboard() {
 
       if (error) {
         console.error('Database insertion error:', error);
+        
+        // Provide specific error messages
+        if (error.message?.includes('invalid input value for enum')) {
+          throw new Error(`Invalid category. Please try again.`);
+        } else if (error.message?.includes('violates foreign key constraint')) {
+          throw new Error('Authentication issue. Please log out and log back in.');
+        } else if (error.message?.includes('permission denied')) {
+          throw new Error('Permission denied. Please ensure you are logged in.');
+        }
+        
         throw error;
       }
       console.log('Successfully inserted trend:', data);

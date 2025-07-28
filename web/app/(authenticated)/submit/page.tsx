@@ -7,7 +7,6 @@ import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
 import MobileTrendSubmission from '@/components/MobileTrendSubmission';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-// import { TrendUmbrellaService } from '@/lib/trendUmbrellaService'; // Not needed
 import { mapCategoryToEnum } from '@/lib/categoryMapper';
 import { 
   TrendingUp as TrendingUpIcon,
@@ -247,10 +246,6 @@ export default function SubmitTrendPage() {
           }
         }
 
-      // Trend umbrella feature removed - not needed
-      let umbrellaId = null;
-      console.log('Trend umbrella feature has been removed');
-
       // Skip profile check for now to avoid errors
 
       // Build the insert data object with proper defaults and validation
@@ -258,6 +253,13 @@ export default function SubmitTrendPage() {
       console.log('First category:', trendData.categories?.[0]);
       const mappedCategory = trendData.categories?.[0] ? mapCategoryToEnum(trendData.categories[0]) : 'meme_format';
       console.log('Mapped category:', mappedCategory);
+      
+      // Double-check the mapping worked
+      const validCategories = ['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'];
+      if (!validCategories.includes(mappedCategory)) {
+        console.error('Invalid mapped category:', mappedCategory, 'from original:', trendData.categories?.[0]);
+        throw new Error(`Invalid category mapping. "${trendData.categories?.[0]}" could not be mapped to a valid category.`);
+      }
       
       // Validate required fields
       if (!mappedCategory) {
@@ -314,17 +316,62 @@ export default function SubmitTrendPage() {
       } else {
         insertData.posted_at = new Date().toISOString();
       }
+
+      // Double-check the data right before submission
+      console.log('Final check - category:', insertData.category);
+      console.log('Final check - status:', insertData.status);
       
-      // Removed trend_umbrella_id - not needed
+      // Create a clean copy to ensure no mutations and double-check category mapping
+      const dataToSubmit = {
+        spotter_id: insertData.spotter_id,
+        category: mappedCategory, // Use the mapped category directly, not from insertData
+        description: insertData.description,
+        screenshot_url: insertData.screenshot_url,
+        evidence: insertData.evidence,
+        virality_prediction: insertData.virality_prediction,
+        status: 'pending', // Hardcode the status to ensure it's correct
+        quality_score: insertData.quality_score,
+        validation_count: insertData.validation_count,
+        created_at: insertData.created_at,
+        // Optional fields
+        ...(insertData.creator_handle && { creator_handle: insertData.creator_handle }),
+        ...(insertData.creator_name && { creator_name: insertData.creator_name }),
+        ...(insertData.post_caption && { post_caption: insertData.post_caption }),
+        ...(insertData.likes_count !== undefined && { likes_count: insertData.likes_count }),
+        ...(insertData.comments_count !== undefined && { comments_count: insertData.comments_count }),
+        ...(insertData.shares_count !== undefined && { shares_count: insertData.shares_count }),
+        ...(insertData.views_count !== undefined && { views_count: insertData.views_count }),
+        ...(insertData.hashtags && insertData.hashtags.length > 0 && { hashtags: insertData.hashtags }),
+        ...(insertData.post_url && { post_url: insertData.post_url }),
+        ...(insertData.thumbnail_url && { thumbnail_url: insertData.thumbnail_url }),
+        ...(insertData.posted_at && { posted_at: insertData.posted_at })
+      };
+      
+      console.log('Data to submit - category:', dataToSubmit.category);
+      console.log('Submitting data to database (stringified):', JSON.stringify(dataToSubmit, null, 2));
+      console.log('Submitting data to database (object):', dataToSubmit);
 
-      console.log('Submitting data to database:', insertData);
-
-      // Save trend to database
-      const { data, error } = await supabase
+      // Save trend to database with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000)
+      );
+      
+      // Final safety check
+      if (!['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'].includes(dataToSubmit.category)) {
+        console.error('CRITICAL: Invalid category about to be submitted:', dataToSubmit.category);
+        throw new Error(`Category "${dataToSubmit.category}" is not a valid enum. Expected mapped value but got display value.`);
+      }
+      
+      const submissionPromise = supabase
         .from('trend_submissions')
-        .insert(insertData)
+        .insert(dataToSubmit)
         .select()
         .single();
+      
+      const { data, error } = await Promise.race([
+        submissionPromise,
+        timeoutPromise
+      ]).catch(err => ({ data: null, error: err }));
 
       if (error) {
         console.error('Database error details:', {
@@ -337,7 +384,9 @@ export default function SubmitTrendPage() {
         });
         
         // Provide more specific error messages
-        if (error.message?.includes('violates foreign key constraint')) {
+        if (error.message?.includes('Request timed out')) {
+          throw new Error('The submission is taking too long. Please check your internet connection and try again.');
+        } else if (error.message?.includes('violates foreign key constraint')) {
           throw new Error('User authentication issue. Please log out and log back in.');
         } else if (error.message?.includes('null value in column')) {
           const columnMatch = error.message.match(/column "(\w+)"/);
@@ -345,6 +394,8 @@ export default function SubmitTrendPage() {
           throw new Error(`Missing required field: ${columnName}. Please fill in all required fields.`);
         } else if (error.message?.includes('permission denied')) {
           throw new Error('Permission denied. Please ensure you are logged in.');
+        } else if (error.message?.includes('invalid input value for enum')) {
+          throw new Error(`Invalid category value. Please select a valid category.`);
         }
         
         throw error;
