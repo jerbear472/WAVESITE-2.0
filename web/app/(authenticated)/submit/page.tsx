@@ -343,39 +343,29 @@ export default function SubmitTrendPage() {
       console.log('Final check - category:', insertData.category);
       console.log('Final check - status:', insertData.status);
       
-      // Create a clean copy to ensure no mutations and double-check category mapping
+      // Create a minimal data object first to reduce complexity
       const dataToSubmit = {
-        spotter_id: insertData.spotter_id,
-        category: mappedCategory, // Use the mapped category directly, not from insertData
-        description: insertData.description,
-        screenshot_url: insertData.screenshot_url,
-        evidence: insertData.evidence,
-        virality_prediction: insertData.virality_prediction,
-        status: 'pending', // Hardcode the status to ensure it's correct
-        quality_score: insertData.quality_score,
-        validation_count: insertData.validation_count,
-        created_at: insertData.created_at,
-        // Optional fields
-        ...(insertData.creator_handle && { creator_handle: insertData.creator_handle }),
-        ...(insertData.creator_name && { creator_name: insertData.creator_name }),
-        ...(insertData.post_caption && { post_caption: insertData.post_caption }),
-        ...(insertData.likes_count !== undefined && { likes_count: insertData.likes_count }),
-        ...(insertData.comments_count !== undefined && { comments_count: insertData.comments_count }),
-        ...(insertData.shares_count !== undefined && { shares_count: insertData.shares_count }),
-        ...(insertData.views_count !== undefined && { views_count: insertData.views_count }),
-        ...(insertData.hashtags && insertData.hashtags.length > 0 && { hashtags: insertData.hashtags }),
-        ...(insertData.post_url && { post_url: insertData.post_url }),
-        ...(insertData.thumbnail_url && { thumbnail_url: insertData.thumbnail_url }),
-        ...(insertData.posted_at && { posted_at: insertData.posted_at })
+        spotter_id: user?.id,
+        category: mappedCategory, // Use the mapped category directly
+        description: description,
+        evidence: {
+          url: trendData.url || '',
+          title: trendData.trendName || 'Untitled Trend',
+          platform: trendData.platform || 'other'
+        },
+        virality_prediction: 5,
+        status: 'pending',
+        quality_score: 0.5,
+        validation_count: 0
       };
       
       console.log('Data to submit - category:', dataToSubmit.category);
       console.log('Submitting data to database (stringified):', JSON.stringify(dataToSubmit, null, 2));
       console.log('Submitting data to database (object):', dataToSubmit);
 
-      // Save trend to database with timeout
+      // Save trend to database with shorter timeout
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000)
+        setTimeout(() => reject(new Error('Request timed out after 15 seconds')), 15000) // Reduced from 30s to 15s
       );
       
       // Final safety check
@@ -383,6 +373,9 @@ export default function SubmitTrendPage() {
         console.error('CRITICAL: Invalid category about to be submitted:', dataToSubmit.category);
         throw new Error(`Category "${dataToSubmit.category}" is not a valid enum. Expected mapped value but got display value.`);
       }
+      
+      // Log the exact request being made
+      console.log('Making Supabase request at:', new Date().toISOString());
       
       const submissionPromise = supabase
         .from('trend_submissions')
@@ -394,6 +387,8 @@ export default function SubmitTrendPage() {
         submissionPromise,
         timeoutPromise
       ]).catch(err => ({ data: null, error: err }));
+      
+      console.log('Request completed at:', new Date().toISOString());
 
       if (error) {
         console.error('Database error details:', {
