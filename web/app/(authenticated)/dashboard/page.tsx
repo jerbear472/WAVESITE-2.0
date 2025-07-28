@@ -176,8 +176,8 @@ export default function Dashboard() {
         .from('trend_submissions')
         .select(`
           *,
-          spotter:profiles!trend_submissions_spotter_id_fkey(username, email),
-          earnings:earnings_ledger!trend_submissions_id_fkey(amount)
+          spotter:profiles(username, email),
+          earnings:earnings_ledger(amount)
         `)
         .eq('spotter_id', user?.id)
         .order('created_at', { ascending: false });
@@ -189,14 +189,19 @@ export default function Dashboard() {
 
       const { data: userTrends, error: userTrendsError } = await userTrendsQuery.limit(5);
       
+      if (userTrendsError) {
+        console.error('User trends error:', userTrendsError);
+      } else {
+        console.log('User trends found:', userTrends?.length || 0);
+      }
+      
       // Then get recent trends from all users to fill the section
       let allTrendsQuery = supabase
         .from('trend_submissions')
         .select(`
           *,
-          spotter:profiles!trend_submissions_spotter_id_fkey(username, email)
+          spotter:profiles(username, email)
         `)
-        .in('status', ['approved', 'viral', 'validating'])
         .order('created_at', { ascending: false });
 
       if (timeframe !== 'all') {
@@ -204,7 +209,13 @@ export default function Dashboard() {
         allTrendsQuery = allTrendsQuery.gte('created_at', dateFilter);
       }
 
-      const { data: allTrends, error: allTrendsError } = await allTrendsQuery.limit(10);
+      const { data: allTrends, error: allTrendsError } = await allTrendsQuery.limit(15);
+      
+      if (allTrendsError) {
+        console.error('All trends error:', allTrendsError);
+      } else {
+        console.log('All trends found:', allTrends?.length || 0);
+      }
 
       // Combine user trends and recent platform trends, prioritizing user trends
       const combinedTrends = [];
@@ -234,55 +245,7 @@ export default function Dashboard() {
       }
 
       // Limit to top 10 most recent
-      const finalTrends = combinedTrends.slice(0, 10);
-      
-      // If no trends are found, provide some sample/demo trends
-      if (finalTrends.length === 0) {
-        const sampleTrends = [
-          {
-            id: 'sample-1',
-            category: 'visual_style',
-            description: 'AI-generated portrait style trending on social media',
-            virality_prediction: 8,
-            status: 'viral',
-            created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-            validation_count: 15,
-            likes_count: 45000,
-            views_count: 120000,
-            isUserTrend: false,
-            spotter: { username: 'trendspotter', email: 'demo@example.com' }
-          },
-          {
-            id: 'sample-2',
-            category: 'meme_format',
-            description: 'New reaction format spreading across platforms',
-            virality_prediction: 7,
-            status: 'approved',
-            created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
-            validation_count: 8,
-            likes_count: 23000,
-            views_count: 89000,
-            isUserTrend: false,
-            spotter: { username: 'memehunter', email: 'demo2@example.com' }
-          },
-          {
-            id: 'sample-3',
-            category: 'audio_music',
-            description: 'Viral sound bite being used in thousands of videos',
-            virality_prediction: 9,
-            status: 'viral',
-            created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
-            validation_count: 25,
-            likes_count: 78000,
-            views_count: 200000,
-            isUserTrend: false,
-            spotter: { username: 'soundtracker', email: 'demo3@example.com' }
-          }
-        ];
-        setRecentTrends(sampleTrends);
-      } else {
-        setRecentTrends(finalTrends);
-      }
+      setRecentTrends(combinedTrends.slice(0, 10));
     } catch (error) {
       console.error('Error fetching trends:', error);
     }
