@@ -463,9 +463,12 @@ export default function SubmitTrendPage() {
         finalInsertData.status = 'submitted';
       }
       
+      // Import the wrapper at the top of the file
+      const { submitTrend } = await import('@/lib/supabaseWrapper');
+      
       // Try insert without select to avoid hanging issues
       const { data, error } = await Promise.race([
-        supabase.from('trend_submissions').insert(finalInsertData),
+        submitTrend(finalInsertData),
         timeoutPromise
       ]).then(
         (result) => {
