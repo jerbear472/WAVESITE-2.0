@@ -77,6 +77,7 @@ export default function Timeline() {
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [totalEarnings, setTotalEarnings] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -140,6 +141,18 @@ export default function Timeline() {
       }
       
       setTrends(data || []);
+
+      // Fetch total earnings from earnings_ledger
+      const { data: earningsData, error: earningsError } = await supabase
+        .from('earnings_ledger')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('status', 'approved');
+
+      if (!earningsError && earningsData) {
+        const total = earningsData.reduce((sum, earning) => sum + (earning.amount || 0), 0);
+        setTotalEarnings(total);
+      }
     } catch (error: any) {
       console.error('Unexpected error:', error);
       setError('An unexpected error occurred');
@@ -496,7 +509,7 @@ export default function Timeline() {
                   <DollarSignIcon className="w-4 h-4 text-green-400" />
                 </div>
                 <p className="text-2xl font-bold text-white">
-                  ${trends.reduce((sum, t) => sum + t.bounty_amount, 0).toFixed(2)}
+                  ${totalEarnings.toFixed(2)}
                 </p>
               </motion.div>
 
