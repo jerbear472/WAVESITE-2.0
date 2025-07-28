@@ -20,6 +20,9 @@ interface TrendTileProps {
     firstContentDate: string
     lastContentDate: string
     contentItems?: ContentItem[]
+    sentiment?: 'positive' | 'negative' | 'neutral' | 'mixed'
+    moods?: string[]
+    viralityPrediction?: number
   }
   onAddContent: (trendId: string) => void
   onContentClick: (contentId: string) => void
@@ -52,6 +55,26 @@ const statusColors = {
   trending: 'bg-green-100 text-green-800',
   peak: 'bg-yellow-100 text-yellow-800',
   declining: 'bg-red-100 text-red-800'
+}
+
+const sentimentColors = {
+  positive: 'bg-emerald-100 text-emerald-800',
+  negative: 'bg-red-100 text-red-800',
+  neutral: 'bg-gray-100 text-gray-800',
+  mixed: 'bg-purple-100 text-purple-800'
+}
+
+const moodEmojis: Record<string, string> = {
+  excited: '🎉',
+  funny: '😂',
+  inspiring: '✨',
+  controversial: '🔥',
+  nostalgic: '💭',
+  relaxing: '😌',
+  energetic: '⚡',
+  emotional: '❤️',
+  informative: '📚',
+  creative: '🎨'
 }
 
 const statusIcons = {
@@ -157,15 +180,49 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
             </button>
             
             <div className="flex-1">
-              <div className="flex items-center space-x-3 mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">{trend.title}</h3>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[trend.status]}`}>
-                  <StatusIcon className="w-3 h-3 inline mr-1" />
-                  {trend.status}
-                </span>
-                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
-                  {trend.category}
-                </span>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{trend.title}</h3>
+                
+                {/* Tags Row */}
+                <div className="flex items-center flex-wrap gap-2 mb-2">
+                  {/* Status Tag */}
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[trend.status]}`}>
+                    <StatusIcon className="w-3 h-3 inline mr-1" />
+                    {trend.status}
+                  </span>
+                  
+                  {/* Category Tag */}
+                  <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+                    {trend.category}
+                  </span>
+                  
+                  {/* Wave Score Tag */}
+                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full flex items-center gap-1">
+                    <SparklesIcon className="w-3 h-3" />
+                    Wave: {trend.waveScore}
+                  </span>
+                  
+                  {/* Sentiment Tag */}
+                  {trend.sentiment && (
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${sentimentColors[trend.sentiment]}`}>
+                      {trend.sentiment}
+                    </span>
+                  )}
+                  
+                  {/* Virality Prediction Tag */}
+                  {trend.viralityPrediction && (
+                    <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                      Virality: {trend.viralityPrediction}/10
+                    </span>
+                  )}
+                  
+                  {/* Mood Tags */}
+                  {trend.moods && trend.moods.slice(0, 2).map((mood, index) => (
+                    <span key={index} className="px-2 py-1 text-xs font-medium bg-yellow-50 text-yellow-800 rounded-full">
+                      {moodEmojis[mood] || '•'} {mood}
+                    </span>
+                  ))}
+                </div>
               </div>
               
               {trend.description && (

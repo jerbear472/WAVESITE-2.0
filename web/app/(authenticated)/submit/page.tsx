@@ -200,6 +200,11 @@ export default function SubmitTrendPage() {
 
   const handleTrendSubmit = async (trendData: TrendData) => {
     console.log('Starting trend submission (v2 - no umbrellas) with data:', trendData);
+    
+    // Check if trendData contains a status field
+    if ('status' in trendData) {
+      console.warn('WARNING: trendData contains status field:', (trendData as any).status);
+    }
     let retryCount = 0;
     const maxRetries = 3;
     
@@ -305,7 +310,8 @@ export default function SubmitTrendPage() {
       // We'll use dataToSubmit directly, no need for insertData
       
       // Create a minimal data object first to reduce complexity
-      const dataToSubmit = {
+      // DO NOT spread trendData to avoid accidental status inclusion
+      const dataToSubmit: any = {
         spotter_id: user?.id,
         category: mappedCategory, // Use the mapped category directly
         description: description,
@@ -315,10 +321,16 @@ export default function SubmitTrendPage() {
           platform: trendData.platform || 'other'
         },
         virality_prediction: 5,
-        status: 'submitted', // Changed from 'pending' to 'submitted'
+        status: 'submitted', // MUST be 'submitted', not 'pending'
         quality_score: 0.5,
         validation_count: 0
       };
+      
+      // PARANOID STATUS CHECK
+      if (dataToSubmit.status === 'pending') {
+        console.error('CRITICAL: Status is still pending! Forcing to submitted');
+        dataToSubmit.status = 'submitted';
+      }
       
       console.log('Data to submit - category:', dataToSubmit.category);
       console.log('Submitting data to database (stringified):', JSON.stringify(dataToSubmit, null, 2));
