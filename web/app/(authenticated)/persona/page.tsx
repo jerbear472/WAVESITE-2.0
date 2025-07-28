@@ -26,13 +26,28 @@ export default function PersonaPage() {
   }, []);
 
   const handlePersonaComplete = async (newPersonaData: any) => {
+    console.log('Persona complete, attempting to save:', newPersonaData);
+    
     try {
-      await savePersonaData(newPersonaData);
-      // Redirect directly to profile page after saving
-      router.push('/profile');
+      const success = await savePersonaData(newPersonaData);
+      
+      if (success) {
+        console.log('Persona saved successfully, redirecting to profile');
+        // Small delay to ensure save completes
+        setTimeout(() => {
+          router.push('/profile');
+        }, 100);
+      } else {
+        console.error('Persona save returned false');
+        // Show completion screen but warn user
+        alert('Your persona was saved locally but may not have synced to the server. Please check your internet connection.');
+        setPersonaSummary(newPersonaData);
+        setIsComplete(true);
+      }
     } catch (error) {
       console.error('Error saving persona:', error);
       // Still show completion screen if there's an error but data was saved locally
+      alert('There was an error saving your persona. It has been saved locally and will sync when you reconnect.');
       setPersonaSummary(newPersonaData);
       setIsComplete(true);
     }

@@ -106,84 +106,96 @@ export function usePersona() {
       }
 
       try {
-        // First check localStorage since API endpoint doesn't exist yet
-        const savedPersona = localStorage.getItem(`persona_${user.id}`);
-        if (savedPersona) {
-          try {
-            const parsedPersona = JSON.parse(savedPersona);
-            // Validate the persona data before considering it valid
-            if (isValidPersona(parsedPersona)) {
-              setPersonaData(parsedPersona);
-              setHasPersona(true);
-              setLoading(false);
-              return;
-            } else {
-              // Invalid persona data, clear it
-              console.log('Invalid persona data found in localStorage, clearing...');
-              localStorage.removeItem(`persona_${user.id}`);
-            }
-          } catch (parseError) {
-            console.error('Error parsing persona from localStorage:', parseError);
-            localStorage.removeItem(`persona_${user.id}`);
-          }
-        }
+        console.log('Loading persona for user:', user.id);
+        setError(null);
+        
+        // Try to load from database directly using Supabase client
+        const { data, error: dbError } = await supabase
+          .from('user_personas')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        // Try API as fallback (for future implementation)
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            console.log('No session available for API call');
-            setPersonaData(defaultPersonaData);
-            setHasPersona(false);
-            return;
-          }
-
-          const response = await fetch('/api/v1/persona', {
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data) {
-              // Transform API response to match frontend structure
-              const transformedData: PersonaData = {
-                location: data.location,
-                demographics: data.demographics,
-                professional: data.professional,
-                interests: data.interests,
-                lifestyle: data.lifestyle,
-                tech: data.tech
-              };
-              
-              // Validate the transformed data
-              if (isValidPersona(transformedData)) {
-                setPersonaData(transformedData);
+        if (dbError) {
+          console.error('Database error loading persona:', dbError);
+          setError(dbError.message);
+          
+          // Fall back to localStorage
+          const localData = localStorage.getItem(`persona_${user.id}`);
+          if (localData) {
+            try {
+              const parsed = JSON.parse(localData);
+              if (isValidPersona(parsed)) {
+                setPersonaData(parsed);
                 setHasPersona(true);
-                // Save to localStorage
-                localStorage.setItem(`persona_${user.id}`, JSON.stringify(transformedData));
-              } else {
-                // Invalid persona data from API
-                setPersonaData(defaultPersonaData);
-                setHasPersona(false);
+                console.log('Loaded persona from localStorage');
               }
-            } else {
-              // No persona found, use defaults
-              setPersonaData(defaultPersonaData);
-              setHasPersona(false);
+            } catch (e) {
+              console.error('Error parsing localStorage data:', e);
             }
-          } else {
-            // No persona found, use defaults
-            setPersonaData(defaultPersonaData);
-            setHasPersona(false);
           }
-        } catch (apiError) {
-          // API call failed, persona doesn't exist
-          console.log('Persona API not available, using localStorage only');
-          setPersonaData(defaultPersonaData);
-          setHasPersona(false);
+        } else if (data) {
+          console.log('Found persona in database:', data);
+          // Transform database format to frontend format
+          const transformed: PersonaData = {
+            location: {
+              country: data.location_country || '',
+              city: data.location_city || '',
+              urbanType: data.location_urban_type || 'urban'
+            },
+            demographics: {
+              ageRange: data.age_range || '',
+              gender: data.gender || '',
+              educationLevel: data.education_level || '',
+              relationshipStatus: data.relationship_status || '',
+              hasChildren: data.has_children || false
+            },
+            professional: {
+              employmentStatus: data.employment_status || '',
+              industry: data.industry || '',
+              incomeRange: data.income_range || '',
+              workStyle: data.work_style || 'office'
+            },
+            interests: data.interests || [],
+            lifestyle: {
+              shoppingHabits: data.shopping_habits || [],
+              mediaConsumption: data.media_consumption || [],
+              values: data.values || []
+            },
+            tech: {
+              proficiency: data.tech_proficiency || 'intermediate',
+              primaryDevices: data.primary_devices || [],
+              socialPlatforms: data.social_platforms || []
+            }
+          };
+          
+          console.log('Transformed persona data:', transformed);
+          setPersonaData(transformed);
+          setHasPersona(true);
+          
+          // Also save to localStorage as backup
+          localStorage.setItem(`persona_${user.id}`, JSON.stringify(transformed));
+        } else {
+          console.log('No persona found in database');
+          
+          // Check localStorage
+          const localData = localStorage.getItem(`persona_${user.id}`);
+          if (localData) {
+            try {
+              const parsed = JSON.parse(localData);
+              if (isValidPersona(parsed)) {
+                setPersonaData(parsed);
+                setHasPersona(true);
+                console.log('Loaded persona from localStorage');
+                
+                // Try to sync to database
+                console.log('Attempting to sync localStorage persona to database...');
+                await savePersonaData(parsed);
+              }
+            } catch (e) {
+              console.error('Error parsing localStorage data:', e);
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading persona data:', error);
