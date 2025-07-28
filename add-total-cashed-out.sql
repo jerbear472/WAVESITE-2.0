@@ -2,7 +2,10 @@
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS total_cashed_out DECIMAL(10,2) DEFAULT 0.00;
 
--- Update the get_user_dashboard_stats function to include total cashed out
+-- Drop the existing function first
+DROP FUNCTION IF EXISTS get_user_dashboard_stats(UUID);
+
+-- Create the updated get_user_dashboard_stats function to include total cashed out
 CREATE OR REPLACE FUNCTION get_user_dashboard_stats(p_user_id UUID)
 RETURNS TABLE (
   total_earnings DECIMAL(10,2),
