@@ -354,7 +354,7 @@ export default function SubmitTrendPage() {
           platform: trendData.platform || 'other'
         },
         virality_prediction: 5,
-        status: 'pending',
+        status: 'submitted', // Changed from 'pending' to 'submitted'
         quality_score: 0.5,
         validation_count: 0
       };

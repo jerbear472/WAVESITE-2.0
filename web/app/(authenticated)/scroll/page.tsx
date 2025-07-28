@@ -234,7 +234,7 @@ export default function ScrollDashboard() {
             submitted_by: user?.username || user?.email
           },
           virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : trendData.spreadSpeed === 'picking_up' ? 6 : 5,
-          status: 'pending', // Changed from 'submitted' to 'pending'
+          status: 'submitted', // Use 'submitted' to match the enum
           quality_score: 0.5,
           validation_count: 0,
           // Social media metadata
