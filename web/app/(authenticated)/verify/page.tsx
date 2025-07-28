@@ -96,14 +96,26 @@ export default function Verify() {
         .from('trend_submissions')
         .select('*')
         .neq('spotter_id', user?.id)
-        .eq('status', 'pending')
+        .eq('status', 'submitted')
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (trendsError) throw trendsError;
 
+      // Get list of trends this user has already validated
+      const { data: validatedTrends, error: validatedError } = await supabase
+        .from('trend_validations')
+        .select('trend_id')
+        .eq('validator_id', user?.id);
+
+      if (validatedError) throw validatedError;
+
+      // Filter out already validated trends
+      const validatedTrendIds = new Set(validatedTrends?.map(v => v.trend_id) || []);
+      const unvalidatedTrends = (trendsData || []).filter(trend => !validatedTrendIds.has(trend.id));
+
       // Fetch user details for each trend
-      const userIds = [...new Set(trendsData?.map(t => t.spotter_id) || [])];
+      const userIds = [...new Set(unvalidatedTrends.map(t => t.spotter_id) || [])];
       const { data: usersData } = await supabase
         .from('user_profiles')
         .select('id, username, email')
@@ -116,7 +128,7 @@ export default function Verify() {
       }, {} as Record<string, any>);
 
       // Transform the data to include spotter info
-      const transformedData = (trendsData || []).map(trend => ({
+      const transformedData = unvalidatedTrends.map(trend => ({
         ...trend,
         spotter: userMap[trend.spotter_id] || { username: 'Anonymous', email: null }
       }));
@@ -255,8 +267,10 @@ export default function Verify() {
         // Move to next trend
         if (currentIndex < trends.length - 1) {
           setCurrentIndex(prev => prev + 1);
+        } else {
+          // We've reached the end - show completion message
+          setCurrentIndex(trends.length);
         }
-        // If we've reached the end, don't cycle back - user has completed all trends
         return;
       }
 
