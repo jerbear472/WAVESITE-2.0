@@ -5,6 +5,17 @@
 /* Import responsive fixes */
 @import '../styles/responsive-fixes.css';
 
+/* Prevent horizontal scrolling */
+@layer base {
+  html, body {
+    @apply overflow-x-hidden;
+  }
+  
+  body {
+    @apply relative;
+  }
+}
+
 /* Custom slider styles for Wave Score */
 @layer components {
   /* Webkit browsers */
