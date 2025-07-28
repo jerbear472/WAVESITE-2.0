@@ -192,7 +192,7 @@ export default function ScrollDashboard() {
         'Pets & Animals': 'behavior_pattern'
       };
       
-      const mappedCategory = categoryMapping[originalCategory] || 'meme_format';
+      let mappedCategory = categoryMapping[originalCategory] || 'meme_format';
       console.log('Direct mapping result:', originalCategory, '→', mappedCategory);
       
       // Validate the mapped category
@@ -250,9 +250,7 @@ export default function ScrollDashboard() {
       console.log('=== FINAL CATEGORY RESULT (SCROLL) ===');
       console.log('mappedCategory after all checks:', mappedCategory);
       
-      const { data, error } = await supabase
-        .from('trend_submissions')
-        .insert({
+      const insertObject = {
           spotter_id: user?.id,
           category: mappedCategory, // Use validated mapped category
           description: trendData.explanation || trendData.trendName || 'Untitled Trend',
@@ -294,7 +292,15 @@ export default function ScrollDashboard() {
           created_at: new Date().toISOString(),
           // Link to trend umbrella
           // trend_umbrella_id removed
-        })
+        };
+      
+      console.log('=== EXACT INSERT OBJECT ===');
+      console.log('Insert object category:', insertObject.category);
+      console.log('Full insert object:', JSON.stringify(insertObject, null, 2));
+      
+      const { data, error } = await supabase
+        .from('trend_submissions')
+        .insert(insertObject)
         .select()
         .single();
 
