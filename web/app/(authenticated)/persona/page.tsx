@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import PersonaBuilder from '@/components/PersonaBuilder';
+import PersonaBuilderEnhanced from '@/components/PersonaBuilderEnhanced';
 import MobilePersonaBuilder from '@/components/MobilePersonaBuilder';
 import { motion } from 'framer-motion';
 import { usePersona } from '@/hooks/usePersona';
@@ -144,6 +144,6 @@ export default function PersonaPage() {
       initialData={personaData}
     />
   ) : (
-    <PersonaBuilder onComplete={handlePersonaComplete} />
+    <PersonaBuilderEnhanced onComplete={handlePersonaComplete} />
   );
 }
