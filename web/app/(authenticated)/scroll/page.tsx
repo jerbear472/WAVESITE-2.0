@@ -167,17 +167,57 @@ export default function ScrollDashboard() {
       console.log('Scroll page v3 - umbrellas disabled');
       const umbrellaId = null;
 
-      // Map category to enum value
-      const mappedCategory = trendData.categories?.[0] ? mapCategoryToEnum(trendData.categories[0]) : 'meme_format';
-      console.log('Category mapping:', trendData.categories?.[0], '→', mappedCategory);
+      // Map category to enum value with extensive logging
+      const originalCategory = trendData.categories?.[0];
+      console.log('Original category from form:', originalCategory);
+      console.log('All categories:', trendData.categories);
+      
+      let mappedCategory;
+      try {
+        mappedCategory = originalCategory ? mapCategoryToEnum(originalCategory) : 'meme_format';
+        console.log('Category mapping:', originalCategory, '→', mappedCategory);
+      } catch (mappingError) {
+        console.error('Category mapping failed:', mappingError);
+        mappedCategory = 'meme_format'; // Fallback
+      }
+      
+      // Double-check by manually mapping if needed
+      if (!mappedCategory || mappedCategory === originalCategory) {
+        console.warn('Category mapping may have failed, using manual mapping');
+        const manualMapping: Record<string, string> = {
+          'Fashion & Beauty': 'visual_style',
+          'Food & Drink': 'behavior_pattern',
+          'Humor & Memes': 'meme_format',
+          'Lifestyle': 'behavior_pattern',
+          'Politics & Social Issues': 'behavior_pattern',
+          'Music & Dance': 'audio_music',
+          'Sports & Fitness': 'behavior_pattern',
+          'Tech & Gaming': 'creator_technique',
+          'Art & Creativity': 'visual_style',
+          'Education & Science': 'creator_technique'
+        };
+        mappedCategory = manualMapping[originalCategory] || 'meme_format';
+        console.log('Manual mapping result:', originalCategory, '→', mappedCategory);
+      }
+      
+      // Validate the mapped category
+      const validCategories = ['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'];
+      if (!validCategories.includes(mappedCategory)) {
+        console.error('CRITICAL: Invalid mapped category:', mappedCategory);
+        console.error('Original category was:', originalCategory);
+        console.error('Forcing to meme_format as emergency fallback');
+        mappedCategory = 'meme_format';
+      }
       
       // Save trend to database
       console.log('Inserting trend submission to database...');
+      console.log('Final category being submitted:', mappedCategory);
+      
       const { data, error } = await supabase
         .from('trend_submissions')
         .insert({
           spotter_id: user?.id,
-          category: mappedCategory, // Use mapped category
+          category: mappedCategory, // Use validated mapped category
           description: trendData.explanation || trendData.trendName || 'Untitled Trend',
           screenshot_url: imageUrl || trendData.thumbnail_url || null,
           evidence: {

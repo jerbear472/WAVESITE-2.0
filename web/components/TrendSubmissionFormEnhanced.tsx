@@ -65,6 +65,9 @@ interface TrendData {
   views_count?: number;
   hashtags?: string[];
   thumbnail_url?: string;
+  
+  // Wave Score
+  wave_score?: number;
 }
 
 const platforms = [
@@ -157,7 +160,8 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     likes_count: 0,
     comments_count: 0,
     views_count: 0,
-    hashtags: []
+    hashtags: [],
+    wave_score: 50
   });
 
   // Auto-extract metadata when component mounts with initialUrl
@@ -887,6 +891,56 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                   ))}
                 </div>
               </div>
+              
+              {/* Wave Score Slider */}
+              <div>
+                <label className="block text-slate-200 mb-3 font-medium">
+                  🌊 Wave Score - How cool is this trend?
+                </label>
+                <div className="bg-slate-700/50 rounded-xl p-6 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <p className="text-slate-300 text-sm mb-1">Rate the coolness factor</p>
+                      <p className="text-slate-500 text-xs">0 = Not cool at all | 100 = Extremely cool</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+                        {formData.wave_score || 50}
+                      </div>
+                      <p className="text-slate-400 text-xs">Wave Score</p>
+                    </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={formData.wave_score || 50}
+                      onChange={(e) => setFormData(prev => ({ ...prev, wave_score: parseInt(e.target.value) }))}
+                      className="w-full h-2 bg-slate-600/50 rounded-lg appearance-none cursor-pointer slider-thumb"
+                      style={{
+                        background: `linear-gradient(to right, #3b82f6 0%, #8b5cf6 ${formData.wave_score || 50}%, #475569 ${formData.wave_score || 50}%, #475569 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-slate-500 mt-2">
+                      <span>0</span>
+                      <span>25</span>
+                      <span>50</span>
+                      <span>75</span>
+                      <span>100</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-600">🥱 Meh</span>
+                    <span className="text-slate-500">😐 OK</span>
+                    <span className="text-slate-400">👍 Cool</span>
+                    <span className="text-slate-300">🔥 Fire</span>
+                    <span className="text-slate-200">🌊 Wave!</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1103,6 +1157,23 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                         </div>
                       )}
                     </div>
+                  </div>
+                  
+                  {/* Wave Score */}
+                  <div className="pb-4 border-b border-slate-600">
+                    <h4 className="text-sm font-medium text-slate-400 mb-2">Wave Score</h4>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 bg-slate-600/30 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all"
+                          style={{ width: `${formData.wave_score || 50}%` }}
+                        />
+                      </div>
+                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+                        {formData.wave_score || 50}
+                      </span>
+                    </div>
+                    <p className="text-slate-500 text-xs mt-1">Coolness rating: 0 = Meh, 100 = Wave! 🌊</p>
                   </div>
                 </div>
 

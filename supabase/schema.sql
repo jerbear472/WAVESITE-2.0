@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS public.trend_submissions (
     evidence JSONB,
     virality_prediction INTEGER CHECK (virality_prediction >= 1 AND virality_prediction <= 10),
     predicted_peak_date TIMESTAMPTZ,
+    wave_score INTEGER CHECK (wave_score >= 0 AND wave_score <= 100),
     status trend_status DEFAULT 'submitted',
     approved_by_id UUID REFERENCES public.user_profiles(id),
     quality_score DECIMAL(3,2) DEFAULT 0.00,

@@ -47,6 +47,7 @@ async def submit_trend(
         "posted_at": trend_data.posted_at.isoformat() if trend_data.posted_at else None,
         "evidence": trend_data.evidence or {},
         "virality_prediction": trend_data.virality_prediction or 5,
+        "wave_score": trend_data.wave_score if hasattr(trend_data, 'wave_score') else 50,
         "quality_score": 0.7,  # Default quality score
         "status": TrendStatus.SUBMITTED.value,
         "bounty_amount": 0,

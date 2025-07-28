@@ -36,11 +36,18 @@ class TrendSubmissionCreate(BaseModel):
     evidence: Optional[Dict[str, Any]] = None
     virality_prediction: Optional[int] = None
     predicted_peak_date: Optional[datetime] = None
+    wave_score: Optional[int] = None
     
     @validator('virality_prediction')
     def validate_virality_prediction(cls, v):
         if v is not None and (v < 1 or v > 10):
             raise ValueError('Virality prediction must be between 1 and 10')
+        return v
+    
+    @validator('wave_score')
+    def validate_wave_score(cls, v):
+        if v is not None and (v < 0 or v > 100):
+            raise ValueError('Wave score must be between 0 and 100')
         return v
 
 class TrendSubmissionResponse(BaseModel):
@@ -68,6 +75,7 @@ class TrendSubmissionResponse(BaseModel):
     created_at: datetime
     validated_at: Optional[datetime]
     mainstream_at: Optional[datetime]
+    wave_score: Optional[int] = None
     potential_bounty: Optional[float] = None
     
     class Config:
@@ -113,6 +121,7 @@ class PublicTrendResponse(BaseModel):
     posted_at: Optional[datetime]
     spotter_username: str
     spotter_id: str
+    wave_score: Optional[int] = None
     
     class Config:
         orm_mode = True
@@ -144,6 +153,7 @@ class UserTimelineResponse(BaseModel):
     status: TrendStatus
     created_at: datetime
     posted_at: Optional[datetime]
+    wave_score: Optional[int] = None
     
     class Config:
         orm_mode = True

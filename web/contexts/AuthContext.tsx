@@ -49,7 +49,7 @@ interface AuthContextType {
   logout: () => Promise<{ success: boolean; error?: any }>;
   refreshUser: () => Promise<void>;
   switchViewMode: (mode: 'user' | 'professional') => Promise<void>;
-  updateUserEarnings: (amount: number) => void;
+  updateUserEarnings: (amount: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -347,14 +347,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateUserEarnings = (amount: number) => {
+  const updateUserEarnings = async (amount: number) => {
     if (!user) return;
     
+    // Update local state immediately for UI feedback
     setUser({
       ...user,
       total_earnings: user.total_earnings + amount,
       trends_spotted: user.trends_spotted + 1
     });
+
+    // Also update in database
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          total_earnings: user.total_earnings + amount,
+          trends_spotted: user.trends_spotted + 1
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error updating earnings:', error);
+      }
+    } catch (error) {
+      console.error('Error updating earnings:', error);
+    }
   };
 
   return (

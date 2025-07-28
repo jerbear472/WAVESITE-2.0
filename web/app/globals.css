@@ -5,6 +5,28 @@
 /* Import responsive fixes */
 @import '../styles/responsive-fixes.css';
 
+/* Custom slider styles for Wave Score */
+@layer components {
+  /* Webkit browsers */
+  .slider-thumb::-webkit-slider-thumb {
+    @apply appearance-none w-5 h-5 bg-gradient-to-r from-wave-400 to-wave-600 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-shadow;
+  }
+  
+  /* Firefox */
+  .slider-thumb::-moz-range-thumb {
+    @apply w-5 h-5 bg-gradient-to-r from-wave-400 to-wave-600 rounded-full cursor-pointer border-0 shadow-lg hover:shadow-xl transition-shadow;
+  }
+  
+  /* Track styles */
+  .slider-thumb::-webkit-slider-runnable-track {
+    @apply rounded-lg;
+  }
+  
+  .slider-thumb::-moz-range-track {
+    @apply rounded-lg;
+  }
+}
+
 :root {
   --wave-primary: #0080ff;
   --wave-secondary: #0066cc;

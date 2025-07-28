@@ -291,3 +291,36 @@ Require stack:
  ✓ Compiled in 204ms (872 modules)
  ✓ Compiled in 356ms (872 modules)
  ✓ Compiled in 232ms (872 modules)
+ ○ Compiling /scroll ...
+ ✓ Compiled /scroll in 999ms (1806 modules)
+
+ ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ✓ Compiled /not-found in 295ms (1811 modules)
+
+ ⚠ metadata.metadataBase is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ✓ Compiled in 1017ms (1754 modules)
+ ✓ Compiled in 470ms (922 modules)
+ ✓ Compiled in 258ms (922 modules)
+ ✓ Compiled in 239ms (922 modules)
+ ✓ Compiled in 411ms (922 modules)
+ ✓ Compiled in 314ms (922 modules)
+ ✓ Compiled in 272ms (922 modules)
+ ✓ Compiled in 245ms (922 modules)
+ ✓ Compiled in 242ms (922 modules)
+ ✓ Compiled in 281ms (922 modules)
+ ✓ Compiled in 521ms (1754 modules)
+ ✓ Compiled in 154ms (1754 modules)
+ ✓ Compiled in 474ms (922 modules)
+ ✓ Compiled in 331ms (922 modules)
+ ✓ Compiled in 279ms (922 modules)
+ ✓ Compiled in 196ms (922 modules)
+ ✓ Compiled in 238ms (922 modules)
+ ✓ Compiled in 230ms (922 modules)
+ ✓ Compiled in 244ms (922 modules)
+ ✓ Compiled in 280ms (922 modules)
+ ✓ Compiled in 212ms (922 modules)
+ ✓ Compiled in 324ms (922 modules)
+ ✓ Compiled in 220ms (922 modules)
+ ✓ Compiled in 255ms (922 modules)
+ ✓ Compiled in 890ms (1769 modules)
+[?25h

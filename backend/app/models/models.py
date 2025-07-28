@@ -101,6 +101,7 @@ class TrendSubmission(Base):
     # Predictions
     virality_prediction = Column(Integer)  # 1-10 scale
     predicted_peak_date = Column(DateTime(timezone=True))
+    wave_score = Column(Integer)  # 0-100 scale - user's coolness rating
     
     # Status
     status = Column(Enum(TrendStatus), default=TrendStatus.SUBMITTED)

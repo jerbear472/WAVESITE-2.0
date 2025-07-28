@@ -254,6 +254,25 @@ export default function SubmitTrendPage() {
       const mappedCategory = trendData.categories?.[0] ? mapCategoryToEnum(trendData.categories[0]) : 'meme_format';
       console.log('Mapped category:', mappedCategory);
       
+      // Double-check by manually mapping if needed
+      if (!mappedCategory || mappedCategory === trendData.categories?.[0]) {
+        console.warn('Category mapping may have failed, using manual mapping');
+        const manualMapping: Record<string, string> = {
+          'Fashion & Beauty': 'visual_style',
+          'Food & Drink': 'behavior_pattern',
+          'Humor & Memes': 'meme_format',
+          'Lifestyle': 'behavior_pattern',
+          'Politics & Social Issues': 'behavior_pattern',
+          'Music & Dance': 'audio_music',
+          'Sports & Fitness': 'behavior_pattern',
+          'Tech & Gaming': 'creator_technique',
+          'Art & Creativity': 'visual_style',
+          'Education & Science': 'creator_technique'
+        };
+        mappedCategory = manualMapping[trendData.categories?.[0]] || 'meme_format';
+        console.log('Manual mapping result:', trendData.categories?.[0], '→', mappedCategory);
+      }
+      
       // Double-check the mapping worked
       const validCategories = ['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'];
       if (!validCategories.includes(mappedCategory)) {
