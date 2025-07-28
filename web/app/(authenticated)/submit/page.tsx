@@ -302,55 +302,7 @@ export default function SubmitTrendPage() {
         throw new Error('Description is required');
       }
       
-      const insertData: any = {
-        spotter_id: user?.id,
-        category: mappedCategory, // Convert category to enum
-        description: description,
-        screenshot_url: imageUrl || trendData.thumbnail_url || null,
-        evidence: {
-          url: trendData.url || '',
-          title: trendData.trendName || 'Untitled Trend',
-          platform: trendData.platform || 'other',
-          // Store all the rich data
-          ageRanges: trendData.ageRanges,
-          subcultures: trendData.subcultures,
-          region: trendData.region,
-          categories: trendData.categories,
-          moods: trendData.moods,
-          spreadSpeed: trendData.spreadSpeed,
-          audioOrCatchphrase: trendData.audioOrCatchphrase,
-          motivation: trendData.motivation,
-          firstSeen: trendData.firstSeen,
-          otherPlatforms: trendData.otherPlatforms,
-          brandAdoption: trendData.brandAdoption
-        },
-        virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : trendData.spreadSpeed === 'picking_up' ? 6 : 5,
-        status: 'submitted',
-        quality_score: 0.5,
-        validation_count: 0,
-        created_at: new Date().toISOString()
-      };
-      
-      // Add social media metadata conditionally to avoid null constraint violations
-      if (trendData.creator_handle) insertData.creator_handle = trendData.creator_handle;
-      if (trendData.creator_name) insertData.creator_name = trendData.creator_name;
-      if (trendData.post_caption) insertData.post_caption = trendData.post_caption;
-      if (trendData.likes_count !== undefined) insertData.likes_count = trendData.likes_count;
-      if (trendData.comments_count !== undefined) insertData.comments_count = trendData.comments_count;
-      if (trendData.shares_count !== undefined) insertData.shares_count = trendData.shares_count;
-      if (trendData.views_count !== undefined) insertData.views_count = trendData.views_count;
-      if (trendData.hashtags && trendData.hashtags.length > 0) insertData.hashtags = trendData.hashtags;
-      if (trendData.url) insertData.post_url = trendData.url;
-      if (trendData.thumbnail_url) insertData.thumbnail_url = trendData.thumbnail_url;
-      if (trendData.posted_at) {
-        insertData.posted_at = trendData.posted_at;
-      } else {
-        insertData.posted_at = new Date().toISOString();
-      }
-
-      // Double-check the data right before submission
-      console.log('Final check - category:', insertData.category);
-      console.log('Final check - status:', insertData.status);
+      // We'll use dataToSubmit directly, no need for insertData
       
       // Create a minimal data object first to reduce complexity
       const dataToSubmit = {
@@ -457,7 +409,7 @@ export default function SubmitTrendPage() {
           details: error.details,
           hint: error.hint,
           code: error.code,
-          insertData: insertData
+          dataToSubmit: dataToSubmit
         });
         
         // Provide more specific error messages
@@ -529,7 +481,7 @@ export default function SubmitTrendPage() {
         console.error('Final submission error:', {
           errorMessage,
           originalError: error,
-          insertData,
+          dataToSubmit,
           user: user?.id
         });
         throw new Error(errorMessage);
