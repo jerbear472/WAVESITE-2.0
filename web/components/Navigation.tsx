@@ -134,8 +134,8 @@ export default function Navigation() {
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-800">
               <span className="max-w-[120px] xl:max-w-[200px] truncate">{user.email}</span>
               {!isBusinessUser && user.total_earnings !== undefined && (
-                <span className="font-medium text-green-600" title="Available to cash out">
-                  💰 {formatCurrency(user.total_earnings)}
+                <span className="font-medium text-green-600">
+                  {formatCurrency(user.total_earnings)}
                 </span>
               )}
             </div>
@@ -201,7 +201,7 @@ export default function Navigation() {
                 <p className="truncate">{user.email}</p>
                 {!isBusinessUser && user.total_earnings !== undefined && (
                   <p className="font-medium text-green-600 mt-1">
-                    💰 Available: {formatCurrency(user.total_earnings)}
+                    {formatCurrency(user.total_earnings)}
                   </p>
                 )}
               </div>
