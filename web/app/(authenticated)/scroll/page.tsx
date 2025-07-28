@@ -301,6 +301,27 @@ export default function ScrollDashboard() {
       console.log('Insert object category:', insertObject.category);
       console.log('Full insert object:', JSON.stringify(insertObject, null, 2));
       
+      // ABSOLUTE FINAL MAPPING - RIGHT BEFORE INSERT
+      const finalCategoryMapping: Record<string, string> = {
+        'Fashion & Beauty': 'visual_style',
+        'Food & Drink': 'behavior_pattern',
+        'Humor & Memes': 'meme_format',
+        'Lifestyle': 'behavior_pattern',
+        'Politics & Social Issues': 'behavior_pattern',
+        'Music & Dance': 'audio_music',
+        'Sports & Fitness': 'behavior_pattern',
+        'Tech & Gaming': 'creator_technique',
+        'Art & Creativity': 'visual_style',
+        'Education & Science': 'creator_technique'
+      };
+      
+      // Force final mapping
+      if (finalCategoryMapping[insertObject.category]) {
+        console.error('EMERGENCY: Display category detected at insert!', insertObject.category);
+        insertObject.category = finalCategoryMapping[insertObject.category];
+        console.log('Forced to:', insertObject.category);
+      }
+      
       const { data, error } = await supabase
         .from('trend_submissions')
         .insert(insertObject)

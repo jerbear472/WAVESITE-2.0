@@ -180,8 +180,7 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
             </button>
             
             <div className="flex-1">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{trend.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{trend.title}</h3>
                 
                 {/* Tags Row */}
                 <div className="flex items-center flex-wrap gap-2 mb-2">
@@ -197,7 +196,7 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
                   </span>
                   
                   {/* Wave Score Tag */}
-                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full flex items-center gap-1">
+                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full inline-flex items-center gap-1">
                     <SparklesIcon className="w-3 h-3" />
                     Wave: {trend.waveScore}
                   </span>
@@ -223,7 +222,6 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
                     </span>
                   ))}
                 </div>
-              </div>
               
               {trend.description && (
                 <p className="text-sm text-gray-600 mb-3">{trend.description}</p>
@@ -231,17 +229,6 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
               
               {/* Metrics Row */}
               <div className="flex items-center space-x-6 text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                      {trend.waveScore}
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1">
-                      <SparklesIcon className="w-3 h-3 text-yellow-500" />
-                    </div>
-                  </div>
-                  <span className="text-gray-500">Wave Score™</span>
-                </div>
                 
                 <div>
                   <span className="font-semibold text-gray-900">{formatCurrency(trend.totalEarnings)}</span>

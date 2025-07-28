@@ -21,6 +21,9 @@ interface TrendTileData {
   firstContentDate: string
   lastContentDate: string
   contentItems?: any[]
+  sentiment?: 'positive' | 'negative' | 'neutral' | 'mixed'
+  moods?: string[]
+  viralityPrediction?: number
 }
 
 export default function TrendTilesGrid() {
@@ -52,7 +55,10 @@ export default function TrendTilesGrid() {
         isCollaborative: true,
         firstContentDate: '2025-01-15',
         lastContentDate: '2025-01-26',
-        contentItems: []
+        contentItems: [],
+        sentiment: 'positive',
+        moods: ['creative', 'inspiring', 'controversial'],
+        viralityPrediction: 9
       },
       {
         id: '2',
@@ -67,7 +73,10 @@ export default function TrendTilesGrid() {
         platformDistribution: { instagram: 8, tiktok: 4 },
         isCollaborative: false,
         firstContentDate: '2025-01-10',
-        lastContentDate: '2025-01-25'
+        lastContentDate: '2025-01-25',
+        sentiment: 'positive',
+        moods: ['relaxing', 'inspiring'],
+        viralityPrediction: 7
       },
       {
         id: '3',
@@ -82,7 +91,10 @@ export default function TrendTilesGrid() {
         platformDistribution: { tiktok: 5, youtube: 3 },
         isCollaborative: false,
         firstContentDate: '2025-01-20',
-        lastContentDate: '2025-01-26'
+        lastContentDate: '2025-01-26',
+        sentiment: 'neutral',
+        moods: ['informative', 'energetic'],
+        viralityPrediction: 6
       },
       {
         id: '4',
@@ -97,7 +109,10 @@ export default function TrendTilesGrid() {
         platformDistribution: { youtube: 12, tiktok: 10 },
         isCollaborative: false,
         firstContentDate: '2024-12-15',
-        lastContentDate: '2025-01-20'
+        lastContentDate: '2025-01-20',
+        sentiment: 'positive',
+        moods: ['nostalgic', 'excited', 'funny'],
+        viralityPrediction: 8
       },
       {
         id: '5',
@@ -112,7 +127,10 @@ export default function TrendTilesGrid() {
         platformDistribution: { youtube: 7, instagram: 2 },
         isCollaborative: true,
         firstContentDate: '2025-01-05',
-        lastContentDate: '2025-01-18'
+        lastContentDate: '2025-01-18',
+        sentiment: 'mixed',
+        moods: ['informative', 'creative'],
+        viralityPrediction: 7
       }
     ])
   }, [])

@@ -397,9 +397,40 @@ export default function SubmitTrendPage() {
       console.log('dataToSubmit.category after all checks:', dataToSubmit.category);
       console.log('Full dataToSubmit object:', JSON.stringify(dataToSubmit, null, 2));
       
+      // ABSOLUTE FINAL MAPPING - RIGHT BEFORE INSERT
+      const finalCategoryMapping: Record<string, string> = {
+        'Fashion & Beauty': 'visual_style',
+        'Food & Drink': 'behavior_pattern',
+        'Humor & Memes': 'meme_format',
+        'Lifestyle': 'behavior_pattern',
+        'Politics & Social Issues': 'behavior_pattern',
+        'Music & Dance': 'audio_music',
+        'Sports & Fitness': 'behavior_pattern',
+        'Tech & Gaming': 'creator_technique',
+        'Art & Creativity': 'visual_style',
+        'Education & Science': 'creator_technique'
+      };
+      
+      // Create final insert object with FORCED mapping
+      const finalInsertData = {
+        ...dataToSubmit,
+        category: finalCategoryMapping[dataToSubmit.category] || dataToSubmit.category || 'meme_format'
+      };
+      
+      console.log('=== ABSOLUTE FINAL INSERT DATA ===');
+      console.log('Original category:', dataToSubmit.category);
+      console.log('Final category:', finalInsertData.category);
+      console.log('Full final data:', JSON.stringify(finalInsertData, null, 2));
+      
+      // LAST DITCH CHECK
+      if (Object.keys(finalCategoryMapping).includes(finalInsertData.category)) {
+        console.error('CRITICAL FAILURE: Display category STILL in final insert!');
+        finalInsertData.category = 'meme_format';
+      }
+      
       // Try insert without select to avoid hanging issues
       const { data, error } = await Promise.race([
-        supabase.from('trend_submissions').insert(dataToSubmit),
+        supabase.from('trend_submissions').insert(finalInsertData),
         timeoutPromise
       ]).then(
         (result) => {
