@@ -204,7 +204,12 @@ export default function SubmitTrendPage() {
     
     // Check if trendData contains a status field
     if ('status' in trendData) {
-      console.warn('WARNING: trendData contains status field:', (trendData as any).status);
+      console.error('CRITICAL: trendData contains status field:', (trendData as any).status);
+      if ((trendData as any).status === 'pending') {
+        console.error('FOUND THE PROBLEM: Form is sending pending status!');
+        // Remove the status field entirely
+        delete (trendData as any).status;
+      }
     }
     let retryCount = 0;
     const maxRetries = 3;
