@@ -1,4 +1,5 @@
 'use client';
+import { getSafeCategory } from '@/lib/safeCategory';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -279,8 +280,9 @@ export default function SubmitTrendPage() {
         'Pets & Animals': 'behavior_pattern'
       };
       
-      let mappedCategory = categoryMapping[trendData.categories?.[0]] || 'meme_format';
-      console.log('Direct mapping result:', trendData.categories?.[0], '→', mappedCategory);
+      // Use isolated safe function for mapping
+      let mappedCategory = getSafeCategory(trendData.categories?.[0]);
+      console.log('Safe mapping result:', trendData.categories?.[0], '→', mappedCategory);
       
       // FORCE OVERRIDE - If we still have display value, force it
       if (mappedCategory === 'Humor & Memes' || !['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'].includes(mappedCategory)) {
@@ -411,10 +413,10 @@ export default function SubmitTrendPage() {
         'Education & Science': 'creator_technique'
       };
       
-      // Create final insert object with FORCED mapping
+      // Create final insert object with SAFE mapping
       const finalInsertData = {
         ...dataToSubmit,
-        category: finalCategoryMapping[dataToSubmit.category] || dataToSubmit.category || 'meme_format'
+        category: getSafeCategory(dataToSubmit.category)
       };
       
       console.log('=== ABSOLUTE FINAL INSERT DATA ===');

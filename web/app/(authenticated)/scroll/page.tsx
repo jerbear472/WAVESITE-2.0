@@ -1,4 +1,5 @@
 'use client';
+import { getSafeCategory } from '@/lib/safeCategory';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -192,8 +193,9 @@ export default function ScrollDashboard() {
         'Pets & Animals': 'behavior_pattern'
       };
       
-      let mappedCategory = categoryMapping[originalCategory] || 'meme_format';
-      console.log('Direct mapping result:', originalCategory, '→', mappedCategory);
+      // Use isolated safe function for mapping
+      let mappedCategory = getSafeCategory(originalCategory);
+      console.log('Safe mapping result:', originalCategory, '→', mappedCategory);
       
       // Validate the mapped category
       const validCategories = ['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'];
@@ -315,12 +317,9 @@ export default function ScrollDashboard() {
         'Education & Science': 'creator_technique'
       };
       
-      // Force final mapping
-      if (finalCategoryMapping[insertObject.category]) {
-        console.error('EMERGENCY: Display category detected at insert!', insertObject.category);
-        insertObject.category = finalCategoryMapping[insertObject.category];
-        console.log('Forced to:', insertObject.category);
-      }
+      // Force final safe mapping
+      insertObject.category = getSafeCategory(insertObject.category);
+      console.log('Final safe category:', insertObject.category);
       
       const { data, error } = await supabase
         .from('trend_submissions')
