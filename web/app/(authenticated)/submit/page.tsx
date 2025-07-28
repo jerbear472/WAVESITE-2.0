@@ -405,12 +405,29 @@ export default function SubmitTrendPage() {
         'Pets & Animals'
       ];
       
+      // Log the exact state before final check
+      console.log('=== FINAL CATEGORY CHECK ===');
+      console.log('dataToSubmit.category before check:', dataToSubmit.category);
+      console.log('Is it a display category?', displayCategories.includes(dataToSubmit.category));
+      
       if (displayCategories.includes(dataToSubmit.category)) {
         console.error('EMERGENCY OVERRIDE: Display category detected in final submission!', dataToSubmit.category);
         // Re-map it one more time as emergency fallback
-        dataToSubmit.category = categoryMapping[dataToSubmit.category] || 'meme_format';
+        const remapped = categoryMapping[dataToSubmit.category];
+        console.log('Attempting remap:', dataToSubmit.category, '->', remapped);
+        dataToSubmit.category = remapped || 'meme_format';
         console.log('Emergency remapped to:', dataToSubmit.category);
       }
+      
+      // ULTRA PARANOID CHECK - Force mapping for Music & Dance specifically
+      if (dataToSubmit.category === 'Music & Dance') {
+        console.error('CRITICAL: Music & Dance still present after all checks!');
+        dataToSubmit.category = 'audio_music';
+      }
+      
+      console.log('=== FINAL CATEGORY RESULT ===');
+      console.log('dataToSubmit.category after all checks:', dataToSubmit.category);
+      console.log('Full dataToSubmit object:', JSON.stringify(dataToSubmit, null, 2));
       
       // Try insert without select to avoid hanging issues
       const { data, error } = await Promise.race([

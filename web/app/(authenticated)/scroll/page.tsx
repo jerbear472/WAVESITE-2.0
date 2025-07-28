@@ -227,12 +227,28 @@ export default function ScrollDashboard() {
         'Pets & Animals'
       ];
       
+      // Log the exact state before final check
+      console.log('=== FINAL CATEGORY CHECK (SCROLL) ===');
+      console.log('mappedCategory before check:', mappedCategory);
+      console.log('Is it a display category?', displayCategories.includes(mappedCategory));
+      
       if (displayCategories.includes(mappedCategory)) {
         console.error('EMERGENCY OVERRIDE: Display category detected in final submission!', mappedCategory);
         // Re-map it one more time as emergency fallback
-        mappedCategory = categoryMapping[mappedCategory] || 'meme_format';
+        const remapped = categoryMapping[mappedCategory];
+        console.log('Attempting remap:', mappedCategory, '->', remapped);
+        mappedCategory = remapped || 'meme_format';
         console.log('Emergency remapped to:', mappedCategory);
       }
+      
+      // ULTRA PARANOID CHECK - Force mapping for Music & Dance specifically
+      if (mappedCategory === 'Music & Dance') {
+        console.error('CRITICAL: Music & Dance still present after all checks!');
+        mappedCategory = 'audio_music';
+      }
+      
+      console.log('=== FINAL CATEGORY RESULT (SCROLL) ===');
+      console.log('mappedCategory after all checks:', mappedCategory);
       
       const { data, error } = await supabase
         .from('trend_submissions')
