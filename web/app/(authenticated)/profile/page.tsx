@@ -6,9 +6,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePersona } from '@/hooks/usePersona';
 import WaveLogo from '@/components/WaveLogo';
-import CashOutModal from '@/components/CashOutModal';
-import { formatCurrency } from '@/lib/formatters';
-import { EARNINGS } from '@/lib/constants';
 import { 
   User as UserIcon,
   MapPin as MapPinIcon,
@@ -24,15 +21,13 @@ import {
   Zap as ZapIcon,
   Globe as GlobeIcon,
   ShoppingBag as ShoppingBagIcon,
-  Sparkles as SparklesIcon,
-  DollarSign as DollarSignIcon
+  Sparkles as SparklesIcon
 } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { personaData, loading: personaLoading, hasPersona } = usePersona();
-  const [showCashOutModal, setShowCashOutModal] = useState(false);
 
   // Debug logging
   useEffect(() => {
@@ -222,43 +217,6 @@ export default function ProfilePage() {
                       <p className="text-sm text-wave-100">Validation</p>
                     </div>
                   </div>
-                </div>
-              </div>
-              
-              {/* Earnings Section */}
-              <div className="mt-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur rounded-xl p-4 border border-green-500/30">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500/20 rounded-lg">
-                      <span className="text-2xl">💰</span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-green-100">Total Earnings</p>
-                      <p className="text-3xl font-bold text-green-300">{formatCurrency(user.total_earnings)}</p>
-                    </div>
-                  </div>
-                  {user.pending_earnings > 0 && (
-                    <div className="text-right">
-                      <p className="text-sm text-yellow-100">Pending</p>
-                      <p className="text-xl font-semibold text-yellow-300">{formatCurrency(user.pending_earnings)}</p>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Cash Out Button */}
-                {(user.total_earnings || 0) > 0 && (
-                  <button
-                    onClick={() => setShowCashOutModal(true)}
-                    className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-                  >
-                    <DollarSignIcon className="w-5 h-5" />
-                    Cash Out {formatCurrency(user.total_earnings)}
-                  </button>
-                )}
-                
-                <div className="mt-3 text-sm text-green-100">
-                  <p>💡 Each trend submission earns {formatCurrency(EARNINGS.SUBMISSION_REWARD)}</p>
-                  <p>🎯 Keep spotting trends to increase your earnings!</p>
                 </div>
               </div>
             </div>
@@ -454,18 +412,6 @@ export default function ProfilePage() {
             Back to Dashboard
           </button>
         </motion.div>
-
-        {/* Cash Out Modal */}
-        <CashOutModal
-          isOpen={showCashOutModal}
-          onClose={() => setShowCashOutModal(false)}
-          totalEarnings={user.total_earnings || 0}
-          userId={user.id}
-          onSuccess={() => {
-            // Refresh the page to update earnings
-            window.location.reload();
-          }}
-        />
       </div>
     </div>
   );
