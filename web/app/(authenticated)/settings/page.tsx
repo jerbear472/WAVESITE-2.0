@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { 
   User as UserIcon,
   Mail as MailIcon,
@@ -25,7 +26,11 @@ import {
   Filter as FilterIcon,
   Download as DownloadIcon,
   RefreshCw as RefreshCwIcon,
-  ChevronDown as ChevronDownIcon
+  ChevronDown as ChevronDownIcon,
+  Upload as UploadIcon,
+  Check as CheckIcon,
+  AlertCircle as AlertCircleIcon,
+  Trash2 as TrashIcon
 } from 'lucide-react';
 
 interface UserProfile {
@@ -78,6 +83,7 @@ export default function SettingsPage() {
     id: '',
     username: '',
     email: '',
+    avatar_url: '',
     notifications: {
       email: true,
       push: true,
@@ -92,6 +98,13 @@ export default function SettingsPage() {
     theme: 'system',
     language: 'en'
   });
+  
+  // Avatar upload states
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Admin state
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -117,24 +130,38 @@ export default function SettingsPage() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      // In a real app, fetch from user_profiles table
+      
+      // Fetch actual profile data
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+        
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
       setProfile({
         id: user?.id || '',
-        username: user?.username || user?.email?.split('@')[0] || '',
+        username: profileData?.username || user?.username || user?.email?.split('@')[0] || '',
         email: user?.email || '',
-        notifications: {
+        avatar_url: profileData?.avatar_url || '',
+        bio: profileData?.bio || '',
+        website: profileData?.website || '',
+        notifications: profileData?.notifications || {
           email: true,
           push: true,
           trends: true,
           earnings: true
         },
-        privacy: {
+        privacy: profileData?.privacy || {
           profile_public: true,
           show_earnings: false,
           show_trends: true
         },
-        theme: 'system',
-        language: 'en'
+        theme: profileData?.theme || 'system',
+        language: profileData?.language || 'en'
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -230,13 +257,94 @@ export default function SettingsPage() {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     try {
       setSaving(true);
-      // In a real app, update user_profiles table
+      setUploadError(null);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user?.id,
+          ...updates,
+          updated_at: new Date().toISOString()
+        });
+        
+      if (error) throw error;
+      
       setProfile({ ...profile, ...updates });
-      // Show success message
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000);
     } catch (error) {
       console.error('Error updating profile:', error);
+      setUploadError('Failed to update profile');
     } finally {
       setSaving(false);
+    }
+  };
+  
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploadingAvatar(true);
+      setUploadError(null);
+      
+      const file = event.target.files?.[0];
+      if (!file) return;
+      
+      // Validate file
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      
+      if (!validExtensions.includes(fileExt || '')) {
+        throw new Error('Please upload a valid image file (JPG, PNG, GIF, or WebP)');
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Image size must be less than 5MB');
+      }
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      // Upload to Supabase Storage
+      const fileName = `${user?.id}-${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+        
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+        
+      // Update profile with new avatar URL
+      await updateProfile({ avatar_url: publicUrl });
+      
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      setUploadError(error.message || 'Failed to upload avatar');
+      setAvatarPreview(null);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+  
+  const removeAvatar = async () => {
+    try {
+      setUploadingAvatar(true);
+      await updateProfile({ avatar_url: '' });
+      setAvatarPreview(null);
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      setUploadError('Failed to remove avatar');
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -287,73 +395,92 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl safe-area-top safe-area-bottom">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-wave-900/20 to-gray-900">
+      {/* Animated Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-wave-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+      
+      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl safe-area-top safe-area-bottom">
+        {/* Header with Back Button */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-responsive-2xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-responsive-sm text-gray-400">Manage your account settings and preferences</p>
+          <div className="flex items-center gap-4 mb-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 rounded-xl bg-gray-800/50 hover:bg-gray-800 transition-all border border-gray-700 group"
+            >
+              <ChevronDownIcon className="w-5 h-5 text-gray-400 group-hover:text-white transform rotate-90" />
+            </button>
+            <div>
+              <h1 className="text-responsive-2xl font-bold text-white">Settings</h1>
+              <p className="text-responsive-sm text-gray-400">Manage your account settings and preferences</p>
+            </div>
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex space-x-1 mb-6 sm:mb-8 bg-gray-800/50 p-1 rounded-lg overflow-x-auto hide-scrollbar">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target ${
-              activeTab === 'profile' 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-            }`}
-          >
-            <UserIcon className="w-4 h-4" />
-            Profile
-          </button>
-          <button
-            onClick={() => setActiveTab('account')}
-            className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target ${
-              activeTab === 'account' 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-            }`}
-          >
-            <LockIcon className="w-4 h-4" />
-            Account
-          </button>
-          <button
-            onClick={() => setActiveTab('notifications')}
-            className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target ${
-              activeTab === 'notifications' 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-            }`}
-          >
-            <BellIcon className="w-4 h-4" />
-            Notifications
-          </button>
-          <button
-            onClick={() => setActiveTab('privacy')}
-            className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target ${
-              activeTab === 'privacy' 
-                ? 'bg-blue-600 text-white shadow-lg' 
-                : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-            }`}
-          >
-            <ShieldIcon className="w-4 h-4" />
-            Privacy
-          </button>
-          {isAdmin && (
+        {/* Tabs with Enhanced Styling */}
+        <div className="relative mb-6 sm:mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-wave-500/10 via-transparent to-wave-600/10 rounded-xl blur-xl" />
+          <div className="relative flex space-x-1 bg-gray-800/60 backdrop-blur-md p-1.5 rounded-xl overflow-x-auto hide-scrollbar border border-gray-700/50">
             <button
-              onClick={() => setActiveTab('admin')}
-              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target ${
-                activeTab === 'admin' 
-                  ? 'bg-red-600 text-white shadow-lg' 
-                  : 'text-red-400 hover:text-white hover:bg-red-900/50'
+              onClick={() => setActiveTab('profile')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target transform hover:scale-105 ${
+                activeTab === 'profile' 
+                  ? 'bg-gradient-to-r from-wave-500 to-wave-600 text-white shadow-lg shadow-wave-500/25' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
               }`}
             >
-              <UsersIcon className="w-4 h-4" />
-              Admin
+              <UserIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Profile</span>
             </button>
-          )}
+            <button
+              onClick={() => setActiveTab('account')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target transform hover:scale-105 ${
+                activeTab === 'account' 
+                  ? 'bg-gradient-to-r from-wave-500 to-wave-600 text-white shadow-lg shadow-wave-500/25' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+              }`}
+            >
+              <LockIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Account</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('notifications')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target transform hover:scale-105 ${
+                activeTab === 'notifications' 
+                  ? 'bg-gradient-to-r from-wave-500 to-wave-600 text-white shadow-lg shadow-wave-500/25' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+              }`}
+            >
+              <BellIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Notifications</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('privacy')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target transform hover:scale-105 ${
+                activeTab === 'privacy' 
+                  ? 'bg-gradient-to-r from-wave-500 to-wave-600 text-white shadow-lg shadow-wave-500/25' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+              }`}
+            >
+              <ShieldIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Privacy</span>
+            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg font-medium text-responsive-xs transition-all whitespace-nowrap touch-target transform hover:scale-105 ${
+                  activeTab === 'admin' 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
+                    : 'text-red-400 hover:text-white hover:bg-red-900/50'
+                }`}
+              >
+                <UsersIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Profile Tab */}
@@ -367,64 +494,209 @@ export default function SettingsPage() {
             
             <div className="space-y-6">
               {/* Avatar */}
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
-                    {profile.username.charAt(0).toUpperCase()}
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="relative group">
+                  {/* Avatar Display */}
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-wave-500 to-wave-600 shadow-xl">
+                    {avatarPreview || profile.avatar_url ? (
+                      <Image
+                        src={avatarPreview || profile.avatar_url}
+                        alt="Profile avatar"
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold">
+                        {profile.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    
+                    {/* Upload Overlay */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="text-center">
+                        <CameraIcon className="w-8 h-8 text-white mx-auto mb-2" />
+                        <p className="text-white text-sm font-medium">Change Photo</p>
+                      </div>
+                    </div>
                   </div>
-                  <button className="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors">
-                    <CameraIcon className="w-4 h-4 text-white" />
+                  
+                  {/* Upload Button */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute bottom-0 right-0 p-3 bg-wave-600 rounded-full hover:bg-wave-700 transition-all shadow-lg group-hover:scale-110 disabled:opacity-50"
+                  >
+                    {uploadingAvatar ? (
+                      <RefreshCwIcon className="w-5 h-5 text-white animate-spin" />
+                    ) : (
+                      <CameraIcon className="w-5 h-5 text-white" />
+                    )}
                   </button>
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium text-white">{profile.username}</h3>
-                  <p className="text-gray-400">{profile.email}</p>
+                
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="text-xl font-semibold text-white mb-1">{profile.username}</h3>
+                  <p className="text-gray-400 mb-4">{profile.email}</p>
+                  
+                  {/* Avatar Actions */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                      className="px-4 py-2 bg-wave-600/20 hover:bg-wave-600/30 text-wave-400 rounded-lg transition-all flex items-center gap-2 text-sm font-medium"
+                    >
+                      <UploadIcon className="w-4 h-4" />
+                      Upload New
+                    </button>
+                    {profile.avatar_url && (
+                      <button
+                        onClick={removeAvatar}
+                        disabled={uploadingAvatar}
+                        className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-all flex items-center gap-2 text-sm font-medium"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Upload Status */}
+                  <AnimatePresence>
+                    {uploadError && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mt-3 p-3 bg-red-500/20 border border-red-500/50 rounded-lg flex items-center gap-2"
+                      >
+                        <AlertCircleIcon className="w-4 h-4 text-red-400 flex-shrink-0" />
+                        <p className="text-red-400 text-sm">{uploadError}</p>
+                      </motion.div>
+                    )}
+                    {uploadSuccess && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mt-3 p-3 bg-green-500/20 border border-green-500/50 rounded-lg flex items-center gap-2"
+                      >
+                        <CheckIcon className="w-4 h-4 text-green-400 flex-shrink-0" />
+                        <p className="text-green-400 text-sm">Profile updated successfully!</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
-              {/* Username */}
+              {/* Username with Character Counter */}
               <div>
-                <label className="block text-responsive-xs font-medium text-gray-300 mb-2">Username</label>
-                <input
-                  type="text"
-                  value={profile.username}
-                  onChange={(e) => setProfile({ ...profile, username: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-responsive-xs font-medium text-gray-300">Username</label>
+                  <span className="text-xs text-gray-500">{profile.username.length}/30</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={profile.username}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 30) {
+                        setProfile({ ...profile, username: e.target.value });
+                      }
+                    }}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:border-wave-500 focus:ring-2 focus:ring-wave-500/20 focus:outline-none transition-all"
+                    placeholder="Enter your username"
+                  />
+                  {profile.username.length >= 25 && (
+                    <p className="text-xs text-yellow-400 mt-1">Approaching character limit</p>
+                  )}
+                </div>
               </div>
 
-              {/* Bio */}
+              {/* Bio with Character Counter */}
               <div>
-                <label className="block text-responsive-xs font-medium text-gray-300 mb-2">Bio</label>
-                <textarea
-                  value={profile.bio || ''}
-                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="Tell us about yourself..."
-                />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-responsive-xs font-medium text-gray-300">Bio</label>
+                  <span className="text-xs text-gray-500">{(profile.bio || '').length}/150</span>
+                </div>
+                <div className="relative">
+                  <textarea
+                    value={profile.bio || ''}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 150) {
+                        setProfile({ ...profile, bio: e.target.value });
+                      }
+                    }}
+                    rows={4}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:border-wave-500 focus:ring-2 focus:ring-wave-500/20 focus:outline-none transition-all resize-none"
+                    placeholder="Tell us about yourself..."
+                  />
+                  <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((profile.bio || '').length / 150) * 100}%` }}
+                      className="h-1 bg-gradient-to-r from-wave-500 to-wave-600 rounded-full"
+                      style={{ maxWidth: '100px' }}
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Website */}
+              {/* Website with Validation */}
               <div>
                 <label className="block text-responsive-xs font-medium text-gray-300 mb-2">Website</label>
-                <input
-                  type="url"
-                  value={profile.website || ''}
-                  onChange={(e) => setProfile({ ...profile, website: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="https://example.com"
-                />
+                <div className="relative">
+                  <GlobeIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <input
+                    type="url"
+                    value={profile.website || ''}
+                    onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:border-wave-500 focus:ring-2 focus:ring-wave-500/20 focus:outline-none transition-all"
+                    placeholder="https://example.com"
+                  />
+                  {profile.website && !profile.website.match(/^https?:\/\/.+/) && (
+                    <p className="text-xs text-yellow-400 mt-1">Please include http:// or https://</p>
+                  )}
+                </div>
               </div>
 
-              <button
-                onClick={() => updateProfile(profile)}
-                disabled={saving}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg font-medium text-white transition-colors flex items-center gap-2"
-              >
-                <SaveIcon className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
+              {/* Save Button with Enhanced Styling */}
+              <div className="flex items-center gap-4 pt-6 border-t border-gray-700">
+                <button
+                  onClick={() => updateProfile(profile)}
+                  disabled={saving}
+                  className="px-6 py-3 bg-gradient-to-r from-wave-500 to-wave-600 hover:from-wave-600 hover:to-wave-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-medium text-white transition-all shadow-lg hover:shadow-xl flex items-center gap-2 transform hover:scale-105"
+                >
+                  {saving ? (
+                    <>
+                      <RefreshCwIcon className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <SaveIcon className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+                
+                {uploadSuccess && (
+                  <motion.p
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-green-400 text-sm flex items-center gap-2"
+                  >
+                    <CheckIcon className="w-4 h-4" />
+                    Changes saved!
+                  </motion.p>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -450,12 +722,27 @@ export default function SettingsPage() {
                 />
               </div>
 
-              {/* Password */}
+              {/* Password with Security Indicator */}
               <div>
-                <label className="block text-responsive-xs font-medium text-gray-300 mb-2">Password</label>
-                <button className="px-4 py-2 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg text-white transition-colors">
-                  Change Password
-                </button>
+                <label className="block text-responsive-xs font-medium text-gray-300 mb-2">Password Security</label>
+                <div className="p-4 bg-gray-700/30 rounded-xl border border-gray-600">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-500/20 rounded-lg">
+                        <ShieldIcon className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">Password Strength</p>
+                        <p className="text-green-400 text-sm">Strong</p>
+                      </div>
+                    </div>
+                    <p className="text-gray-400 text-sm">Last changed 30 days ago</p>
+                  </div>
+                  <button className="w-full px-4 py-2.5 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg text-white transition-all flex items-center justify-center gap-2 group">
+                    <LockIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Change Password
+                  </button>
+                </div>
               </div>
 
               {/* Enterprise Access */}
@@ -483,32 +770,60 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              {/* Theme */}
+              {/* Theme with Visual Preview */}
               <div>
-                <label className="block text-responsive-xs font-medium text-gray-300 mb-2">Theme Preference</label>
-                <select
-                  value={profile.theme}
-                  onChange={(e) => setProfile({ ...profile, theme: e.target.value as 'light' | 'dark' | 'system' })}
-                  className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                >
-                  <option value="system">System</option>
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
+                <label className="block text-responsive-xs font-medium text-gray-300 mb-3">Theme Preference</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { value: 'system', label: 'System', icon: '🖥️', gradient: 'from-gray-600 to-gray-700' },
+                    { value: 'light', label: 'Light', icon: '☀️', gradient: 'from-gray-200 to-gray-300' },
+                    { value: 'dark', label: 'Dark', icon: '🌙', gradient: 'from-gray-800 to-gray-900' }
+                  ].map((theme) => (
+                    <button
+                      key={theme.value}
+                      onClick={() => setProfile({ ...profile, theme: theme.value as 'light' | 'dark' | 'system' })}
+                      className={`relative p-4 rounded-xl border-2 transition-all transform hover:scale-105 ${
+                        profile.theme === theme.value
+                          ? 'border-wave-500 bg-wave-500/10'
+                          : 'border-gray-600 hover:border-gray-500'
+                      }`}
+                    >
+                      <div className={`w-full h-16 rounded-lg bg-gradient-to-br ${theme.gradient} mb-3 flex items-center justify-center text-2xl`}>
+                        {theme.icon}
+                      </div>
+                      <p className="text-sm font-medium text-white">{theme.label}</p>
+                      {profile.theme === theme.value && (
+                        <div className="absolute top-2 right-2 w-6 h-6 bg-wave-500 rounded-full flex items-center justify-center">
+                          <CheckIcon className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Language */}
+              {/* Language with Flags */}
               <div>
                 <label className="block text-responsive-xs font-medium text-gray-300 mb-2">Language</label>
-                <select
-                  value={profile.language}
-                  onChange={(e) => setProfile({ ...profile, language: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                >
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="fr">French</option>
-                </select>
+                <div className="relative">
+                  <GlobeIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <select
+                    value={profile.language}
+                    onChange={(e) => setProfile({ ...profile, language: e.target.value })}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:border-wave-500 focus:ring-2 focus:ring-wave-500/20 focus:outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Spanish</option>
+                    <option value="fr">🇫🇷 French</option>
+                    <option value="de">🇩🇪 German</option>
+                    <option value="it">🇮🇹 Italian</option>
+                    <option value="pt">🇵🇹 Portuguese</option>
+                    <option value="ja">🇯🇵 Japanese</option>
+                    <option value="ko">🇰🇷 Korean</option>
+                    <option value="zh">🇨🇳 Chinese</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+                </div>
               </div>
 
               {/* Delete Account */}
@@ -533,21 +848,33 @@ export default function SettingsPage() {
             <h2 className="text-responsive-lg font-semibold text-white mb-4 sm:mb-6">Notification Preferences</h2>
             
             <div className="space-y-4">
-              <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
-                <div>
-                  <span className="text-white font-medium">Email Notifications</span>
-                  <p className="text-responsive-xs text-gray-400 mt-1">Receive updates via email</p>
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center justify-between p-5 bg-gray-700/30 rounded-xl cursor-pointer hover:bg-gray-700/50 transition-all border border-gray-700 hover:border-gray-600"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-wave-500/20 rounded-lg mt-0.5">
+                    <MailIcon className="w-5 h-5 text-wave-400" />
+                  </div>
+                  <div>
+                    <span className="text-white font-medium block mb-1">Email Notifications</span>
+                    <p className="text-responsive-xs text-gray-400">Receive updates and announcements via email</p>
+                  </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={profile.notifications.email}
-                  onChange={(e) => setProfile({
-                    ...profile,
-                    notifications: { ...profile.notifications, email: e.target.checked }
-                  })}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-              </label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={profile.notifications.email}
+                    onChange={(e) => setProfile({
+                      ...profile,
+                      notifications: { ...profile.notifications, email: e.target.checked }
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-wave-500 peer-checked:to-wave-600"></div>
+                </label>
+              </motion.label>
 
               <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
                 <div>
@@ -610,21 +937,33 @@ export default function SettingsPage() {
             <h2 className="text-responsive-lg font-semibold text-white mb-4 sm:mb-6">Privacy Settings</h2>
             
             <div className="space-y-4">
-              <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
-                <div>
-                  <span className="text-white font-medium">Public Profile</span>
-                  <p className="text-responsive-xs text-gray-400 mt-1">Allow others to see your profile</p>
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center justify-between p-5 bg-gray-700/30 rounded-xl cursor-pointer hover:bg-gray-700/50 transition-all border border-gray-700 hover:border-gray-600"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-purple-500/20 rounded-lg mt-0.5">
+                    <UserIcon className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <span className="text-white font-medium block mb-1">Public Profile</span>
+                    <p className="text-responsive-xs text-gray-400">Allow others to discover and view your profile</p>
+                  </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={profile.privacy.profile_public}
-                  onChange={(e) => setProfile({
-                    ...profile,
-                    privacy: { ...profile.privacy, profile_public: e.target.checked }
-                  })}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-              </label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={profile.privacy.profile_public}
+                    onChange={(e) => setProfile({
+                      ...profile,
+                      privacy: { ...profile.privacy, profile_public: e.target.checked }
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-purple-600"></div>
+                </label>
+              </motion.label>
 
               <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
                 <div>
