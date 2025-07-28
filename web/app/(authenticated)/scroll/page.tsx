@@ -23,7 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
-import { mapCategoryToEnum } from '@/lib/categoryMapper';
+// import { mapCategoryToEnum } from '@/lib/categoryMapper'; // Using inline mapping instead
 // import { TrendUmbrellaService } from '@/lib/trendUmbrellaService'; // Not needed
 
 export default function ScrollDashboard() {
@@ -167,38 +167,33 @@ export default function ScrollDashboard() {
       console.log('Scroll page v3 - umbrellas disabled');
       const umbrellaId = null;
 
-      // Map category to enum value with extensive logging
+      // ALWAYS use inline mapping to avoid import issues
       const originalCategory = trendData.categories?.[0];
       console.log('Original category from form:', originalCategory);
       console.log('All categories:', trendData.categories);
       
-      let mappedCategory;
-      try {
-        mappedCategory = originalCategory ? mapCategoryToEnum(originalCategory) : 'meme_format';
-        console.log('Category mapping:', originalCategory, '→', mappedCategory);
-      } catch (mappingError) {
-        console.error('Category mapping failed:', mappingError);
-        mappedCategory = 'meme_format'; // Fallback
-      }
+      // Direct inline mapping - don't rely on imports
+      const categoryMapping: Record<string, string> = {
+        'Fashion & Beauty': 'visual_style',
+        'Food & Drink': 'behavior_pattern',
+        'Humor & Memes': 'meme_format',
+        'Lifestyle': 'behavior_pattern',
+        'Politics & Social Issues': 'behavior_pattern',
+        'Music & Dance': 'audio_music',
+        'Sports & Fitness': 'behavior_pattern',
+        'Tech & Gaming': 'creator_technique',
+        'Art & Creativity': 'visual_style',
+        'Education & Science': 'creator_technique',
+        // Add any other categories that might exist
+        'Entertainment': 'audio_music',
+        'Travel': 'behavior_pattern',
+        'Business': 'behavior_pattern',
+        'Health & Wellness': 'behavior_pattern',
+        'Pets & Animals': 'behavior_pattern'
+      };
       
-      // Double-check by manually mapping if needed
-      if (!mappedCategory || mappedCategory === originalCategory) {
-        console.warn('Category mapping may have failed, using manual mapping');
-        const manualMapping: Record<string, string> = {
-          'Fashion & Beauty': 'visual_style',
-          'Food & Drink': 'behavior_pattern',
-          'Humor & Memes': 'meme_format',
-          'Lifestyle': 'behavior_pattern',
-          'Politics & Social Issues': 'behavior_pattern',
-          'Music & Dance': 'audio_music',
-          'Sports & Fitness': 'behavior_pattern',
-          'Tech & Gaming': 'creator_technique',
-          'Art & Creativity': 'visual_style',
-          'Education & Science': 'creator_technique'
-        };
-        mappedCategory = manualMapping[originalCategory] || 'meme_format';
-        console.log('Manual mapping result:', originalCategory, '→', mappedCategory);
-      }
+      const mappedCategory = categoryMapping[originalCategory] || 'meme_format';
+      console.log('Direct mapping result:', originalCategory, '→', mappedCategory);
       
       // Validate the mapped category
       const validCategories = ['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'];
