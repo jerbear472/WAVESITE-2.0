@@ -376,6 +376,7 @@ export default function SubmitTrendPage() {
       
       // Log the exact request being made
       console.log('Making Supabase request at:', new Date().toISOString());
+      console.log('Using status:', dataToSubmit.status); // Added for debugging
       
       // Try insert without select to avoid hanging issues
       const { data, error } = await Promise.race([
