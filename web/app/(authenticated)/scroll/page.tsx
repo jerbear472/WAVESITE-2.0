@@ -445,7 +445,15 @@ export default function ScrollDashboard() {
           ? `Trend submitted! +${formatCurrency(earnedAmount)} pending (${streakMultiplier}x multiplier!)` 
           : `Trend submitted! +${formatCurrency(earnedAmount)} pending verification`
       });
-      setTimeout(() => setSubmitMessage(null), 3000);
+      
+      // Close the form modal
+      setShowTrendForm(false);
+      setTrendLink('');
+      
+      // Show success message for a bit longer
+      setTimeout(() => {
+        setSubmitMessage(null);
+      }, 3000);
 
     } catch (error) {
       console.error('Error submitting trend:', error);
@@ -684,6 +692,9 @@ export default function ScrollDashboard() {
                 }`}
               >
                 <p className="text-sm font-semibold">{submitMessage.text}</p>
+                {submitMessage.type === 'success' && (
+                  <p className="text-xs mt-1 opacity-80">Check your timeline to see your submission!</p>
+                )}
               </motion.div>
             )}
           </motion.div>
