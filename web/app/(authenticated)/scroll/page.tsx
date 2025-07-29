@@ -13,7 +13,8 @@ import {
   Loader2,
   Camera,
   Flame,
-  Zap
+  Zap,
+  Clock
 } from 'lucide-react';
 import { ScrollSession } from '@/components/ScrollSession';
 import { FloatingTrendLogger } from '@/components/FloatingTrendLogger';
