@@ -61,7 +61,7 @@ export default function EnterpriseDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout>();
-  const audioRef = useRef<HTMLAudioElement>();
+  const audioRef = useRef<HTMLAudioElement>(null);
   
   const [stats, setStats] = useState<EnterpriseStats>({
     total_validated_trends: 0,
@@ -277,7 +277,7 @@ export default function EnterpriseDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hidden audio element for notifications */}
-      <audio ref={audioRef} src="/notification.mp3" />
+      <audio ref={audioRef} src="/notification.mp3" preload="auto" />
       
       {/* Premium Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -620,7 +620,7 @@ export default function EnterpriseDashboard() {
                 </div>
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <p className="text-sm font-medium text-blue-900 mb-1">Opportunity Alert</p>
-                  <p className="text-xs text-blue-700">3 emerging trends in "Tech" with <90% confidence score</p>
+                  <p className="text-xs text-blue-700">3 emerging trends in "Tech" with &gt;90% confidence score</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                   <p className="text-sm font-medium text-green-900 mb-1">Market Signal</p>
