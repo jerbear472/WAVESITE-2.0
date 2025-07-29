@@ -17,11 +17,14 @@ export default function Navigation() {
   const [viewSwitcherOpen, setViewSwitcherOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState<number>(0);
+  const [earningsLoaded, setEarningsLoaded] = useState(false);
 
   // Fetch correct total earnings
   useEffect(() => {
     const fetchEarnings = async () => {
       if (!user) return;
+      
+      console.log('Navigation: Starting earnings fetch for user:', user.id);
       
       try {
         const { data: profile, error } = await supabase
@@ -42,6 +45,15 @@ export default function Navigation() {
             total
           });
           setTotalEarnings(total);
+          setEarningsLoaded(true);
+        } else if (error) {
+          console.error('Error fetching profile earnings:', error);
+          // Fallback to user object if available
+          if (user?.total_earnings !== undefined) {
+            console.log('Using fallback user.total_earnings:', user.total_earnings);
+            setTotalEarnings(user.total_earnings);
+            setEarningsLoaded(true);
+          }
         }
       } catch (error) {
         console.error('Error fetching earnings:', error);
@@ -190,9 +202,9 @@ export default function Navigation() {
             {/* User info - visible on larger screens */}
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-800">
               <span className="max-w-[120px] xl:max-w-[200px] truncate">{user.email}</span>
-              {!isBusinessUser && totalEarnings > 0 && (
+              {!isBusinessUser && (earningsLoaded ? totalEarnings > 0 : user?.total_earnings !== undefined) && (
                 <span className="font-medium text-green-600">
-                  {formatCurrency(totalEarnings)}
+                  {formatCurrency(earningsLoaded ? totalEarnings : (user?.total_earnings || 0))}
                 </span>
               )}
             </div>
@@ -256,9 +268,9 @@ export default function Navigation() {
             <div className="border-t border-gray-200 pt-2">
               <div className="px-3 py-2 text-sm text-gray-600">
                 <p className="truncate">{user.email}</p>
-                {!isBusinessUser && totalEarnings > 0 && (
+                {!isBusinessUser && (earningsLoaded ? totalEarnings > 0 : user?.total_earnings !== undefined) && (
                   <p className="font-medium text-green-600 mt-1">
-                    {formatCurrency(totalEarnings)}
+                    {formatCurrency(earningsLoaded ? totalEarnings : (user?.total_earnings || 0))}
                   </p>
                 )}
               </div>
