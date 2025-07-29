@@ -98,7 +98,11 @@ const categoryOptions = [
   'Sports & Fitness',
   'Tech & Gaming',
   'Art & Creativity',
-  'Education & Science'
+  'Education & Science',
+  'Luxury',
+  'Celebrity',
+  'Meme Coin',
+  'Meme Stock'
 ];
 
 const moodOptions = [
@@ -111,7 +115,8 @@ const moodOptions = [
   'Nostalgic 🌟',
   'Rebellious 🤘',
   'Cozy 🧸',
-  'Chaotic 🌪️'
+  'Chaotic 🌪️',
+  'Fancy 🍸'
 ];
 
 const spreadSpeedOptions = [

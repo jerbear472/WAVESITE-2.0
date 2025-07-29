@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Hash, Heart, Zap, ShoppingBag, Music, Palette, Code, Utensils } from 'lucide-react';
+import { Plus, X, Hash, Heart, Zap, ShoppingBag, Music, Palette, Code, Utensils, Diamond, Star, Coins, TrendingUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,10 +19,14 @@ const categories = [
   { id: 'tech', name: 'Tech', icon: Code, color: 'from-orange-500 to-red-500' },
   { id: 'food', name: 'Food', icon: Utensils, color: 'from-yellow-500 to-amber-500' },
   { id: 'lifestyle', name: 'Lifestyle', icon: Zap, color: 'from-teal-500 to-green-500' },
+  { id: 'luxury', name: 'Luxury', icon: Diamond, color: 'from-purple-600 to-pink-600' },
+  { id: 'celebrity', name: 'Celebrity', icon: Star, color: 'from-yellow-400 to-orange-500' },
+  { id: 'meme_coin', name: 'Meme Coin', icon: Coins, color: 'from-yellow-500 to-yellow-600' },
+  { id: 'meme_stock', name: 'Meme Stock', icon: TrendingUp, color: 'from-green-600 to-blue-600' },
   { id: 'other', name: 'Other', icon: Palette, color: 'from-gray-500 to-gray-600' }
 ];
 
-const emojis = ['🔥', '💯', '✨', '🚀', '💎', '🌊', '⚡', '🎯'];
+const emojis = ['🔥', '💯', '✨', '🚀', '💎', '🌊', '⚡', '🎯', '🍸'];
 
 export const FloatingTrendLogger: React.FC<FloatingTrendLoggerProps> = ({ 
   isVisible, 

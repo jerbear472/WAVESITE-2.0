@@ -373,14 +373,9 @@ export default function Verify() {
 
       if (insertError) throw insertError;
 
+      // Update rate limit using the increment function
       const { error: rateLimitError } = await supabase
-        .from('validation_rate_limits')
-        .update({
-          validations_today: (rateLimit.validations_remaining_today - 1),
-          validations_this_hour: (rateLimit.validations_remaining_hour - 1),
-          last_validation_at: new Date().toISOString()
-        })
-        .eq('user_id', user?.id);
+        .rpc('increment_validation_count', { p_user_id: user?.id });
 
       if (rateLimitError) console.error('Rate limit update error:', rateLimitError);
 
@@ -855,7 +850,7 @@ export default function Verify() {
                       <motion.div 
                         className="bg-gradient-to-r from-blue-500 to-purple-600 h-2"
                         initial={{ width: 0 }}
-                        animate={{ width: `${(rateLimit.validations_remaining_hour / 10) * 100}%` }}
+                        animate={{ width: `${(rateLimit.validations_remaining_hour / 20) * 100}%` }}
                         transition={{ duration: 0.5 }}
                       />
                     </div>
@@ -872,12 +867,26 @@ export default function Verify() {
                       <motion.div 
                         className="bg-gradient-to-r from-green-500 to-emerald-600 h-2"
                         initial={{ width: 0 }}
-                        animate={{ width: `${(rateLimit.validations_remaining_today / 50) * 100}%` }}
+                        animate={{ width: `${(rateLimit.validations_remaining_today / 100) * 100}%` }}
                         transition={{ duration: 0.5 }}
                       />
                     </div>
                   </div>
                 </div>
+                
+                {/* Rate limit reached warning */}
+                {!rateLimit.can_validate && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
+                  >
+                    <p className="text-xs text-red-400 flex items-center gap-1">
+                      <AlertCircleIcon className="w-3 h-3" />
+                      Limit reached. Resets at {new Date(rateLimit.reset_time).toLocaleTimeString()}
+                    </p>
+                  </motion.div>
+                )}
               </motion.div>
             )}
 

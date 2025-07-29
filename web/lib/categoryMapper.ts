@@ -20,6 +20,11 @@ export const CATEGORY_MAP: Record<string, string> = {
   'Business': 'behavior_pattern',
   'Health & Wellness': 'behavior_pattern',
   'Pets & Animals': 'behavior_pattern',
+  // New categories
+  'Luxury': 'product_brand',
+  'Celebrity': 'behavior_pattern',
+  'Meme Coin': 'meme_format',
+  'Meme Stock': 'meme_format',
   // Direct mappings for database values
   'visual_style': 'visual_style',
   'audio_music': 'audio_music',
