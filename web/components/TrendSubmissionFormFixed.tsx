@@ -177,7 +177,7 @@ export default function TrendSubmissionFormFixed({ onClose, onSubmit, initialUrl
     try {
       await onSubmit(formData);
       setSuccess('Trend submitted successfully! 🎉');
-      setTimeout(() => onClose(), 1500);
+      setTimeout(() => onClose(), 3000);
     } catch (err: any) {
       setError(err.message || 'Failed to submit trend');
     } finally {

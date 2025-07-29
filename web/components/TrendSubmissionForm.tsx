@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { TrendDuplicateChecker } from '@/lib/trendDuplicateChecker';
+import { useToast } from '@/contexts/ToastContext';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -63,6 +64,7 @@ interface TrendSubmissionFormProps {
 
 export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = '' }: TrendSubmissionFormProps) {
   const { user } = useAuth();
+  const { showError, showWarning } = useToast();
   const DRAFT_KEY = 'wavesight_trend_draft';
   
   // Load draft from localStorage
@@ -73,7 +75,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
         try {
           return JSON.parse(draft);
         } catch (e) {
-          console.error('Error loading draft:', e);
+          showWarning('Could not load saved draft', 'Starting with a fresh form');
         }
       }
     }
@@ -205,7 +207,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
         posted_at: extractedData.metadata.posted_at || prev.posted_at || ''
       }));
     } catch (error) {
-      console.error('Error extracting metadata:', error);
+      showError('Failed to extract metadata', 'Please fill in the details manually');
     } finally {
       setExtractingMetadata(false);
     }
@@ -291,14 +293,11 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
       
       // Show success for a moment before closing
       setTimeout(() => {
-        console.log('Closing form after success');
         onClose();
       }, 1500);
     } catch (err: any) {
-      console.error('Form submission error:', err);
+      showError('Failed to submit trend', err.message || 'Please try again later');
       setError(err.message || 'Failed to submit trend. Please try again.');
-      // Auto-clear error after 5 seconds
-      setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
     }

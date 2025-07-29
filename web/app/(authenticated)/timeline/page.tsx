@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
 import { mapCategoryToEnum } from '@/lib/categoryMapper';
+import { useToast } from '@/contexts/ToastContext';
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,
@@ -68,6 +69,7 @@ type ViewMode = 'grid' | 'list' | 'timeline';
 
 export default function Timeline() {
   const { user, loading: authLoading } = useAuth();
+  const { showError, showSuccess, showWarning } = useToast();
   const [trends, setTrends] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export default function Timeline() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Database error:', error);
+        showError('Failed to load trends', error.message);
         setError('Failed to load trends');
         return;
       }
@@ -157,7 +159,7 @@ export default function Timeline() {
         setTotalEarnings(total);
       }
     } catch (error: any) {
-      console.error('Unexpected error:', error);
+      showError('An unexpected error occurred', 'Please refresh the page');
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -326,11 +328,11 @@ export default function Timeline() {
               
               imageUrl = publicUrl;
             } else {
-              console.error('Image upload error:', uploadError);
+              showWarning('Image upload failed', 'Trend will be submitted without image');
               // Continue without image
             }
           } catch (imageError) {
-            console.error('Error handling image:', imageError);
+            showWarning('Image processing failed', 'Trend will be submitted without image');
             // Continue without image
           }
         }
@@ -393,23 +395,20 @@ export default function Timeline() {
           .single();
 
         if (error) {
-          console.error('Database error:', error);
           throw error;
         }
-
-        console.log('Trend submitted successfully:', data);
 
         // Close form and refresh trends
         setShowSubmitForm(false);
         await fetchUserTrends();
         
         // Show success message
+        showSuccess('Trend submitted successfully!', 'Your trend is now being processed');
         setError('');
         console.log('Returning successful submission data');
         return data;
 
       } catch (error: any) {
-        console.error(`Error submitting trend (attempt ${retryCount + 1}):`, error);
         retryCount++;
         
         if (retryCount >= maxRetries) {
@@ -427,7 +426,7 @@ export default function Timeline() {
             errorMessage += error.message || 'Please try again.';
           }
           setError(errorMessage);
-          console.error('Max retries reached, throwing error:', errorMessage);
+          showError('Failed to submit trend', errorMessage);
           throw new Error(errorMessage);
         }
         
@@ -438,7 +437,6 @@ export default function Timeline() {
     }
     
     // Should never reach here, but just in case
-    console.error('Unexpected: exited retry loop without success or error');
     throw new Error('Unexpected submission error');
   };
 

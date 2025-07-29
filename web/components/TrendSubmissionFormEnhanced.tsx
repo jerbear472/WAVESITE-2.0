@@ -486,7 +486,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       await onSubmit(formData);
       console.log('onSubmit completed successfully');
       setSuccess('Trend submitted successfully! 🎉');
-      setTimeout(() => onClose(), 1500);
+      setTimeout(() => onClose(), 3000);
     } catch (err: any) {
       console.error('Form submission error - Full details:', {
         error: err,
