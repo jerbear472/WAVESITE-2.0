@@ -35,6 +35,12 @@ export default function Navigation() {
           const total = (profile.earnings_pending || 0) + 
                        (profile.earnings_approved || 0) + 
                        (profile.earnings_paid || 0);
+          console.log('Navigation earnings calculation:', {
+            pending: profile.earnings_pending || 0,
+            approved: profile.earnings_approved || 0,
+            paid: profile.earnings_paid || 0,
+            total
+          });
           setTotalEarnings(total);
         }
       } catch (error) {
