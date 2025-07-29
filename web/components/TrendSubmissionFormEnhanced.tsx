@@ -475,7 +475,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       await onSubmit(formData);
       console.log('onSubmit completed successfully');
       setSuccess('Trend submitted successfully! 🎉');
-      // Don't auto-close - let parent component handle it
+      setTimeout(() => onClose(), 1500);
     } catch (err: any) {
       console.error('Form submission error - Full details:', {
         error: err,

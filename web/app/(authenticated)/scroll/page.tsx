@@ -446,8 +446,8 @@ export default function ScrollDashboard() {
           : `Trend submitted! +${formatCurrency(earnedAmount)} pending verification`
       });
       
-      // Close the form modal
-      setShowTrendForm(false);
+      // The form will auto-close after 1.5 seconds
+      // Clear the URL input
       setTrendLink('');
       
       // Show success message for a bit longer
