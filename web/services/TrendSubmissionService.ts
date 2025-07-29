@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { TrendDuplicateChecker } from '@/lib/trendDuplicateChecker';
 import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { mapCategoryToEnum } from '@/lib/categoryMapper';
@@ -53,37 +53,13 @@ class CircuitBreaker {
   }
 }
 
-// Resource pool for Supabase clients
+// Resource pool for Supabase clients - simplified to use single instance
 class SupabasePool {
-  private clients: ReturnType<typeof createClient>[] = [];
-  private available: boolean[] = [];
-  private readonly maxClients = 3;
-
-  async getClient(): Promise<{ client: ReturnType<typeof createClient>, release: () => void }> {
-    // Find available client
-    let index = this.available.findIndex(avail => avail);
-    
-    if (index === -1) {
-      // Create new client if under limit
-      if (this.clients.length < this.maxClients) {
-        const client = createClient();
-        this.clients.push(client);
-        this.available.push(false);
-        index = this.clients.length - 1;
-      } else {
-        // Wait for available client
-        await new Promise(resolve => setTimeout(resolve, 100));
-        return this.getClient();
-      }
-    }
-
-    this.available[index] = false;
-    const clientIndex = index;
-
+  async getClient(): Promise<{ client: typeof supabase, release: () => void }> {
     return {
-      client: this.clients[clientIndex],
+      client: supabase,
       release: () => {
-        this.available[clientIndex] = true;
+        // No-op since we're using a single instance
       }
     };
   }

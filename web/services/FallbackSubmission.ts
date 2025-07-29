@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 // Fallback submission service - minimal dependencies, maximum reliability
 export class FallbackSubmission {
@@ -6,7 +6,7 @@ export class FallbackSubmission {
     console.log('🚨 Using fallback submission method');
     
     try {
-      const supabase = createClient();
+      // Use imported supabase client
       
       // Minimal data preparation - no external calls
       const insertData = {
