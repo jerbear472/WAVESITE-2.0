@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { format, parseISO } from 'date-fns';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp as TrendingUpIcon,
   X as XIcon,
@@ -119,10 +119,7 @@ export default function Verify() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showStats, setShowStats] = useState(false);
   
-  // Swipe gesture handling
-  const dragX = useMotionValue(0);
-  const dragOpacity = useTransform(dragX, [-200, 0, 200], [0.5, 1, 0.5]);
-  const rotateZ = useTransform(dragX, [-200, 200], [-10, 10]);
+  // Removed swipe gesture handling for better UX
 
   const performanceService = PerformanceManagementService.getInstance();
 
@@ -429,15 +426,6 @@ export default function Verify() {
     }, 300);
   };
   
-  const handleDragEnd = (event: any, info: any) => {
-    const threshold = 100;
-    
-    if (info.offset.x > threshold) {
-      handleVerify(true);
-    } else if (info.offset.x < -threshold) {
-      handleVerify(false);
-    }
-  };
 
   const showValidationFeedback = (isValid: boolean, payment: number) => {
     console.log(`Vote submitted! ${performanceMetrics?.currentTier === 'suspended' ? 'No payment (suspended)' : `Estimated earnings: $${payment.toFixed(3)}`}`);
@@ -643,15 +631,10 @@ export default function Verify() {
             {currentTrend && currentIndex < trends.length ? (
               <motion.div 
                 key={currentTrend.id}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.2}
-                onDragEnd={handleDragEnd}
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 50 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                style={{ x: dragX, opacity: dragOpacity, rotateZ }}
                 className="bg-gray-900/60 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-gray-800/50"
               >
                 {/* Payment Indicator */}
@@ -720,22 +703,27 @@ export default function Verify() {
                   </div>
 
                   {/* Confidence Slider */}
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center mb-3">
-                      <label className="text-sm font-medium text-gray-300">
+                  <div className="mb-8 p-4 bg-gray-800/50 rounded-2xl border border-gray-700">
+                    <div className="flex justify-between items-center mb-4">
+                      <label className="text-base font-semibold text-white flex items-center gap-2">
+                        <ShieldIcon className="w-4 h-4 text-blue-400" />
                         How confident are you?
                       </label>
-                      <motion.span 
+                      <motion.div 
                         key={confidenceScore}
                         initial={{ scale: 0.8 }}
                         animate={{ scale: 1 }}
-                        className="text-2xl font-bold text-white"
+                        className="flex items-center gap-2"
                       >
-                        {(confidenceScore * 100).toFixed(0)}%
-                      </motion.span>
+                        <span className="text-3xl font-bold text-white">
+                          {(confidenceScore * 100).toFixed(0)}%
+                        </span>
+                        {confidenceScore >= 0.9 && <SparklesIcon className="w-5 h-5 text-yellow-400" />}
+                        {confidenceScore <= 0.1 && <AlertCircleIcon className="w-5 h-5 text-blue-400" />}
+                      </motion.div>
                     </div>
                     
-                    <div className="relative">
+                    <div className="relative mb-6">
                       <input
                         type="range"
                         min="0"
@@ -743,15 +731,34 @@ export default function Verify() {
                         step="0.05"
                         value={confidenceScore}
                         onChange={(e) => setConfidenceScore(parseFloat(e.target.value))}
-                        className="w-full h-3 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                        className="w-full h-4 bg-gray-700 rounded-full appearance-none cursor-pointer slider-thumb"
                         style={{
                           background: `linear-gradient(to right, #3B82F6 0%, #8B5CF6 ${confidenceScore * 100}%, #374151 ${confidenceScore * 100}%, #374151 100%)`
                         }}
                       />
-                      <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-xs text-gray-500">
-                        <span>Not sure</span>
-                        <span>Somewhat</span>
-                        <span>Very confident</span>
+                      <div className="absolute -bottom-5 left-0 right-0 flex justify-between text-xs text-gray-400">
+                        <span>0%</span>
+                        <span>25%</span>
+                        <span>50%</span>
+                        <span>75%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+                    
+                    {/* Confidence level indicator */}
+                    <div className="flex justify-center">
+                      <div className={`text-sm font-medium px-3 py-1 rounded-full ${
+                        confidenceScore >= 0.8 ? 'bg-green-500/20 text-green-400' :
+                        confidenceScore >= 0.6 ? 'bg-blue-500/20 text-blue-400' :
+                        confidenceScore >= 0.4 ? 'bg-yellow-500/20 text-yellow-400' :
+                        confidenceScore >= 0.2 ? 'bg-orange-500/20 text-orange-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        {confidenceScore >= 0.8 ? 'Very Confident' :
+                         confidenceScore >= 0.6 ? 'Confident' :
+                         confidenceScore >= 0.4 ? 'Somewhat Confident' :
+                         confidenceScore >= 0.2 ? 'Unsure' :
+                         'Very Unsure'}
                       </div>
                     </div>
                   </div>
@@ -787,23 +794,6 @@ export default function Verify() {
                   </div>
                 </div>
                 
-                {/* Swipe Indicators */}
-                <div className="flex justify-center gap-4 p-4 bg-gray-900/50">
-                  <motion.div
-                    animate={{ opacity: dragX.get() < -50 ? 1 : 0.3 }}
-                    className="text-red-400 text-sm font-medium flex items-center gap-1"
-                  >
-                    <ChevronLeftIcon className="w-4 h-4" />
-                    Not Trending
-                  </motion.div>
-                  <motion.div
-                    animate={{ opacity: dragX.get() > 50 ? 1 : 0.3 }}
-                    className="text-green-400 text-sm font-medium flex items-center gap-1"
-                  >
-                    Trending
-                    <ChevronRightIcon className="w-4 h-4" />
-                  </motion.div>
-                </div>
               </motion.div>
             ) : (
               <motion.div 
@@ -1001,10 +991,11 @@ export default function Verify() {
             
             {/* Keyboard Shortcuts */}
             <div className="mt-4 text-center text-xs text-gray-500">
-              <p>Swipe or use keyboard: 
+              <p>Use keyboard shortcuts: 
                 <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">←/A</kbd> Not Trending
                 <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">→/D</kbd> Trending
                 <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">↓/S</kbd> Skip
+                <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">1-5</kbd> Set confidence
               </p>
             </div>
           </motion.div>
@@ -1058,7 +1049,7 @@ export default function Verify() {
                   </div>
                   <div>
                     <p className="font-semibold">Make your decision</p>
-                    <p className="text-sm text-gray-400">Swipe or tap to verify, reject, or skip</p>
+                    <p className="text-sm text-gray-400">Click the buttons to verify, reject, or skip</p>
                   </div>
                 </div>
               </div>

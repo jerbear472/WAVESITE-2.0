@@ -31,12 +31,12 @@
 @layer components {
   /* Webkit browsers */
   .slider-thumb::-webkit-slider-thumb {
-    @apply appearance-none w-5 h-5 bg-gradient-to-r from-wave-400 to-wave-600 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-shadow;
+    @apply appearance-none w-6 h-6 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95;
   }
   
   /* Firefox */
   .slider-thumb::-moz-range-thumb {
-    @apply w-5 h-5 bg-gradient-to-r from-wave-400 to-wave-600 rounded-full cursor-pointer border-0 shadow-lg hover:shadow-xl transition-shadow;
+    @apply w-6 h-6 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95;
   }
   
   /* Track styles */
@@ -46,6 +46,15 @@
   
   .slider-thumb::-moz-range-track {
     @apply rounded-lg;
+  }
+  
+  /* Focus styles */
+  .slider-thumb:focus {
+    @apply outline-none;
+  }
+  
+  .slider-thumb:focus::-webkit-slider-thumb {
+    @apply ring-2 ring-blue-400 ring-offset-2 ring-offset-gray-900;
   }
 }
 
