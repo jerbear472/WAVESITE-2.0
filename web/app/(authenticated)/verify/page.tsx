@@ -86,6 +86,7 @@ interface RateLimitInfo {
 }
 
 export default function Verify() {
+  console.log('🚀 ENHANCED VERIFY PAGE WITH PERFORMANCE TIERS - v2.0');
   const { user } = useAuth();
   const [trends, setTrends] = useState<TrendToVerify[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -448,7 +449,7 @@ export default function Verify() {
               </div>
               <div>
                 <h1 className="text-responsive-2xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
-                  Performance-Based Verification
+                  Performance-Based Verification v2.0
                 </h1>
                 <p className="text-responsive-sm text-gray-400 mt-1">
                   Earn based on your performance tier
