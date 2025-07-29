@@ -436,6 +436,10 @@ export default function Verify() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900">
+      {/* DEPLOYMENT TEST BANNER - REMOVE AFTER VERIFYING */}
+      <div className="bg-red-600 text-white text-center py-4 text-2xl font-bold">
+        🚀 ENHANCED VERIFY PAGE v2.0 - DEPLOYED SUCCESSFULLY! 🚀
+      </div>
       <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 safe-area-top safe-area-bottom">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
