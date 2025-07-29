@@ -409,17 +409,24 @@ export default function ScrollDashboard() {
   // Handle quick submit button
   const handleQuickSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!trendLink.trim()) return;
+    console.log('handleQuickSubmit called, trendLink:', trendLink);
+    
+    if (!trendLink.trim()) {
+      console.log('No trend link provided');
+      return;
+    }
     
     // Check for duplicate
     const normalizedUrl = normalizeUrl(trendLink);
     if (loggedTrends.includes(normalizedUrl)) {
+      console.log('Duplicate trend detected');
       setSubmitMessage({ type: 'error', text: 'Already logged!' });
       setTimeout(() => setSubmitMessage(null), 3000);
       return;
     }
     
     // Open the comprehensive submission form with pre-filled URL
+    console.log('Opening trend form modal...');
     setShowTrendForm(true);
   };
 
@@ -711,14 +718,17 @@ export default function ScrollDashboard() {
 
       {/* Trend Submission Form Modal */}
       {showTrendForm && (
+        console.log('Rendering TrendSubmissionFormEnhanced modal...') || (
         <TrendSubmissionFormEnhanced
           onClose={() => {
+            console.log('Closing trend form modal');
             setShowTrendForm(false);
             setTrendLink('');
           }}
           onSubmit={handleTrendSubmit}
           initialUrl={trendLink}
         />
+        )
       )}
 
       {/* Screenshot Upload Modal */}
