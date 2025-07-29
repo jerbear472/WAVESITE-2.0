@@ -1,16 +1,4 @@
 {
-  "framework": null,
-  "buildCommand": "cd web && rm -rf .next && npm install && npm run build",
-  "outputDirectory": "web/.next",
-  "installCommand": "cd web && npm install",
-  "devCommand": "cd web && npm run dev",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./",
-  "functions": {
-    "web/app/api/test-*/route.ts": {
-      "excludeFiles": "**"
-    },
-    "web/app/api/direct-submit/route.ts": {
-      "excludeFiles": "**"
-    }
-  }
+  "root": "web",
+  "framework": "nextjs"
 }
