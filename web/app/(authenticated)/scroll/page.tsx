@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { ScrollSession } from '@/components/ScrollSession';
 import { FloatingTrendLogger } from '@/components/FloatingTrendLogger';
-import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
+import TrendSubmissionFormEnhanced from '@/components/TrendSubmissionFormEnhanced';
 import TrendScreenshotUpload from '@/components/TrendScreenshotUpload';
 import SubmissionHistory from '@/components/SubmissionHistory';
 import { useAuth } from '@/contexts/AuthContext';
@@ -711,7 +711,7 @@ export default function ScrollDashboard() {
 
       {/* Trend Submission Form Modal */}
       {showTrendForm && (
-        <TrendSubmissionForm
+        <TrendSubmissionFormEnhanced
           onClose={() => {
             setShowTrendForm(false);
             setTrendLink('');
