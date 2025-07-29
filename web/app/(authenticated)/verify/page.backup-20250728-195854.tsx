@@ -1,5 +1,5 @@
 'use client';
-// Enhanced Performance-Based Verification Page - Updated
+
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -26,15 +26,8 @@ import {
   ChevronUp as ChevronUpIcon,
   ChevronDown as ChevronDownIcon,
   Shield as ShieldIcon,
-  Star as StarIcon,
-  DollarSign as DollarSignIcon
+  Star as StarIcon
 } from 'lucide-react';
-import { PerformanceTierDisplay } from '@/components/PerformanceTierDisplay';
-import { ConsensusVisualization } from '@/components/ConsensusVisualization';
-import { 
-  PerformanceManagementService, 
-  UserPerformanceMetrics 
-} from '@/lib/performanceManagementService';
 
 interface TrendToVerify {
   id: string;
@@ -108,10 +101,6 @@ export default function Verify() {
   const [similarTrends, setSimilarTrends] = useState<any[]>([]);
   const [consensusData, setConsensusData] = useState<any>(null);
   const [validationStartTime, setValidationStartTime] = useState<number>(0);
-  const [performanceMetrics, setPerformanceMetrics] = useState<UserPerformanceMetrics | null>(null);
-  const [estimatedPayment, setEstimatedPayment] = useState<number>(0);
-
-  const performanceService = PerformanceManagementService.getInstance();
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -125,6 +114,7 @@ export default function Verify() {
       } else if (e.key === 'ArrowDown' || e.key === 's') {
         handleSkip();
       } else if (e.key >= '1' && e.key <= '5') {
+        // Number keys for confidence: 1 = 20%, 2 = 40%, 3 = 60%, 4 = 80%, 5 = 100%
         setConfidenceScore(parseInt(e.key) * 0.2);
       }
     };
@@ -135,7 +125,6 @@ export default function Verify() {
 
   useEffect(() => {
     if (user) {
-      loadUserPerformance();
       checkRateLimit();
       fetchTrendsToVerify();
       fetchUserStats();
@@ -143,19 +132,13 @@ export default function Verify() {
   }, [user]);
 
   useEffect(() => {
+    // Start timer when viewing a trend
     if (currentTrend) {
       setValidationStartTime(Date.now());
       fetchSimilarTrends(currentTrend.category);
       fetchConsensusData(currentTrend.id);
-      calculateEstimatedPayment();
     }
-  }, [currentIndex, confidenceScore]);
-
-  const loadUserPerformance = async () => {
-    if (!user) return;
-    const metrics = await performanceService.getUserPerformanceMetrics(user.id);
-    setPerformanceMetrics(metrics);
-  };
+  }, [currentIndex]);
 
   const checkRateLimit = async () => {
     if (!user) return;
@@ -203,9 +186,6 @@ export default function Verify() {
 
   const fetchTrendsToVerify = async () => {
     try {
-      // Get prioritized trends based on user tier
-      const prioritizedIds = await performanceService.getPrioritizedTrends(user?.id || '', 20);
-      
       // Fetch trends with enhanced filtering
       const { data: trendsData, error: trendsError } = await supabase
         .from('trend_submissions')
@@ -214,8 +194,7 @@ export default function Verify() {
         .in('stage', ['submitted', 'validating'])
         .eq('auto_rejected', false)
         .eq('auto_approved', false)
-        .in('id', prioritizedIds.length > 0 ? prioritizedIds : ['00000000-0000-0000-0000-000000000000'])
-        .order('validation_difficulty', { ascending: false })
+        .order('validation_difficulty', { ascending: false }) // Prioritize harder trends
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -229,10 +208,11 @@ export default function Verify() {
 
       if (validatedError) throw validatedError;
 
+      // Filter out already validated trends
       const validatedTrendIds = new Set(validatedTrends?.map(v => v.trend_id) || []);
       const unvalidatedTrends = (trendsData || []).filter(trend => !validatedTrendIds.has(trend.id));
 
-      // Fetch user details
+      // Fetch user details for each trend
       const userIds = [...new Set(unvalidatedTrends.map(t => t.spotter_id) || [])];
       const { data: usersData } = await supabase
         .from('profiles')
@@ -260,6 +240,7 @@ export default function Verify() {
   const fetchUserStats = async () => {
     setStatsLoading(true);
     try {
+      // Get user profile with enhanced stats
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
@@ -267,6 +248,7 @@ export default function Verify() {
         .single();
 
       if (profile) {
+        // Get today's earnings with new calculation
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -279,6 +261,7 @@ export default function Verify() {
 
         const totalEarnings = earnings?.reduce((sum, e) => sum + parseFloat(e.amount), 0) || 0;
 
+        // Get expertise level for most validated category
         const { data: expertise } = await supabase
           .from('validator_expertise')
           .select('expertise_level, category')
@@ -294,7 +277,7 @@ export default function Verify() {
             : 0,
           validation_reputation: profile.validation_reputation || 0.5,
           vote_weight: profile.vote_weight || 1.0,
-          validation_streak: profile.consecutive_good_votes || 0,
+          validation_streak: profile.validation_streak || 0,
           expertise_level: expertise?.[0]?.expertise_level
         });
       }
@@ -305,37 +288,15 @@ export default function Verify() {
     }
   };
 
-  const calculateEstimatedPayment = async () => {
-    if (!user || !trends[currentIndex]) return;
-
-    const trend = trends[currentIndex];
-    const baseRate = 0.05;
-    const difficultyBonus = (trend.validation_difficulty || 1) * 0.03;
-    const confidenceBonus = (confidenceScore >= 0.9 || confidenceScore <= 0.1) ? 0.01 : 0;
-    
-    const payment = await performanceService.calculateTieredPayment(
-      user.id,
-      baseRate,
-      difficultyBonus,
-      confidenceBonus
-    );
-    
-    setEstimatedPayment(payment);
-  };
-
   const handleVerify = async (isValid: boolean) => {
     if (verifying || !trends[currentIndex] || !rateLimit?.can_validate) return;
-
-    // Check if user is suspended
-    if (performanceMetrics?.currentTier === 'suspended') {
-      alert('You are currently suspended and cannot earn from validations. Your votes still count for improving your performance score.');
-    }
 
     setVerifying(true);
     const trend = trends[currentIndex];
     const validationTime = Math.floor((Date.now() - validationStartTime) / 1000);
 
     try {
+      // Submit enhanced validation vote
       const { data: insertData, error: insertError } = await supabase
         .from('trend_validations')
         .insert({
@@ -352,6 +313,7 @@ export default function Verify() {
 
       if (insertError) throw insertError;
 
+      // Update rate limits
       const { error: rateLimitError } = await supabase
         .from('validation_rate_limits')
         .update({
@@ -364,16 +326,20 @@ export default function Verify() {
       if (rateLimitError) console.error('Rate limit update error:', rateLimitError);
 
       setLastAction(isValid ? 'trending' : 'not-trending');
+
+      // Calculate estimated payment
+      const estimatedPayment = await calculateEstimatedPayment(trend);
       
+      // Show feedback with estimated earnings
       showValidationFeedback(isValid, estimatedPayment);
 
+      // Reset form
       setConfidenceScore(0.75);
       setReasoning('');
       setShowReasoningInput(false);
 
       await fetchUserStats();
       await checkRateLimit();
-      await loadUserPerformance();
 
       setTimeout(() => {
         setLastAction(null);
@@ -405,8 +371,19 @@ export default function Verify() {
     }, 300);
   };
 
-  const showValidationFeedback = (isValid: boolean, payment: number) => {
-    console.log(`Vote submitted! ${performanceMetrics?.currentTier === 'suspended' ? 'No payment (suspended)' : `Estimated earnings: $${payment.toFixed(3)}`}`);
+  const calculateEstimatedPayment = async (trend: TrendToVerify) => {
+    // Simplified calculation for UI feedback
+    const baseRate = 0.05;
+    const accuracyMultiplier = stats.accuracy_score >= 80 ? 1.5 : 1.0;
+    const difficultyBonus = (trend.validation_difficulty || 1) * 0.03;
+    const confidenceBonus = (confidenceScore >= 0.9 || confidenceScore <= 0.1) ? 0.01 : 0;
+    
+    return (baseRate * accuracyMultiplier + difficultyBonus + confidenceBonus);
+  };
+
+  const showValidationFeedback = (isValid: boolean, estimatedPayment: number) => {
+    // This would show a toast or modal with feedback
+    console.log(`Vote submitted! Estimated earnings: $${estimatedPayment.toFixed(3)}`);
   };
 
   const formatEngagementCount = (count?: number): string => {
@@ -414,6 +391,15 @@ export default function Verify() {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toLocaleString();
+  };
+
+  const getExpertiseBadgeColor = (level?: string) => {
+    switch (level) {
+      case 'specialist': return 'from-purple-500 to-pink-600';
+      case 'expert': return 'from-blue-500 to-purple-600';
+      case 'intermediate': return 'from-green-500 to-blue-600';
+      default: return 'from-gray-500 to-gray-600';
+    }
   };
 
   const currentTrend = trends[currentIndex];
@@ -435,7 +421,7 @@ export default function Verify() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 safe-area-top safe-area-bottom">
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8 safe-area-top safe-area-bottom">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -448,50 +434,25 @@ export default function Verify() {
               </div>
               <div>
                 <h1 className="text-responsive-2xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
-                  Performance-Based Verification
+                  Enhanced Trend Verification
                 </h1>
                 <p className="text-responsive-sm text-gray-400 mt-1">
-                  Earn based on your performance tier
+                  Help validate trends with confidence scoring
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              {/* Performance Tier Badge */}
-              {user && performanceMetrics && (
-                <PerformanceTierDisplay 
-                  userId={user.id} 
-                  compact={true}
-                  onTierChange={() => loadUserPerformance()}
-                />
-              )}
-              
-              {/* Rate Limit Display */}
-              {rateLimit && (
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl px-4 py-2 border border-gray-700">
-                  <p className="text-xs text-gray-400">Validations remaining</p>
-                  <p className="text-sm font-semibold text-white">
-                    {rateLimit.validations_remaining_hour} / hour
-                  </p>
-                </div>
-              )}
-            </div>
+            {/* Rate Limit Display */}
+            {rateLimit && (
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl px-4 py-2 border border-gray-700">
+                <p className="text-xs text-gray-400">Validations remaining</p>
+                <p className="text-sm font-semibold text-white">
+                  {rateLimit.validations_remaining_hour} / hour
+                </p>
+              </div>
+            )}
           </div>
         </motion.div>
-
-        {/* Performance Metrics Summary */}
-        {user && performanceMetrics && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <PerformanceTierDisplay 
-              userId={user.id} 
-              showDetails={true}
-            />
-          </motion.div>
-        )}
 
         {/* Enhanced Stats Bar */}
         <motion.div 
@@ -503,15 +464,14 @@ export default function Verify() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <motion.div 
               whileHover={{ scale: 1.05 }}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-4 border border-blue-500/20"
+              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-4 border border-blue-500/20 hover:border-blue-500/40 transition-all"
             >
               <div className="relative text-center">
                 <ZapIcon className="w-6 h-6 text-blue-400 mx-auto mb-2 opacity-50" />
                 <p className="text-responsive-xl font-bold text-blue-400">{stats.verified_today}</p>
                 <p className="text-responsive-xs text-gray-400 mt-1">Verified Today</p>
                 {stats.validation_streak > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xs rounded-full px-2 py-1 flex items-center gap-1">
-                    <ZapIcon className="w-3 h-3" />
+                  <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
                     {stats.validation_streak}
                   </div>
                 )}
@@ -523,14 +483,9 @@ export default function Verify() {
               className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-600/10 p-4 border border-green-500/20"
             >
               <div className="relative text-center">
-                <DollarSignIcon className="w-6 h-6 text-green-400 mx-auto mb-2 opacity-50" />
+                <AwardIcon className="w-6 h-6 text-green-400 mx-auto mb-2 opacity-50" />
                 <p className="text-responsive-xl font-bold text-green-400">${stats.earnings_today.toFixed(2)}</p>
                 <p className="text-responsive-xs text-gray-400 mt-1">Earned Today</p>
-                {performanceMetrics && performanceMetrics.paymentMultiplier !== 1 && (
-                  <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full px-2 py-1">
-                    {performanceMetrics.paymentMultiplier}x
-                  </div>
-                )}
               </div>
             </motion.div>
             
@@ -557,6 +512,11 @@ export default function Verify() {
                   {(stats.validation_reputation * 100).toFixed(0)}
                 </p>
                 <p className="text-responsive-xs text-gray-400 mt-1">Reputation</p>
+                <div className="mt-2">
+                  <div className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${getExpertiseBadgeColor(stats.expertise_level)} text-white`}>
+                    {stats.expertise_level || 'Novice'}
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -575,33 +535,24 @@ export default function Verify() {
                 transition={{ duration: 0.3 }}
                 className="bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-gray-800/50"
               >
-                {/* Difficulty & Payment Indicator */}
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  {currentTrend.validation_difficulty && (
-                    <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1">
-                      <p className="text-xs text-gray-400">Difficulty</p>
-                      <div className="flex gap-1 mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-2 h-2 rounded-full ${
-                              i < Math.ceil(currentTrend.validation_difficulty * 5)
-                                ? 'bg-yellow-400'
-                                : 'bg-gray-600'
-                            }`}
-                          />
-                        ))}
-                      </div>
+                {/* Difficulty Indicator */}
+                {currentTrend.validation_difficulty && (
+                  <div className="absolute top-4 left-4 z-10 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1">
+                    <p className="text-xs text-gray-400">Difficulty</p>
+                    <div className="flex gap-1 mt-1">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-2 h-2 rounded-full ${
+                            i < Math.ceil(currentTrend.validation_difficulty * 5)
+                              ? 'bg-yellow-400'
+                              : 'bg-gray-600'
+                          }`}
+                        />
+                      ))}
                     </div>
-                  )}
-                  
-                  <div className="bg-green-500/20 backdrop-blur-sm rounded-lg px-3 py-2 border border-green-500/30">
-                    <p className="text-xs text-green-400">Est. Payment</p>
-                    <p className="text-sm font-bold text-green-400">
-                      ${estimatedPayment.toFixed(3)}
-                    </p>
                   </div>
-                </div>
+                )}
 
                 {(currentTrend.thumbnail_url || currentTrend.screenshot_url) && (
                   <div className="relative h-48 sm:h-64 lg:h-80 overflow-hidden">
@@ -615,6 +566,7 @@ export default function Verify() {
                 )}
                 
                 <div className="p-6">
+                  {/* Trend Details */}
                   <h2 className="text-2xl font-bold text-white mb-4">
                     {currentTrend.evidence?.title || currentTrend.description}
                   </h2>
@@ -632,6 +584,7 @@ export default function Verify() {
                           </div>
                         </div>
                       )}
+                      {/* Add other metrics */}
                     </div>
                   )}
 
@@ -693,13 +646,6 @@ export default function Verify() {
                 <CheckIcon className="w-20 h-20 text-green-500 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-white mb-3">All Caught Up!</h3>
                 <p className="text-gray-400">Check back later for more trends.</p>
-                {performanceMetrics && performanceMetrics.nextTierThreshold && (
-                  <div className="mt-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                    <p className="text-sm text-blue-400">
-                      Keep validating to reach {performanceMetrics.nextTierThreshold.tier} tier!
-                    </p>
-                  </div>
-                )}
               </motion.div>
             )}
             </AnimatePresence>
@@ -707,14 +653,35 @@ export default function Verify() {
 
           {/* Side Panel */}
           <div className="space-y-6">
-            {/* Real-time Consensus */}
-            {currentTrend && (
-              <ConsensusVisualization 
-                trendId={currentTrend.id}
-                onConsensusReached={(consensus) => {
-                  console.log('Consensus reached:', consensus);
-                }}
-              />
+            {/* Current Consensus */}
+            {consensusData && currentTrend && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 border border-gray-800"
+              >
+                <h3 className="text-sm font-semibold text-gray-300 mb-3">Current Consensus</h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-400">Weighted Score</span>
+                      <span className="text-white font-semibold">
+                        {((consensusData.weighted_score + 1) * 50).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-2 rounded-full"
+                        style={{ width: `${(consensusData.weighted_score + 1) * 50}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>{consensusData.vote_count} votes</span>
+                    <span>Avg confidence: {(consensusData.confidence_avg * 100).toFixed(0)}%</span>
+                  </div>
+                </div>
+              </motion.div>
             )}
 
             {/* Similar Trends */}
@@ -756,17 +723,6 @@ export default function Verify() {
             transition={{ delay: 0.3 }}
             className="mt-6 space-y-4"
           >
-            {/* Suspension Warning */}
-            {performanceMetrics?.currentTier === 'suspended' && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
-                <AlertCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
-                <div className="text-sm text-red-400">
-                  <p className="font-semibold">You are currently suspended</p>
-                  <p>Your votes count toward improving your score, but you won't earn payments until your suspension is lifted.</p>
-                </div>
-              </div>
-            )}
-
             <div className="bg-gray-900/50 backdrop-blur-md rounded-2xl border border-gray-800/50 p-6">
               <h3 className="text-lg font-semibold text-white mb-4 text-center">
                 Is this a trending topic?
