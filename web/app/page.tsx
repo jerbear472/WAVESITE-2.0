@@ -5,10 +5,6 @@ import Header from '@/components/Header'
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
-      {/* DEPLOYMENT TEST - REMOVE AFTER CONFIRMING */}
-      <div className="bg-green-600 text-white text-center py-6 text-3xl font-bold animate-pulse">
-        🎉 VERCEL DEPLOYMENT WORKING! - Updated: {new Date().toLocaleString()} 🎉
-      </div>
       <Header />
       {/* Hero Section */}
       <section className="flex-1 flex items-center justify-center px-4 py-20 pt-32">
