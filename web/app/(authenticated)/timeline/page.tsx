@@ -286,6 +286,7 @@ export default function Timeline() {
     
     while (retryCount < maxRetries) {
       try {
+        console.log(`Attempt ${retryCount + 1} of ${maxRetries}`);
         // Ensure user is authenticated
         if (!user?.id) {
           throw new Error('Please log in to submit trends');
@@ -400,10 +401,11 @@ export default function Timeline() {
 
         // Close form and refresh trends
         setShowSubmitForm(false);
-        fetchUserTrends();
+        await fetchUserTrends();
         
         // Show success message
         setError('');
+        console.log('Returning successful submission data');
         return data;
 
       } catch (error: any) {
@@ -425,13 +427,19 @@ export default function Timeline() {
             errorMessage += error.message || 'Please try again.';
           }
           setError(errorMessage);
+          console.error('Max retries reached, throwing error:', errorMessage);
           throw new Error(errorMessage);
         }
         
         // Wait before retrying with exponential backoff
+        console.log(`Waiting ${1000 * Math.pow(2, retryCount)}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
       }
     }
+    
+    // Should never reach here, but just in case
+    console.error('Unexpected: exited retry loop without success or error');
+    throw new Error('Unexpected submission error');
   };
 
   if (authLoading || (loading && trends.length === 0)) {

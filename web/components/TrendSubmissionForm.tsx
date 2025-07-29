@@ -272,7 +272,18 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
     console.log('Submitting form data:', formData);
 
     try {
-      await onSubmit(formData);
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Submission timeout - please try again')), 30000)
+      );
+      
+      const result = await Promise.race([
+        onSubmit(formData),
+        timeoutPromise
+      ]);
+      
+      console.log('Submit result:', result);
+      
       setSuccess('Trend submitted successfully!');
       
       // Clear the draft on successful submission
@@ -280,6 +291,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
       
       // Show success for a moment before closing
       setTimeout(() => {
+        console.log('Closing form after success');
         onClose();
       }, 1500);
     } catch (err: any) {
