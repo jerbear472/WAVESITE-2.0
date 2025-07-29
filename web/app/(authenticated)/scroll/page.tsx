@@ -357,6 +357,7 @@ export default function ScrollDashboard() {
       insertObject.category = getSafeCategory(insertObject.category);
       console.log('Final safe category:', insertObject.category);
       
+      console.log('Submitting to database with user ID:', user?.id);
       const { data, error } = await supabase
         .from('trend_submissions')
         .insert(insertObject)
@@ -378,6 +379,8 @@ export default function ScrollDashboard() {
         throw error;
       }
       console.log('Successfully inserted trend:', data);
+      console.log('Trend ID:', data.id);
+      console.log('Trend spotter_id:', data.spotter_id);
 
       // Update local state
       const normalizedUrl = normalizeUrl(trendData.url);

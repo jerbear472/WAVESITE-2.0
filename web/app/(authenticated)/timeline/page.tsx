@@ -127,6 +127,7 @@ export default function Timeline() {
       }
 
       const userId = session.user.id;
+      console.log('Timeline: Fetching trends for user ID:', userId);
       
       const { data, error } = await supabase
         .from('trend_submissions')
@@ -140,6 +141,8 @@ export default function Timeline() {
         return;
       }
       
+      console.log('Timeline: Found trends:', data?.length || 0);
+      console.log('Timeline: First trend (if any):', data?.[0]);
       setTrends(data || []);
 
       // Fetch total earnings from earnings_ledger
