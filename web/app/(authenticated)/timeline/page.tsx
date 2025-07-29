@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
 import { TrendSubmissionService } from '@/services/TrendSubmissionService';
+import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { 
   TrendingUp as TrendingUpIcon,
@@ -267,6 +268,27 @@ export default function Timeline() {
     return emojiMap[category] || '📌';
   };
 
+  const getStageInfo = (stage: string) => {
+    switch (stage) {
+      case 'submitted':
+        return { text: 'Just Starting', icon: '🌱', color: 'text-gray-400', bgColor: 'bg-gray-500/20' };
+      case 'validating':
+        return { text: 'Gaining Traction', icon: '📈', color: 'text-blue-400', bgColor: 'bg-blue-500/20' };
+      case 'trending':
+        return { text: 'Trending', icon: '🔥', color: 'text-green-400', bgColor: 'bg-green-500/20' };
+      case 'viral':
+        return { text: 'Going Viral!', icon: '🚀', color: 'text-red-400', bgColor: 'bg-red-500/20' };
+      case 'peaked':
+        return { text: 'At Peak', icon: '⭐', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' };
+      case 'declining':
+        return { text: 'Declining', icon: '📉', color: 'text-orange-400', bgColor: 'bg-orange-500/20' };
+      case 'auto_rejected':
+        return { text: 'Rejected', icon: '❌', color: 'text-gray-400', bgColor: 'bg-gray-500/20' };
+      default:
+        return { text: 'Unknown', icon: '❓', color: 'text-gray-400', bgColor: 'bg-gray-500/20' };
+    }
+  };
+
   const getCreatorProfileUrl = (platform: string, handle: string) => {
     // Clean the handle - remove @ if present
     const cleanHandle = handle.startsWith('@') ? handle.substring(1) : handle;
@@ -299,182 +321,64 @@ export default function Timeline() {
       // Use the submission service
       const submissionService = TrendSubmissionService.getInstance();
       const result = await submissionService.submitTrend(trendData, user.id);
-
-        // Upload image if present
-        let imageUrl = null;
-        let thumbnailUrl = trendData.thumbnail_url || null;
-        
-        if (trendData.screenshot && trendData.screenshot instanceof File) {
-          try {
-            const fileExt = trendData.screenshot.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-            
-            // Try to create bucket if it doesn't exist (with timeout)
-            try {
-              console.log('Checking/creating storage bucket...');
-              const bucketTimeout = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Bucket check timeout')), 3000);
-              });
-              
-              await Promise.race([
-                supabase.storage.createBucket('trend-images', {
-                  public: true,
-                  allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
-                }),
-                bucketTimeout
-              ]);
-            } catch (bucketError) {
-              // Bucket might already exist or timeout, continue
-              console.log('Bucket exists or timed out (this is OK)');
-            }
-            
-            console.log('Uploading image...');
-            const uploadTimeout = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Image upload timeout')), 10000);
-            });
-            
-            const { data: uploadData, error: uploadError } = await Promise.race([
-              supabase.storage
-                .from('trend-images')
-                .upload(fileName, trendData.screenshot, {
-                  cacheControl: '3600',
-                  upsert: false
-                }),
-              uploadTimeout
-            ]) as any;
-
-            if (!uploadError) {
-              const { data: { publicUrl } } = supabase.storage
-                .from('trend-images')
-                .getPublicUrl(fileName);
-              
-              imageUrl = publicUrl;
-            } else {
-              showWarning('Image upload failed', 'Trend will be submitted without image');
-              // Continue without image
-            }
-          } catch (imageError) {
-            showWarning('Image processing failed', 'Trend will be submitted without image');
-            // Continue without image
-          }
-        }
-
-        // Build the insert data object with all fields
-        const insertData: any = {
-          spotter_id: user.id,
-          category: trendData.categories?.[0] ? mapCategoryToEnum(trendData.categories[0]) : 'meme_format', // Convert category to enum
-          description: trendData.explanation || trendData.trendName || 'Untitled Trend',
-          screenshot_url: imageUrl || thumbnailUrl,
-          evidence: {
-            url: trendData.url || '',
-            title: trendData.trendName || 'Untitled Trend',
-            platform: trendData.platform || 'other',
-            // Store all the rich data
-            ageRanges: trendData.ageRanges,
-            subcultures: trendData.subcultures,
-            region: trendData.region,
-            categories: trendData.categories,
-            moods: trendData.moods,
-            spreadSpeed: trendData.spreadSpeed,
-            audioOrCatchphrase: trendData.audioOrCatchphrase,
-            motivation: trendData.motivation,
-            firstSeen: trendData.firstSeen,
-            otherPlatforms: trendData.otherPlatforms,
-            brandAdoption: trendData.brandAdoption,
-            submitted_by: user.email || user.id,
-            metadata_captured: true
-          },
-          virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : trendData.spreadSpeed === 'picking_up' ? 6 : 5,
-          status: 'submitted',
-          quality_score: 0.5,
-          validation_count: 0,
-          created_at: new Date().toISOString()
-        };
-
-        // Add social media metadata fields separately to avoid null issues
-        if (trendData.creator_handle) insertData.creator_handle = trendData.creator_handle;
-        if (trendData.creator_name) insertData.creator_name = trendData.creator_name;
-        if (trendData.post_caption) insertData.post_caption = trendData.post_caption;
-        if (trendData.likes_count !== undefined) insertData.likes_count = trendData.likes_count;
-        if (trendData.comments_count !== undefined) insertData.comments_count = trendData.comments_count;
-        if (trendData.shares_count !== undefined) insertData.shares_count = trendData.shares_count;
-        if (trendData.views_count !== undefined) insertData.views_count = trendData.views_count;
-        if (trendData.hashtags && trendData.hashtags.length > 0) insertData.hashtags = trendData.hashtags;
-        if (trendData.url) insertData.post_url = trendData.url;
-        if (thumbnailUrl) insertData.thumbnail_url = thumbnailUrl;
-        if (trendData.posted_at) {
-          insertData.posted_at = trendData.posted_at;
-        } else {
-          insertData.posted_at = new Date().toISOString();
-        }
-
-        console.log('Submitting data to database:', insertData);
-
-        // Add timeout protection to prevent hanging
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Database operation timed out after 15 seconds')), 15000);
-        });
-
-        const { data, error } = await Promise.race([
-          supabase
-            .from('trend_submissions')
-            .insert(insertData)
-            .select()
-            .single(),
-          timeoutPromise
-        ]) as any;
-
-        if (error) {
-          throw error;
-        }
-
-        // Log successful submission
-        const attemptDuration = Date.now() - attemptStartTime;
-        console.log(`✅ Database insert successful after ${attemptDuration}ms`);
-        
+      
+      if (result.success) {
         // Close form and refresh trends
         setShowSubmitForm(false);
-        console.log('🔄 Refreshing trends list...');
         await fetchUserTrends();
         
         // Show success message
-        const totalDuration = Date.now() - submissionStartTime;
-        console.log(`✅ Total submission completed in ${totalDuration}ms`);
         showSuccess('Trend submitted successfully!', 'Your trend is now being processed');
         setError('');
-        console.log('Returning successful submission data');
-        return data;
-
-      } catch (error: any) {
-        retryCount++;
-        
-        if (retryCount >= maxRetries) {
-          // Provide more specific error messages
-          let errorMessage = 'Failed to submit trend. ';
-          if (error.message?.includes('user_id')) {
-            errorMessage = 'Authentication error. Please log in again.';
-          } else if (error.message?.includes('category')) {
-            errorMessage = 'Please select a valid category.';
-          } else if (error.message?.includes('url')) {
-            errorMessage = 'Please provide a valid URL.';
-          } else if (error.message?.includes('duplicate')) {
-            errorMessage = 'This trend has already been submitted.';
+        return result.data;
+      } else {
+        // Handle failure - try fallback if it's a service error
+        if (result.error?.includes('temporarily unavailable') || 
+            result.error?.includes('timeout')) {
+          console.log('Main service failed, trying fallback...');
+          showWarning('Using backup submission method', 'Some features may be limited');
+          
+          const fallbackResult = await FallbackSubmission.submit(trendData, user.id);
+          
+          if (fallbackResult.success) {
+            setShowSubmitForm(false);
+            await fetchUserTrends();
+            showSuccess('Trend submitted via backup!', 'Your trend was saved successfully');
+            setError('');
+            return fallbackResult.data;
           } else {
-            errorMessage += error.message || 'Please try again.';
+            setError(fallbackResult.error || 'Both submission methods failed');
+            showError('Submission failed completely', fallbackResult.error || 'Please try again later');
           }
-          setError(errorMessage);
-          showError('Failed to submit trend', errorMessage);
-          throw new Error(errorMessage);
+        } else {
+          // Non-recoverable error (like duplicate)
+          setError(result.error || 'Failed to submit trend');
+          showError('Submission failed', result.error || 'Please try again');
         }
+      }
+    } catch (error: any) {
+      // If main service throws, try fallback
+      console.error('Main service error:', error);
+      console.log('Attempting fallback submission...');
+      
+      try {
+        const fallbackResult = await FallbackSubmission.submit(trendData, user.id);
         
-        // Wait before retrying with exponential backoff
-        console.log(`Waiting ${1000 * Math.pow(2, retryCount)}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+        if (fallbackResult.success) {
+          setShowSubmitForm(false);
+          await fetchUserTrends();
+          showSuccess('Trend submitted via backup!', 'Your trend was saved successfully');
+          setError('');
+          return fallbackResult.data;
+        } else {
+          throw new Error(fallbackResult.error || 'Fallback also failed');
+        }
+      } catch (fallbackError: any) {
+        const errorMessage = fallbackError.message || 'All submission methods failed';
+        setError(errorMessage);
+        showError('Critical submission error', errorMessage);
       }
     }
-    
-    // Should never reach here, but just in case
-    throw new Error('Unexpected submission error');
   };
 
   if (authLoading || (loading && trends.length === 0)) {
@@ -1189,9 +1093,17 @@ export default function Timeline() {
                                       </p>
                                     )}
                                   </div>
-                                  <div className={`flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold`}>
-                                    {getStatusIcon(trend.status)}
-                                    <span className="capitalize">{trend.status}</span>
+                                  <div className="flex items-center gap-2">
+                                    <div className={`flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold`}>
+                                      {getStatusIcon(trend.status)}
+                                      <span className="capitalize">{trend.status}</span>
+                                    </div>
+                                    {trend.stage && (
+                                      <div className={`flex items-center gap-1 px-3 py-1.5 ${getStageInfo(trend.stage).bgColor} rounded-full text-xs font-medium ${getStageInfo(trend.stage).color}`}>
+                                        <span>{getStageInfo(trend.stage).icon}</span>
+                                        <span>{getStageInfo(trend.stage).text}</span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -1233,11 +1145,11 @@ export default function Timeline() {
                                 <div className="flex items-center gap-3 mb-3 text-sm">
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                    <span>Wave: {trend.virality_prediction || 0}/10</span>
+                                    <span>Momentum: {trend.trend_momentum_score || trend.virality_prediction || 5}/10</span>
                                   </div>
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <AwardIcon className="w-4 h-4 text-blue-400" />
-                                    <span>Approval: {trend.validation_count}</span>
+                                    <span>Votes: {trend.positive_validations || 0}👍 {trend.negative_validations || 0}👎</span>
                                   </div>
                                   {trend.bounty_amount > 0 && (
                                     <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${

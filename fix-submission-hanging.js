@@ -1,165 +1,103 @@
-// Fix for trend submission hanging issue
-// This adds better error handling and timeout to the submission process
+// Debug script to fix trend submission hanging
+// Run this in the browser console to add better error handling
 
-// Run this in browser console to patch the submission handler
+// Override the handleTrendSubmit function with better logging and timeouts
 (function() {
-  console.log('🔧 Applying submission fix...');
+  console.log('🔧 Applying trend submission fix...');
   
   // Find the React component instance
-  const submitButton = document.querySelector('button[type="submit"]');
-  if (!submitButton) {
-    console.error('❌ Submit button not found');
+  const timelineComponent = document.querySelector('[data-timeline]')?.__reactInternalInstance;
+  
+  if (!timelineComponent) {
+    console.log('⚠️ Could not find Timeline component. Try this on the timeline page.');
     return;
   }
   
-  // Add global error handler for unhandled promise rejections
-  window.addEventListener('unhandledrejection', function(event) {
-    console.error('🚨 Unhandled promise rejection:', event.reason);
-    if (event.reason?.message?.includes('trend_submissions')) {
-      console.error('This is related to trend submission!');
-      alert('Error submitting trend: ' + (event.reason.message || 'Unknown error'));
-    }
-  });
+  // Patch the submission handler
+  const originalSubmit = window.handleTrendSubmit || console.log;
   
-  // Monitor fetch requests
-  const originalFetch = window.fetch;
-  window.fetch = async function(...args) {
-    const [url, options] = args;
+  window.handleTrendSubmit = async function(trendData) {
+    console.log('🚀 Starting patched trend submission...');
+    const startTime = Date.now();
     
-    // Check if this is a Supabase request
-    if (url && url.includes('supabase.co')) {
-      console.log('📡 Supabase request:', url);
-      console.log('Request options:', options);
-      
-      // Add timeout to prevent hanging
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        console.error('⏱️ Request timed out after 30 seconds');
-      }, 30000);
-      
-      try {
-        const response = await originalFetch(url, {
-          ...options,
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        // Log response details
-        console.log('📥 Response status:', response.status);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Response error:', errorText);
-        }
-        
-        return response;
-      } catch (error) {
-        clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
-          console.error('⏱️ Request aborted due to timeout');
-          alert('Request timed out. Please check your connection and try again.');
-        } else {
-          console.error('🚨 Fetch error:', error);
-        }
-        throw error;
-      }
-    }
-    
-    // For non-Supabase requests, use original fetch
-    return originalFetch(...args);
-  };
-  
-  console.log('✅ Fix applied! Try submitting again.');
-  console.log('📋 The console will now show detailed logs for all Supabase requests.');
-})();
-
-// Additional helper to manually trigger submission with logging
-window.debugSubmitTrend = async function(formData) {
-  console.log('🧪 Manual submission test starting...');
-  
-  try {
-    // Get auth session
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    
-    if (authError || !session) {
-      console.error('❌ Auth error:', authError || 'No session');
-      return;
-    }
-    
-    console.log('✅ Auth OK, user:', session.user.email);
-    
-    // Prepare minimal test data
-    const testData = {
-      spotter_id: session.user.id,
-      category: 'meme_format',
-      description: formData?.explanation || 'Debug test submission',
-      evidence: {
-        url: formData?.url || 'https://example.com',
-        title: formData?.trendName || 'Debug Test'
-      },
-      virality_prediction: 5,
-      status: 'pending',
-      quality_score: 0.5,
-      validation_count: 0,
-      creator_handle: formData?.creator_handle || '@test',
-      post_caption: formData?.post_caption || 'Test caption',
-      likes_count: formData?.likes_count || 0,
-      comments_count: formData?.comments_count || 0,
-      views_count: formData?.views_count || 0,
-      posted_at: new Date().toISOString()
-    };
-    
-    console.log('📤 Submitting data:', testData);
-    
-    const { data, error } = await supabase
-      .from('trend_submissions')
-      .insert(testData)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('❌ Submission error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
+    try {
+      // Add timeout wrapper
+      const timeout = 30000; // 30 seconds total timeout
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Submission timeout after 30 seconds')), timeout);
       });
       
-      // Provide specific guidance
-      if (error.code === 'PGRST301') {
-        console.log('🔧 This is an RLS policy error. The user may not have permission to insert.');
-        console.log('Run this SQL in Supabase to fix:');
-        console.log(`
-CREATE POLICY "Users can create their own submissions" ON trend_submissions
-FOR INSERT WITH CHECK (auth.uid() = spotter_id);
-
-CREATE POLICY "Users can view their own submissions" ON trend_submissions
-FOR SELECT USING (auth.uid() = spotter_id);
-        `);
+      // Log each step
+      console.log('Step 1: Preparing submission data');
+      console.log('Data:', trendData);
+      
+      // Call original function with timeout
+      const result = await Promise.race([
+        originalSubmit.call(this, trendData),
+        timeoutPromise
+      ]);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Submission completed in ${duration}ms`);
+      return result;
+      
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error(`❌ Submission failed after ${duration}ms:`, error);
+      
+      // Show user-friendly error
+      if (error.message.includes('timeout')) {
+        alert('The submission is taking too long. Please try again with a different URL or refresh the page.');
+      } else {
+        alert(`Submission failed: ${error.message}`);
       }
       
-      return;
+      throw error;
+    }
+  };
+  
+  console.log('✅ Fix applied! Try submitting a trend now.');
+  console.log('💡 Tip: Open the Network tab to see which requests might be hanging.');
+})();
+
+// Also add a helper to check current Supabase status
+window.checkSupabaseStatus = async function() {
+  console.log('🔍 Checking Supabase connection...');
+  
+  try {
+    const { createClient } = await import('/utils/supabase/client');
+    const supabase = createClient();
+    
+    // Test database connection
+    console.log('Testing database query...');
+    const { data, error } = await supabase
+      .from('trend_submissions')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      console.error('❌ Database error:', error);
+    } else {
+      console.log('✅ Database connection OK');
     }
     
-    console.log('✅ Submission successful!', data);
+    // Test storage
+    console.log('Testing storage access...');
+    const { data: buckets, error: storageError } = await supabase.storage.listBuckets();
     
-    // Clean up
-    if (data?.id) {
-      setTimeout(async () => {
-        await supabase.from('trend_submissions').delete().eq('id', data.id);
-        console.log('🧹 Test data cleaned up');
-      }, 5000);
+    if (storageError) {
+      console.error('❌ Storage error:', storageError);
+    } else {
+      console.log('✅ Storage access OK, buckets:', buckets);
     }
     
-  } catch (err) {
-    console.error('🚨 Unexpected error:', err);
+    // Check auth status
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('✅ Auth status:', user ? `Logged in as ${user.email}` : 'Not logged in');
+    
+  } catch (error) {
+    console.error('❌ Status check failed:', error);
   }
 };
 
-console.log('\n📖 Usage:');
-console.log('1. Try submitting the form normally - it will now show detailed logs');
-console.log('2. Or run: debugSubmitTrend() for a manual test');
-console.log('3. Or run: debugSubmitTrend(formData) with your form data');
+console.log('💡 Run checkSupabaseStatus() to test your connection');
