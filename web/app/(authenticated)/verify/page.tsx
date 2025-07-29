@@ -508,7 +508,7 @@ export default function Verify() {
                 onClick={() => setShowTutorial(true)}
                 className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
               >
-                <Info className="w-5 h-5 text-gray-400" />
+                <InfoIcon className="w-5 h-5 text-gray-400" />
               </motion.button>
               
               {/* Stats Button */}
