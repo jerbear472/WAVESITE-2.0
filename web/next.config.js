@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  generateBuildId: async () => {
+    // Force new build ID to clear cache
+    return 'build-' + Date.now()
+  },
   images: {
     domains: ['achuavagkhjenaypawij.supabase.co'],
   },
