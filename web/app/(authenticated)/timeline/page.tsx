@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
-import { mapCategoryToEnum } from '@/lib/categoryMapper';
+import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { useToast } from '@/contexts/ToastContext';
 import { 
   TrendingUp as TrendingUpIcon,
@@ -48,6 +48,11 @@ interface Trend {
   created_at: string;
   validated_at?: string;
   mainstream_at?: string;
+  // Enhanced fields
+  stage?: 'submitted' | 'validating' | 'trending' | 'viral' | 'peaked' | 'declining' | 'auto_rejected';
+  trend_momentum_score?: number;
+  positive_validations?: number;
+  negative_validations?: number;
   // Social media metadata
   creator_handle?: string;
   creator_name?: string;
@@ -283,16 +288,17 @@ export default function Timeline() {
 
   const handleTrendSubmit = async (trendData: any) => {
     console.log('Starting trend submission with data:', trendData);
-    let retryCount = 0;
-    const maxRetries = 3;
     
-    while (retryCount < maxRetries) {
-      try {
-        console.log(`Attempt ${retryCount + 1} of ${maxRetries}`);
-        // Ensure user is authenticated
-        if (!user?.id) {
-          throw new Error('Please log in to submit trends');
-        }
+    // Ensure user is authenticated
+    if (!user?.id) {
+      showError('Authentication Required', 'Please log in to submit trends');
+      return;
+    }
+
+    try {
+      // Use the submission service
+      const submissionService = TrendSubmissionService.getInstance();
+      const result = await submissionService.submitTrend(trendData, user.id);
 
         // Upload image if present
         let imageUrl = null;
@@ -303,23 +309,39 @@ export default function Timeline() {
             const fileExt = trendData.screenshot.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
             
-            // Try to create bucket if it doesn't exist
+            // Try to create bucket if it doesn't exist (with timeout)
             try {
-              await supabase.storage.createBucket('trend-images', {
-                public: true,
-                allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+              console.log('Checking/creating storage bucket...');
+              const bucketTimeout = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Bucket check timeout')), 3000);
               });
+              
+              await Promise.race([
+                supabase.storage.createBucket('trend-images', {
+                  public: true,
+                  allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+                }),
+                bucketTimeout
+              ]);
             } catch (bucketError) {
-              // Bucket might already exist, continue
-              console.log('Bucket already exists or error creating:', bucketError);
+              // Bucket might already exist or timeout, continue
+              console.log('Bucket exists or timed out (this is OK)');
             }
             
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('trend-images')
-              .upload(fileName, trendData.screenshot, {
-                cacheControl: '3600',
-                upsert: false
-              });
+            console.log('Uploading image...');
+            const uploadTimeout = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Image upload timeout')), 10000);
+            });
+            
+            const { data: uploadData, error: uploadError } = await Promise.race([
+              supabase.storage
+                .from('trend-images')
+                .upload(fileName, trendData.screenshot, {
+                  cacheControl: '3600',
+                  upsert: false
+                }),
+              uploadTimeout
+            ]) as any;
 
             if (!uploadError) {
               const { data: { publicUrl } } = supabase.storage
@@ -388,21 +410,36 @@ export default function Timeline() {
 
         console.log('Submitting data to database:', insertData);
 
-        const { data, error } = await supabase
-          .from('trend_submissions')
-          .insert(insertData)
-          .select()
-          .single();
+        // Add timeout protection to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Database operation timed out after 15 seconds')), 15000);
+        });
+
+        const { data, error } = await Promise.race([
+          supabase
+            .from('trend_submissions')
+            .insert(insertData)
+            .select()
+            .single(),
+          timeoutPromise
+        ]) as any;
 
         if (error) {
           throw error;
         }
 
+        // Log successful submission
+        const attemptDuration = Date.now() - attemptStartTime;
+        console.log(`✅ Database insert successful after ${attemptDuration}ms`);
+        
         // Close form and refresh trends
         setShowSubmitForm(false);
+        console.log('🔄 Refreshing trends list...');
         await fetchUserTrends();
         
         // Show success message
+        const totalDuration = Date.now() - submissionStartTime;
+        console.log(`✅ Total submission completed in ${totalDuration}ms`);
         showSuccess('Trend submitted successfully!', 'Your trend is now being processed');
         setError('');
         console.log('Returning successful submission data');
@@ -708,12 +745,32 @@ export default function Timeline() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60" />
                             
-                            {/* Status Badge */}
-                            <div className="absolute top-3 right-3">
+                            {/* Status Badge with Stage */}
+                            <div className="absolute top-3 right-3 space-y-2">
                               <div className={`flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold shadow-lg`}>
                                 {getStatusIcon(trend.status)}
                                 <span className="capitalize">{trend.status}</span>
                               </div>
+                              {trend.stage && (
+                                <div className={`flex items-center gap-1 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full text-xs font-medium shadow-lg ${
+                                  trend.stage === 'viral' ? 'text-red-400' :
+                                  trend.stage === 'trending' ? 'text-green-400' :
+                                  trend.stage === 'validating' ? 'text-blue-400' :
+                                  trend.stage === 'declining' ? 'text-orange-400' :
+                                  'text-gray-400'
+                                }`}>
+                                  <ZapIcon className="w-3 h-3" />
+                                  <span>
+                                    {trend.stage === 'submitted' ? 'Just Starting' :
+                                     trend.stage === 'validating' ? 'Gaining Traction' :
+                                     trend.stage === 'trending' ? 'Trending' :
+                                     trend.stage === 'viral' ? 'Going Viral!' :
+                                     trend.stage === 'peaked' ? 'At Peak' :
+                                     trend.stage === 'declining' ? 'Declining' :
+                                     trend.stage}
+                                  </span>
+                                </div>
+                              )}
                             </div>
 
                             {/* Category Badge */}
@@ -832,11 +889,13 @@ export default function Timeline() {
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-1">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span className="text-xs text-gray-400">Wave: {trend.virality_prediction || 0}/10</span>
+                                  <span className="text-xs text-gray-400">Momentum: {trend.trend_momentum_score || trend.virality_prediction || 5}/10</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
-                                  <span className="text-xs text-gray-400">Approval: {trend.validation_count}</span>
+                                  <span className="text-xs text-gray-400">
+                                    Votes: {trend.positive_validations || 0}👍 {trend.negative_validations || 0}👎
+                                  </span>
                                 </div>
                               </div>
                               
@@ -946,9 +1005,17 @@ export default function Timeline() {
                                 </div>
                               </div>
 
-                              <div className={`flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold`}>
-                                {getStatusIcon(trend.status)}
-                                <span className="capitalize">{trend.status}</span>
+                              <div className="flex items-center gap-2">
+                                <div className={`flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold`}>
+                                  {getStatusIcon(trend.status)}
+                                  <span className="capitalize">{trend.status}</span>
+                                </div>
+                                {trend.stage && (
+                                  <div className={`flex items-center gap-1 px-3 py-1.5 ${getStageInfo(trend.stage).bgColor} rounded-full text-xs font-medium ${getStageInfo(trend.stage).color}`}>
+                                    <span>{getStageInfo(trend.stage).icon}</span>
+                                    <span>{getStageInfo(trend.stage).text}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
@@ -990,11 +1057,11 @@ export default function Timeline() {
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span>Wave: {trend.virality_prediction || 0}/10</span>
+                                  <span>Momentum: {trend.trend_momentum_score || trend.virality_prediction || 5}/10</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
-                                  <span>Approval: {trend.validation_count}</span>
+                                  <span>Votes: {trend.positive_validations || 0}👍 {trend.negative_validations || 0}👎</span>
                                 </div>
                               </div>
 

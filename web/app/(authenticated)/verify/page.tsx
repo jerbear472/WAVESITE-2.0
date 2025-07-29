@@ -152,6 +152,13 @@ export default function Verify() {
       fetchTrendsToVerify();
       fetchUserStats();
       checkFirstTime();
+      
+      // Set up periodic rate limit refresh (every 30 seconds)
+      const interval = setInterval(() => {
+        checkRateLimit();
+      }, 30000);
+      
+      return () => clearInterval(interval);
     }
   }, [user]);
   
@@ -185,10 +192,18 @@ export default function Verify() {
       const { data, error } = await supabase
         .rpc('check_rate_limit', { p_user_id: user.id });
 
-      console.log('Rate limit check response:', data);
+      console.log('Rate limit check response:', data, error);
 
       if (!error && data && data.length > 0) {
-        setRateLimit(data[0]);
+        const rateLimitData = data[0];
+        
+        // Ensure we have valid numbers
+        setRateLimit({
+          can_validate: rateLimitData.can_validate,
+          validations_remaining_today: Math.max(0, rateLimitData.validations_remaining_today || 0),
+          validations_remaining_hour: Math.max(0, rateLimitData.validations_remaining_hour || 0),
+          reset_time: rateLimitData.reset_time
+        });
         
         // Also fetch raw data to debug
         const { data: rawData } = await supabase
@@ -198,9 +213,24 @@ export default function Verify() {
           .single();
         
         console.log('Raw rate limit data:', rawData);
+      } else {
+        // Set default rate limit if no data
+        setRateLimit({
+          can_validate: true,
+          validations_remaining_today: 100,
+          validations_remaining_hour: 20,
+          reset_time: new Date().toISOString()
+        });
       }
     } catch (error) {
       console.error('Error checking rate limit:', error);
+      // Set default rate limit on error
+      setRateLimit({
+        can_validate: true,
+        validations_remaining_today: 100,
+        validations_remaining_hour: 20,
+        reset_time: new Date().toISOString()
+      });
     }
   };
 
@@ -386,11 +416,13 @@ export default function Verify() {
 
       // Immediately update the local rate limit state for optimistic UI
       if (rateLimit) {
+        const newDailyRemaining = Math.max(0, rateLimit.validations_remaining_today - 1);
+        const newHourlyRemaining = Math.max(0, rateLimit.validations_remaining_hour - 1);
         const newRateLimit = {
           ...rateLimit,
-          validations_remaining_today: Math.max(0, rateLimit.validations_remaining_today - 1),
-          validations_remaining_hour: Math.max(0, rateLimit.validations_remaining_hour - 1),
-          can_validate: (rateLimit.validations_remaining_today - 1) > 0 && (rateLimit.validations_remaining_hour - 1) > 0
+          validations_remaining_today: newDailyRemaining,
+          validations_remaining_hour: newHourlyRemaining,
+          can_validate: newDailyRemaining > 0 && newHourlyRemaining > 0
         };
         console.log('Setting new rate limit state:', newRateLimit);
         setRateLimit(newRateLimit);
@@ -408,9 +440,12 @@ export default function Verify() {
       if (rateLimitError) {
         console.error('Rate limit update error:', rateLimitError);
         // Revert the optimistic update if the server call fails
-        if (rateLimit) {
-          setRateLimit(rateLimit);
-        }
+        checkRateLimit();
+      } else {
+        // Refresh rate limit to ensure sync with server
+        setTimeout(() => {
+          checkRateLimit();
+        }, 100);
       }
 
       setLastAction(isValid ? 'trending' : 'not-trending');
@@ -869,16 +904,27 @@ export default function Verify() {
                 animate={{ opacity: 1, x: 0 }}
                 className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 border border-gray-800"
               >
-                <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
-                  <ClockIcon className="w-4 h-4" />
-                  Validation Limits
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                    <ClockIcon className="w-4 h-4" />
+                    Validation Limits
+                  </h3>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    onClick={() => checkRateLimit()}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </motion.button>
+                </div>
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Hourly</span>
                       <span className="text-white font-medium">
-                        {rateLimit.validations_remaining_hour} left
+                        {rateLimit.validations_remaining_hour} / 20
                       </span>
                     </div>
                     <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
@@ -895,7 +941,7 @@ export default function Verify() {
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-400">Daily</span>
                       <span className="text-white font-medium">
-                        {rateLimit.validations_remaining_today} left
+                        {rateLimit.validations_remaining_today} / 100
                       </span>
                     </div>
                     <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
@@ -918,10 +964,30 @@ export default function Verify() {
                   >
                     <p className="text-xs text-red-400 flex items-center gap-1">
                       <AlertCircleIcon className="w-3 h-3" />
-                      Limit reached. Resets at {new Date(rateLimit.reset_time).toLocaleTimeString()}
+                      {rateLimit.validations_remaining_hour === 0 ? 'Hourly limit reached' : 'Daily limit reached'}
+                    </p>
+                    <p className="text-xs text-red-300 mt-1">
+                      Resets {(() => {
+                        const resetTime = new Date(rateLimit.reset_time);
+                        const now = new Date();
+                        const diffMinutes = Math.ceil((resetTime.getTime() - now.getTime()) / 60000);
+                        
+                        if (diffMinutes < 60) {
+                          return `in ${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''}`;
+                        } else {
+                          return `at ${resetTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                        }
+                      })()}
                     </p>
                   </motion.div>
                 )}
+                
+                {/* Info about limits */}
+                <div className="mt-3 p-2 bg-gray-800/30 rounded-lg">
+                  <p className="text-xs text-gray-500">
+                    Limits reset automatically each hour and day.
+                  </p>
+                </div>
               </motion.div>
             )}
 

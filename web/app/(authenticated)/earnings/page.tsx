@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/formatters';
 import { EARNINGS } from '@/lib/constants';
 import CashOutModal from '@/components/CashOutModal';
+import PaymentHistory from '@/components/PaymentHistory';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   DollarSign as DollarSignIcon, 
