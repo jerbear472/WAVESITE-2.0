@@ -185,8 +185,19 @@ export default function Verify() {
       const { data, error } = await supabase
         .rpc('check_rate_limit', { p_user_id: user.id });
 
+      console.log('Rate limit check response:', data);
+
       if (!error && data && data.length > 0) {
         setRateLimit(data[0]);
+        
+        // Also fetch raw data to debug
+        const { data: rawData } = await supabase
+          .from('validation_rate_limits')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        console.log('Raw rate limit data:', rawData);
       }
     } catch (error) {
       console.error('Error checking rate limit:', error);
@@ -377,7 +388,20 @@ export default function Verify() {
       const { error: rateLimitError } = await supabase
         .rpc('increment_validation_count', { p_user_id: user?.id });
 
-      if (rateLimitError) console.error('Rate limit update error:', rateLimitError);
+      if (rateLimitError) {
+        console.error('Rate limit update error:', rateLimitError);
+        // Still continue with the validation even if rate limit update fails
+      }
+      
+      // Immediately update the local rate limit state
+      if (rateLimit) {
+        setRateLimit({
+          ...rateLimit,
+          validations_remaining_today: Math.max(0, rateLimit.validations_remaining_today - 1),
+          validations_remaining_hour: Math.max(0, rateLimit.validations_remaining_hour - 1),
+          can_validate: rateLimit.validations_remaining_today > 1 && rateLimit.validations_remaining_hour > 1
+        });
+      }
 
       setLastAction(isValid ? 'trending' : 'not-trending');
       
