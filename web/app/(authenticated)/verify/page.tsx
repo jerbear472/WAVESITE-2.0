@@ -384,6 +384,18 @@ export default function Verify() {
 
       if (insertError) throw insertError;
 
+      // Immediately update the local rate limit state for optimistic UI
+      if (rateLimit) {
+        const newRateLimit = {
+          ...rateLimit,
+          validations_remaining_today: Math.max(0, rateLimit.validations_remaining_today - 1),
+          validations_remaining_hour: Math.max(0, rateLimit.validations_remaining_hour - 1),
+          can_validate: (rateLimit.validations_remaining_today - 1) > 0 && (rateLimit.validations_remaining_hour - 1) > 0
+        };
+        console.log('Setting new rate limit state:', newRateLimit);
+        setRateLimit(newRateLimit);
+      }
+      
       // Log current rate limit state before update
       console.log('Current rate limit before validation:', rateLimit);
       
@@ -395,19 +407,10 @@ export default function Verify() {
 
       if (rateLimitError) {
         console.error('Rate limit update error:', rateLimitError);
-        // Still continue with the validation even if rate limit update fails
-      }
-      
-      // Immediately update the local rate limit state for optimistic UI
-      if (rateLimit) {
-        const newRateLimit = {
-          ...rateLimit,
-          validations_remaining_today: Math.max(0, rateLimit.validations_remaining_today - 1),
-          validations_remaining_hour: Math.max(0, rateLimit.validations_remaining_hour - 1),
-          can_validate: rateLimit.validations_remaining_today > 1 && rateLimit.validations_remaining_hour > 1
-        };
-        console.log('Setting new rate limit state:', newRateLimit);
-        setRateLimit(newRateLimit);
+        // Revert the optimistic update if the server call fails
+        if (rateLimit) {
+          setRateLimit(rateLimit);
+        }
       }
 
       setLastAction(isValid ? 'trending' : 'not-trending');
@@ -419,14 +422,7 @@ export default function Verify() {
       setShowReasoningInput(false);
 
       await fetchUserStats();
-      // Don't call checkRateLimit here as it might overwrite our optimistic update
-      // await checkRateLimit();
       await loadUserPerformance();
-      
-      // Instead, do a delayed check to sync with server
-      setTimeout(() => {
-        checkRateLimit();
-      }, 1000);
 
       setTimeout(() => {
         setLastAction(null);
@@ -434,6 +430,8 @@ export default function Verify() {
           setCurrentIndex(prev => prev + 1);
         } else {
           setCurrentIndex(trends.length);
+          // Refresh rate limit when all trends are verified
+          checkRateLimit();
         }
       }, 500);
     } catch (error: any) {
