@@ -384,23 +384,30 @@ export default function Verify() {
 
       if (insertError) throw insertError;
 
+      // Log current rate limit state before update
+      console.log('Current rate limit before validation:', rateLimit);
+      
       // Update rate limit using the increment function
-      const { error: rateLimitError } = await supabase
+      const { data: incrementData, error: rateLimitError } = await supabase
         .rpc('increment_validation_count', { p_user_id: user?.id });
+
+      console.log('Increment function response:', incrementData, 'Error:', rateLimitError);
 
       if (rateLimitError) {
         console.error('Rate limit update error:', rateLimitError);
         // Still continue with the validation even if rate limit update fails
       }
       
-      // Immediately update the local rate limit state
+      // Immediately update the local rate limit state for optimistic UI
       if (rateLimit) {
-        setRateLimit({
+        const newRateLimit = {
           ...rateLimit,
           validations_remaining_today: Math.max(0, rateLimit.validations_remaining_today - 1),
           validations_remaining_hour: Math.max(0, rateLimit.validations_remaining_hour - 1),
           can_validate: rateLimit.validations_remaining_today > 1 && rateLimit.validations_remaining_hour > 1
-        });
+        };
+        console.log('Setting new rate limit state:', newRateLimit);
+        setRateLimit(newRateLimit);
       }
 
       setLastAction(isValid ? 'trending' : 'not-trending');
@@ -412,8 +419,14 @@ export default function Verify() {
       setShowReasoningInput(false);
 
       await fetchUserStats();
-      await checkRateLimit();
+      // Don't call checkRateLimit here as it might overwrite our optimistic update
+      // await checkRateLimit();
       await loadUserPerformance();
+      
+      // Instead, do a delayed check to sync with server
+      setTimeout(() => {
+        checkRateLimit();
+      }, 1000);
 
       setTimeout(() => {
         setLastAction(null);
