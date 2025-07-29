@@ -393,13 +393,57 @@ export default function ScrollDashboard() {
       const baseAmount = 0.10;
       const earnedAmount = baseAmount * streakMultiplier;
       setTodaysEarnings(prev => prev + earnedAmount);
-      updateUserEarnings(earnedAmount);
+      
+      // Create earnings ledger entry for pending review
+      console.log('Creating earnings ledger entry for trend:', data.id);
+      const { error: earningsError } = await supabase
+        .from('earnings_ledger')
+        .insert({
+          user_id: user.id,
+          trend_id: data.id,
+          amount: earnedAmount,
+          type: 'trend_submission',
+          status: 'pending', // Pending community verification
+          description: `Trend submission: ${trendData.trendName || 'Untitled'}`,
+          created_at: new Date().toISOString()
+        });
+
+      if (earningsError) {
+        console.error('Error creating earnings entry:', earningsError);
+      }
+
+      // Update user's pending earnings
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          earnings_pending: supabase.rpc('increment_earnings_pending', { x: earnedAmount })
+        })
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error('Error updating pending earnings:', profileError);
+        // Fallback to direct update
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('earnings_pending')
+          .eq('id', user.id)
+          .single();
+          
+        if (profile) {
+          await supabase
+            .from('profiles')
+            .update({
+              earnings_pending: (profile.earnings_pending || 0) + earnedAmount
+            })
+            .eq('id', user.id);
+        }
+      }
       
       setSubmitMessage({ 
         type: 'success', 
         text: streak > 0 
-          ? `Trend submitted! +${formatCurrency(earnedAmount)} (${streakMultiplier}x multiplier!)` 
-          : `Trend submitted! +${formatCurrency(earnedAmount)}`
+          ? `Trend submitted! +${formatCurrency(earnedAmount)} pending (${streakMultiplier}x multiplier!)` 
+          : `Trend submitted! +${formatCurrency(earnedAmount)} pending verification`
       });
       setTimeout(() => setSubmitMessage(null), 3000);
 
@@ -455,7 +499,7 @@ export default function ScrollDashboard() {
           </div>
 
           <div className="text-right bg-gray-800/50 px-4 py-2 rounded-xl">
-            <p className="text-xs text-gray-400 font-medium">Today's Total</p>
+            <p className="text-xs text-gray-400 font-medium">Today's Pending</p>
             <p className="text-xl font-bold text-emerald-400">{formatCurrency(todaysEarnings)}</p>
           </div>
         </motion.div>
@@ -571,7 +615,7 @@ export default function ScrollDashboard() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-white">Submit New Trend</h3>
-                  <p className="text-blue-200/80 font-medium">Earn ${(0.10 * streakMultiplier).toFixed(2)} per submission</p>
+                  <p className="text-blue-200/80 font-medium">Earn ${(0.10 * streakMultiplier).toFixed(2)} pending per submission</p>
                 </div>
               </div>
               <div className="text-right bg-white/10 backdrop-blur-sm px-4 py-3 rounded-xl border border-white/20">
