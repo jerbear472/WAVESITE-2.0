@@ -48,6 +48,7 @@ interface TrendData {
   
   // Trend Status
   spreadSpeed: string;
+  engagementRange?: string;
   audioOrCatchphrase?: string;
   motivation: string;
   
@@ -116,7 +117,8 @@ const moodOptions = [
   'Rebellious 🤘',
   'Cozy 🧸',
   'Chaotic 🌪️',
-  'Fancy 🍸'
+  'Fancy 🍸',
+  'Ironic 💀'
 ];
 
 const spreadSpeedOptions = [
@@ -124,7 +126,15 @@ const spreadSpeedOptions = [
   { id: 'picking_up', label: '📈 Picking Up', description: 'Gaining momentum, more creators joining' },
   { id: 'viral', label: '🚀 Viral', description: 'Everywhere on the platform' },
   { id: 'saturated', label: '📊 Saturated', description: 'Peak reached, brands jumping in' },
-  { id: 'declining', label: '📉 Declining', description: 'Losing steam, becoming cringe' }
+  { id: 'declining', label: '📉 Declining', description: 'Losing steam, old news' }
+];
+
+const engagementRanges = [
+  { id: 'micro', label: '🌱 Micro', range: '100-10K likes' },
+  { id: 'small', label: '📈 Small', range: '10K-50K likes' },
+  { id: 'medium', label: '🔥 Medium', range: '50K-200K likes' },
+  { id: 'large', label: '🚀 Large', range: '200K-1M likes' },
+  { id: 'mega', label: '💎 Mega', range: '1M+ likes' }
 ];
 
 interface TrendSubmissionFormProps {
@@ -154,6 +164,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     categories: [],
     moods: [],
     spreadSpeed: '',
+    engagementRange: '',
     audioOrCatchphrase: '',
     motivation: '',
     firstSeen: 'today',
@@ -971,6 +982,31 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                     >
                       <div className="font-medium text-white">{option.label}</div>
                       <div className="text-sm text-slate-400 mt-1">{option.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Engagement Range */}
+              <div>
+                <label className="block text-slate-200 mb-3 font-medium">
+                  💬 Typical Engagement Range
+                </label>
+                <p className="text-xs text-slate-400 mb-3">Quick way to spot engagement levels</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {engagementRanges.map((range) => (
+                    <button
+                      key={range.id}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, engagementRange: range.id }))}
+                      className={`p-3 rounded-lg text-center transition-all ${
+                        formData.engagementRange === range.id
+                          ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500'
+                          : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'
+                      } border`}
+                    >
+                      <div className="font-medium text-white text-sm">{range.label}</div>
+                      <div className="text-xs text-slate-400 mt-1">{range.range}</div>
                     </button>
                   ))}
                 </div>
