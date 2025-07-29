@@ -32,9 +32,9 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
       const trendBonus = 0.10; // $0.10 per trend (corrected from 0.25)
       const minutes = sessionTime / 60;
       const baseEarnings = minutes * baseRate;
-      const bonusEarnings = trendsLogged * trendBonus;
+      const bonusEarnings = trendsLogged * trendBonus * streakMultiplier; // Apply multiplier to trend bonus
       return baseEarnings + bonusEarnings;
-    }, [sessionTime, trendsLogged]);
+    }, [sessionTime, trendsLogged, streakMultiplier]);
 
     // Update earnings when time or trends change
     useEffect(() => {

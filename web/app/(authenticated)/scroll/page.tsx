@@ -90,12 +90,22 @@ export default function ScrollDashboard() {
   
   // Handle trend logged from floating logger
   const handleTrendLogged = () => {
+    // Only allow trend logging during active session
+    if (!scrollSessionRef.current?.isActive) {
+      setSubmitMessage({ type: 'error', text: 'Start a session to log trends!' });
+      setTimeout(() => setSubmitMessage(null), 3000);
+      return;
+    }
+    
     scrollSessionRef.current?.logTrend();
     updateStreakProgress();
   };
   
   // Update streak progress when a trend is logged
   const updateStreakProgress = () => {
+    // Only update streak during active session
+    if (!scrollSessionRef.current?.isActive) return;
+    
     const now = new Date();
     
     // Add current trend to window
@@ -120,6 +130,24 @@ export default function ScrollDashboard() {
       setTrendsInWindow([]);
     }
   };
+  
+  // Handle session state changes
+  const handleSessionStateChange = (active: boolean) => {
+    setIsScrolling(active);
+    
+    // Reset streak when session ends
+    if (!active) {
+      setStreak(0);
+      setStreakMultiplier(1);
+      setTrendsInWindow([]);
+      setLastTrendTime(null);
+      
+      // Clear any running timers
+      if (streakTimerRef.current) {
+        clearInterval(streakTimerRef.current);
+      }
+    }
+  };
 
   // Normalize URL for duplicate checking
   const normalizeUrl = (url: string) => {
@@ -142,6 +170,13 @@ export default function ScrollDashboard() {
       // Check if user is authenticated
       if (!user?.id) {
         setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
+        setTimeout(() => setSubmitMessage(null), 3000);
+        return;
+      }
+      
+      // Check if session is active
+      if (!scrollSessionRef.current?.isActive) {
+        setSubmitMessage({ type: 'error', text: 'Start a scroll session to submit trends!' });
         setTimeout(() => setSubmitMessage(null), 3000);
         return;
       }
@@ -443,8 +478,27 @@ export default function ScrollDashboard() {
           </motion.div>
         )}
 
+        {/* Session Required Notice */}
+        {!isScrolling && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-6 bg-blue-500/10 backdrop-blur-sm rounded-xl p-4 border border-blue-500/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-500/20 p-2 rounded-lg">
+                <Clock className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium">Start a session to begin earning!</p>
+                <p className="text-blue-200 text-sm">Trends can only be logged during active sessions</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Streak Progress */}
-        {trendsInWindow.length > 0 && streak === 0 && (
+        {trendsInWindow.length > 0 && streak === 0 && isScrolling && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -480,7 +534,7 @@ export default function ScrollDashboard() {
           {/* Scroll Session Component */}
           <ScrollSession
             ref={scrollSessionRef}
-            onSessionStateChange={setIsScrolling}
+            onSessionStateChange={handleSessionStateChange}
             onTrendLogged={handleTrendLogged}
             streak={streak}
             streakMultiplier={streakMultiplier}
