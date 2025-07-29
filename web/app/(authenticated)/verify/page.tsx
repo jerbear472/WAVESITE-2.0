@@ -1,10 +1,10 @@
 'use client';
-// Enhanced Performance-Based Verification Page - Updated
-import { useEffect, useState, useCallback } from 'react';
+// Enhanced Performance-Based Verification Page - V3 with improved UI/UX
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { format, parseISO } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { 
   TrendingUp as TrendingUpIcon,
   X as XIcon,
@@ -27,7 +27,13 @@ import {
   ChevronDown as ChevronDownIcon,
   Shield as ShieldIcon,
   Star as StarIcon,
-  DollarSign as DollarSignIcon
+  DollarSign as DollarSignIcon,
+  Sparkles as SparklesIcon,
+  Trophy as TrophyIcon,
+  Flame as FlameIcon,
+  BarChart3 as BarChart3Icon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon
 } from 'lucide-react';
 import { PerformanceTierDisplay } from '@/components/PerformanceTierDisplay';
 import { ConsensusVisualization } from '@/components/ConsensusVisualization';
@@ -86,7 +92,6 @@ interface RateLimitInfo {
 }
 
 export default function Verify() {
-  console.log('🚀 ENHANCED VERIFY PAGE WITH PERFORMANCE TIERS - v2.0');
   const { user } = useAuth();
   const [trends, setTrends] = useState<TrendToVerify[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -111,6 +116,13 @@ export default function Verify() {
   const [validationStartTime, setValidationStartTime] = useState<number>(0);
   const [performanceMetrics, setPerformanceMetrics] = useState<UserPerformanceMetrics | null>(null);
   const [estimatedPayment, setEstimatedPayment] = useState<number>(0);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  
+  // Swipe gesture handling
+  const dragX = useMotionValue(0);
+  const dragOpacity = useTransform(dragX, [-200, 0, 200], [0.5, 1, 0.5]);
+  const rotateZ = useTransform(dragX, [-200, 200], [-10, 10]);
 
   const performanceService = PerformanceManagementService.getInstance();
 
@@ -119,14 +131,16 @@ export default function Verify() {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!currentTrend || verifying) return;
       
-      if (e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         handleVerify(false);
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
         handleVerify(true);
-      } else if (e.key === 'ArrowDown' || e.key === 's') {
+      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === ' ') {
         handleSkip();
       } else if (e.key >= '1' && e.key <= '5') {
         setConfidenceScore(parseInt(e.key) * 0.2);
+      } else if (e.key === '?') {
+        setShowTutorial(true);
       }
     };
 
@@ -140,8 +154,17 @@ export default function Verify() {
       checkRateLimit();
       fetchTrendsToVerify();
       fetchUserStats();
+      checkFirstTime();
     }
   }, [user]);
+  
+  const checkFirstTime = () => {
+    const hasSeenTutorial = localStorage.getItem('verify-tutorial-seen');
+    if (!hasSeenTutorial) {
+      setShowTutorial(true);
+      localStorage.setItem('verify-tutorial-seen', 'true');
+    }
+  };
 
   useEffect(() => {
     if (currentTrend) {
@@ -405,6 +428,16 @@ export default function Verify() {
       }
     }, 300);
   };
+  
+  const handleDragEnd = (event: any, info: any) => {
+    const threshold = 100;
+    
+    if (info.offset.x > threshold) {
+      handleVerify(true);
+    } else if (info.offset.x < -threshold) {
+      handleVerify(false);
+    }
+  };
 
   const showValidationFeedback = (isValid: boolean, payment: number) => {
     console.log(`Vote submitted! ${performanceMetrics?.currentTier === 'suspended' ? 'No payment (suspended)' : `Estimated earnings: $${payment.toFixed(3)}`}`);
@@ -421,43 +454,73 @@ export default function Verify() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading trends to verify...</p>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-20 w-20 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <SparklesIcon className="w-8 h-8 text-blue-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <p className="text-gray-400 mt-4 animate-pulse">Loading trends to verify...</p>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      {/* Animated Background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-900/5 via-purple-900/5 to-pink-900/5 pointer-events-none" />
+      
       <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 safe-area-top safe-area-bottom">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+              <motion.div 
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+                className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg"
+              >
                 <TrendingUpIcon className="w-6 h-6" />
-              </div>
+              </motion.div>
               <div>
-                <h1 className="text-responsive-2xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
-                  Performance-Based Verification
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                  Trend Verification
                 </h1>
-                <p className="text-responsive-sm text-gray-400 mt-1">
-                  Earn based on your performance tier
+                <p className="text-sm text-gray-400 mt-0.5">
+                  Help validate what's trending
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {/* Tutorial Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowTutorial(true)}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <Info className="w-5 h-5 text-gray-400" />
+              </motion.button>
+              
+              {/* Stats Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowStats(true)}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <BarChart3Icon className="w-5 h-5 text-gray-400" />
+              </motion.button>
+              
               {/* Performance Tier Badge */}
               {user && performanceMetrics && (
                 <PerformanceTierDisplay 
@@ -466,101 +529,111 @@ export default function Verify() {
                   onTierChange={() => loadUserPerformance()}
                 />
               )}
-              
-              {/* Rate Limit Display */}
-              {rateLimit && (
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl px-4 py-2 border border-gray-700">
-                  <p className="text-xs text-gray-400">Validations remaining</p>
-                  <p className="text-sm font-semibold text-white">
-                    {rateLimit.validations_remaining_hour} / hour
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </motion.div>
 
-        {/* Performance Metrics Summary */}
-        {user && performanceMetrics && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
+        {/* Progress Bar */}
+        {trends.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-4"
           >
-            <PerformanceTierDisplay 
-              userId={user.id} 
-              showDetails={true}
-            />
+            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
+                initial={{ width: 0 }}
+                animate={{ width: `${((currentIndex + 1) / trends.length) * 100}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
           </motion.div>
         )}
 
-        {/* Enhanced Stats Bar */}
+        {/* Quick Stats Bar */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-gray-900/50 backdrop-blur-md rounded-2xl border border-gray-800/50 p-6 mb-8"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"
         >
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-4 border border-blue-500/20"
-            >
-              <div className="relative text-center">
-                <ZapIcon className="w-6 h-6 text-blue-400 mx-auto mb-2 opacity-50" />
-                <p className="text-responsive-xl font-bold text-blue-400">{stats.verified_today}</p>
-                <p className="text-responsive-xs text-gray-400 mt-1">Verified Today</p>
-                {stats.validation_streak > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xs rounded-full px-2 py-1 flex items-center gap-1">
-                    <ZapIcon className="w-3 h-3" />
-                    {stats.validation_streak}
-                  </div>
-                )}
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-2xl p-4 border border-blue-500/20 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.verified_today}</p>
+                <p className="text-xs text-blue-400 mt-0.5">Verified</p>
               </div>
-            </motion.div>
+              <ZapIcon className="w-5 h-5 text-blue-400" />
+            </div>
+            {stats.validation_streak > 0 && (
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="mt-2 inline-flex items-center gap-1 text-xs bg-blue-500/20 rounded-full px-2 py-1"
+              >
+                <FlameIcon className="w-3 h-3 text-blue-400" />
+                <span className="text-blue-400">{stats.validation_streak} streak</span>
+              </motion.div>
+            )}
+          </motion.div>
             
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-600/10 p-4 border border-green-500/20"
-            >
-              <div className="relative text-center">
-                <DollarSignIcon className="w-6 h-6 text-green-400 mx-auto mb-2 opacity-50" />
-                <p className="text-responsive-xl font-bold text-green-400">${stats.earnings_today.toFixed(2)}</p>
-                <p className="text-responsive-xs text-gray-400 mt-1">Earned Today</p>
-                {performanceMetrics && performanceMetrics.paymentMultiplier !== 1 && (
-                  <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full px-2 py-1">
-                    {performanceMetrics.paymentMultiplier}x
-                  </div>
-                )}
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-gradient-to-br from-green-500/10 to-emerald-600/5 rounded-2xl p-4 border border-green-500/20 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">${stats.earnings_today.toFixed(2)}</p>
+                <p className="text-xs text-green-400 mt-0.5">Earned</p>
               </div>
-            </motion.div>
+              <DollarSignIcon className="w-5 h-5 text-green-400" />
+            </div>
+            {performanceMetrics && performanceMetrics.paymentMultiplier !== 1 && (
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="mt-2 inline-flex items-center gap-1 text-xs bg-green-500/20 rounded-full px-2 py-1"
+              >
+                <span className="text-green-400">{performanceMetrics.paymentMultiplier}x multiplier</span>
+              </motion.div>
+            )}
+          </motion.div>
             
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-600/10 p-4 border border-purple-500/20"
-            >
-              <div className="relative text-center">
-                <TargetIcon className="w-6 h-6 text-purple-400 mx-auto mb-2 opacity-50" />
-                <p className="text-responsive-xl font-bold text-purple-400">
-                  {stats.accuracy_score.toFixed(1)}%
-                </p>
-                <p className="text-responsive-xs text-gray-400 mt-1">Accuracy</p>
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-gradient-to-br from-purple-500/10 to-pink-600/5 rounded-2xl p-4 border border-purple-500/20 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.accuracy_score.toFixed(0)}%</p>
+                <p className="text-xs text-purple-400 mt-0.5">Accuracy</p>
               </div>
-            </motion.div>
-            
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-600/10 p-4 border border-amber-500/20"
-            >
-              <div className="relative text-center">
-                <ShieldIcon className="w-6 h-6 text-amber-400 mx-auto mb-2 opacity-50" />
-                <p className="text-responsive-xl font-bold text-amber-400">
+              <TrophyIcon className="w-5 h-5 text-purple-400" />
+            </div>
+          </motion.div>
+          
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-gradient-to-br from-amber-500/10 to-orange-600/5 rounded-2xl p-4 border border-amber-500/20 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">
                   {(stats.validation_reputation * 100).toFixed(0)}
                 </p>
-                <p className="text-responsive-xs text-gray-400 mt-1">Reputation</p>
+                <p className="text-xs text-amber-400 mt-0.5">Reputation</p>
               </div>
-            </motion.div>
-          </div>
+              <ShieldIcon className="w-5 h-5 text-amber-400" />
+            </div>
+          </motion.div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -570,136 +643,197 @@ export default function Verify() {
             {currentTrend && currentIndex < trends.length ? (
               <motion.div 
                 key={currentTrend.id}
-                initial={{ opacity: 0, scale: 0.9, y: 50 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: -50 }}
-                transition={{ duration: 0.3 }}
-                className="bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-gray-800/50"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={handleDragEnd}
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 50 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                style={{ x: dragX, opacity: dragOpacity, rotateZ }}
+                className="bg-gray-900/60 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-gray-800/50"
               >
-                {/* Difficulty & Payment Indicator */}
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  {currentTrend.validation_difficulty && (
-                    <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1">
-                      <p className="text-xs text-gray-400">Difficulty</p>
-                      <div className="flex gap-1 mt-1">
-                        {[...Array(5)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-2 h-2 rounded-full ${
-                              i < Math.ceil(currentTrend.validation_difficulty * 5)
-                                ? 'bg-yellow-400'
-                                : 'bg-gray-600'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="bg-green-500/20 backdrop-blur-sm rounded-lg px-3 py-2 border border-green-500/30">
-                    <p className="text-xs text-green-400">Est. Payment</p>
-                    <p className="text-sm font-bold text-green-400">
-                      ${estimatedPayment.toFixed(3)}
-                    </p>
-                  </div>
+                {/* Payment Indicator */}
+                <div className="absolute top-4 right-4 z-10">
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }}
+                    className="bg-green-500/20 backdrop-blur-sm rounded-2xl px-4 py-2 border border-green-500/30"
+                  >
+                    <p className="text-xs text-green-400">Potential Earning</p>
+                    <p className="text-lg font-bold text-green-400">${estimatedPayment.toFixed(3)}</p>
+                  </motion.div>
                 </div>
 
+                {/* Image Section */}
                 {(currentTrend.thumbnail_url || currentTrend.screenshot_url) && (
-                  <div className="relative h-48 sm:h-64 lg:h-80 overflow-hidden">
+                  <div className="relative h-64 sm:h-80 overflow-hidden bg-gray-800">
                     <img
                       src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
                       alt="Trend"
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
+                    
+                    {/* Engagement Overlay */}
+                    {(currentTrend.likes_count || currentTrend.views_count) && (
+                      <div className="absolute bottom-4 left-4 flex gap-3">
+                        {currentTrend.likes_count !== undefined && (
+                          <motion.div 
+                            whileHover={{ scale: 1.05 }}
+                            className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5"
+                          >
+                            <HeartIcon className="w-4 h-4 text-red-400" />
+                            <span className="text-sm font-medium text-white">
+                              {formatEngagementCount(currentTrend.likes_count)}
+                            </span>
+                          </motion.div>
+                        )}
+                        {currentTrend.views_count !== undefined && (
+                          <motion.div 
+                            whileHover={{ scale: 1.05 }}
+                            className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5"
+                          >
+                            <EyeIcon className="w-4 h-4 text-blue-400" />
+                            <span className="text-sm font-medium text-white">
+                              {formatEngagementCount(currentTrend.views_count)}
+                            </span>
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
                 
                 <div className="p-6">
-                  <h2 className="text-2xl font-bold text-white mb-4">
-                    {currentTrend.evidence?.title || currentTrend.description}
-                  </h2>
-                  
-                  {/* Engagement Metrics */}
-                  {(currentTrend.likes_count || currentTrend.views_count) && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                      {currentTrend.likes_count !== undefined && (
-                        <div className="bg-red-500/10 rounded-xl p-3 border border-red-500/20">
-                          <div className="flex items-center gap-2">
-                            <HeartIcon className="w-5 h-5 text-red-400" />
-                            <span className="text-white font-semibold">
-                              {formatEngagementCount(currentTrend.likes_count)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {/* Trend Info */}
+                  <div className="mb-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
+                      {currentTrend.evidence?.title || currentTrend.description}
+                    </h2>
+                    
+                    {currentTrend.creator_handle && (
+                      <p className="text-sm text-gray-400">
+                        By @{currentTrend.creator_handle} • {currentTrend.platform || 'Social Media'}
+                      </p>
+                    )}
+                  </div>
 
                   {/* Confidence Slider */}
                   <div className="mb-6">
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex justify-between items-center mb-3">
                       <label className="text-sm font-medium text-gray-300">
-                        Confidence Level
+                        How confident are you?
                       </label>
-                      <span className="text-lg font-bold text-white">
+                      <motion.span 
+                        key={confidenceScore}
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        className="text-2xl font-bold text-white"
+                      >
                         {(confidenceScore * 100).toFixed(0)}%
-                      </span>
+                      </motion.span>
                     </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={confidenceScore}
-                      onChange={(e) => setConfidenceScore(parseFloat(e.target.value))}
-                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                      style={{
-                        background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${confidenceScore * 100}%, #374151 ${confidenceScore * 100}%, #374151 100%)`
-                      }}
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Not Sure</span>
-                      <span>Very Confident</span>
+                    
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={confidenceScore}
+                        onChange={(e) => setConfidenceScore(parseFloat(e.target.value))}
+                        className="w-full h-3 bg-gray-700 rounded-full appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #3B82F6 0%, #8B5CF6 ${confidenceScore * 100}%, #374151 ${confidenceScore * 100}%, #374151 100%)`
+                        }}
+                      />
+                      <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-xs text-gray-500">
+                        <span>Not sure</span>
+                        <span>Somewhat</span>
+                        <span>Very confident</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Optional Reasoning */}
-                  <div className="mb-6">
+                  {/* Reasoning Toggle */}
+                  <div className="mt-8">
                     <button
                       onClick={() => setShowReasoningInput(!showReasoningInput)}
-                      className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-2"
+                      className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors"
                     >
                       <InfoIcon className="w-4 h-4" />
-                      Add reasoning (optional)
+                      {showReasoningInput ? 'Hide reasoning' : 'Add reasoning'} (optional)
                     </button>
-                    {showReasoningInput && (
-                      <textarea
-                        value={reasoning}
-                        onChange={(e) => setReasoning(e.target.value)}
-                        placeholder="Explain your decision..."
-                        className="mt-2 w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
-                        rows={3}
-                      />
-                    )}
+                    
+                    <AnimatePresence>
+                      {showReasoningInput && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <textarea
+                            value={reasoning}
+                            onChange={(e) => setReasoning(e.target.value)}
+                            placeholder="Why do you think this is or isn't trending?"
+                            className="mt-3 w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none resize-none"
+                            rows={3}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
+                </div>
+                
+                {/* Swipe Indicators */}
+                <div className="flex justify-center gap-4 p-4 bg-gray-900/50">
+                  <motion.div
+                    animate={{ opacity: dragX.get() < -50 ? 1 : 0.3 }}
+                    className="text-red-400 text-sm font-medium flex items-center gap-1"
+                  >
+                    <ChevronLeftIcon className="w-4 h-4" />
+                    Not Trending
+                  </motion.div>
+                  <motion.div
+                    animate={{ opacity: dragX.get() > 50 ? 1 : 0.3 }}
+                    className="text-green-400 text-sm font-medium flex items-center gap-1"
+                  >
+                    Trending
+                    <ChevronRightIcon className="w-4 h-4" />
+                  </motion.div>
                 </div>
               </motion.div>
             ) : (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl p-12 text-center border border-gray-800/50"
+                className="bg-gray-900/60 backdrop-blur-xl rounded-3xl shadow-2xl p-12 text-center border border-gray-800/50"
               >
-                <CheckIcon className="w-20 h-20 text-green-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-white mb-3">All Caught Up!</h3>
-                <p className="text-gray-400">Check back later for more trends.</p>
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <CheckIcon className="w-24 h-24 text-green-500 mx-auto mb-4" />
+                </motion.div>
+                <h3 className="text-3xl font-bold text-white mb-3">All Caught Up!</h3>
+                <p className="text-gray-400 text-lg">Great job! Check back later for more trends to verify.</p>
+                
                 {performanceMetrics && performanceMetrics.nextTierThreshold && (
-                  <div className="mt-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                    <p className="text-sm text-blue-400">
-                      Keep validating to reach {performanceMetrics.nextTierThreshold.tier} tier!
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="mt-8 p-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl border border-blue-500/20"
+                  >
+                    <p className="text-blue-400 font-medium">
+                      You're on your way to {performanceMetrics.nextTierThreshold.tier} tier!
                     </p>
-                  </div>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Keep up the great work to unlock higher rewards.
+                    </p>
+                  </motion.div>
                 )}
               </motion.div>
             )}
@@ -707,42 +841,92 @@ export default function Verify() {
           </div>
 
           {/* Side Panel */}
-          <div className="space-y-6">
-            {/* Real-time Consensus */}
-            {currentTrend && (
-              <ConsensusVisualization 
-                trendId={currentTrend.id}
-                onConsensusReached={(consensus) => {
-                  console.log('Consensus reached:', consensus);
-                }}
-              />
+          <div className="space-y-4">
+            {/* Rate Limit */}
+            {rateLimit && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 border border-gray-800"
+              >
+                <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+                  <ClockIcon className="w-4 h-4" />
+                  Validation Limits
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-400">Hourly</span>
+                      <span className="text-white font-medium">
+                        {rateLimit.validations_remaining_hour} left
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+                      <motion.div 
+                        className="bg-gradient-to-r from-blue-500 to-purple-600 h-2"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(rateLimit.validations_remaining_hour / 10) * 100}%` }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-400">Daily</span>
+                      <span className="text-white font-medium">
+                        {rateLimit.validations_remaining_today} left
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
+                      <motion.div 
+                        className="bg-gradient-to-r from-green-500 to-emerald-600 h-2"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(rateLimit.validations_remaining_today / 50) * 100}%` }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             )}
 
-            {/* Similar Trends */}
-            {similarTrends.length > 0 && (
+            {/* Consensus Visualization */}
+            {currentTrend && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-gray-900/50 backdrop-blur-sm rounded-xl p-4 border border-gray-800"
               >
-                <h3 className="text-sm font-semibold text-gray-300 mb-3">Similar Validated Trends</h3>
-                <div className="space-y-2">
-                  {similarTrends.map((trend) => (
-                    <div key={trend.id} className="bg-gray-800/50 rounded-lg p-3">
-                      <p className="text-sm text-gray-300 line-clamp-2">{trend.description}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          trend.stage === 'viral' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
-                        }`}>
-                          {trend.stage}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          Score: {((trend.weighted_consensus_score + 1) * 50).toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                <ConsensusVisualization 
+                  trendId={currentTrend.id}
+                  onConsensusReached={(consensus) => {
+                    console.log('Consensus reached:', consensus);
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {/* Session Progress */}
+            {trends.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-5 border border-gray-800"
+              >
+                <h3 className="text-sm font-semibold text-gray-300 mb-3">Session Progress</h3>
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-gray-400">Trends Reviewed</span>
+                  <span className="font-medium text-white">{currentIndex + 1} / {trends.length}</span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                  <motion.div
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((currentIndex + 1) / trends.length) * 100}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
                 </div>
               </motion.div>
             )}
@@ -754,103 +938,206 @@ export default function Verify() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-6 space-y-4"
+            transition={{ delay: 0.2 }}
+            className="mt-6"
           >
             {/* Suspension Warning */}
             {performanceMetrics?.currentTier === 'suspended' && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
-                <AlertCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 mb-4 flex items-start gap-3"
+              >
+                <AlertCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-red-400">
-                  <p className="font-semibold">You are currently suspended</p>
-                  <p>Your votes count toward improving your score, but you won't earn payments until your suspension is lifted.</p>
+                  <p className="font-semibold">Account Suspended</p>
+                  <p className="mt-1">Your votes help improve your score but won't earn rewards during suspension.</p>
                 </div>
-              </div>
+              </motion.div>
             )}
 
-            <div className="bg-gray-900/50 backdrop-blur-md rounded-2xl border border-gray-800/50 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 text-center">
-                Is this a trending topic?
-              </h3>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleVerify(false)}
-                  disabled={verifying || !rateLimit?.can_validate}
-                  className={`flex-1 border-2 py-4 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3 group ${
-                    lastAction === 'not-trending' 
-                      ? 'bg-red-500 border-red-500 text-white' 
-                      : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500'
-                  }`}
-                >
-                  <XIcon className="w-6 h-6" />
-                  <span>Not Trending</span>
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleSkip}
-                  disabled={verifying}
-                  className="px-6 py-4 rounded-xl font-semibold bg-gray-700/50 hover:bg-gray-700 text-gray-300 transition-all flex items-center justify-center gap-2"
-                >
-                  <SkipForwardIcon className="w-5 h-5" />
-                  <span>Skip</span>
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleVerify(true)}
-                  disabled={verifying || !rateLimit?.can_validate}
-                  className={`flex-1 py-4 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3 ${
-                    lastAction === 'trending'
-                      ? 'bg-gradient-to-r from-green-600 to-emerald-700 text-white'
-                      : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                  }`}
-                >
-                  <CheckIcon className="w-6 h-6" />
-                  <span>Yes, Trending</span>
-                </motion.button>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <motion.button
+                whileHover={{ scale: 1.02, x: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleVerify(false)}
+                disabled={verifying || !rateLimit?.can_validate}
+                className={`flex-1 py-4 px-6 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3 ${
+                  lastAction === 'not-trending' 
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/25' 
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
+                }`}
+              >
+                <XIcon className="w-5 h-5" />
+                <span>Not Trending</span>
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.02, y: 5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleSkip}
+                disabled={verifying}
+                className="sm:w-auto px-6 py-4 rounded-2xl font-semibold bg-gray-800/50 hover:bg-gray-800 text-gray-400 transition-all flex items-center justify-center gap-2 border border-gray-700"
+              >
+                <SkipForwardIcon className="w-5 h-5" />
+                <span className="hidden sm:inline">Skip</span>
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.02, x: 5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleVerify(true)}
+                disabled={verifying || !rateLimit?.can_validate}
+                className={`flex-1 py-4 px-6 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-3 ${
+                  lastAction === 'trending'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/25'
+                    : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg hover:shadow-blue-500/25'
+                }`}
+              >
+                <CheckIcon className="w-5 h-5" />
+                <span>Yes, Trending</span>
+              </motion.button>
             </div>
             
-            {/* Enhanced Keyboard Shortcuts */}
-            <div className="text-center text-xs text-gray-500">
-              <p>Keyboard shortcuts: 
-                <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">←</kbd> Not Trending
-                <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">→</kbd> Trending
+            {/* Keyboard Shortcuts */}
+            <div className="mt-4 text-center text-xs text-gray-500">
+              <p>Swipe or use keyboard: 
+                <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">←/A</kbd> Not Trending
+                <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">→/D</kbd> Trending
                 <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">↓/S</kbd> Skip
-                <kbd className="px-2 py-1 bg-gray-800 rounded text-gray-300 mx-1">1-5</kbd> Set Confidence
               </p>
             </div>
           </motion.div>
         )}
 
-        {/* Progress Indicator */}
-        {trends.length > 0 && (
-          <motion.div 
+      </div>
+      
+      {/* Tutorial Modal */}
+      <AnimatePresence>
+        {showTutorial && (
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="mt-6"
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowTutorial(false)}
           >
-            <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-              <span>Progress</span>
-              <span className="font-semibold text-white">{currentIndex + 1} / {trends.length}</span>
-            </div>
-            <div className="w-full bg-gray-800/50 rounded-full h-3 overflow-hidden">
-              <motion.div
-                className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${((currentIndex + 1) / trends.length) * 100}%` }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-gray-900 rounded-3xl p-6 max-w-md w-full border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-2xl font-bold mb-4">How to Verify Trends</h2>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-blue-400">1</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Review the trend</p>
+                    <p className="text-sm text-gray-400">Look at the content and engagement metrics</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-purple-400">2</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Set your confidence</p>
+                    <p className="text-sm text-gray-400">Adjust the slider based on how sure you are</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-green-400">3</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Make your decision</p>
+                    <p className="text-sm text-gray-400">Swipe or tap to verify, reject, or skip</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
+                <p className="text-sm font-semibold mb-2">Pro Tips:</p>
+                <ul className="text-sm text-gray-400 space-y-1">
+                  <li>• Higher confidence on correct votes = more earnings</li>
+                  <li>• Use keyboard shortcuts for faster verification</li>
+                  <li>• Add reasoning to help improve the system</li>
+                </ul>
+              </div>
+              
+              <button
+                onClick={() => setShowTutorial(false)}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 font-semibold hover:shadow-lg transition-all"
+              >
+                Got it!
+              </button>
+            </motion.div>
           </motion.div>
         )}
-      </div>
+      </AnimatePresence>
+      
+      {/* Stats Modal */}
+      <AnimatePresence>
+        {showStats && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowStats(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-gray-900 rounded-3xl p-6 max-w-md w-full border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-2xl font-bold mb-6">Your Performance</h2>
+              
+              {user && performanceMetrics && (
+                <PerformanceTierDisplay 
+                  userId={user.id} 
+                  showDetails={true}
+                />
+              )}
+              
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                  <p className="text-3xl font-bold text-blue-400">{stats.verified_today}</p>
+                  <p className="text-sm text-gray-400 mt-1">Verified Today</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                  <p className="text-3xl font-bold text-green-400">${stats.earnings_today.toFixed(2)}</p>
+                  <p className="text-sm text-gray-400 mt-1">Earned Today</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                  <p className="text-3xl font-bold text-purple-400">{stats.accuracy_score.toFixed(0)}%</p>
+                  <p className="text-sm text-gray-400 mt-1">Accuracy</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                  <p className="text-3xl font-bold text-amber-400">{stats.validation_streak}</p>
+                  <p className="text-sm text-gray-400 mt-1">Streak</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setShowStats(false)}
+                className="w-full mt-6 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 font-semibold transition-all"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
