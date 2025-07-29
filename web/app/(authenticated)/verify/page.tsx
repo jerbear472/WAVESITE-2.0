@@ -78,7 +78,7 @@ interface RateLimitInfo {
   reset_time: string;
 }
 
-export default function EnhancedVerify() {
+export default function Verify() {
   const { user } = useAuth();
   const [trends, setTrends] = useState<TrendToVerify[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
