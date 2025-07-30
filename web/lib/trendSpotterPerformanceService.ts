@@ -202,22 +202,14 @@ export class TrendSpotterPerformanceService {
    */
   async getSpotterPerformanceMetrics(userId: string): Promise<SpotterPerformanceMetrics | null> {
     try {
-      // Get user profile
+      // Get user profile - with fallback for missing columns
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          spotter_tier,
-          spotter_approval_rate_30d,
-          spotter_viral_rate_30d,
-          spotter_quality_score,
-          consecutive_approved_trends,
-          total_trends_submitted,
-          total_trends_approved
-        `)
+        .select('*')
         .eq('id', userId)
         .single();
 
-      if (profileError || !profile) {
+      if (profileError) {
         console.error('Error fetching spotter profile:', profileError);
         return this.getDefaultMetrics();
       }
@@ -251,8 +243,8 @@ export class TrendSpotterPerformanceService {
       // Get daily challenge
       const dailyChallenge = await this.getDailyChallenge(userId);
 
-      // Determine tier
-      const tier = profile.spotter_tier || this.calculateTier(approvalRate, totalTrends30d);
+      // Determine tier - handle missing column
+      const tier = profile?.spotter_tier || this.calculateTier(approvalRate, totalTrends30d);
       const benefits = this.getTierBenefits(tier as SpotterTier);
 
       // Calculate early detection bonus rate
@@ -268,12 +260,12 @@ export class TrendSpotterPerformanceService {
       return {
         trendApprovalRate30d: approvalRate,
         trendViralRate30d: viralRate,
-        submissionQualityScore: profile.spotter_quality_score || 0.5,
+        submissionQualityScore: profile?.spotter_quality_score || 0.5,
         totalTrendsSubmitted30d: totalTrends30d,
         totalApprovedTrends30d: approvedTrends30d,
         earlyDetectionBonus,
         currentTier: tier as SpotterTier,
-        consecutiveApprovedTrends: profile.consecutive_approved_trends || 0,
+        consecutiveApprovedTrends: profile?.consecutive_approved_trends || 0,
         paymentMultiplier: benefits.paymentMultiplier,
         categoryExpertise,
         nextTierThreshold,
