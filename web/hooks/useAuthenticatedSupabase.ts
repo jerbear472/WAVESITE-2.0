@@ -1,11 +1,11 @@
-import { createClient } from '@/utils/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 
 // Custom hook that ensures Supabase client always uses the correct user session
 export function useAuthenticatedSupabase() {
   const { user } = useAuth();
-  const [supabase] = useState(() => createClient());
+  const [supabaseClient] = useState(() => supabase);
   const [isReady, setIsReady] = useState(false);
   
   useEffect(() => {
@@ -16,7 +16,7 @@ export function useAuthenticatedSupabase() {
       }
 
       // Verify the session is valid
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
       
       if (error || !session) {
         console.error('Session sync error:', error);
@@ -32,25 +32,25 @@ export function useAuthenticatedSupabase() {
         });
         
         // Force refresh the session
-        await supabase.auth.refreshSession();
+        await supabaseClient.auth.refreshSession();
       }
 
       setIsReady(true);
     }
 
     syncAuth();
-  }, [user, supabase]);
+  }, [user, supabaseClient]);
 
-  return { supabase, isReady, userId: user?.id };
+  return { supabase: supabaseClient, isReady, userId: user?.id };
 }
 
 // Helper function to safely query user's trends
 export async function fetchUserTrends(userId: string) {
-  const supabase = createClient();
+  const supabaseClient = supabase;
   
   try {
     // First verify we have a valid session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
     
     if (sessionError || !session) {
       throw new Error('No valid session');
@@ -64,7 +64,7 @@ export async function fetchUserTrends(userId: string) {
     }
 
     // Query trends
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('trend_submissions')
       .select('*')
       .eq('spotter_id', queryUserId)
@@ -78,7 +78,7 @@ export async function fetchUserTrends(userId: string) {
         console.log('Attempting alternative query...');
         
         // Try without the eq filter to see if we can read anything
-        const { data: allData, error: allError } = await supabase
+        const { data: allData, error: allError } = await supabaseClient
           .from('trend_submissions')
           .select('*')
           .order('created_at', { ascending: false })
