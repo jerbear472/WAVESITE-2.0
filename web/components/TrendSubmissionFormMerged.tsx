@@ -160,6 +160,7 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
   const [success, setSuccess] = useState('');
   const [extractingMetadata, setExtractingMetadata] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   
   // Quality and payment tracking
   const [qualityMetrics, setQualityMetrics] = useState<TrendQualityMetrics | null>(null);
@@ -193,31 +194,50 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     wave_score: 50
   });
 
+  // Set mounted state
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   // Auto-extract metadata when component mounts with initialUrl
   useEffect(() => {
-    if (initialUrl) {
+    if (mounted && initialUrl) {
       extractMetadata(initialUrl);
     }
-  }, [initialUrl]);
+  }, [mounted, initialUrl]);
 
   // Update quality metrics in real-time
   useEffect(() => {
-    updateQualityMetrics();
-  }, [formData]);
+    if (!mounted) return;
+    
+    try {
+      updateQualityMetrics();
+    } catch (error) {
+      console.error('Error updating quality metrics:', error);
+    }
+  }, [mounted, formData]);
 
   const updateQualityMetrics = async () => {
-    if (!user) return;
-    
-    const metrics = performanceService.calculateTrendQuality(formData);
-    setQualityMetrics(metrics);
-    
-    // Update payment estimate
-    const payment = await performanceService.calculateTrendPayment(
-      user.id,
-      formData,
-      metrics
-    );
-    setEstimatedPayment(payment);
+    try {
+      if (!user) return;
+      
+      const metrics = performanceService.calculateTrendQuality(formData);
+      setQualityMetrics(metrics);
+      
+      // Update payment estimate
+      const payment = await performanceService.calculateTrendPayment(
+        user.id,
+        formData,
+        metrics
+      );
+      setEstimatedPayment(payment);
+    } catch (error) {
+      console.error('Quality metrics calculation error:', error);
+      // Set default values on error
+      setQualityMetrics(null);
+      setEstimatedPayment(null);
+    }
   };
 
   // Auto-detect platform from URL
@@ -530,6 +550,11 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     setError('');
     return true;
   };
+
+  // Don't render until mounted to prevent hydration issues
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">

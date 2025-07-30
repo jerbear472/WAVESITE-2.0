@@ -338,11 +338,16 @@ export class TrendSpotterPerformanceService {
    */
   async getCategoryExpertise(userId: string): Promise<CategoryExpertise[]> {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('spotter_category_expertise')
         .select('*')
         .eq('user_id', userId)
         .order('trends_submitted', { ascending: false });
+      
+      if (error) {
+        console.warn('Category expertise table not available:', error);
+        return [];
+      }
 
       return (data || []).map(exp => ({
         category: exp.category,
