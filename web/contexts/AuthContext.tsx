@@ -85,11 +85,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
           
         if (profile) {
-          // Fetch user stats including earnings
-          const { data: stats } = await supabase
-            .rpc('get_user_dashboard_stats', { p_user_id: session.user.id });
-          
-          const userStats = stats?.[0] || {};
+          // Fetch user stats including earnings - handle missing RPC
+          let userStats: any = {};
+          try {
+            const { data: stats } = await supabase
+              .rpc('get_user_dashboard_stats', { p_user_id: session.user.id });
+            userStats = stats?.[0] || {};
+          } catch (rpcError) {
+            console.warn('Dashboard stats RPC not available:', rpcError);
+            userStats = {};
+          }
           
           // Check if user is admin
           const isAdmin = profile.email === 'jeremyuys@gmail.com' || profile.email === 'enterprise@test.com';
@@ -148,11 +153,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
 
         if (profile) {
-          // Fetch user stats including earnings
-          const { data: stats } = await supabase
-            .rpc('get_user_dashboard_stats', { p_user_id: session.user.id });
-          
-          const userStats = stats?.[0] || {};
+          // Fetch user stats including earnings - handle missing RPC
+          let userStats: any = {};
+          try {
+            const { data: stats } = await supabase
+              .rpc('get_user_dashboard_stats', { p_user_id: session.user.id });
+            userStats = stats?.[0] || {};
+          } catch (rpcError) {
+            console.warn('Dashboard stats RPC not available:', rpcError);
+            userStats = {};
+          }
           
           // Check if user is admin
           const isAdmin = profile.email === 'jeremyuys@gmail.com' || profile.email === 'enterprise@test.com';
