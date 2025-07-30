@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { MetadataExtractor } from '@/lib/metadataExtractor';
+import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import { TrendQualityIndicator } from '@/components/TrendQualityIndicator';
 import { 
   TrendSpotterPerformanceService,
@@ -304,8 +304,10 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
         setSuccess(`✨ Auto-captured: ${capturedItems.join(', ')} from ${detectedPlatform}`);
         setTimeout(() => setSuccess(''), 4000);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Metadata extraction failed:', error);
+      // Don't show error to user - just continue without metadata
+      // The form still works without auto-extracted data
     } finally {
       setExtractingMetadata(false);
     }
