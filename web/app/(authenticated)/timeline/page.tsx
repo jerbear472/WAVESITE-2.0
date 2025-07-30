@@ -9,6 +9,7 @@ import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
 import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
+import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,
@@ -127,30 +128,40 @@ export default function Timeline() {
       setError(null);
       setLoading(true);
       
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        router.push('/login');
-        return;
+      // Ensure we have the current user
+      if (!user?.id) {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          router.push('/login');
+          return;
+        }
       }
 
-      const userId = session.user.id;
+      const userId = user?.id || '';
       console.log('Timeline: Fetching trends for user ID:', userId);
       
-      const { data, error } = await supabase
-        .from('trend_submissions')
-        .select('*')
-        .eq('spotter_id', userId)
-        .order('created_at', { ascending: false });
+      // Use the helper function that handles RLS issues
+      const { data, error } = await fetchUserTrendsHelper(userId);
 
       if (error) {
-        showError('Failed to load trends', error.message);
+        showError('Failed to load trends', error.message || 'Unknown error');
         setError('Failed to load trends');
+        
+        // Log more details for debugging
+        console.error('Trend fetch error details:', {
+          error,
+          userId,
+          isAuthenticated: !!user,
+          timestamp: new Date().toISOString()
+        });
         return;
       }
       
       console.log('Timeline: Found trends:', data?.length || 0);
-      console.log('Timeline: First trend (if any):', data?.[0]);
+      if (data && data.length > 0) {
+        console.log('Timeline: Latest trend:', data[0]);
+      }
       setTrends(data || []);
 
       // Fetch total earnings from earnings_ledger

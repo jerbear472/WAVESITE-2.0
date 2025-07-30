@@ -2,7 +2,7 @@
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { 
   TrendingUp, 
@@ -14,25 +14,41 @@ import {
   Camera,
   Flame,
   Zap,
-  Clock
+  Clock,
+  Info,
+  Trophy,
+  Target,
+  Star,
+  TrendingDown,
+  Award,
+  BarChart3,
+  Sparkles,
+  CheckCircle,
+  X
 } from 'lucide-react';
 import { ScrollSession } from '@/components/ScrollSession';
 import { FloatingTrendLogger } from '@/components/FloatingTrendLogger';
-import TrendSubmissionFormEnhanced from '@/components/TrendSubmissionFormEnhanced';
+import TrendSubmissionFormWithQuality from '@/components/TrendSubmissionFormWithQuality';
 import TrendScreenshotUpload from '@/components/TrendScreenshotUpload';
 import SubmissionHistory from '@/components/SubmissionHistory';
+import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
+import { TrendQualityIndicator } from '@/components/TrendQualityIndicator';
 import { useAuth } from '@/contexts/AuthContext';
 import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
-// import { mapCategoryToEnum } from '@/lib/categoryMapper'; // Using inline mapping instead
-// import { TrendUmbrellaService } from '@/lib/trendUmbrellaService'; // Not needed
+import { 
+  TrendSpotterPerformanceService, 
+  SpotterPerformanceMetrics,
+  TrendQualityMetrics 
+} from '@/lib/trendSpotterPerformanceService';
 
 export default function ScrollDashboard() {
   const router = useRouter();
   const { user, updateUserEarnings } = useAuth();
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollSessionRef = useRef<any>();
+  const performanceService = TrendSpotterPerformanceService.getInstance();
   
   // Form states
   const [trendLink, setTrendLink] = useState('');
@@ -40,21 +56,73 @@ export default function ScrollDashboard() {
   const [submitMessage, setSubmitMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [loggedTrends, setLoggedTrends] = useState<string[]>([]);
   const [todaysEarnings, setTodaysEarnings] = useState(0);
+  const [todaysPendingEarnings, setTodaysPendingEarnings] = useState(0);
   const [showTrendForm, setShowTrendForm] = useState(false);
   const [showScreenshotForm, setShowScreenshotForm] = useState(false);
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
+  const [showPaymentBreakdown, setShowPaymentBreakdown] = useState(false);
+  
+  // Performance states
+  const [spotterMetrics, setSpotterMetrics] = useState<SpotterPerformanceMetrics | null>(null);
+  const [qualityMetrics, setQualityMetrics] = useState<TrendQualityMetrics | null>(null);
+  const [estimatedPayment, setEstimatedPayment] = useState<any>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
   
   // Streak states
   const [streak, setStreak] = useState(0);
   const [streakMultiplier, setStreakMultiplier] = useState(1);
   const [lastTrendTime, setLastTrendTime] = useState<Date | null>(null);
   const [trendsInWindow, setTrendsInWindow] = useState<Date[]>([]);
-  const [timeRemaining, setTimeRemaining] = useState(180); // 3 minutes in seconds
+  const [timeRemaining, setTimeRemaining] = useState(180);
   const streakTimerRef = useRef<NodeJS.Timeout>();
   
   // Constants
   const STREAK_WINDOW = 180000; // 3 minutes in milliseconds
-  const TRENDS_FOR_STREAK = 3; // Number of trends needed in 3 minutes
-  const STREAK_TIMEOUT = 60000; // 60 seconds to maintain streak
+  const TRENDS_FOR_STREAK = 3;
+  const STREAK_TIMEOUT = 60000;
+
+  // Load performance metrics on mount
+  useEffect(() => {
+    if (user) {
+      loadPerformanceMetrics();
+      // Refresh metrics every 5 minutes
+      const interval = setInterval(loadPerformanceMetrics, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const loadPerformanceMetrics = async () => {
+    if (!user) return;
+    
+    setLoadingMetrics(true);
+    try {
+      const metrics = await performanceService.getSpotterPerformanceMetrics(user.id);
+      setSpotterMetrics(metrics);
+      
+      // Load today's earnings
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { data: earnings } = await supabase
+        .from('earnings_ledger')
+        .select('amount, status')
+        .eq('user_id', user.id)
+        .eq('type', 'trend_submission')
+        .gte('created_at', today.toISOString());
+      
+      const confirmedEarnings = earnings?.filter(e => e.status === 'confirmed')
+        .reduce((sum, e) => sum + parseFloat(e.amount), 0) || 0;
+      const pendingEarnings = earnings?.filter(e => e.status === 'pending')
+        .reduce((sum, e) => sum + parseFloat(e.amount), 0) || 0;
+      
+      setTodaysEarnings(confirmedEarnings);
+      setTodaysPendingEarnings(pendingEarnings);
+    } catch (error) {
+      console.error('Error loading metrics:', error);
+    } finally {
+      setLoadingMetrics(false);
+    }
+  };
 
   // Streak timer effect
   useEffect(() => {
@@ -64,7 +132,6 @@ export default function ScrollDashboard() {
         const remaining = Math.max(0, (STREAK_TIMEOUT - timeSinceLastTrend) / 1000);
         
         if (remaining === 0) {
-          // Lost streak
           setStreak(0);
           setStreakMultiplier(1);
           setTrendsInWindow([]);
@@ -79,19 +146,16 @@ export default function ScrollDashboard() {
       return () => clearInterval(timer);
     }
   }, [streak, lastTrendTime]);
-  
-  // Calculate streak multiplier based on streak count
+
   const calculateMultiplier = (streakCount: number) => {
     if (streakCount === 0) return 1;
     if (streakCount < 3) return 1.5;
     if (streakCount < 5) return 2;
     if (streakCount < 10) return 3;
-    return 5; // Max multiplier
+    return 5;
   };
-  
-  // Handle trend logged from floating logger
+
   const handleTrendLogged = () => {
-    // Only allow trend logging during active session
     if (!scrollSessionRef.current?.isActive) {
       setSubmitMessage({ type: 'error', text: 'Start a session to log trends!' });
       setTimeout(() => setSubmitMessage(null), 3000);
@@ -101,18 +165,12 @@ export default function ScrollDashboard() {
     scrollSessionRef.current?.logTrend();
     updateStreakProgress();
   };
-  
-  // Update streak progress when a trend is logged
+
   const updateStreakProgress = () => {
-    // Only update streak during active session
     if (!scrollSessionRef.current?.isActive) return;
     
     const now = new Date();
-    
-    // Add current trend to window
     const updatedTrends = [...trendsInWindow, now];
-    
-    // Filter trends within the 3-minute window
     const recentTrends = updatedTrends.filter(
       time => now.getTime() - time.getTime() < STREAK_WINDOW
     );
@@ -120,37 +178,29 @@ export default function ScrollDashboard() {
     setTrendsInWindow(recentTrends);
     setLastTrendTime(now);
     
-    // Check if we have enough trends for a streak
     if (recentTrends.length >= TRENDS_FOR_STREAK) {
-      // Increase streak
       const newStreak = streak + 1;
       setStreak(newStreak);
       setStreakMultiplier(calculateMultiplier(newStreak));
-      
-      // Reset window for next streak
       setTrendsInWindow([]);
     }
   };
-  
-  // Handle session state changes
+
   const handleSessionStateChange = (active: boolean) => {
     setIsScrolling(active);
     
-    // Reset streak when session ends
     if (!active) {
       setStreak(0);
       setStreakMultiplier(1);
       setTrendsInWindow([]);
       setLastTrendTime(null);
       
-      // Clear any running timers
       if (streakTimerRef.current) {
         clearInterval(streakTimerRef.current);
       }
     }
   };
 
-  // Normalize URL for duplicate checking
   const normalizeUrl = (url: string) => {
     try {
       const urlObj = new URL(url.trim());
@@ -162,25 +212,69 @@ export default function ScrollDashboard() {
     }
   };
 
-  // Handle trend submission via popup form
+  // Calculate quality and payment when form is opened
+  const handleFormOpen = async (url: string) => {
+    if (!user || !spotterMetrics) return;
+    
+    // Calculate estimated quality for preview
+    const mockTrendData = { url, platform: 'unknown' };
+    const quality = performanceService.calculateTrendQuality(mockTrendData);
+    setQualityMetrics(quality);
+    
+    // Calculate estimated payment
+    const payment = await performanceService.calculateTrendPayment(
+      user.id,
+      mockTrendData,
+      quality
+    );
+    setEstimatedPayment(payment);
+  };
+
   const handleTrendSubmit = async (trendData: any) => {
     try {
-      console.log('Starting trend submission (SCROLL v3 - NO UMBRELLAS) with data:', trendData);
-      console.log('User ID:', user?.id);
-
-      // Check if user is authenticated
       if (!user?.id) {
         setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
         setTimeout(() => setSubmitMessage(null), 3000);
         return;
       }
       
-      // Check if session is active
       if (!scrollSessionRef.current?.isActive) {
         setSubmitMessage({ type: 'error', text: 'Start a scroll session to submit trends!' });
         setTimeout(() => setSubmitMessage(null), 3000);
         return;
       }
+
+      // Check tier restrictions
+      if (spotterMetrics?.currentTier === 'restricted') {
+        const tierBenefits = performanceService.getTierBenefits('restricted');
+        const { data: todayCount } = await supabase
+          .from('trend_submissions')
+          .select('id', { count: 'exact' })
+          .eq('spotter_id', user.id)
+          .gte('created_at', new Date().toISOString().split('T')[0]);
+        
+        if ((todayCount?.length || 0) >= tierBenefits.dailyTrendLimit) {
+          setSubmitMessage({ 
+            type: 'error', 
+            text: `Daily limit reached (${tierBenefits.dailyTrendLimit} trends for restricted tier)` 
+          });
+          setTimeout(() => setSubmitMessage(null), 5000);
+          return;
+        }
+      }
+
+      // Calculate quality metrics
+      const qualityMetrics = performanceService.calculateTrendQuality(trendData);
+      setQualityMetrics(qualityMetrics);
+
+      // Calculate payment
+      const paymentInfo = await performanceService.calculateTrendPayment(
+        user.id,
+        trendData,
+        qualityMetrics
+      );
+      setEstimatedPayment(paymentInfo);
+
       // Upload image if present
       let imageUrl = null;
       if (trendData.screenshot && trendData.screenshot instanceof File) {
@@ -200,211 +294,84 @@ export default function ScrollDashboard() {
         imageUrl = publicUrl;
       }
 
-      // Trend umbrella feature removed - v3 no umbrellas
-      console.log('Scroll page v3 - umbrellas disabled');
-      const umbrellaId = null;
+      // Map category
+      const mappedCategory = getSafeCategory(trendData.categories?.[0]);
 
-      // ALWAYS use inline mapping to avoid import issues
-      const originalCategory = trendData.categories?.[0];
-      console.log('Original category from form:', originalCategory);
-      console.log('All categories:', trendData.categories);
-      
-      // Direct inline mapping - don't rely on imports
-      const categoryMapping: Record<string, string> = {
-        'Fashion & Beauty': 'visual_style',
-        'Food & Drink': 'behavior_pattern',
-        'Humor & Memes': 'meme_format',
-        'Lifestyle': 'behavior_pattern',
-        'Politics & Social Issues': 'behavior_pattern',
-        'Music & Dance': 'audio_music',
-        'Sports & Fitness': 'behavior_pattern',
-        'Tech & Gaming': 'creator_technique',
-        'Art & Creativity': 'visual_style',
-        'Education & Science': 'creator_technique',
-        // Add any other categories that might exist
-        'Entertainment': 'audio_music',
-        'Travel': 'behavior_pattern',
-        'Business': 'behavior_pattern',
-        'Health & Wellness': 'behavior_pattern',
-        'Pets & Animals': 'behavior_pattern'
-      };
-      
-      // Use isolated safe function for mapping
-      let mappedCategory = getSafeCategory(originalCategory);
-      console.log('Safe mapping result:', originalCategory, '→', mappedCategory);
-      
-      // Validate the mapped category
-      const validCategories = ['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'];
-      if (!validCategories.includes(mappedCategory)) {
-        console.error('CRITICAL: Invalid mapped category:', mappedCategory);
-        console.error('Original category was:', originalCategory);
-        console.error('Forcing to meme_format as emergency fallback');
-        mappedCategory = 'meme_format';
-      }
-      
-      // Save trend to database
-      console.log('Inserting trend submission to database...');
-      console.log('Final category being submitted:', mappedCategory);
-      
-      // FINAL SAFETY CHECK - Ensure mappedCategory is NEVER a display value
-      const displayCategories = [
-        'Fashion & Beauty',
-        'Food & Drink',
-        'Humor & Memes',
-        'Lifestyle',
-        'Politics & Social Issues',
-        'Music & Dance',
-        'Sports & Fitness',
-        'Tech & Gaming',
-        'Art & Creativity',
-        'Education & Science',
-        'Entertainment',
-        'Travel',
-        'Business',
-        'Health & Wellness',
-        'Pets & Animals'
-      ];
-      
-      // Log the exact state before final check
-      console.log('=== FINAL CATEGORY CHECK (SCROLL) ===');
-      console.log('mappedCategory before check:', mappedCategory);
-      console.log('Is it a display category?', displayCategories.includes(mappedCategory));
-      
-      // ALWAYS ensure we have a mapped category, not a display value
-      if (displayCategories.includes(mappedCategory)) {
-        console.error('EMERGENCY OVERRIDE: Display category detected in final submission!', mappedCategory);
-        // Re-map it one more time as emergency fallback
-        const remapped = categoryMapping[mappedCategory];
-        console.log('Attempting remap:', mappedCategory, '->', remapped);
-        mappedCategory = remapped || 'meme_format';
-        console.log('Emergency remapped to:', mappedCategory);
-      }
-      
-      // ULTRA PARANOID CHECK - Force mapping for any remaining display values
-      const finalCheck = Object.keys(categoryMapping);
-      if (finalCheck.includes(mappedCategory)) {
-        console.error('CRITICAL: Display category STILL present after emergency override!', mappedCategory);
-        mappedCategory = categoryMapping[mappedCategory] || 'meme_format';
-        console.log('FORCED remap to:', mappedCategory);
-      }
-      
-      console.log('=== FINAL CATEGORY RESULT (SCROLL) ===');
-      console.log('mappedCategory after all checks:', mappedCategory);
-      
+      // Save trend to database with quality metrics
       const insertObject = {
-          spotter_id: user?.id,
-          category: mappedCategory, // Use validated mapped category
-          description: trendData.explanation || trendData.trendName || 'Untitled Trend',
-          screenshot_url: imageUrl || trendData.thumbnail_url || null,
-          evidence: {
-            url: trendData.url || '',
-            title: trendData.trendName || 'Untitled Trend',
-            platform: trendData.platform || 'other',
-            // Store all the rich data
-            ageRanges: trendData.ageRanges,
-            subcultures: trendData.subcultures,
-            region: trendData.region,
-            categories: trendData.categories,
-            moods: trendData.moods,
-            spreadSpeed: trendData.spreadSpeed,
-            audioOrCatchphrase: trendData.audioOrCatchphrase,
-            motivation: trendData.motivation,
-            firstSeen: trendData.firstSeen,
-            otherPlatforms: trendData.otherPlatforms,
-            brandAdoption: trendData.brandAdoption,
-            submitted_by: user?.username || user?.email
-          },
-          virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : trendData.spreadSpeed === 'picking_up' ? 6 : 5,
-          status: getSafeStatus('submitted'), // Use safe function to ensure valid enum
-          quality_score: 0.5,
-          validation_count: 0,
-          // Social media metadata
-          creator_handle: trendData.creator_handle || null,
-          creator_name: trendData.creator_name || null,
-          post_caption: trendData.post_caption || null,
-          likes_count: trendData.likes_count || 0,
-          comments_count: trendData.comments_count || 0,
-          shares_count: trendData.shares_count || 0,
-          views_count: trendData.views_count || 0,
-          hashtags: trendData.hashtags || [],
-          post_url: trendData.url,
-          thumbnail_url: trendData.thumbnail_url || imageUrl || null,
-          posted_at: trendData.posted_at || new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          // Link to trend umbrella
-          // trend_umbrella_id removed
-        };
-      
-      console.log('=== EXACT INSERT OBJECT ===');
-      console.log('Insert object category:', insertObject.category);
-      console.log('Full insert object:', JSON.stringify(insertObject, null, 2));
-      
-      // ABSOLUTE FINAL MAPPING - RIGHT BEFORE INSERT
-      const finalCategoryMapping: Record<string, string> = {
-        'Fashion & Beauty': 'visual_style',
-        'Food & Drink': 'behavior_pattern',
-        'Humor & Memes': 'meme_format',
-        'Lifestyle': 'behavior_pattern',
-        'Politics & Social Issues': 'behavior_pattern',
-        'Music & Dance': 'audio_music',
-        'Sports & Fitness': 'behavior_pattern',
-        'Tech & Gaming': 'creator_technique',
-        'Art & Creativity': 'visual_style',
-        'Education & Science': 'creator_technique'
+        spotter_id: user?.id,
+        category: mappedCategory,
+        description: trendData.explanation || trendData.trendName || 'Untitled Trend',
+        screenshot_url: imageUrl || trendData.thumbnail_url || null,
+        evidence: {
+          url: trendData.url || '',
+          title: trendData.trendName || 'Untitled Trend',
+          platform: trendData.platform || 'other',
+          ageRanges: trendData.ageRanges,
+          subcultures: trendData.subcultures,
+          region: trendData.region,
+          categories: trendData.categories,
+          moods: trendData.moods,
+          spreadSpeed: trendData.spreadSpeed,
+          audioOrCatchphrase: trendData.audioOrCatchphrase,
+          motivation: trendData.motivation,
+          firstSeen: trendData.firstSeen,
+          otherPlatforms: trendData.otherPlatforms,
+          brandAdoption: trendData.brandAdoption,
+          submitted_by: user?.username || user?.email
+        },
+        virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : trendData.spreadSpeed === 'picking_up' ? 6 : 5,
+        status: getSafeStatus('submitted'),
+        quality_score: qualityMetrics.overallQuality,
+        has_media: qualityMetrics.hasScreenshot || qualityMetrics.hasVideo,
+        metadata_completeness: qualityMetrics.metadataCompleteness,
+        validation_count: 0,
+        creator_handle: trendData.creator_handle || null,
+        creator_name: trendData.creator_name || null,
+        post_caption: trendData.post_caption || null,
+        likes_count: trendData.likes_count || 0,
+        comments_count: trendData.comments_count || 0,
+        shares_count: trendData.shares_count || 0,
+        views_count: trendData.views_count || 0,
+        hashtags: trendData.hashtags || [],
+        post_url: trendData.url,
+        thumbnail_url: trendData.thumbnail_url || imageUrl || null,
+        posted_at: trendData.posted_at || new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        payment_amount: paymentInfo.totalAmount,
+        payment_breakdown: paymentInfo.breakdown
       };
-      
-      // Force final safe mapping
-      insertObject.category = getSafeCategory(insertObject.category);
-      console.log('Final safe category:', insertObject.category);
-      
-      console.log('Submitting to database with user ID:', user?.id);
+
       const { data, error } = await supabase
         .from('trend_submissions')
         .insert(insertObject)
         .select()
         .single();
 
-      if (error) {
-        console.error('Database insertion error:', error);
-        
-        // Provide specific error messages
-        if (error.message?.includes('invalid input value for enum')) {
-          throw new Error(`Invalid category. Please try again.`);
-        } else if (error.message?.includes('violates foreign key constraint')) {
-          throw new Error('Authentication issue. Please log out and log back in.');
-        } else if (error.message?.includes('permission denied')) {
-          throw new Error('Permission denied. Please ensure you are logged in.');
-        }
-        
-        throw error;
-      }
-      console.log('Successfully inserted trend:', data);
-      console.log('Trend ID:', data.id);
-      console.log('Trend spotter_id:', data.spotter_id);
+      if (error) throw error;
 
-      // Update local state
-      const normalizedUrl = normalizeUrl(trendData.url);
-      setLoggedTrends(prev => [...prev, normalizedUrl]);
-      
-      // Update streak progress
-      updateStreakProgress();
-      
-      // Calculate earnings with multiplier (10c per trend)
-      const baseAmount = 0.10;
-      const earnedAmount = baseAmount * streakMultiplier;
-      setTodaysEarnings(prev => prev + earnedAmount);
-      
-      // Create earnings ledger entry for pending review
-      console.log('Creating earnings ledger entry for trend:', data.id);
+      // Update spotter metrics
+      await performanceService.updateSpotterMetrics(
+        user.id,
+        data.id,
+        qualityMetrics.overallQuality
+      );
+
+      // Create earnings ledger entry
       const { error: earningsError } = await supabase
         .from('earnings_ledger')
         .insert({
           user_id: user.id,
           trend_id: data.id,
-          amount: earnedAmount,
+          amount: paymentInfo.totalAmount,
           type: 'trend_submission',
-          status: 'pending', // Pending community verification
-          description: `Trend submission: ${trendData.trendName || 'Untitled'}`,
+          status: 'pending',
+          description: `Trend: ${trendData.trendName || 'Untitled'} (${spotterMetrics?.currentTier} tier)`,
+          metadata: {
+            quality_score: qualityMetrics.overallQuality,
+            tier: spotterMetrics?.currentTier,
+            payment_breakdown: paymentInfo.breakdown
+          },
           created_at: new Date().toISOString()
         });
 
@@ -413,82 +380,63 @@ export default function ScrollDashboard() {
       }
 
       // Update user's pending earnings
-      const { error: profileError } = await supabase
+      await supabase
         .from('profiles')
         .update({
-          earnings_pending: supabase.rpc('increment_earnings_pending', { x: earnedAmount })
+          earnings_pending: supabase.raw(`earnings_pending + ${paymentInfo.totalAmount}`)
         })
         .eq('id', user.id);
 
-      if (profileError) {
-        console.error('Error updating pending earnings:', profileError);
-        // Fallback to direct update
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('earnings_pending')
-          .eq('id', user.id)
-          .single();
-          
-        if (profile) {
-          await supabase
-            .from('profiles')
-            .update({
-              earnings_pending: (profile.earnings_pending || 0) + earnedAmount
-            })
-            .eq('id', user.id);
-        }
-      }
+      // Update local state
+      const normalizedUrl = normalizeUrl(trendData.url);
+      setLoggedTrends(prev => [...prev, normalizedUrl]);
+      setTodaysPendingEarnings(prev => prev + paymentInfo.totalAmount);
+      
+      updateStreakProgress();
       
       setSubmitMessage({ 
         type: 'success', 
-        text: streak > 0 
-          ? `Trend submitted! +${formatCurrency(earnedAmount)} pending (${streakMultiplier}x multiplier!)` 
-          : `Trend submitted! +${formatCurrency(earnedAmount)} pending verification`
+        text: `Trend submitted! +${formatCurrency(paymentInfo.totalAmount)} pending (Quality: ${(qualityMetrics.overallQuality * 100).toFixed(0)}%)` 
       });
       
-      // The form will auto-close after 1.5 seconds
-      // Clear the URL input
       setTrendLink('');
+      setShowPaymentBreakdown(true);
       
-      // Show success message for a bit longer
       setTimeout(() => {
         setSubmitMessage(null);
-      }, 3000);
+        setShowPaymentBreakdown(false);
+      }, 5000);
+
+      // Refresh metrics
+      loadPerformanceMetrics();
 
     } catch (error) {
       console.error('Error submitting trend:', error);
-      throw error;
+      setSubmitMessage({ type: 'error', text: 'Failed to submit trend. Please try again.' });
+      setTimeout(() => setSubmitMessage(null), 3000);
     }
   };
 
-  // Handle quick submit button
   const handleQuickSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('handleQuickSubmit called, trendLink:', trendLink);
     
-    if (!trendLink.trim()) {
-      console.log('No trend link provided');
-      return;
-    }
+    if (!trendLink.trim()) return;
     
-    // Check for duplicate
     const normalizedUrl = normalizeUrl(trendLink);
     if (loggedTrends.includes(normalizedUrl)) {
-      console.log('Duplicate trend detected');
       setSubmitMessage({ type: 'error', text: 'Already logged!' });
       setTimeout(() => setSubmitMessage(null), 3000);
       return;
     }
     
-    // Open the comprehensive submission form with pre-filled URL
-    console.log('Opening trend form modal...');
+    handleFormOpen(trendLink);
     setShowTrendForm(true);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/20 to-black">
       <div className="container mx-auto px-4 py-6 max-w-5xl safe-area-top safe-area-bottom">
-        {/* Clean Header */}
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -506,11 +454,70 @@ export default function ScrollDashboard() {
             <h1 className="text-2xl font-bold text-white">Scroll & Earn</h1>
           </div>
 
-          <div className="text-right bg-gray-800/50 px-4 py-2 rounded-xl">
-            <p className="text-xs text-gray-400 font-medium">Today's Pending</p>
-            <p className="text-xl font-bold text-emerald-400">{formatCurrency(todaysEarnings)}</p>
+          {/* Performance Tier Badge */}
+          {user && !loadingMetrics && spotterMetrics && (
+            <SpotterTierDisplay 
+              userId={user.id} 
+              compact={true}
+              onTierChange={() => loadPerformanceMetrics()}
+            />
+          )}
+        </motion.div>
+
+        {/* Earnings Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 grid grid-cols-2 gap-4"
+        >
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+            <p className="text-xs text-gray-400 font-medium">Today's Confirmed</p>
+            <p className="text-2xl font-bold text-emerald-400">{formatCurrency(todaysEarnings)}</p>
+          </div>
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+            <p className="text-xs text-gray-400 font-medium">Pending Verification</p>
+            <p className="text-2xl font-bold text-yellow-400">{formatCurrency(todaysPendingEarnings)}</p>
           </div>
         </motion.div>
+
+        {/* Daily Challenge */}
+        {spotterMetrics?.dailyChallengeProgress && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-purple-500/10 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-500/20 p-2 rounded-lg">
+                  <Target className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-white font-semibold">Daily Challenge</p>
+                  <p className="text-purple-200 text-sm">
+                    {spotterMetrics.dailyChallengeProgress.description}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-bold text-purple-400">
+                  +${spotterMetrics.dailyChallengeProgress.reward.toFixed(2)}
+                </p>
+                <p className="text-xs text-purple-300">reward</p>
+              </div>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                initial={{ width: 0 }}
+                animate={{ 
+                  width: `${(spotterMetrics.dailyChallengeProgress.progress / 
+                    spotterMetrics.dailyChallengeProgress.target) * 100}%` 
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
 
         {/* Streak Status */}
         {streak > 0 && (
@@ -529,7 +536,7 @@ export default function ScrollDashboard() {
                     {streak} Streak Active
                   </p>
                   <p className="text-orange-200 text-sm">
-                    {streakMultiplier}x multiplier
+                    {streakMultiplier}x speed multiplier
                   </p>
                 </div>
               </div>
@@ -560,39 +567,60 @@ export default function ScrollDashboard() {
           </motion.div>
         )}
 
-        {/* Streak Progress */}
-        {trendsInWindow.length > 0 && streak === 0 && isScrolling && (
+        {/* Performance Stats */}
+        {spotterMetrics && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-6 bg-gray-800/40 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="bg-yellow-500/20 p-1.5 rounded">
-                  <Zap className="w-4 h-4 text-yellow-400" />
-                </div>
-                <p className="text-white font-medium text-sm">Building Streak</p>
+            <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-3 border border-gray-700/50">
+              <div className="flex items-center justify-between mb-1">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span className="text-xs text-gray-400">30d</span>
               </div>
-              <p className="text-sm font-semibold text-gray-300">
-                {trendsInWindow.length}/{TRENDS_FOR_STREAK}
+              <p className="text-lg font-bold text-white">
+                {(spotterMetrics.trendApprovalRate30d * 100).toFixed(0)}%
               </p>
+              <p className="text-xs text-gray-400">Approval Rate</p>
             </div>
-            <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(trendsInWindow.length / TRENDS_FOR_STREAK) * 100}%` }}
-                className="bg-gradient-to-r from-yellow-400 to-orange-400 h-full rounded-full"
-                transition={{ duration: 0.5 }}
-              />
+            
+            <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-3 border border-gray-700/50">
+              <div className="flex items-center justify-between mb-1">
+                <TrendingUp className="w-4 h-4 text-purple-400" />
+                <span className="text-xs text-gray-400">30d</span>
+              </div>
+              <p className="text-lg font-bold text-white">
+                {(spotterMetrics.trendViralRate30d * 100).toFixed(0)}%
+              </p>
+              <p className="text-xs text-gray-400">Viral Rate</p>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              {TRENDS_FOR_STREAK - trendsInWindow.length} more to start streak
-            </p>
+            
+            <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-3 border border-gray-700/50">
+              <div className="flex items-center justify-between mb-1">
+                <Sparkles className="w-4 h-4 text-yellow-400" />
+                <span className="text-xs text-gray-400">Quality</span>
+              </div>
+              <p className="text-lg font-bold text-white">
+                {(spotterMetrics.submissionQualityScore * 100).toFixed(0)}%
+              </p>
+              <p className="text-xs text-gray-400">Avg Score</p>
+            </div>
+            
+            <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-3 border border-gray-700/50">
+              <div className="flex items-center justify-between mb-1">
+                <Flame className="w-4 h-4 text-orange-400" />
+                <span className="text-xs text-gray-400">Current</span>
+              </div>
+              <p className="text-lg font-bold text-white">
+                {spotterMetrics.consecutiveApprovedTrends}
+              </p>
+              <p className="text-xs text-gray-400">Approved Streak</p>
+            </div>
           </motion.div>
         )}
 
-        {/* Main Content - Single Column */}
+        {/* Main Content */}
         <div className="space-y-6">
           {/* Scroll Session Component */}
           <ScrollSession
@@ -623,7 +651,11 @@ export default function ScrollDashboard() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-white">Submit New Trend</h3>
-                  <p className="text-blue-200/80 font-medium">Earn ${(0.10 * streakMultiplier).toFixed(2)} pending per submission</p>
+                  <p className="text-blue-200/80 font-medium">
+                    Earn ${spotterMetrics ? 
+                      `${performanceService.getTierBenefits(spotterMetrics.currentTier).basePaymentRange.min.toFixed(2)}-${performanceService.getTierBenefits(spotterMetrics.currentTier).basePaymentRange.max.toFixed(2)}` 
+                      : '0.08-0.15'} per quality submission
+                  </p>
                 </div>
               </div>
               <div className="text-right bg-white/10 backdrop-blur-sm px-4 py-3 rounded-xl border border-white/20">
@@ -631,6 +663,21 @@ export default function ScrollDashboard() {
                 <p className="text-xl font-bold text-white">{loggedTrends.length}</p>
               </div>
             </div>
+
+            {/* Payment Breakdown Preview */}
+            {showPaymentBreakdown && estimatedPayment && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4 p-3 bg-green-500/10 rounded-lg border border-green-500/20"
+              >
+                <p className="text-xs text-green-400 mb-2">Payment Breakdown:</p>
+                {estimatedPayment.breakdown.map((item: string, index: number) => (
+                  <p key={index} className="text-xs text-gray-300">{item}</p>
+                ))}
+              </motion.div>
+            )}
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 relative z-10">
@@ -692,63 +739,28 @@ export default function ScrollDashboard() {
                 }`}
               >
                 <p className="text-sm font-semibold">{submitMessage.text}</p>
-                {submitMessage.type === 'success' && (
-                  <p className="text-xs mt-1 opacity-80">Check your timeline to see your submission!</p>
-                )}
               </motion.div>
             )}
           </motion.div>
 
-          {/* Streak Info */}
-          <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50"
+          {/* Performance Overview Button */}
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => setShowPerformanceModal(true)}
+            className="w-full bg-gray-800/40 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50 hover:bg-gray-800/60 transition-all flex items-center justify-between group"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="bg-orange-500/20 p-1.5 rounded">
-                  <Flame className="w-4 h-4 text-orange-400" />
-                </div>
-                <h3 className="font-semibold text-base text-white">Streak Multipliers</h3>
+            <div className="flex items-center gap-3">
+              <div className="bg-purple-500/20 p-2 rounded-lg">
+                <BarChart3 className="w-5 h-5 text-purple-400" />
               </div>
-              <span className="text-xs font-medium text-gray-400 bg-gray-700/50 px-2 py-1 rounded">
-                Current: {streakMultiplier}x
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              <div className="bg-gray-700/40 rounded-lg p-3 border border-orange-400/30">
-                <p className="text-xs text-gray-400 font-medium">Streak</p>
-                <p className="text-lg font-semibold text-orange-400 mt-1">1-2</p>
-                <p className="text-sm font-medium text-white">1.5x</p>
-              </div>
-              
-              <div className="bg-gray-700/40 rounded-lg p-3 border border-yellow-400/30">
-                <p className="text-xs text-gray-400 font-medium">Streak</p>
-                <p className="text-lg font-semibold text-yellow-400 mt-1">3-4</p>
-                <p className="text-sm font-medium text-white">2x</p>
-              </div>
-              
-              <div className="bg-gray-700/40 rounded-lg p-3 border border-purple-400/30">
-                <p className="text-xs text-gray-400 font-medium">Streak</p>
-                <p className="text-lg font-semibold text-purple-400 mt-1">5-9</p>
-                <p className="text-sm font-medium text-white">3x</p>
-              </div>
-              
-              <div className="bg-gray-700/40 rounded-lg p-3 border border-red-400/30">
-                <p className="text-xs text-gray-400 font-medium">Streak</p>
-                <p className="text-lg font-semibold text-red-400 mt-1">10+</p>
-                <p className="text-sm font-medium text-white">5x</p>
+              <div className="text-left">
+                <p className="text-white font-semibold">Performance Overview</p>
+                <p className="text-sm text-gray-400">View detailed stats and progress</p>
               </div>
             </div>
-            
-            <div className="mt-4 bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
-              <p className="text-sm text-white text-center font-medium">
-                🎯 Log 3 trends in 3 minutes to start a streak
-              </p>
-              <p className="text-xs text-blue-200 text-center mt-1">
-                Faster submissions = higher multipliers
-              </p>
-            </div>
-          </div>
+            <Info className="w-5 h-5 text-gray-400 group-hover:text-gray-300 transition-colors" />
+          </motion.button>
 
           {/* Submission History */}
           <motion.div
@@ -776,17 +788,18 @@ export default function ScrollDashboard() {
 
       {/* Trend Submission Form Modal */}
       {showTrendForm && (
-        console.log('Rendering TrendSubmissionFormEnhanced modal...') || (
-        <TrendSubmissionFormEnhanced
+        <TrendSubmissionFormWithQuality
           onClose={() => {
-            console.log('Closing trend form modal');
             setShowTrendForm(false);
             setTrendLink('');
+            setQualityMetrics(null);
+            setEstimatedPayment(null);
           }}
           onSubmit={handleTrendSubmit}
           initialUrl={trendLink}
+          qualityMetrics={qualityMetrics}
+          estimatedPayment={estimatedPayment}
         />
-        )
       )}
 
       {/* Screenshot Upload Modal */}
@@ -794,12 +807,58 @@ export default function ScrollDashboard() {
         <TrendScreenshotUpload
           onClose={() => setShowScreenshotForm(false)}
           onSubmit={() => {
-            setTodaysEarnings(prev => prev + 0.10);
-            setSubmitMessage({ type: 'success', text: 'Screenshot submitted! +$0.10' });
+            // Screenshot submissions get base rate
+            const baseAmount = spotterMetrics ? 
+              performanceService.getTierBenefits(spotterMetrics.currentTier).basePaymentRange.min : 0.08;
+            setTodaysPendingEarnings(prev => prev + baseAmount);
+            setSubmitMessage({ type: 'success', text: `Screenshot submitted! +${formatCurrency(baseAmount)}` });
             setTimeout(() => setSubmitMessage(null), 3000);
           }}
         />
       )}
+
+      {/* Performance Modal */}
+      <AnimatePresence>
+        {showPerformanceModal && spotterMetrics && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setShowPerformanceModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-gray-900 rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">Performance Overview</h2>
+                <button
+                  onClick={() => setShowPerformanceModal(false)}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+              
+              <SpotterTierDisplay 
+                userId={user!.id} 
+                showDetails={true}
+              />
+              
+              <button
+                onClick={() => setShowPerformanceModal(false)}
+                className="w-full mt-6 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 font-semibold transition-all"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

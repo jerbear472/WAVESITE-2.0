@@ -133,10 +133,14 @@ export class TrendSubmissionService {
   private readonly supabasePool = new SupabasePool();
   private readonly submissionState = new SubmissionState();
   private bucketChecked = false;
+  private lastHealthCheck: { time: number; healthy: boolean; message: string } | null = null;
 
   private constructor() {
     // Cleanup old submissions periodically
     setInterval(() => this.submissionState.cleanup(), 60000);
+    
+    // Run health check on startup
+    this.checkHealth();
   }
 
   static getInstance(): TrendSubmissionService {
@@ -146,9 +150,105 @@ export class TrendSubmissionService {
     return this.instance;
   }
 
+  async checkHealth(): Promise<{ healthy: boolean; message: string; details?: any }> {
+    // Cache health check for 5 minutes
+    if (this.lastHealthCheck && Date.now() - this.lastHealthCheck.time < 300000) {
+      return {
+        healthy: this.lastHealthCheck.healthy,
+        message: this.lastHealthCheck.message
+      };
+    }
+
+    console.log('🏥 Running health check...');
+    
+    try {
+      const { client, release } = await this.supabasePool.getClient();
+      
+      try {
+        // Test 1: Can we query trends?
+        const { error: selectError } = await client
+          .from('trend_submissions')
+          .select('id')
+          .limit(1);
+        
+        if (selectError) {
+          const result = { 
+            healthy: false, 
+            message: 'Cannot read from trend_submissions table',
+            details: selectError 
+          };
+          this.lastHealthCheck = { time: Date.now(), ...result };
+          return result;
+        }
+
+        // Test 2: Check auth
+        const { data: { user }, error: authError } = await client.auth.getUser();
+        if (authError || !user) {
+          const result = { 
+            healthy: false, 
+            message: 'Authentication issue detected',
+            details: authError 
+          };
+          this.lastHealthCheck = { time: Date.now(), ...result };
+          return result;
+        }
+
+        // Test 3: Can we see our own trends?
+        const { data: ownTrends, error: ownError } = await client
+          .from('trend_submissions')
+          .select('id')
+          .eq('spotter_id', user.id)
+          .limit(1);
+        
+        if (ownError) {
+          const result = { 
+            healthy: false, 
+            message: 'RLS policies may be blocking access to own trends',
+            details: ownError 
+          };
+          this.lastHealthCheck = { time: Date.now(), ...result };
+          return result;
+        }
+
+        const result = { 
+          healthy: true, 
+          message: 'All systems operational',
+          details: {
+            userId: user.id,
+            canReadTrends: true,
+            canReadOwnTrends: true
+          }
+        };
+        this.lastHealthCheck = { time: Date.now(), ...result };
+        return result;
+
+      } finally {
+        release();
+      }
+    } catch (error) {
+      const result = { 
+        healthy: false, 
+        message: 'Health check failed',
+        details: error 
+      };
+      this.lastHealthCheck = { time: Date.now(), ...result };
+      return result;
+    }
+  }
+
   async submitTrend(trendData: any, userId: string): Promise<{ success: boolean; data?: any; error?: string }> {
     const submissionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     console.log(`📝 Starting submission ${submissionId}`);
+
+    // Run health check first
+    const health = await this.checkHealth();
+    if (!health.healthy) {
+      console.error('🚨 Health check failed:', health.message);
+      // Don't block submission, but log the issue
+      if (health.message.includes('RLS policies')) {
+        console.warn('⚠️ RLS policy issue detected - submission may not appear in timeline');
+      }
+    }
 
     // Check if user can submit
     if (!this.submissionState.canSubmit(userId)) {
