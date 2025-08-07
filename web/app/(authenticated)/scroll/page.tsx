@@ -50,7 +50,6 @@ import { ScrollSession } from '@/components/ScrollSession';
 import { FloatingTrendLogger } from '@/components/FloatingTrendLogger';
 import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePersona } from '@/contexts/PersonaContext';
 import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
@@ -159,7 +158,6 @@ interface TrendData {
 export default function EnhancedScrollDashboard() {
   const router = useRouter();
   const { user, profile } = useAuth();
-  const { persona } = usePersona();
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollSessionRef = useRef<any>();
   
@@ -309,16 +307,16 @@ export default function EnhancedScrollDashboard() {
     setIsSubmitting(true);
     
     try {
-      // Combine with persona data
+      // Combine with profile data
       const enrichedData = {
         ...trendData,
         ...formData,
-        user_age: persona?.age || profile.age,
-        user_gender: persona?.gender || profile.gender,
-        user_location: persona?.location || profile.location,
-        user_interests: persona?.interests || profile.interests,
-        user_investment_experience: persona?.investment_experience,
-        user_risk_tolerance: persona?.risk_tolerance
+        user_age: profile?.age,
+        user_gender: profile?.gender,
+        user_location: profile?.location,
+        user_interests: profile?.interests,
+        user_investment_experience: profile?.investment_experience,
+        user_risk_tolerance: profile?.risk_tolerance
       };
       
       // Calculate payment based on data completeness and finance relevance
