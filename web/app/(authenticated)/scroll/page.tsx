@@ -233,22 +233,9 @@ export default function LegibleScrollPage() {
     const pastedText = e.clipboardData.getData('text');
     if (isValidUrl(pastedText)) {
       setTrendUrl(pastedText);
-      
-      // Check if session is active before opening form
-      if (!isSessionActive) {
-        setSubmitMessage({ type: 'error', text: 'Please start a session first!' });
-        setTimeout(() => setSubmitMessage(null), 3000);
-        return;
-      }
-      
+      // Immediately open the form - no session required
       setTimeout(() => {
-        try {
-          setShowSubmissionForm(true);
-        } catch (error) {
-          console.error('Error opening submission form:', error);
-          setSubmitMessage({ type: 'error', text: 'Failed to open submission form. Please try again.' });
-          setTimeout(() => setSubmitMessage(null), 3000);
-        }
+        setShowSubmissionForm(true);
       }, 100);
     }
   };
@@ -256,20 +243,8 @@ export default function LegibleScrollPage() {
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isSessionActive) {
-      setSubmitMessage({ type: 'error', text: 'Start a session first to submit trends!' });
-      setTimeout(() => setSubmitMessage(null), 3000);
-      return;
-    }
-    
     if (trendUrl && isValidUrl(trendUrl)) {
-      try {
-        setShowSubmissionForm(true);
-      } catch (error) {
-        console.error('Error opening submission form:', error);
-        setSubmitMessage({ type: 'error', text: 'Failed to open submission form. Please try again.' });
-        setTimeout(() => setSubmitMessage(null), 3000);
-      }
+      setShowSubmissionForm(true);
     } else {
       setSubmitMessage({ type: 'error', text: 'Please enter a valid URL' });
       setTimeout(() => setSubmitMessage(null), 3000);
@@ -292,11 +267,6 @@ export default function LegibleScrollPage() {
   const handleTrendSubmit = async (formData: any) => {
     if (!user || !profile) {
       setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
-      return;
-    }
-    
-    if (!isSessionActive) {
-      setSubmitMessage({ type: 'error', text: 'Session required! Start a session to submit trends.' });
       return;
     }
     
@@ -337,9 +307,9 @@ export default function LegibleScrollPage() {
           c.toLowerCase().includes('crypto')
         );
       
-      // Calculate payment with streak multiplier
+      // Calculate payment with streak multiplier (only if session is active)
       let basePayment = calculateBasePayment(formData, isFinanceTrend);
-      let finalPayment = basePayment * streakMultiplier;
+      let finalPayment = isSessionActive ? basePayment * streakMultiplier : basePayment;
       
       // Prepare submission
       const submissionData = {
@@ -418,11 +388,13 @@ export default function LegibleScrollPage() {
           }
         });
       
-      // Update streak
-      const newStreak = currentStreak + 1;
-      setCurrentStreak(newStreak);
-      setStreakMultiplier(calculateMultiplier(newStreak));
-      setLastSubmissionTime(new Date());
+      // Update streak only if session is active
+      if (isSessionActive) {
+        const newStreak = currentStreak + 1;
+        setCurrentStreak(newStreak);
+        setStreakMultiplier(calculateMultiplier(newStreak));
+        setLastSubmissionTime(new Date());
+      }
       
       // Update stats
       setTodaysPendingEarnings(prev => prev + finalPayment);
@@ -430,7 +402,7 @@ export default function LegibleScrollPage() {
       
       // Success message
       const bonuses = [];
-      if (streakMultiplier > 1) bonuses.push(`${streakMultiplier}x Streak`);
+      if (isSessionActive && streakMultiplier > 1) bonuses.push(`${streakMultiplier}x Streak`);
       if (isFinanceTrend) bonuses.push('📈 Finance');
       if (formData.wave_score > 70) bonuses.push('🌊 High Wave');
       
@@ -535,9 +507,9 @@ export default function LegibleScrollPage() {
         <div className="mb-6 bg-white rounded-2xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Scroll Session</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Scroll Session (Optional)</h2>
               <p className="text-sm text-gray-500">
-                {isSessionActive ? 'Session active - submit trends to build streaks!' : 'Start a session to begin earning'}
+                {isSessionActive ? 'Session active - submit trends quickly to build streak multipliers!' : 'Start a session to activate streak bonuses up to 3x earnings!'}
               </p>
             </div>
             
@@ -563,7 +535,7 @@ export default function LegibleScrollPage() {
             </button>
           </div>
 
-          {isSessionActive && (
+          {isSessionActive ? (
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-gray-50 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
@@ -592,6 +564,22 @@ export default function LegibleScrollPage() {
                   <p className="text-xl font-bold text-orange-700">{formatTime(streakTimeRemaining)}</p>
                 </div>
               )}
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Zap className="w-5 h-5 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">How Streak Bonuses Work</h3>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• Submit trends within 5-minute windows to build streaks</li>
+                    <li>• Earn multipliers: 2 trends = 1.2x, 3 = 1.5x, 5 = 2x, 10 = 2.5x, 15+ = 3x</li>
+                    <li>• Sessions are optional - you can submit trends anytime!</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -635,30 +623,6 @@ export default function LegibleScrollPage() {
           </div>
         </div>
 
-        {/* Streak Explanation */}
-        {isSessionActive && (
-          <div className="mb-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <Zap className="w-6 h-6" />
-              <h3 className="font-semibold">Streak Multipliers Active!</h3>
-            </div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="opacity-80">2 trends:</span>
-                <span className="font-bold ml-1">1.2x</span>
-              </div>
-              <div>
-                <span className="opacity-80">3 trends:</span>
-                <span className="font-bold ml-1">1.5x</span>
-              </div>
-              <div>
-                <span className="opacity-80">5 trends:</span>
-                <span className="font-bold ml-1">2.0x</span>
-              </div>
-            </div>
-            <p className="text-xs mt-2 opacity-80">Submit trends within 5 minutes to maintain streak!</p>
-          </div>
-        )}
 
         {/* Recent Tickers */}
         {recentTickers.length > 0 && (
@@ -713,11 +677,11 @@ export default function LegibleScrollPage() {
             
             <button
               type="submit"
-              disabled={!trendUrl || !isSessionActive}
+              disabled={!trendUrl}
               className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2 text-lg"
             >
               <Send className="w-5 h-5" />
-              {!isSessionActive ? 'Start Session First' : 'Start Submission'}
+              Start Submission
             </button>
           </form>
 
