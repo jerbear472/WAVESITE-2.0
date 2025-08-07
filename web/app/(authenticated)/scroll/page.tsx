@@ -276,18 +276,25 @@ export default function LegibleScrollPage() {
       // Handle screenshot upload
       let screenshotUrl = formData.thumbnail_url;
       if (formData.screenshot && formData.screenshot instanceof File) {
-        const fileExt = formData.screenshot.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('trend-images')
-          .upload(fileName, formData.screenshot);
-
-        if (!uploadError && uploadData) {
-          const { data: { publicUrl } } = supabase.storage
+        try {
+          const fileExt = formData.screenshot.name.split('.').pop();
+          const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from('trend-images')
-            .getPublicUrl(fileName);
-          screenshotUrl = publicUrl;
+            .upload(fileName, formData.screenshot);
+
+          if (uploadError) {
+            console.error('Screenshot upload error:', uploadError);
+          } else if (uploadData) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('trend-images')
+              .getPublicUrl(fileName);
+            screenshotUrl = publicUrl;
+          }
+        } catch (uploadErr) {
+          console.error('Error handling screenshot:', uploadErr);
+          // Continue without screenshot
         }
       }
       
@@ -311,8 +318,8 @@ export default function LegibleScrollPage() {
       let basePayment = calculateBasePayment(formData, isFinanceTrend);
       let finalPayment = isSessionActive ? basePayment * streakMultiplier : basePayment;
       
-      // Prepare submission
-      const submissionData = {
+      // Prepare submission - use basic fields that exist in database
+      const submissionData: any = {
         spotter_id: user.id,
         category: getSafeCategory(formData.categories?.[0] || 'other'),
         description: formData.trendName || formData.explanation || 'Untitled Trend',
@@ -320,8 +327,8 @@ export default function LegibleScrollPage() {
         evidence: {
           ...formData,
           session_duration: sessionDuration,
-          streak_count: currentStreak + 1,
-          streak_multiplier: streakMultiplier,
+          streak_count: isSessionActive ? currentStreak + 1 : 0,
+          streak_multiplier: isSessionActive ? streakMultiplier : 1,
           user_profile: {
             age: profile?.age,
             gender: profile?.gender,
@@ -329,37 +336,27 @@ export default function LegibleScrollPage() {
             interests: profile?.interests
           }
         },
-        platform: formData.platform,
-        engagement_score: calculateEngagementScore(formData),
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
-        payment_amount: finalPayment,
-        demographic_data: {
-          age_ranges: formData.ageRanges,
-          subcultures: formData.subcultures,
-          region: formData.region,
-          moods: formData.moods
-        },
-        finance_data: isFinanceTrend ? {
-          tickers,
-          sentiment: detectSentiment(allText),
-          categories: formData.categories?.filter((c: string) => 
-            c.toLowerCase().includes('stock') || 
-            c.toLowerCase().includes('coin')
-          )
-        } : null,
-        creator_handle: formData.creator_handle,
-        creator_name: formData.creator_name,
-        post_caption: formData.post_caption,
-        likes_count: formData.likes_count || 0,
-        comments_count: formData.comments_count || 0,
-        shares_count: formData.shares_count || 0,
-        views_count: formData.views_count || 0,
-        hashtags: formData.hashtags || [],
-        thumbnail_url: formData.thumbnail_url,
-        screenshot_url: screenshotUrl,
-        wave_score: formData.wave_score || 50,
+        bounty_amount: finalPayment,
+        quality_score: 7, // Default quality score
+        validation_count: 0,
         created_at: new Date().toISOString()
       };
+      
+      // Add optional fields that might exist in database
+      if (formData.platform) submissionData.platform = formData.platform;
+      if (formData.creator_handle) submissionData.creator_handle = formData.creator_handle;
+      if (formData.creator_name) submissionData.creator_name = formData.creator_name;
+      if (formData.post_caption) submissionData.post_caption = formData.post_caption;
+      if (formData.likes_count) submissionData.likes_count = formData.likes_count;
+      if (formData.comments_count) submissionData.comments_count = formData.comments_count;
+      if (formData.shares_count) submissionData.shares_count = formData.shares_count;
+      if (formData.views_count) submissionData.views_count = formData.views_count;
+      if (formData.hashtags?.length) submissionData.hashtags = formData.hashtags;
+      if (formData.thumbnail_url) submissionData.thumbnail_url = formData.thumbnail_url;
+      if (screenshotUrl) submissionData.screenshot_url = screenshotUrl;
+      
+      console.log('Submitting to Supabase:', submissionData);
       
       const { data, error } = await supabase
         .from('trend_submissions')
@@ -367,10 +364,14 @@ export default function LegibleScrollPage() {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase submission error:', error);
+        console.error('Error details:', error.message, error.details, error.hint);
+        throw error;
+      }
       
       // Create earnings entry
-      await supabase
+      const { error: earningsError } = await supabase
         .from('earnings_ledger')
         .insert({
           user_id: user.id,
@@ -383,10 +384,15 @@ export default function LegibleScrollPage() {
             is_finance: isFinanceTrend,
             tickers,
             wave_score: formData.wave_score,
-            streak_multiplier: streakMultiplier,
+            streak_multiplier: isSessionActive ? streakMultiplier : 1,
             base_payment: basePayment
           }
         });
+      
+      if (earningsError) {
+        console.error('Earnings ledger error:', earningsError);
+        // Don't throw - trend was submitted successfully
+      }
       
       // Update streak only if session is active
       if (isSessionActive) {
@@ -419,9 +425,10 @@ export default function LegibleScrollPage() {
       loadTodaysStats();
       if (isFinanceTrend) loadRecentTickers();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submission error:', error);
-      setSubmitMessage({ type: 'error', text: 'Failed to submit trend. Please try again.' });
+      const errorMessage = error?.message || error?.error_description || 'Failed to submit trend';
+      setSubmitMessage({ type: 'error', text: `Error: ${errorMessage}. Please check console for details.` });
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setSubmitMessage(null), 5000);
