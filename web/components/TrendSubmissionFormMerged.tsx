@@ -165,10 +165,10 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
   // Quality and payment tracking
   const [qualityMetrics, setQualityMetrics] = useState<TrendQualityMetrics | null>(null);
   const [estimatedPayment, setEstimatedPayment] = useState<any>(null);
-  const performanceService = TrendSpotterPerformanceService.getInstance();
+  const [performanceService, setPerformanceService] = useState<any>(null);
   
   const [formData, setFormData] = useState<TrendData>({
-    url: initialUrl,
+    url: initialUrl || '',
     trendName: '',
     platform: '',
     explanation: '',
@@ -194,15 +194,21 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     wave_score: 50
   });
 
-  // Set mounted state
+  // Set mounted state and initialize performance service
   useEffect(() => {
     setMounted(true);
+    try {
+      setPerformanceService(TrendSpotterPerformanceService.getInstance());
+    } catch (err) {
+      console.error('Failed to initialize performance service:', err);
+    }
     return () => setMounted(false);
   }, []);
 
   // Auto-extract metadata when component mounts with initialUrl
   useEffect(() => {
     if (mounted && initialUrl) {
+      setFormData(prev => ({ ...prev, url: initialUrl }));
       extractMetadata(initialUrl);
     }
   }, [mounted, initialUrl]);
@@ -222,16 +228,20 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     try {
       if (!user) return;
       
-      const metrics = performanceService.calculateTrendQuality(formData);
-      setQualityMetrics(metrics);
+      const metrics = performanceService?.calculateTrendQuality(formData);
+      setQualityMetrics(metrics || null);
       
       // Update payment estimate
-      const payment = await performanceService.calculateTrendPayment(
-        user.id,
-        formData,
-        metrics
-      );
-      setEstimatedPayment(payment);
+      if (performanceService) {
+        const payment = await performanceService.calculateTrendPayment(
+          user.id,
+          formData,
+          metrics
+        );
+        setEstimatedPayment(payment);
+      } else {
+        setEstimatedPayment(null);
+      }
     } catch (error) {
       console.error('Quality metrics calculation error:', error);
       // Set default values on error
@@ -1330,11 +1340,13 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
           {qualityMetrics && (
             <div className="hidden lg:block lg:w-80">
               <div className="sticky top-0">
-                <TrendQualityIndicator
-                  qualityMetrics={qualityMetrics}
-                  estimatedPayment={estimatedPayment}
-                  userTier={estimatedPayment?.userTier || 'learning'}
-                />
+                {performanceService && (
+                  <TrendQualityIndicator
+                    qualityMetrics={qualityMetrics}
+                    estimatedPayment={estimatedPayment}
+                    userTier={estimatedPayment?.userTier || 'learning'}
+                  />
+                )}
               </div>
             </div>
           )}

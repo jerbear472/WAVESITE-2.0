@@ -33,6 +33,7 @@ import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Primary platforms with better colors
 const PLATFORMS = [
@@ -232,8 +233,22 @@ export default function LegibleScrollPage() {
     const pastedText = e.clipboardData.getData('text');
     if (isValidUrl(pastedText)) {
       setTrendUrl(pastedText);
+      
+      // Check if session is active before opening form
+      if (!isSessionActive) {
+        setSubmitMessage({ type: 'error', text: 'Please start a session first!' });
+        setTimeout(() => setSubmitMessage(null), 3000);
+        return;
+      }
+      
       setTimeout(() => {
-        setShowSubmissionForm(true);
+        try {
+          setShowSubmissionForm(true);
+        } catch (error) {
+          console.error('Error opening submission form:', error);
+          setSubmitMessage({ type: 'error', text: 'Failed to open submission form. Please try again.' });
+          setTimeout(() => setSubmitMessage(null), 3000);
+        }
       }, 100);
     }
   };
@@ -248,7 +263,13 @@ export default function LegibleScrollPage() {
     }
     
     if (trendUrl && isValidUrl(trendUrl)) {
-      setShowSubmissionForm(true);
+      try {
+        setShowSubmissionForm(true);
+      } catch (error) {
+        console.error('Error opening submission form:', error);
+        setSubmitMessage({ type: 'error', text: 'Failed to open submission form. Please try again.' });
+        setTimeout(() => setSubmitMessage(null), 3000);
+      }
     } else {
       setSubmitMessage({ type: 'error', text: 'Please enter a valid URL' });
       setTimeout(() => setSubmitMessage(null), 3000);
@@ -781,14 +802,34 @@ export default function LegibleScrollPage() {
 
       {/* 3-Step Trend Submission Form */}
       {showSubmissionForm && (
-        <TrendSubmissionFormMerged
-          onClose={() => {
-            setShowSubmissionForm(false);
-            setTrendUrl('');
-          }}
-          onSubmit={handleTrendSubmit}
-          initialUrl={trendUrl}
-        />
+        <ErrorBoundary
+          fallback={
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Form</h3>
+                <p className="text-gray-600 mb-4">Unable to load the submission form. Please try refreshing the page.</p>
+                <button
+                  onClick={() => {
+                    setShowSubmissionForm(false);
+                    setTrendUrl('');
+                  }}
+                  className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <TrendSubmissionFormMerged
+            onClose={() => {
+              setShowSubmissionForm(false);
+              setTrendUrl('');
+            }}
+            onSubmit={handleTrendSubmit}
+            initialUrl={trendUrl}
+          />
+        </ErrorBoundary>
       )}
     </div>
   );
