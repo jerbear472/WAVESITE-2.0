@@ -210,24 +210,6 @@ export default function EnhancedScrollPage() {
     setIsSubmitting(true);
     
     try {
-      // Handle screenshot upload if present
-      let screenshotUrl = formData.thumbnail_url; // Use auto-captured thumbnail as fallback
-      if (formData.screenshot && formData.screenshot instanceof File) {
-        const fileExt = formData.screenshot.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('trend-images')
-          .upload(fileName, formData.screenshot);
-
-        if (!uploadError && uploadData) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('trend-images')
-            .getPublicUrl(fileName);
-          screenshotUrl = publicUrl;
-        }
-      }
-      
       // Extract finance tickers from all text fields
       const allText = [
         formData.trendName,
@@ -298,7 +280,6 @@ export default function EnhancedScrollPage() {
         views_count: formData.views_count || 0,
         hashtags: formData.hashtags || [],
         thumbnail_url: formData.thumbnail_url,
-        screenshot_url: screenshotUrl, // Add uploaded screenshot
         wave_score: formData.wave_score || 50,
         
         created_at: new Date().toISOString()
