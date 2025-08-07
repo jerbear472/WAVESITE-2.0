@@ -49,6 +49,7 @@ import {
 import { ScrollSession } from '@/components/ScrollSession';
 import { FloatingTrendLogger } from '@/components/FloatingTrendLogger';
 import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
+import TrendSubmissionFormMerged from '@/components/TrendSubmissionFormMerged';
 import { useAuth } from '@/contexts/AuthContext';
 import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
@@ -298,7 +299,7 @@ export default function EnhancedScrollDashboard() {
     setShowTrendForm(true);
   };
 
-  const handleTrendSubmit = async (formData: Partial<TrendData>) => {
+  const handleTrendSubmit = async (formData: any) => {
     if (!user || !profile) {
       setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
       return;
@@ -307,61 +308,90 @@ export default function EnhancedScrollDashboard() {
     setIsSubmitting(true);
     
     try {
-      // Combine with profile data
+      // The formData from TrendSubmissionFormMerged already has all the data we need
+      // Just enrich with user profile data and finance-specific fields
       const enrichedData = {
-        ...trendData,
         ...formData,
+        platform: formData.platform || selectedPlatform,
         user_age: profile?.age,
         user_gender: profile?.gender,
         user_location: profile?.location,
         user_interests: profile?.interests,
         user_investment_experience: profile?.investment_experience,
-        user_risk_tolerance: profile?.risk_tolerance
+        user_risk_tolerance: profile?.risk_tolerance,
+        // Extract any ticker symbols from the content
+        ticker_symbols: extractTickersFromText(
+          formData.explanation + ' ' + 
+          formData.post_caption + ' ' + 
+          (formData.hashtags?.join(' ') || '')
+        )
       };
       
       // Calculate payment based on data completeness and finance relevance
       let payment = 0.08; // Base payment
       
-      // Bonuses
-      if (enrichedData.ticker_symbols?.length) payment += 0.02;
-      if (enrichedData.sentiment) payment += 0.01;
-      if (enrichedData.screenshot) payment += 0.02;
-      if (enrichedData.age_ranges?.length) payment += 0.01;
-      if (enrichedData.locations?.length) payment += 0.01;
-      if (FINANCE_CATEGORIES.includes(enrichedData.category || '')) payment += 0.03;
-      if (enrichedData.views && enrichedData.views > 100000) payment += 0.02;
+      // Quality bonuses from 3-step form
+      if (enrichedData.trendName && enrichedData.explanation) payment += 0.01; // Complete description
+      if (enrichedData.ticker_symbols?.length) payment += 0.02; // Finance content
+      if (enrichedData.screenshot) payment += 0.02; // Visual evidence
+      if (enrichedData.ageRanges?.length > 0) payment += 0.01; // Demographics
+      if (enrichedData.subcultures?.length > 0) payment += 0.01; // Audience insights
+      if (enrichedData.categories?.some((c: string) => 
+        c.includes('Stock') || c.includes('Coin') || c.includes('Crypto')
+      )) payment += 0.03; // Finance category
+      if (enrichedData.views_count > 100000) payment += 0.02; // High engagement
+      if (enrichedData.creator_handle && enrichedData.post_caption) payment += 0.01; // Auto-captured data
+      if (enrichedData.hashtags?.length > 3) payment += 0.01; // Rich hashtags
+      if (enrichedData.otherPlatforms?.length > 0) payment += 0.01; // Cross-platform trend
+      if (enrichedData.wave_score && enrichedData.wave_score > 70) payment += 0.02; // High wave score
       
       // Apply streak multiplier
       payment *= streakMultiplier;
       
-      // Save to database
+      // Save to database with all the rich data from the 3-step form
       const { data, error } = await supabase
         .from('trend_submissions')
         .insert({
           spotter_id: user.id,
-          category: getSafeCategory(enrichedData.category),
-          description: enrichedData.description || enrichedData.title || 'Untitled Trend',
+          category: getSafeCategory(enrichedData.categories?.[0] || enrichedData.category),
+          description: enrichedData.trendName || enrichedData.explanation || 'Untitled Trend',
           status: getSafeStatus('submitted'),
-          evidence: enrichedData,
-          virality_prediction: enrichedData.spread_speed === 'viral' ? 9 : 
-                               enrichedData.spread_speed === 'picking_up' ? 7 : 5,
+          evidence: enrichedData, // This contains ALL the rich data from the form
+          virality_prediction: enrichedData.spreadSpeed === 'viral' ? 9 : 
+                               enrichedData.spreadSpeed === 'picking_up' ? 7 : 
+                               enrichedData.spreadSpeed === 'just_starting' ? 5 : 3,
           payment_amount: payment,
           created_at: new Date().toISOString(),
           
-          // Additional fields for enterprise dashboard
+          // Additional structured fields for enterprise dashboard
           platform: enrichedData.platform,
           engagement_score: calculateEngagementScore(enrichedData),
           demographic_data: {
-            age_ranges: enrichedData.age_ranges,
+            age_ranges: enrichedData.ageRanges || enrichedData.age_ranges,
             genders: enrichedData.genders,
-            locations: enrichedData.locations,
-            interests: enrichedData.interests
+            locations: enrichedData.region ? [enrichedData.region] : enrichedData.locations,
+            interests: enrichedData.subcultures || enrichedData.interests,
+            moods: enrichedData.moods
           },
-          finance_data: enrichedData.ticker_symbols ? {
+          finance_data: enrichedData.ticker_symbols?.length ? {
             tickers: enrichedData.ticker_symbols,
-            sentiment: enrichedData.sentiment,
-            volume: enrichedData.volume_mentioned
-          } : null
+            sentiment: enrichedData.sentiment || detectFinanceSentiment(enrichedData),
+            categories: enrichedData.categories?.filter((c: string) => 
+              c.includes('Stock') || c.includes('Coin') || c.includes('Crypto')
+            )
+          } : null,
+          
+          // Auto-captured metadata fields
+          creator_handle: enrichedData.creator_handle,
+          creator_name: enrichedData.creator_name,
+          post_caption: enrichedData.post_caption,
+          likes_count: enrichedData.likes_count || 0,
+          comments_count: enrichedData.comments_count || 0,
+          shares_count: enrichedData.shares_count || 0,
+          views_count: enrichedData.views_count || 0,
+          hashtags: enrichedData.hashtags || [],
+          thumbnail_url: enrichedData.thumbnail_url,
+          wave_score: enrichedData.wave_score || 50
         })
         .select()
         .single();
@@ -395,9 +425,16 @@ export default function EnhancedScrollDashboard() {
       setStreak(prev => prev + 1);
       setStreakMultiplier(calculateMultiplier(streak + 1));
       
+      // Create detailed success message
+      const bonusReasons = [];
+      if (enrichedData.ticker_symbols?.length) bonusReasons.push('Finance');
+      if (enrichedData.creator_handle) bonusReasons.push('Auto-captured');
+      if (enrichedData.wave_score > 70) bonusReasons.push('High Wave Score');
+      if (enrichedData.otherPlatforms?.length) bonusReasons.push('Cross-platform');
+      
       setSubmitMessage({ 
         type: 'success', 
-        text: `Trend logged! +${formatCurrency(payment)} earned ${enrichedData.ticker_symbols ? '(Finance bonus!)' : ''}` 
+        text: `Trend submitted! +${formatCurrency(payment)} earned${bonusReasons.length ? ` (${bonusReasons.join(', ')})` : ''}` 
       });
       
       // Reset form
@@ -446,6 +483,28 @@ export default function EnhancedScrollDashboard() {
     const tickerPattern = /\$?[A-Z]{1,5}\b/g;
     const matches = text.match(tickerPattern) || [];
     return [...new Set(matches.map(t => t.replace('$', '')))];
+  };
+
+  const detectFinanceSentiment = (data: any): string => {
+    const content = (
+      (data.explanation || '') + ' ' + 
+      (data.post_caption || '') + ' ' + 
+      (data.hashtags?.join(' ') || '')
+    ).toLowerCase();
+    
+    if (content.includes('moon') || content.includes('rocket') || content.includes('bull')) {
+      return 'bullish';
+    }
+    if (content.includes('bear') || content.includes('crash') || content.includes('dump')) {
+      return 'bearish';
+    }
+    if (content.includes('fomo') || content.includes('fear')) {
+      return 'fomo';
+    }
+    if (content.includes('diamond') || content.includes('hold')) {
+      return 'diamond_hands';
+    }
+    return 'neutral';
   };
 
   return (
@@ -729,130 +788,18 @@ export default function EnhancedScrollDashboard() {
         </AnimatePresence>
       </div>
 
-      {/* Trend Details Modal */}
-      <AnimatePresence>
-        {showTrendForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gray-900 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">Complete Trend Details</h2>
-                <button
-                  onClick={() => setShowTrendForm(false)}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-400" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {/* Engagement Metrics */}
-                <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Engagement Metrics</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    <input
-                      type="number"
-                      placeholder="Likes"
-                      onChange={(e) => setTrendData(prev => ({ ...prev, likes: parseInt(e.target.value) }))}
-                      className="px-3 py-2 bg-gray-800 rounded-lg text-white text-sm"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Comments"
-                      onChange={(e) => setTrendData(prev => ({ ...prev, comments: parseInt(e.target.value) }))}
-                      className="px-3 py-2 bg-gray-800 rounded-lg text-white text-sm"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Shares"
-                      onChange={(e) => setTrendData(prev => ({ ...prev, shares: parseInt(e.target.value) }))}
-                      className="px-3 py-2 bg-gray-800 rounded-lg text-white text-sm"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Views"
-                      onChange={(e) => setTrendData(prev => ({ ...prev, views: parseInt(e.target.value) }))}
-                      className="px-3 py-2 bg-gray-800 rounded-lg text-white text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Demographics */}
-                <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Who's engaging?</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['Gen Z', 'Millennials', 'Gen X', 'Boomers'].map(age => (
-                      <button
-                        key={age}
-                        onClick={() => setTrendData(prev => ({
-                          ...prev,
-                          age_ranges: prev.age_ranges?.includes(age) 
-                            ? prev.age_ranges.filter(a => a !== age)
-                            : [...(prev.age_ranges || []), age]
-                        }))}
-                        className={`px-3 py-1 rounded-lg text-sm transition-all ${
-                          trendData.age_ranges?.includes(age)
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        {age}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Virality Prediction */}
-                <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Spread Speed</label>
-                  <div className="flex gap-2">
-                    {['viral', 'picking_up', 'steady', 'declining'].map(speed => (
-                      <button
-                        key={speed}
-                        onClick={() => setTrendData(prev => ({ ...prev, spread_speed: speed as any }))}
-                        className={`px-4 py-2 rounded-lg text-sm capitalize transition-all ${
-                          trendData.spread_speed === speed
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        {speed.replace('_', ' ')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleTrendSubmit(trendData)}
-                  disabled={isSubmitting}
-                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-600 disabled:to-gray-600 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      Submit Trend
-                    </>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 3-Step Trend Submission Form with Auto-Capture */}
+      {showTrendForm && (
+        <TrendSubmissionFormMerged
+          onClose={() => {
+            setShowTrendForm(false);
+            setTrendData({});
+            setSelectedPlatform('');
+          }}
+          onSubmit={handleTrendSubmit}
+          initialUrl={trendData.url || ''}
+        />
+      )}
     </div>
   );
 }
