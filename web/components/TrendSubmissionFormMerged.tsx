@@ -194,15 +194,19 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     wave_score: 50
   });
 
-  // Set mounted state and initialize performance service
+  // Set mounted state
   useEffect(() => {
     setMounted(true);
+    // Temporarily disable performance service to fix form loading
+    // TODO: Re-enable once TrendSpotterPerformanceService is fixed
+    /*
     try {
-      setPerformanceService(TrendSpotterPerformanceService.getInstance());
+      const service = TrendSpotterPerformanceService.getInstance();
+      setPerformanceService(service);
     } catch (err) {
       console.error('Failed to initialize performance service:', err);
     }
-    return () => setMounted(false);
+    */
   }, []);
 
   // Auto-extract metadata when component mounts with initialUrl
@@ -561,9 +565,18 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     return true;
   };
 
-  // Don't render until mounted to prevent hydration issues
+  // Show loading state while mounting
   if (!mounted) {
-    return null;
+    return (
+      <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+          <div className="flex items-center gap-3">
+            <LoaderIcon className="w-5 h-5 animate-spin text-purple-500" />
+            <span className="text-slate-300">Loading submission form...</span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
