@@ -60,6 +60,8 @@ export default function CleanVerifyPage() {
   const [stats, setStats] = useState({
     verified_today: 0,
     earnings_today: 0,
+    verified_total: 0,
+    earnings_total: 0,
     remaining_today: 100,
     remaining_hour: 20
   });
@@ -180,11 +182,26 @@ export default function CleanVerifyPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const { data: validations } = await supabase
+      console.log('Loading stats for user:', user?.id, 'from date:', today.toISOString());
+
+      const { data: validations, error: validationError } = await supabase
         .from('trend_validations')
         .select('*')
         .eq('validator_id', user?.id)
         .gte('created_at', today.toISOString());
+
+      if (validationError) {
+        console.error('Error loading validations:', validationError);
+      }
+
+      // Also get all-time validations for total stats
+      const { data: allValidations } = await supabase
+        .from('trend_validations')
+        .select('*')
+        .eq('validator_id', user?.id);
+
+      console.log('Found validations today:', validations?.length || 0);
+      console.log('Found total validations:', allValidations?.length || 0);
 
       // Try to get rate limits, but handle errors gracefully
       let rateLimit = null;
@@ -203,18 +220,25 @@ export default function CleanVerifyPage() {
         // Continue with default limits
       }
 
-      setStats({
+      const newStats = {
         verified_today: validations?.length || 0,
         earnings_today: parseFloat(((validations?.length || 0) * EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION).toFixed(2)),
+        verified_total: allValidations?.length || 0,
+        earnings_total: parseFloat(((allValidations?.length || 0) * EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION).toFixed(2)),
         remaining_today: rateLimit?.[0]?.validations_remaining_today || 100,
         remaining_hour: rateLimit?.[0]?.validations_remaining_hour || 20
-      });
+      };
+
+      console.log('Setting new stats:', newStats);
+      setStats(newStats);
     } catch (error) {
       console.error('Error loading stats:', error);
       // Set default stats on error
       setStats({
         verified_today: 0,
         earnings_today: 0,
+        verified_total: 0,
+        earnings_total: 0,
         remaining_today: 100,
         remaining_hour: 20
       });
@@ -299,6 +323,16 @@ export default function CleanVerifyPage() {
       loadStats();
     }
   }, [user]);
+
+  // Refresh stats when reaching the completion screen or when no trends are available
+  useEffect(() => {
+    if (user && !loading) {
+      if ((trends.length > 0 && currentIndex >= trends.length) || trends.length === 0) {
+        console.log('User reached completion screen or no trends available, refreshing stats...');
+        loadStats();
+      }
+    }
+  }, [user, trends.length, currentIndex, loading]);
 
   const cleanupOldSkippedTrends = () => {
     if (!user?.id) return;
@@ -419,18 +453,43 @@ export default function CleanVerifyPage() {
               </div>
             ) : null;
           })()}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">Today's Performance</h3>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-gray-900">{stats.verified_today}</p>
-                <p className="text-sm text-gray-500 mt-1">Trends Verified</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-green-600">${stats.earnings_today.toFixed(2)}</p>
-                <p className="text-sm text-gray-500 mt-1">Total Earned</p>
+          <div className="space-y-4">
+            {/* Today's Performance */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">Today's Performance</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-gray-900">{stats.verified_today}</p>
+                  <p className="text-sm text-gray-500 mt-1">Trends Verified</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-green-600">${stats.earnings_today.toFixed(2)}</p>
+                  <p className="text-sm text-gray-500 mt-1">Earned Today</p>
+                </div>
               </div>
             </div>
+
+            {/* All-Time Stats */}
+            {stats.verified_total > 0 && (
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 shadow-sm border border-purple-200">
+                <h3 className="text-sm font-medium text-purple-600 mb-4 uppercase tracking-wide">All-Time Contribution</h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-purple-800">{stats.verified_total}</p>
+                    <p className="text-sm text-purple-600 mt-1">Total Verified</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-purple-700">${stats.earnings_total.toFixed(2)}</p>
+                    <p className="text-sm text-purple-600 mt-1">Total Earned</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-purple-200">
+                  <p className="text-center text-sm text-purple-600">
+                    Thanks for helping validate {stats.verified_total} trends! 🎉
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
