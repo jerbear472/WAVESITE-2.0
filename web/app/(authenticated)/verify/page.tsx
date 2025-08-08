@@ -50,7 +50,7 @@ interface TrendToVerify {
 }
 
 export default function CleanVerifyPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [trends, setTrends] = useState<TrendToVerify[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -235,7 +235,7 @@ export default function CleanVerifyPage() {
       await supabase
         .from('trend_validations')
         .insert({
-          trend_id: trends[currentIndex].id,
+          trend_submission_id: trends[currentIndex].id,
           validator_id: user?.id,
           vote,
           confidence_score: 0.75,
@@ -249,6 +249,15 @@ export default function CleanVerifyPage() {
       // Show earnings animation
       setShowEarningsAnimation(true);
       setTimeout(() => setShowEarningsAnimation(false), 2000);
+      
+      // Refresh user earnings in profile (for navigation display)
+      try {
+        await supabase.rpc('refresh_user_earnings', { p_user_id: user?.id });
+        // Also refresh the user context to update navigation
+        await refreshUser();
+      } catch (refreshError) {
+        console.warn('Failed to refresh user earnings:', refreshError);
+      }
       
       // Reload stats from database to ensure accuracy
       await loadStats();
