@@ -119,20 +119,29 @@ export default function CleanVerifyPage() {
         return;
       }
 
-      // Get trends user hasn't validated
+      // Get trends user has already validated (fix column name)
       const { data: validatedTrends } = await supabase
         .from('trend_validations')
-        .select('trend_id')
+        .select('trend_submission_id')
         .eq('validator_id', user.id);
 
-      const validatedIds = validatedTrends?.map(v => v.trend_id) || [];
+      const validatedIds = validatedTrends?.map(v => v.trend_submission_id) || [];
+      
+      // Also get trends user has skipped in this session from localStorage
+      const skippedKey = `skipped_trends_${user.id}_${new Date().toDateString()}`;
+      const skippedTrends = JSON.parse(localStorage.getItem(skippedKey) || '[]');
+      
+      // Combine validated and skipped IDs
+      const excludeIds = [...validatedIds, ...skippedTrends];
+      
+      console.log(`Loading trends - excluding ${excludeIds.length} already processed trends`);
 
       const { data: trendsData } = await supabase
         .from('trend_submissions')
         .select('*')
         .in('status', ['submitted', 'validating'])
         .neq('spotter_id', user.id) // Exclude user's own trends
-        .not('id', 'in', validatedIds.length > 0 ? `(${validatedIds.join(',')})` : '()')
+        .not('id', 'in', excludeIds.length > 0 ? `(${excludeIds.join(',')})` : '()')
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -221,13 +230,24 @@ export default function CleanVerifyPage() {
   };
 
   const handleVote = async (vote: 'verify' | 'reject' | 'skip') => {
-    if (vote === 'skip') {
-      nextTrend();
+    if (!trends[currentIndex]) {
+      console.error('No trend available to vote on');
       return;
     }
 
-    if (!trends[currentIndex]) {
-      console.error('No trend available to vote on');
+    if (vote === 'skip') {
+      // Track skipped trends in localStorage so they don't appear again today
+      const skippedKey = `skipped_trends_${user?.id}_${new Date().toDateString()}`;
+      const existingSkipped = JSON.parse(localStorage.getItem(skippedKey) || '[]');
+      const trendId = trends[currentIndex].id;
+      
+      if (!existingSkipped.includes(trendId)) {
+        existingSkipped.push(trendId);
+        localStorage.setItem(skippedKey, JSON.stringify(existingSkipped));
+        console.log(`Skipped trend ${trendId}, total skipped today: ${existingSkipped.length}`);
+      }
+      
+      nextTrend();
       return;
     }
 
@@ -273,10 +293,32 @@ export default function CleanVerifyPage() {
 
   useEffect(() => {
     if (user) {
+      // Clean up old skipped trends from previous days
+      cleanupOldSkippedTrends();
       loadTrends();
       loadStats();
     }
   }, [user]);
+
+  const cleanupOldSkippedTrends = () => {
+    if (!user?.id) return;
+    
+    try {
+      const today = new Date().toDateString();
+      const currentKey = `skipped_trends_${user.id}_${today}`;
+      
+      // Remove old localStorage keys for previous days
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(`skipped_trends_${user.id}_`) && key !== currentKey) {
+          localStorage.removeItem(key);
+          console.log(`Cleaned up old skipped trends: ${key}`);
+        }
+      }
+    } catch (error) {
+      console.warn('Error cleaning up old skipped trends:', error);
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -354,9 +396,29 @@ export default function CleanVerifyPage() {
             </div>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-3">All caught up!</h2>
-          <p className="text-gray-600 text-lg mb-8">
+          <p className="text-gray-600 text-lg mb-4">
             You've reviewed all available trends. Check back later for more.
           </p>
+          {user && (() => {
+            const skippedKey = `skipped_trends_${user.id}_${new Date().toDateString()}`;
+            const skippedCount = JSON.parse(localStorage.getItem(skippedKey) || '[]').length;
+            return skippedCount > 0 ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-blue-800 text-sm mb-2">
+                  You skipped {skippedCount} trends today. Want to review them again?
+                </p>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem(skippedKey);
+                    window.location.reload();
+                  }}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium underline"
+                >
+                  Reset skipped trends and try again
+                </button>
+              </div>
+            ) : null;
+          })()}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
             <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">Today's Performance</h3>
             <div className="grid grid-cols-2 gap-6">
@@ -383,8 +445,19 @@ export default function CleanVerifyPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-semibold text-gray-900">Verify Trends</h1>
-              <div className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-1 rounded-full">
-                {currentIndex + 1} / {trends.length}
+              <div className="flex items-center gap-2">
+                <div className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-1 rounded-full">
+                  {currentIndex + 1} / {trends.length}
+                </div>
+                {user && (() => {
+                  const skippedKey = `skipped_trends_${user.id}_${new Date().toDateString()}`;
+                  const skippedCount = JSON.parse(localStorage.getItem(skippedKey) || '[]').length;
+                  return skippedCount > 0 ? (
+                    <div className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">
+                      {skippedCount} skipped today
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
             
