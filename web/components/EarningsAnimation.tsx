@@ -21,8 +21,8 @@ export const EarningsAnimation: React.FC<EarningsAnimationProps> = ({
 }) => {
   useEffect(() => {
     if (show && onComplete) {
-      // Auto-hide after 2 seconds
-      const timer = setTimeout(onComplete, 2000);
+      // Auto-hide after 3 seconds (longer for subtle notification)
+      const timer = setTimeout(onComplete, 3000);
       return () => clearTimeout(timer);
     }
   }, [show, onComplete]);
@@ -32,16 +32,16 @@ export const EarningsAnimation: React.FC<EarningsAnimationProps> = ({
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50"
+        initial={{ opacity: 0, x: -50, scale: 0.8 }}
+        animate={{ opacity: 0.9, x: 0, scale: 1 }}
+        exit={{ opacity: 0, x: -50, scale: 0.8 }}
+        className="fixed bottom-6 left-6 z-50"
       >
-        <div className="bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
-          <DollarSign className="w-5 h-5" />
-          <span className="font-bold text-lg">+${amount.toFixed(2)}</span>
+        <div className="bg-green-500/80 backdrop-blur-sm text-white px-3 py-2 rounded-lg shadow-sm flex items-center gap-2 text-sm">
+          <DollarSign className="w-4 h-4" />
+          <span className="font-medium">+${amount.toFixed(2)}</span>
           {multiplier > 1 && (
-            <span className="text-sm bg-green-600 px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-green-600/60 px-1.5 py-0.5 rounded">
               {multiplier}x
             </span>
           )}

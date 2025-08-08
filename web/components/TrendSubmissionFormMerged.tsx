@@ -134,7 +134,9 @@ const moodOptions = [
   'Cozy 🧸',
   'Chaotic 🌪️',
   'Fancy 🍸',
-  'Ironic 💀'
+  'Ironic 💀',
+  'Corporate 💼',
+  'Calm 🧘'
 ];
 
 const spreadSpeedOptions = [
@@ -462,6 +464,14 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     
     if (content.match(/empower|strong|fierce|boss|queen|king/)) {
       detectedMoods.push('Empowering 💪');
+    }
+    
+    if (content.match(/business|corporate|professional|linkedin|work|office|meeting|company|enterprise|formal/)) {
+      detectedMoods.push('Corporate 💼');
+    }
+    
+    if (content.match(/calm|peaceful|relax|zen|meditation|mindful|serene|tranquil|soothing|chill/)) {
+      detectedMoods.push('Calm 🧘');
     }
     
     return detectedMoods.slice(0, 2);

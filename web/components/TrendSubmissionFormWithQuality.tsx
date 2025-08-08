@@ -115,7 +115,7 @@ const categoryOptions = [
 const moodOptions = [
   'Funny', 'Inspiring', 'Relatable', 'Controversial', 
   'Educational', 'Nostalgic', 'Shocking', 'Wholesome',
-  'Aesthetic', 'Motivational'
+  'Aesthetic', 'Motivational', 'Corporate', 'Calm'
 ];
 
 const motivationOptions = [

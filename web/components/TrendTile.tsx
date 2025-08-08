@@ -74,7 +74,9 @@ const moodEmojis: Record<string, string> = {
   energetic: '⚡',
   emotional: '❤️',
   informative: '📚',
-  creative: '🎨'
+  creative: '🎨',
+  corporate: '💼',
+  calm: '🧘'
 }
 
 const statusIcons = {

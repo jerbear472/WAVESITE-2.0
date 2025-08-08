@@ -781,7 +781,11 @@ export default function SettingsPage() {
                   ].map((theme) => (
                     <button
                       key={theme.value}
-                      onClick={() => setProfile({ ...profile, theme: theme.value as 'light' | 'dark' | 'system' })}
+                      onClick={async () => {
+                        const newProfile = { ...profile, theme: theme.value as 'light' | 'dark' | 'system' };
+                        setProfile(newProfile);
+                        await updateProfile(newProfile);
+                      }}
                       className={`relative p-4 rounded-xl border-2 transition-all transform hover:scale-105 ${
                         profile.theme === theme.value
                           ? 'border-wave-500 bg-wave-500/10'
@@ -809,7 +813,11 @@ export default function SettingsPage() {
                   <GlobeIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <select
                     value={profile.language}
-                    onChange={(e) => setProfile({ ...profile, language: e.target.value })}
+                    onChange={async (e) => {
+                      const newProfile = { ...profile, language: e.target.value };
+                      setProfile(newProfile);
+                      await updateProfile(newProfile);
+                    }}
                     className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white focus:border-wave-500 focus:ring-2 focus:ring-wave-500/20 focus:outline-none appearance-none cursor-pointer"
                   >
                     <option value="en">🇺🇸 English</option>
@@ -866,63 +874,100 @@ export default function SettingsPage() {
                   <input
                     type="checkbox"
                     checked={profile.notifications.email}
-                    onChange={(e) => setProfile({
-                      ...profile,
-                      notifications: { ...profile.notifications, email: e.target.checked }
-                    })}
+                    onChange={async (e) => {
+                      const newProfile = {
+                        ...profile,
+                        notifications: { ...profile.notifications, email: e.target.checked }
+                      };
+                      setProfile(newProfile);
+                      await updateProfile(newProfile);
+                    }}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-wave-500 peer-checked:to-wave-600"></div>
                 </label>
               </motion.label>
 
-              <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-all border border-gray-700 hover:border-gray-600"
+              >
                 <div>
                   <span className="text-white font-medium">Push Notifications</span>
                   <p className="text-responsive-xs text-gray-400 mt-1">Get push notifications in your browser</p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={profile.notifications.push}
-                  onChange={(e) => setProfile({
-                    ...profile,
-                    notifications: { ...profile.notifications, push: e.target.checked }
-                  })}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-              </label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={profile.notifications.push}
+                    onChange={async (e) => {
+                      const newProfile = {
+                        ...profile,
+                        notifications: { ...profile.notifications, push: e.target.checked }
+                      };
+                      setProfile(newProfile);
+                      await updateProfile(newProfile);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-wave-500 peer-checked:to-wave-600"></div>
+                </label>
+              </motion.label>
 
-              <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-all border border-gray-700 hover:border-gray-600"
+              >
                 <div>
                   <span className="text-white font-medium">Trend Updates</span>
                   <p className="text-responsive-xs text-gray-400 mt-1">Notifications about your trend submissions</p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={profile.notifications.trends}
-                  onChange={(e) => setProfile({
-                    ...profile,
-                    notifications: { ...profile.notifications, trends: e.target.checked }
-                  })}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-              </label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={profile.notifications.trends}
+                    onChange={async (e) => {
+                      const newProfile = {
+                        ...profile,
+                        notifications: { ...profile.notifications, trends: e.target.checked }
+                      };
+                      setProfile(newProfile);
+                      await updateProfile(newProfile);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-wave-500 peer-checked:to-wave-600"></div>
+                </label>
+              </motion.label>
 
-              <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-all border border-gray-700 hover:border-gray-600"
+              >
                 <div>
                   <span className="text-white font-medium">Earnings Updates</span>
                   <p className="text-responsive-xs text-gray-400 mt-1">Get notified about your earnings</p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={profile.notifications.earnings}
-                  onChange={(e) => setProfile({
-                    ...profile,
-                    notifications: { ...profile.notifications, earnings: e.target.checked }
-                  })}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-              </label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={profile.notifications.earnings}
+                    onChange={async (e) => {
+                      const newProfile = {
+                        ...profile,
+                        notifications: { ...profile.notifications, earnings: e.target.checked }
+                      };
+                      setProfile(newProfile);
+                      await updateProfile(newProfile);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-wave-500 peer-checked:to-wave-600"></div>
+                </label>
+              </motion.label>
             </div>
           </motion.div>
         )}
@@ -955,47 +1000,73 @@ export default function SettingsPage() {
                   <input
                     type="checkbox"
                     checked={profile.privacy.profile_public}
-                    onChange={(e) => setProfile({
-                      ...profile,
-                      privacy: { ...profile.privacy, profile_public: e.target.checked }
-                    })}
+                    onChange={async (e) => {
+                      const newProfile = {
+                        ...profile,
+                        privacy: { ...profile.privacy, profile_public: e.target.checked }
+                      };
+                      setProfile(newProfile);
+                      await updateProfile(newProfile);
+                    }}
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-purple-600"></div>
                 </label>
               </motion.label>
 
-              <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-all border border-gray-700 hover:border-gray-600"
+              >
                 <div>
                   <span className="text-white font-medium">Show Earnings</span>
                   <p className="text-responsive-xs text-gray-400 mt-1">Display your earnings on your profile</p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={profile.privacy.show_earnings}
-                  onChange={(e) => setProfile({
-                    ...profile,
-                    privacy: { ...profile.privacy, show_earnings: e.target.checked }
-                  })}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-              </label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={profile.privacy.show_earnings}
+                    onChange={async (e) => {
+                      const newProfile = {
+                        ...profile,
+                        privacy: { ...profile.privacy, show_earnings: e.target.checked }
+                      };
+                      setProfile(newProfile);
+                      await updateProfile(newProfile);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-purple-600"></div>
+                </label>
+              </motion.label>
 
-              <label className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-colors">
+              <motion.label 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-all border border-gray-700 hover:border-gray-600"
+              >
                 <div>
                   <span className="text-white font-medium">Show Trends</span>
                   <p className="text-responsive-xs text-gray-400 mt-1">Let others see your submitted trends</p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={profile.privacy.show_trends}
-                  onChange={(e) => setProfile({
-                    ...profile,
-                    privacy: { ...profile.privacy, show_trends: e.target.checked }
-                  })}
-                  className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                />
-              </label>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={profile.privacy.show_trends}
+                    onChange={async (e) => {
+                      const newProfile = {
+                        ...profile,
+                        privacy: { ...profile.privacy, show_trends: e.target.checked }
+                      };
+                      setProfile(newProfile);
+                      await updateProfile(newProfile);
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-purple-500 peer-checked:to-purple-600"></div>
+                </label>
+              </motion.label>
             </div>
           </motion.div>
         )}

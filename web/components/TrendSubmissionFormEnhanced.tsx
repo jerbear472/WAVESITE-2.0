@@ -117,6 +117,8 @@ const moodOptions = [
   'Rebellious 🤘',
   'Cozy 🧸',
   'Chaotic 🌪️',
+  'Corporate 💼',
+  'Calm 🧘',
   'Fancy 🍸',
   'Ironic 💀'
 ];

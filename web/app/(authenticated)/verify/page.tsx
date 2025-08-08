@@ -23,6 +23,7 @@ import {
   Coins,
   CheckCircle2
 } from 'lucide-react';
+import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
 
 interface TrendToVerify {
   id: string;
@@ -195,7 +196,7 @@ export default function CleanVerifyPage() {
 
       setStats({
         verified_today: validations?.length || 0,
-        earnings_today: parseFloat(((validations?.length || 0) * 0.01).toFixed(2)),
+        earnings_today: parseFloat(((validations?.length || 0) * EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION).toFixed(2)),
         remaining_today: rateLimit?.[0]?.validations_remaining_today || 100,
         remaining_hour: rateLimit?.[0]?.validations_remaining_hour || 20
       });
@@ -243,12 +244,12 @@ export default function CleanVerifyPage() {
         });
 
       // Update session earnings for this vote
-      setSessionEarnings(prev => prev + 0.01);
+      setSessionEarnings(prev => prev + EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION);
       setConsecutiveVerifies(prev => prev + 1);
       
       // Show earnings animation
       setShowEarningsAnimation(true);
-      setTimeout(() => setShowEarningsAnimation(false), 2000);
+      setTimeout(() => setShowEarningsAnimation(false), 3000);
       
       // Refresh user earnings in profile (for navigation display)
       try {
@@ -392,10 +393,10 @@ export default function CleanVerifyPage() {
               <motion.div
                 className="bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-lg flex items-center gap-2 border border-green-200"
                 animate={showEarningsAnimation ? {
-                  scale: [1, 1.05, 1],
+                  scale: [1, 1.02, 1],
                   borderColor: ['#86efac', '#22c55e', '#86efac']
                 } : {}}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 1.0 }}
               >
                 <DollarSign className="w-5 h-5 text-green-600" />
                 <div className="flex flex-col items-start">
@@ -496,18 +497,18 @@ export default function CleanVerifyPage() {
       <AnimatePresence>
         {showEarningsAnimation && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: -20 }}
-            className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
+            initial={{ opacity: 0, x: -50, scale: 0.8 }}
+            animate={{ opacity: 0.9, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -50, scale: 0.8 }}
+            className="fixed bottom-6 left-6 z-50 pointer-events-none"
           >
-            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-              <Coins className="w-6 h-6 animate-pulse" />
+            <div className="bg-green-500/80 backdrop-blur-sm text-white px-3 py-2 rounded-lg shadow-sm flex items-center gap-2 text-sm">
+              <Coins className="w-4 h-4" />
               <div className="flex flex-col">
-                <span className="font-bold text-xl">+$0.01 Earned!</span>
+                <span className="font-medium">+${EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION.toFixed(2)} Earned!</span>
                 {consecutiveVerifies >= 3 && (
-                  <span className="text-sm opacity-90">
-                    {consecutiveVerifies} in a row! Keep going! 🔥
+                  <span className="text-xs opacity-90">
+                    {consecutiveVerifies} in a row!
                   </span>
                 )}
               </div>

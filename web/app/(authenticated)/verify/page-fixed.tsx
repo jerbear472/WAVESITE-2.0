@@ -23,6 +23,7 @@ import {
   Coins,
   CheckCircle2
 } from 'lucide-react';
+import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
 
 interface TrendToVerify {
   id: string;
@@ -197,7 +198,7 @@ export default function CleanVerifyPage() {
 
       setStats({
         verified_today: validations?.length || 0,
-        earnings_today: (validations?.length || 0) * 0.01,
+        earnings_today: parseFloat(((validations?.length || 0) * EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION).toFixed(2)),
         remaining_today: rateLimit?.[0]?.validations_remaining_today || 100,
         remaining_hour: rateLimit?.[0]?.validations_remaining_hour || 20
       });
@@ -248,14 +249,14 @@ export default function CleanVerifyPage() {
       setStats(prev => ({
         ...prev,
         verified_today: prev.verified_today + 1,
-        earnings_today: prev.earnings_today + 0.01
+        earnings_today: prev.earnings_today + EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION
       }));
-      setSessionEarnings(prev => prev + 0.01);
+      setSessionEarnings(prev => prev + EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION);
       setConsecutiveVerifies(prev => prev + 1);
       
       // Show earnings animation
       setShowEarningsAnimation(true);
-      setTimeout(() => setShowEarningsAnimation(false), 2000);
+      setTimeout(() => setShowEarningsAnimation(false), 3000);
       
       await loadStats();
       nextTrend();
@@ -389,10 +390,10 @@ export default function CleanVerifyPage() {
               <motion.div
                 className="bg-green-50 px-3 py-1.5 rounded-lg flex items-center gap-2"
                 animate={showEarningsAnimation ? {
-                  scale: [1, 1.1, 1],
+                  scale: [1, 1.02, 1],
                   backgroundColor: ['#f0fdf4', '#86efac', '#f0fdf4']
                 } : {}}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 1.0 }}
               >
                 <DollarSign className="w-4 h-4 text-green-600" />
                 <span className="font-bold text-green-700">
@@ -491,16 +492,16 @@ export default function CleanVerifyPage() {
       <AnimatePresence>
         {showEarningsAnimation && (
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
+            initial={{ opacity: 0, x: -50, scale: 0.8 }}
+            animate={{ opacity: 0.9, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -50, scale: 0.8 }}
+            className="fixed bottom-6 left-6 z-50 pointer-events-none"
           >
-            <div className="bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
-              <Coins className="w-5 h-5" />
-              <span className="font-bold text-lg">+$0.01</span>
+            <div className="bg-green-500/80 backdrop-blur-sm text-white px-3 py-2 rounded-lg shadow-sm flex items-center gap-2 text-sm">
+              <Coins className="w-4 h-4" />
+              <span className="font-medium">+${EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION.toFixed(2)}</span>
               {consecutiveVerifies >= 5 && (
-                <span className="text-sm bg-green-600 px-2 py-0.5 rounded-full">
+                <span className="text-xs bg-green-600/60 px-1.5 py-0.5 rounded">
                   {consecutiveVerifies} streak!
                 </span>
               )}
@@ -521,7 +522,7 @@ export default function CleanVerifyPage() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-green-600">Verified:</span>
-                  <span className="font-bold text-green-700">{Math.floor(sessionEarnings / 0.01)}</span>
+                  <span className="font-bold text-green-700">{Math.floor(sessionEarnings / EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-green-600">Earned:</span>

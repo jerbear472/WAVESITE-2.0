@@ -15,7 +15,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/formatters';
-import { EARNINGS } from '@/lib/constants';
+import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
 
 interface Session {
   id: string;
@@ -90,7 +90,7 @@ export const EarningsDashboard: React.FC = () => {
 
       // Calculate total earnings
       const sessionEarnings = sessions.reduce((sum, s) => sum + s.total_earnings, 0);
-      const verificationEarnings = (verificationsCount || 0) * EARNINGS.VERIFICATION_REWARD;
+      const verificationEarnings = (verificationsCount || 0) * EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION;
       setTotalEarnings(sessionEarnings + verificationEarnings);
 
       // Calculate stats
