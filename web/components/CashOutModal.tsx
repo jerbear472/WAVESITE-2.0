@@ -6,6 +6,7 @@ import { X as XIcon, DollarSign as DollarSignIcon, AlertCircle as AlertCircleIco
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/formatters';
 import { EARNINGS } from '@/lib/constants';
+import SimpleLoader from '@/components/SimpleLoader';
 
 interface CashOutModalProps {
   isOpen: boolean;
@@ -215,7 +216,7 @@ export default function CashOutModal({ isOpen, onClose, availableBalance, onSucc
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                          <SimpleLoader size="small" />
                           Processing...
                         </>
                       ) : (

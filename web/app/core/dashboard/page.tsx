@@ -13,6 +13,7 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import WaveSightLogo from '@/components/WaveSightLogo';
+import SimpleLoader from '@/components/SimpleLoader';
 
 interface CoreTrend {
   id: string;
@@ -209,15 +210,13 @@ export default function CoreDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
-        <motion.div className="text-center">
+        <div className="text-center">
           <WaveSightLogo size="lg" showText={true} />
-          <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-12 h-12 border-t-2 border-blue-500 rounded-full mx-auto mt-6"
-          />
+          <div className="mt-6">
+            <SimpleLoader size="large" />
+          </div>
           <p className="text-gray-600 mt-4">Loading Core Dashboard...</p>
-        </motion.div>
+        </div>
       </div>
     );
   }

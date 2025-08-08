@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import SimpleLoader from '@/components/SimpleLoader';
 
 interface TrendData {
   id: string;
@@ -95,7 +96,11 @@ export default function ProfessionalDashboard() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <SimpleLoader size="large" />
+      </div>
+    );
   }
 
   return (

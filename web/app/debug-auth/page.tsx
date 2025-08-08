@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import SimpleLoader from '@/components/SimpleLoader';
 
 export default function DebugAuth() {
   const [email, setEmail] = useState('');
@@ -136,7 +137,11 @@ export default function DebugAuth() {
         </button>
       </div>
       
-      {loading && <p>Loading...</p>}
+      {loading && (
+        <div className="flex justify-center py-4">
+          <SimpleLoader />
+        </div>
+      )}
       
       {result && (
         <div className="mt-8 p-4 bg-gray-100 rounded">

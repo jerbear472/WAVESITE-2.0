@@ -238,6 +238,15 @@
     }
   }
   
+  @keyframes wave-loading {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
   .animate-fade-in {
     animation: fade-in 0.5s ease-out;
   }
@@ -248,6 +257,19 @@
   
   .animate-slide-up {
     animation: slide-up 0.3s ease-out;
+  }
+  
+  .animate-wave-loading {
+    animation: wave-loading 1s linear infinite;
+  }
+  
+  .wave-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(59, 130, 246, 0.2);
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3), inset 0 0 10px rgba(59, 130, 246, 0.1);
   }
   
   /* Focus styles */

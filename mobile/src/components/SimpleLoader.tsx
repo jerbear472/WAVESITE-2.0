@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import {
   View,
   StyleSheet,
+  ViewStyle,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -11,14 +12,16 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
-interface AnimatedLoaderProps {
+interface SimpleLoaderProps {
   size?: 'small' | 'medium' | 'large';
   color?: string;
+  style?: ViewStyle;
 }
 
-export const AnimatedLoader: React.FC<AnimatedLoaderProps> = ({
+export const SimpleLoader: React.FC<SimpleLoaderProps> = ({
   size = 'medium',
   color = '#3b82f6',
+  style,
 }) => {
   const rotation = useSharedValue(0);
 
@@ -52,7 +55,7 @@ export const AnimatedLoader: React.FC<AnimatedLoaderProps> = ({
   const loaderBorderWidth = borderWidth[size];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <Animated.View
         style={[
           styles.loader,
@@ -69,7 +72,6 @@ export const AnimatedLoader: React.FC<AnimatedLoaderProps> = ({
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -88,3 +90,5 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 });
+
+export default SimpleLoader;

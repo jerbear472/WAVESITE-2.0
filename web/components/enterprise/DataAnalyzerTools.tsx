@@ -8,6 +8,7 @@ import {
   Play, Settings, FileText, Download, AlertCircle, Clock,
   Search, Filter, Hash, MessageSquare, Eye, PieChart
 } from 'lucide-react';
+import SimpleLoader from '@/components/SimpleLoader';
 
 interface AnalyzerTool {
   id: string;
@@ -369,7 +370,7 @@ export function DataAnalyzerTools() {
                       >
                         {isRunning === tool.id ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+                            <SimpleLoader size="small" />
                             <span>Running...</span>
                           </>
                         ) : (

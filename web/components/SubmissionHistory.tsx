@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/formatters';
+import SimpleLoader from '@/components/SimpleLoader';
 import {
   Clock as ClockIcon,
   Check as CheckIcon,
@@ -216,7 +217,7 @@ export default function SubmissionHistory() {
       <div className="space-y-3">
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-wave-400 mx-auto"></div>
+            <SimpleLoader />
           </div>
         ) : submissions.length === 0 ? (
           <div className="text-center py-8">
