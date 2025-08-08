@@ -517,8 +517,8 @@ export default function Dashboard() {
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
-            <Link href="/submit" className="btn-primary">
-              Submit Trend
+            <Link href="/scroll" className="btn-primary">
+              Submit New Trend
             </Link>
           </div>
         </div>

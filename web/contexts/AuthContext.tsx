@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fetch user profile when signed in
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, created_at, updated_at')
           .eq('id', session.user.id)
           .single();
           
@@ -96,8 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userStats = {};
           }
           
-          // Check if user is admin
-          const isAdmin = profile.email === 'jeremyuys@gmail.com' || profile.email === 'enterprise@test.com';
+          // Check if user is admin from database field
+          const isAdmin = profile.is_admin === true;
           
           // Get account type
           const { data: accountSettings } = await supabase
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Get user profile from database
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, created_at, updated_at')
           .eq('id', session.user.id)
           .single();
 
@@ -164,8 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userStats = {};
           }
           
-          // Check if user is admin
-          const isAdmin = profile.email === 'jeremyuys@gmail.com' || profile.email === 'enterprise@test.com';
+          // Check if user is admin from database field
+          const isAdmin = profile.is_admin === true;
           
           // Get account type
           const { data: accountSettings } = await supabase
@@ -239,7 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (authData.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, created_at, updated_at')
           .eq('id', authData.user.id)
           .single();
 
@@ -250,8 +250,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (profile) {
           console.log('User profile found:', profile);
           
-          // Check if user is admin
-          const isAdmin = profile.email === 'jeremyuys@gmail.com' || profile.email === 'enterprise@test.com';
+          // Check if user is admin from database field
+          const isAdmin = profile.is_admin === true;
           
           // Get account type
           const { data: accountSettings } = await supabase
@@ -325,7 +325,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // First check if profile already exists
         const { data: existingProfile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, created_at, updated_at')
           .eq('id', authData.user.id)
           .single();
 

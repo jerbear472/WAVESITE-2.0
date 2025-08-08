@@ -138,12 +138,19 @@ export default function CleanVerifyPage() {
       
       console.log(`Loading trends - excluding ${excludeIds.length} already processed trends`);
 
-      const { data: trendsData } = await supabase
+      // Build query properly for excluding IDs
+      let query = supabase
         .from('trend_submissions')
         .select('*')
-        .in('status', ['submitted', 'validating'])
-        .neq('spotter_id', user.id) // Exclude user's own trends
-        .not('id', 'in', excludeIds.length > 0 ? `(${excludeIds.join(',')})` : '()')
+        .in('status', ['submitted', 'validating']) // Only valid enum values
+        .neq('spotter_id', user.id); // Exclude user's own trends
+      
+      // Only add the NOT IN clause if we have IDs to exclude
+      if (excludeIds.length > 0) {
+        query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+      }
+      
+      const { data: trendsData } = await query
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -259,11 +266,12 @@ export default function CleanVerifyPage() {
       return;
     }
 
+    const trendId = trends[currentIndex].id;
+
     if (vote === 'skip') {
       // Track skipped trends in localStorage so they don't appear again today
       const skippedKey = `skipped_trends_${user?.id}_${new Date().toDateString()}`;
       const existingSkipped = JSON.parse(localStorage.getItem(skippedKey) || '[]');
-      const trendId = trends[currentIndex].id;
       
       if (!existingSkipped.includes(trendId)) {
         existingSkipped.push(trendId);
@@ -277,15 +285,34 @@ export default function CleanVerifyPage() {
 
     setVerifying(true);
     try {
-      await supabase
+      // Check if user has already voted on this trend (double-check)
+      const { data: existingVote } = await supabase
+        .from('trend_validations')
+        .select('id')
+        .eq('trend_submission_id', trendId)
+        .eq('validator_id', user?.id)
+        .single();
+      
+      if (existingVote) {
+        console.warn('User has already voted on this trend');
+        nextTrend();
+        return;
+      }
+
+      // Insert the validation
+      const { error: insertError } = await supabase
         .from('trend_validations')
         .insert({
-          trend_submission_id: trends[currentIndex].id,
+          trend_submission_id: trendId,
           validator_id: user?.id,
           vote,
           confidence_score: 0.75,
           created_at: new Date().toISOString()
         });
+
+      if (insertError) {
+        throw insertError;
+      }
 
       // Update session earnings for this vote
       setSessionEarnings(prev => prev + EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION);
@@ -306,7 +333,14 @@ export default function CleanVerifyPage() {
       
       // Reload stats from database to ensure accuracy
       await loadStats();
-      nextTrend();
+      
+      // Remove the voted trend from the current list to prevent re-showing
+      setTrends(prev => prev.filter(t => t.id !== trendId));
+      
+      // If we removed the last trend, don't increment index
+      if (currentIndex >= trends.length - 1) {
+        setCurrentIndex(trends.length - 1);
+      }
     } catch (error) {
       console.error('Error submitting vote:', error);
       alert('Failed to submit vote. Please try again.');
