@@ -1,31 +1,31 @@
 // Centralized earnings configuration for consistency across the app
 export const EARNINGS_CONFIG = {
-  // Base payment for submitting a trend
-  BASE_PAYMENT: 0.08,
+  // Base payment for submitting a trend - INCREASED to attract participation
+  BASE_PAYMENT: 0.50,
   
-  // Bonus amounts for various criteria
+  // Bonus amounts for various criteria - INCREASED across the board
   BONUSES: {
     // Content quality bonuses
-    COMPLETE_INFO: 0.01,        // Has both title and explanation
-    SCREENSHOT: 0.02,           // Includes screenshot
-    DEMOGRAPHICS: 0.01,         // Includes age ranges
-    SUBCULTURES: 0.01,          // Includes subcultures
-    OTHER_PLATFORMS: 0.01,      // Seen on multiple platforms
+    COMPLETE_INFO: 0.10,        // Has both title and explanation
+    SCREENSHOT: 0.15,           // Includes screenshot
+    DEMOGRAPHICS: 0.10,         // Includes age ranges
+    SUBCULTURES: 0.10,          // Includes subcultures
+    OTHER_PLATFORMS: 0.10,      // Seen on multiple platforms
     
     // Engagement bonuses
-    HIGH_VIEWS: 0.02,           // Views > 100k
-    VIRAL_CONTENT: 0.03,        // Views > 1M
-    HIGH_ENGAGEMENT: 0.02,      // High likes/comments ratio
+    HIGH_VIEWS: 0.25,           // Views > 100k
+    VIRAL_CONTENT: 0.50,        // Views > 1M
+    HIGH_ENGAGEMENT: 0.20,      // High likes/comments ratio
     
     // Metadata bonuses
-    CREATOR_INFO: 0.01,         // Has creator handle
-    RICH_HASHTAGS: 0.01,        // Has 3+ hashtags
-    CAPTION_PROVIDED: 0.01,     // Has post caption
+    CREATOR_INFO: 0.05,         // Has creator handle
+    RICH_HASHTAGS: 0.05,        // Has 3+ hashtags
+    CAPTION_PROVIDED: 0.05,     // Has post caption
     
     // Special category bonuses
-    FINANCE_TREND: 0.03,        // Finance/stock/crypto related
-    HIGH_WAVE_SCORE: 0.02,      // Wave score > 70
-    TRENDING_CATEGORY: 0.01,    // In a trending category
+    FINANCE_TREND: 0.25,        // Finance/stock/crypto related - higher reward
+    HIGH_WAVE_SCORE: 0.20,      // Wave score > 70
+    TRENDING_CATEGORY: 0.10,    // In a trending category
   },
   
   // Streak multipliers (applied to final amount)
@@ -41,16 +41,16 @@ export const EARNINGS_CONFIG = {
   // Time windows
   STREAK_WINDOW: 5 * 60 * 1000, // 5 minutes to maintain streak
   
-  // Validation rewards (for verify page)
+  // Validation rewards (for verify page) - INCREASED
   VALIDATION_REWARDS: {
-    CORRECT_VALIDATION: 0.02,    // Correctly validating a trend
-    CONSENSUS_BONUS: 0.01,       // Agreeing with majority
-    SPEED_BONUS: 0.005,          // Quick validation (< 5 seconds)
+    CORRECT_VALIDATION: 0.10,    // Correctly validating a trend
+    CONSENSUS_BONUS: 0.05,       // Agreeing with majority
+    SPEED_BONUS: 0.02,           // Quick validation (< 5 seconds)
   },
   
-  // Maximum earnings caps
-  MAX_SINGLE_SUBMISSION: 0.50,  // Max for a single submission
-  MAX_DAILY_EARNINGS: 10.00,    // Max daily earnings
+  // Maximum earnings caps - INCREASED
+  MAX_SINGLE_SUBMISSION: 3.00,  // Max for a single submission
+  MAX_DAILY_EARNINGS: 50.00,    // Max daily earnings
 };
 
 // Helper function to calculate earnings for a trend submission
