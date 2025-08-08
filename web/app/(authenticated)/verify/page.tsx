@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -75,6 +75,8 @@ export default function CleanVerifyPage() {
 
   // Keyboard shortcuts
   useEffect(() => {
+    if (!currentTrend || verifying) return;
+    
     const handleKeyPress = (e: KeyboardEvent) => {
       if (verifying || !currentTrend || stats.remaining_hour === 0) return;
       
@@ -96,7 +98,7 @@ export default function CleanVerifyPage() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentTrend, verifying, stats.remaining_hour]);
+  }, [currentTrend, verifying, stats.remaining_hour, trends, currentIndex, user]);
 
   const loadTrends = async () => {
     try {
@@ -175,6 +177,11 @@ export default function CleanVerifyPage() {
   const handleVote = async (vote: 'verify' | 'reject' | 'skip') => {
     if (vote === 'skip') {
       nextTrend();
+      return;
+    }
+
+    if (!trends[currentIndex]) {
+      console.error('No trend available to vote on');
       return;
     }
 
