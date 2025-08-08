@@ -19,84 +19,91 @@ BEGIN
   SELECT 
     -- Total approved earnings
     COALESCE((
-      SELECT SUM(amount) 
-      FROM public.user_earnings 
-      WHERE user_id = p_user_id AND status = 'approved'
-    ), 0.00)::DECIMAL(10,2) as total_earnings,
+      SELECT SUM(ue.amount) 
+      FROM public.user_earnings ue
+      WHERE ue.user_id = p_user_id AND ue.status = 'approved'
+    ), 0.00)::DECIMAL(10,2),
     
     -- Pending earnings
     COALESCE((
-      SELECT SUM(amount) 
-      FROM public.user_earnings 
-      WHERE user_id = p_user_id AND status = 'pending'
-    ), 0.00)::DECIMAL(10,2) as pending_earnings,
+      SELECT SUM(ue2.amount) 
+      FROM public.user_earnings ue2
+      WHERE ue2.user_id = p_user_id AND ue2.status = 'pending'
+    ), 0.00)::DECIMAL(10,2),
     
     -- Total trends submitted
     COALESCE((
       SELECT COUNT(*) 
-      FROM public.trend_submissions 
-      WHERE spotter_id = p_user_id
-    ), 0)::INTEGER as trends_spotted,
+      FROM public.trend_submissions ts
+      WHERE ts.spotter_id = p_user_id
+    ), 0)::INTEGER,
     
     -- Verified trends (approved status)
     COALESCE((
       SELECT COUNT(*) 
-      FROM public.trend_submissions 
-      WHERE spotter_id = p_user_id 
-      AND status IN ('approved', 'viral')
-    ), 0)::INTEGER as trends_verified,
+      FROM public.trend_submissions ts2
+      WHERE ts2.spotter_id = p_user_id 
+      AND ts2.status IN ('approved', 'viral')
+    ), 0)::INTEGER,
     
     -- Scroll sessions (if table exists)
     COALESCE((
       SELECT COUNT(*) 
-      FROM public.scroll_sessions 
-      WHERE user_id = p_user_id
-    ), 0)::INTEGER as scroll_sessions_count,
+      FROM public.scroll_sessions ss
+      WHERE ss.user_id = p_user_id
+    ), 0)::INTEGER,
     
-    -- Accuracy score (percentage of approved trends)
+    -- Accuracy score (percentage of approved trends using validation_status if available, fallback to status)
     CASE 
-      WHEN (SELECT COUNT(*) FROM public.trend_submissions WHERE spotter_id = p_user_id) > 0 
+      WHEN (SELECT COUNT(*) FROM public.trend_submissions ts3 WHERE ts3.spotter_id = p_user_id) > 0 
       THEN (
-        (SELECT COUNT(*) FROM public.trend_submissions WHERE spotter_id = p_user_id AND status IN ('approved', 'viral'))::DECIMAL * 100 / 
-        (SELECT COUNT(*) FROM public.trend_submissions WHERE spotter_id = p_user_id)
+        (SELECT COUNT(*) 
+         FROM public.trend_submissions ts4
+         WHERE ts4.spotter_id = p_user_id 
+         AND (
+           (ts4.validation_status = 'approved') OR 
+           (ts4.validation_status IS NULL AND ts4.status IN ('approved', 'viral'))
+         )
+        )::DECIMAL * 100 / 
+        (SELECT COUNT(*) FROM public.trend_submissions ts5 WHERE ts5.spotter_id = p_user_id)
       )::DECIMAL(5,2)
       ELSE 0.00
-    END as accuracy_score,
+    END,
     
     -- Current streak (simplified - days with submissions)
     COALESCE((
-      SELECT COUNT(DISTINCT DATE(created_at))
-      FROM public.trend_submissions
-      WHERE spotter_id = p_user_id
-      AND created_at >= CURRENT_DATE - INTERVAL '7 days'
-    ), 0)::INTEGER as current_streak,
+      SELECT COUNT(DISTINCT DATE(ts6.created_at))
+      FROM public.trend_submissions ts6
+      WHERE ts6.spotter_id = p_user_id
+      AND ts6.created_at >= CURRENT_DATE - INTERVAL '7 days'
+    ), 0)::INTEGER,
     
     -- Earnings today
     COALESCE((
-      SELECT SUM(amount) 
-      FROM public.user_earnings 
-      WHERE user_id = p_user_id 
-      AND status = 'approved'
-      AND DATE(created_at) = CURRENT_DATE
-    ), 0.00)::DECIMAL(10,2) as earnings_today,
+      SELECT SUM(ue3.amount) 
+      FROM public.user_earnings ue3
+      WHERE ue3.user_id = p_user_id 
+      AND ue3.status = 'approved'
+      AND DATE(ue3.created_at) = CURRENT_DATE
+    ), 0.00)::DECIMAL(10,2),
     
     -- Earnings this week
     COALESCE((
-      SELECT SUM(amount) 
-      FROM public.user_earnings 
-      WHERE user_id = p_user_id 
-      AND status = 'approved'
-      AND created_at >= date_trunc('week', CURRENT_DATE)
-    ), 0.00)::DECIMAL(10,2) as earnings_this_week,
+      SELECT SUM(ue4.amount) 
+      FROM public.user_earnings ue4
+      WHERE ue4.user_id = p_user_id 
+      AND ue4.status = 'approved'
+      AND ue4.created_at >= date_trunc('week', CURRENT_DATE)
+    ), 0.00)::DECIMAL(10,2),
     
     -- Earnings this month
     COALESCE((
-      SELECT SUM(amount) 
-      FROM public.user_earnings 
-      WHERE user_id = p_user_id 
-      AND status = 'approved'
-      AND created_at >= date_trunc('month', CURRENT_DATE)
-    ), 0.00)::DECIMAL(10,2) as earnings_this_month;
+      SELECT SUM(ue5.amount) 
+      FROM public.user_earnings ue5
+      WHERE ue5.user_id = p_user_id 
+      AND ue5.status = 'approved'
+      AND ue5.created_at >= date_trunc('month', CURRENT_DATE)
+    ), 0.00)::DECIMAL(10,2);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

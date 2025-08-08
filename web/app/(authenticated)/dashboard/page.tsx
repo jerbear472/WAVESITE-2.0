@@ -160,16 +160,110 @@ export default function Dashboard() {
 
   const fetchDashboardStats = async () => {
     try {
+      // Try the RPC function first, but fallback to manual calculation if it fails
       const { data: statsData, error: statsError } = await supabase
         .rpc('get_user_dashboard_stats', { p_user_id: user?.id });
 
-      if (statsError) throw statsError;
-
-      if (statsData && statsData.length > 0) {
+      if (statsError) {
+        console.log('RPC function failed, calculating stats manually:', statsError.message);
+        await calculateStatsManually();
+      } else if (statsData && statsData.length > 0) {
         setStats(statsData[0]);
       }
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('Error fetching stats, falling back to manual calculation:', error);
+      await calculateStatsManually();
+    }
+  };
+
+  const calculateStatsManually = async () => {
+    try {
+      // Get user's trends for accuracy calculation
+      const { data: userTrends, error: trendsError } = await supabase
+        .from('trend_submissions')
+        .select('*')
+        .eq('spotter_id', user?.id);
+
+      if (trendsError) {
+        console.error('Error fetching user trends:', trendsError);
+        return;
+      }
+
+      // Get user's earnings
+      const { data: userEarnings, error: earningsError } = await supabase
+        .from('user_earnings')
+        .select('*')
+        .eq('user_id', user?.id);
+
+      if (earningsError) {
+        console.error('Error fetching user earnings:', earningsError);
+        return;
+      }
+
+      // Calculate accuracy rate: % of trends that get approved
+      const totalTrends = userTrends?.length || 0;
+      const approvedTrends = userTrends?.filter(trend => {
+        // Check validation_status first, then fallback to status
+        if (trend.validation_status === 'approved') return true;
+        if (trend.validation_status === null && ['approved', 'viral'].includes(trend.status)) return true;
+        return false;
+      }).length || 0;
+      
+      const accuracyScore = totalTrends > 0 ? ((approvedTrends / totalTrends) * 100) : 0;
+
+      // Calculate other stats
+      const approvedEarnings = userEarnings?.filter(e => e.status === 'approved') || [];
+      const pendingEarnings = userEarnings?.filter(e => e.status === 'pending') || [];
+      
+      const totalEarnings = approvedEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const pendingAmount = pendingEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      // Earnings today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const earningsToday = approvedEarnings
+        .filter(e => new Date(e.created_at) >= today)
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      // Earnings this week  
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const earningsThisWeek = approvedEarnings
+        .filter(e => new Date(e.created_at) >= weekStart)
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      // Earnings this month
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const earningsThisMonth = approvedEarnings
+        .filter(e => new Date(e.created_at) >= monthStart)
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      // Current streak (simplified)
+      const last7Days = new Date();
+      last7Days.setDate(last7Days.getDate() - 7);
+      const recentTrends = userTrends?.filter(t => new Date(t.created_at) >= last7Days) || [];
+      const uniqueDays = new Set(recentTrends.map(t => new Date(t.created_at).toDateString())).size;
+
+      setStats({
+        total_earnings: totalEarnings,
+        pending_earnings: pendingAmount,
+        trends_spotted: totalTrends,
+        trends_verified: approvedTrends,
+        scroll_sessions_count: 0, // Would need scroll_sessions table
+        accuracy_score: Math.round(accuracyScore * 100) / 100, // Round to 2 decimals
+        current_streak: uniqueDays,
+        earnings_today: earningsToday,
+        earnings_this_week: earningsThisWeek,
+        earnings_this_month: earningsThisMonth,
+        total_cashed_out: 0 // Would need additional tracking
+      });
+
+      console.log(`Calculated accuracy rate: ${accuracyScore.toFixed(2)}% (${approvedTrends}/${totalTrends} trends approved)`);
+    } catch (error) {
+      console.error('Error in manual stats calculation:', error);
     }
   };
 
