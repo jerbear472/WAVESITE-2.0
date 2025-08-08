@@ -42,11 +42,11 @@ export const EARNINGS_CONFIG = {
   // Time windows
   STREAK_WINDOW: 5 * 60 * 1000, // 5 minutes to maintain streak
   
-  // Validation rewards (for verify page) - INCREASED
+  // Validation rewards (for verify page)
   VALIDATION_REWARDS: {
-    CORRECT_VALIDATION: 0.10,    // Correctly validating a trend
-    CONSENSUS_BONUS: 0.05,       // Agreeing with majority
-    SPEED_BONUS: 0.02,           // Quick validation (< 5 seconds)
+    CORRECT_VALIDATION: 0.01,    // 1 cent for validating a trend
+    CONSENSUS_BONUS: 0.005,      // Half cent for agreeing with majority
+    SPEED_BONUS: 0.005,          // Half cent for quick validation (< 5 seconds)
   },
   
   // Maximum earnings caps - INCREASED
