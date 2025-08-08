@@ -299,7 +299,7 @@ export default function CleanVerifyPage() {
         return;
       }
 
-      // Insert the validation
+      // Insert the validation using RPC function to avoid recursion
       console.log('Submitting vote:', {
         trend_submission_id: trendId,
         validator_id: user?.id,
@@ -307,24 +307,39 @@ export default function CleanVerifyPage() {
         confidence_score: 0.75
       });
 
-      const { data: insertData, error: insertError } = await supabase
-        .from('trend_validations')
-        .insert({
-          trend_submission_id: trendId,
-          validator_id: user?.id,
-          vote,
-          confidence_score: 0.75,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      // First try the RPC function (avoids recursion issues)
+      const { data: rpcResult, error: rpcError } = await supabase
+        .rpc('submit_trend_validation', {
+          p_trend_id: trendId,
+          p_vote: vote,
+          p_confidence: 0.75
+        });
 
-      if (insertError) {
-        console.error('Vote submission error:', insertError);
-        throw insertError;
+      if (rpcError || (rpcResult && !rpcResult.success)) {
+        // If RPC fails, try direct insert as fallback
+        console.log('RPC failed, trying direct insert:', rpcError || rpcResult?.error);
+        
+        const { data: insertData, error: insertError } = await supabase
+          .from('trend_validations')
+          .insert({
+            trend_submission_id: trendId,
+            validator_id: user?.id,
+            vote,
+            confidence_score: 0.75,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Vote submission error:', insertError);
+          throw insertError;
+        }
+
+        console.log('Vote submitted successfully via direct insert:', insertData);
+      } else {
+        console.log('Vote submitted successfully via RPC:', rpcResult);
       }
-
-      console.log('Vote submitted successfully:', insertData);
 
       // Update session earnings for this vote
       setSessionEarnings(prev => prev + EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION);
@@ -367,7 +382,10 @@ export default function CleanVerifyPage() {
       // Provide more specific error messages
       let errorMessage = 'Failed to submit vote. ';
       
-      if (error?.message?.includes('duplicate')) {
+      if (error?.message?.includes('recursion')) {
+        errorMessage = 'Database policy error detected. Please refresh the page and try again. If the issue persists, contact support.';
+        console.error('RECURSION ERROR - RLS policies need to be fixed');
+      } else if (error?.message?.includes('duplicate')) {
         errorMessage = 'You have already voted on this trend.';
       } else if (error?.message?.includes('violates foreign key')) {
         errorMessage = 'Invalid trend or user ID. Please refresh the page.';
@@ -375,6 +393,10 @@ export default function CleanVerifyPage() {
         errorMessage = 'You do not have permission to vote. Please ensure you are logged in.';
       } else if (error?.code === '23505') {
         errorMessage = 'You have already voted on this trend.';
+      } else if (error?.message?.includes('already voted')) {
+        errorMessage = 'You have already voted on this trend.';
+      } else if (error?.message?.includes('own trend')) {
+        errorMessage = 'You cannot vote on your own trend.';
       } else {
         errorMessage += error?.message || 'Please try again.';
       }
