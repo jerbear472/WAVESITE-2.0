@@ -79,39 +79,54 @@ export const SpotterTierDisplay: React.FC<Props> = ({
   if (compact) {
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2 }}
         className="relative"
       >
         <button
           onClick={() => setShowTooltip(!showTooltip)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/50 border ${
-            metrics.currentTier === 'elite' ? 'border-yellow-500/30' :
-            metrics.currentTier === 'verified' ? 'border-green-500/30' :
-            metrics.currentTier === 'learning' ? 'border-blue-500/30' :
-            'border-orange-500/30'
+          className={`flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white shadow-sm border-2 transition-all duration-200 hover:shadow-md hover:scale-105 ${
+            metrics.currentTier === 'elite' ? 'border-yellow-400 hover:border-yellow-500 bg-gradient-to-r from-yellow-50 to-orange-50' :
+            metrics.currentTier === 'verified' ? 'border-green-400 hover:border-green-500 bg-gradient-to-r from-green-50 to-emerald-50' :
+            metrics.currentTier === 'learning' ? 'border-blue-400 hover:border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50' :
+            'border-orange-400 hover:border-orange-500 bg-gradient-to-r from-orange-50 to-red-50'
           }`}
         >
-          <span className="text-lg">{tierDisplay.badge}</span>
-          <span className={`text-sm font-medium ${tierDisplay.color}`}>
-            {tierDisplay.name}
-          </span>
-          {metrics.paymentMultiplier !== 1 && (
-            <span className="text-xs text-gray-400">
-              {metrics.paymentMultiplier}x
+          <span className="text-xl filter drop-shadow-sm">{tierDisplay.badge}</span>
+          <div className="flex flex-col items-start">
+            <span className={`text-sm font-semibold leading-none ${
+              metrics.currentTier === 'elite' ? 'text-yellow-700' :
+              metrics.currentTier === 'verified' ? 'text-green-700' :
+              metrics.currentTier === 'learning' ? 'text-blue-700' :
+              'text-orange-700'
+            }`}>
+              {tierDisplay.name}
             </span>
-          )}
+            {metrics.paymentMultiplier !== 1 && (
+              <span className="text-xs text-gray-500 leading-none mt-0.5">
+                {metrics.paymentMultiplier}x multiplier
+              </span>
+            )}
+          </div>
+          <div className={`ml-1 w-2 h-2 rounded-full ${
+            metrics.currentTier === 'elite' ? 'bg-yellow-400 animate-pulse' :
+            metrics.currentTier === 'verified' ? 'bg-green-400' :
+            metrics.currentTier === 'learning' ? 'bg-blue-400' :
+            'bg-orange-400'
+          }`} />
         </button>
 
         <AnimatePresence>
           {showTooltip && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full mt-2 right-0 z-50 w-96 bg-gray-900 rounded-xl shadow-xl border border-gray-700 p-4"
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-full mt-3 right-0 z-50 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 p-5"
             >
-              <SpotterPerformanceDetails metrics={metrics} benefits={tierBenefits} />
+              <SpotterPerformanceDetailsLight metrics={metrics} benefits={tierBenefits} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -156,6 +171,110 @@ export const SpotterTierDisplay: React.FC<Props> = ({
 
       {showDetails && <SpotterPerformanceDetails metrics={metrics} benefits={tierBenefits} />}
     </motion.div>
+  );
+};
+
+const SpotterPerformanceDetailsLight: React.FC<{ 
+  metrics: SpotterPerformanceMetrics;
+  benefits: any;
+}> = ({ metrics, benefits }) => {
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${
+            metrics.currentTier === 'elite' ? 'bg-gradient-to-br from-yellow-100 to-orange-100' :
+            metrics.currentTier === 'verified' ? 'bg-gradient-to-br from-green-100 to-emerald-100' :
+            metrics.currentTier === 'learning' ? 'bg-gradient-to-br from-blue-100 to-indigo-100' :
+            'bg-gradient-to-br from-orange-100 to-red-100'
+          }`}>
+            <span className="text-lg">{performanceService.formatTierDisplay(metrics.currentTier).badge}</span>
+          </div>
+          <div>
+            <h3 className={`text-lg font-semibold ${
+              metrics.currentTier === 'elite' ? 'text-yellow-700' :
+              metrics.currentTier === 'verified' ? 'text-green-700' :
+              metrics.currentTier === 'learning' ? 'text-blue-700' :
+              'text-orange-700'
+            }`}>
+              {performanceService.formatTierDisplay(metrics.currentTier).name}
+            </h3>
+            <p className="text-sm text-gray-600">{performanceService.formatTierDisplay(metrics.currentTier).description}</p>
+          </div>
+        </div>
+        
+        {metrics.consecutiveApprovedTrends > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1 bg-purple-100 rounded-lg">
+            <Flame className="w-4 h-4 text-purple-600" />
+            <span className="text-sm text-purple-600 font-medium">
+              {metrics.consecutiveApprovedTrends} streak
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Performance Metrics */}
+      <div className="grid grid-cols-2 gap-4">
+        <MetricCardLight
+          label="Approval Rate"
+          value={`${(metrics.trendApprovalRate30d * 100).toFixed(1)}%`}
+          icon={<CheckCircle className="w-5 h-5" />}
+          trend={metrics.trendApprovalRate30d >= 0.5 ? 'up' : 'down'}
+        />
+        <MetricCardLight
+          label="Viral Rate"
+          value={`${(metrics.trendViralRate30d * 100).toFixed(1)}%`}
+          icon={<TrendingUp className="w-5 h-5" />}
+          trend={metrics.trendViralRate30d >= 0.1 ? 'up' : 'down'}
+        />
+      </div>
+
+      {/* Quality Score */}
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">Submission Quality</span>
+          <span className="text-lg font-bold text-gray-900">
+            {(metrics.submissionQualityScore * 100).toFixed(0)}%
+          </span>
+        </div>
+        <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
+          <motion.div
+            className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
+            initial={{ width: 0 }}
+            animate={{ width: `${metrics.submissionQualityScore * 100}%` }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Based on metadata completeness, media quality, and trend detail
+        </p>
+      </div>
+
+      {/* Benefits Summary */}
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+          <span className="text-gray-600">Payment Rate</span>
+          <span className="font-semibold text-gray-900">
+            ${benefits.basePaymentRange.min.toFixed(2)}-${benefits.basePaymentRange.max.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+          <span className="text-gray-600">Multiplier</span>
+          <span className="font-semibold text-gray-900">{metrics.paymentMultiplier}x</span>
+        </div>
+      </div>
+
+      {/* Activity Summary */}
+      <div className="pt-3 border-t border-gray-200 text-xs text-gray-500">
+        <div className="flex justify-between">
+          <span>Last 30 days:</span>
+          <span className="font-medium text-gray-700">
+            {metrics.totalTrendsSubmitted30d} submitted, {metrics.totalApprovedTrends30d} approved
+          </span>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -312,6 +431,28 @@ const SpotterPerformanceDetails: React.FC<{
           </span>
         </div>
       </div>
+    </div>
+  );
+};
+
+const MetricCardLight: React.FC<{
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  trend?: 'up' | 'down';
+}> = ({ label, value, icon, trend }) => {
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-gray-600">{icon}</div>
+        {trend && (
+          <div className={trend === 'up' ? 'text-green-600' : 'text-red-600'}>
+            {trend === 'up' ? '↑' : '↓'}
+          </div>
+        )}
+      </div>
+      <p className="text-lg font-bold text-gray-900">{value}</p>
+      <p className="text-xs text-gray-600">{label}</p>
     </div>
   );
 };
