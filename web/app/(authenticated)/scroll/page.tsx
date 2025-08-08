@@ -465,22 +465,29 @@ export default function LegibleScrollPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-5xl">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between bg-white rounded-2xl shadow-sm p-4">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="p-2 hover:bg-gray-100 rounded-xl transition-all"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <WaveLogo size={32} animated={true} showTitle={false} />
-            <h1 className="text-xl font-bold text-gray-900">Trend Scanner</h1>
+        <div className="mb-8 bg-white rounded-2xl shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div className="w-12 flex justify-start">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-all"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <WaveLogo size={32} animated={true} showTitle={false} />
+              <h1 className="text-xl font-bold text-gray-900">Trend Scanner</h1>
+            </div>
+            
+            {/* Reserve space for SpotterTierDisplay to prevent layout shift */}
+            <div className="w-40 flex justify-end min-h-[44px] items-center">
+              {user && (
+                <SpotterTierDisplay userId={user.id} compact={true} />
+              )}
+            </div>
           </div>
-
-          {user && (
-            <SpotterTierDisplay userId={user.id} compact={true} />
-          )}
         </div>
 
         {/* Subtle Success/Error Messages */}

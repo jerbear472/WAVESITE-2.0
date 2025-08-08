@@ -126,7 +126,7 @@ export const SpotterTierDisplay: React.FC<Props> = ({
               transition={{ duration: 0.2 }}
               className="absolute top-full mt-3 right-0 z-50 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 p-5"
             >
-              <SpotterPerformanceDetailsLight metrics={metrics} benefits={tierBenefits} />
+              <SpotterPerformanceDetailsLight metrics={metrics} benefits={tierBenefits} tierDisplay={tierDisplay} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -177,7 +177,8 @@ export const SpotterTierDisplay: React.FC<Props> = ({
 const SpotterPerformanceDetailsLight: React.FC<{ 
   metrics: SpotterPerformanceMetrics;
   benefits: any;
-}> = ({ metrics, benefits }) => {
+  tierDisplay: any;
+}> = ({ metrics, benefits, tierDisplay }) => {
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -189,18 +190,13 @@ const SpotterPerformanceDetailsLight: React.FC<{
             metrics.currentTier === 'learning' ? 'bg-gradient-to-br from-blue-100 to-indigo-100' :
             'bg-gradient-to-br from-orange-100 to-red-100'
           }`}>
-            <span className="text-lg">{performanceService.formatTierDisplay(metrics.currentTier).badge}</span>
+            <span className="text-lg">{tierDisplay.badge}</span>
           </div>
           <div>
-            <h3 className={`text-lg font-semibold ${
-              metrics.currentTier === 'elite' ? 'text-yellow-700' :
-              metrics.currentTier === 'verified' ? 'text-green-700' :
-              metrics.currentTier === 'learning' ? 'text-blue-700' :
-              'text-orange-700'
-            }`}>
-              {performanceService.formatTierDisplay(metrics.currentTier).name}
+            <h3 className={`text-lg font-semibold ${tierDisplay.color}`}>
+              {tierDisplay.name}
             </h3>
-            <p className="text-sm text-gray-600">{performanceService.formatTierDisplay(metrics.currentTier).description}</p>
+            <p className="text-sm text-gray-600">{tierDisplay.description}</p>
           </div>
         </div>
         
