@@ -195,7 +195,7 @@ export default function CleanVerifyPage() {
 
       setStats({
         verified_today: validations?.length || 0,
-        earnings_today: (validations?.length || 0) * 0.01,
+        earnings_today: parseFloat(((validations?.length || 0) * 0.01).toFixed(2)),
         remaining_today: rateLimit?.[0]?.validations_remaining_today || 100,
         remaining_hour: rateLimit?.[0]?.validations_remaining_hour || 20
       });
@@ -242,12 +242,7 @@ export default function CleanVerifyPage() {
           created_at: new Date().toISOString()
         });
 
-      // Update earnings immediately for better UX
-      setStats(prev => ({
-        ...prev,
-        verified_today: prev.verified_today + 1,
-        earnings_today: prev.earnings_today + 0.01
-      }));
+      // Update session earnings for this vote
       setSessionEarnings(prev => prev + 0.01);
       setConsecutiveVerifies(prev => prev + 1);
       
@@ -255,6 +250,7 @@ export default function CleanVerifyPage() {
       setShowEarningsAnimation(true);
       setTimeout(() => setShowEarningsAnimation(false), 2000);
       
+      // Reload stats from database to ensure accuracy
       await loadStats();
       nextTrend();
     } catch (error) {
@@ -347,20 +343,20 @@ export default function CleanVerifyPage() {
               <Zap className="w-10 h-10 text-purple-600" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">All caught up!</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">All caught up!</h2>
+          <p className="text-gray-600 text-lg mb-8">
             You've reviewed all available trends. Check back later for more.
           </p>
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="flex justify-around text-center">
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.verified_today}</p>
-                <p className="text-sm text-gray-500">Verified Today</p>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">Today's Performance</h3>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-gray-900">{stats.verified_today}</p>
+                <p className="text-sm text-gray-500 mt-1">Trends Verified</p>
               </div>
-              <div className="border-l border-gray-200" />
-              <div>
-                <p className="text-2xl font-bold text-green-600">${stats.earnings_today.toFixed(2)}</p>
-                <p className="text-sm text-gray-500">Earned Today</p>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-green-600">${stats.earnings_today.toFixed(2)}</p>
+                <p className="text-sm text-gray-500 mt-1">Total Earned</p>
               </div>
             </div>
           </div>
@@ -385,18 +381,20 @@ export default function CleanVerifyPage() {
             {/* Live Earnings Counter */}
             <div className="flex items-center gap-3">
               <motion.div
-                className="bg-green-50 px-3 py-1.5 rounded-lg flex items-center gap-2"
+                className="bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-lg flex items-center gap-2 border border-green-200"
                 animate={showEarningsAnimation ? {
-                  scale: [1, 1.1, 1],
-                  backgroundColor: ['#f0fdf4', '#86efac', '#f0fdf4']
+                  scale: [1, 1.05, 1],
+                  borderColor: ['#86efac', '#22c55e', '#86efac']
                 } : {}}
                 transition={{ duration: 0.5 }}
               >
-                <DollarSign className="w-4 h-4 text-green-600" />
-                <span className="font-bold text-green-700">
-                  ${stats.earnings_today.toFixed(2)}
-                </span>
-                <span className="text-xs text-green-600">today</span>
+                <DollarSign className="w-5 h-5 text-green-600" />
+                <div className="flex flex-col items-start">
+                  <span className="font-bold text-green-800 text-lg leading-tight">
+                    ${stats.earnings_today.toFixed(2)}
+                  </span>
+                  <span className="text-xs text-green-600">Earned Today</span>
+                </div>
               </motion.div>
               
               {/* Stats Toggle */}
@@ -431,16 +429,16 @@ export default function CleanVerifyPage() {
             className="fixed right-0 top-16 bottom-0 w-80 bg-white shadow-lg z-20 overflow-y-auto"
           >
             <div className="p-4 space-y-4">
-              <h3 className="font-semibold text-gray-900">Today's Stats</h3>
+              <h3 className="font-bold text-gray-900 text-lg">Today's Performance</h3>
               
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-purple-50 rounded-lg p-3">
-                  <p className="text-2xl font-bold text-purple-700">{stats.verified_today}</p>
-                  <p className="text-xs text-purple-600">Verified</p>
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                  <p className="text-3xl font-bold text-purple-800">{stats.verified_today}</p>
+                  <p className="text-sm text-purple-600 mt-1">Verified</p>
                 </div>
-                <div className="bg-green-50 rounded-lg p-3">
-                  <p className="text-2xl font-bold text-green-700">${stats.earnings_today.toFixed(2)}</p>
-                  <p className="text-xs text-green-600">Earned</p>
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <p className="text-3xl font-bold text-green-800">${stats.earnings_today.toFixed(2)}</p>
+                  <p className="text-sm text-green-600 mt-1">Earned</p>
                 </div>
               </div>
 
@@ -489,19 +487,21 @@ export default function CleanVerifyPage() {
       <AnimatePresence>
         {showEarningsAnimation && (
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: -20 }}
+            className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
           >
-            <div className="bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
-              <Coins className="w-5 h-5" />
-              <span className="font-bold text-lg">+$0.01</span>
-              {consecutiveVerifies >= 5 && (
-                <span className="text-sm bg-green-600 px-2 py-0.5 rounded-full">
-                  {consecutiveVerifies} streak!
-                </span>
-              )}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+              <Coins className="w-6 h-6 animate-pulse" />
+              <div className="flex flex-col">
+                <span className="font-bold text-xl">+$0.01 Earned!</span>
+                {consecutiveVerifies >= 3 && (
+                  <span className="text-sm opacity-90">
+                    {consecutiveVerifies} in a row! Keep going! 🔥
+                  </span>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -509,21 +509,21 @@ export default function CleanVerifyPage() {
 
       {/* Session Earnings Bar */}
       {sessionEarnings > 0 && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
-          <div className="max-w-3xl mx-auto px-4 py-2">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200">
+          <div className="max-w-3xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-green-700">Session Progress</span>
+                <Zap className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Current Session</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-green-600">Verified:</span>
-                  <span className="font-bold text-green-700">{Math.floor(sessionEarnings / 0.01)}</span>
+                  <span className="text-sm text-blue-600">Verified:</span>
+                  <span className="font-bold text-blue-800 text-lg">{Math.floor(sessionEarnings / 0.01)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-green-600">Earned:</span>
-                  <span className="font-bold text-green-700">+${sessionEarnings.toFixed(2)}</span>
+                  <span className="text-sm text-blue-600">Session Earnings:</span>
+                  <span className="font-bold text-blue-800 text-lg">+${sessionEarnings.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -547,7 +547,7 @@ export default function CleanVerifyPage() {
                 <img
                   src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
                   alt="Trend"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain bg-black"
                 />
                 
                 {/* Engagement Overlay */}
@@ -577,55 +577,46 @@ export default function CleanVerifyPage() {
             )}
 
             {/* Trend Info */}
-            <div className="p-6">
+            <div className="p-8">
               <div className="mb-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h2 className="text-xl font-bold text-gray-900">{currentTrend.description}</h2>
-                  <motion.div
-                    className="flex items-center gap-1"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <div className="bg-green-100 text-green-700 text-sm font-bold px-3 py-1.5 rounded-lg flex items-center gap-1">
-                      <Coins className="w-4 h-4" />
-                      <span>+$0.01</span>
-                    </div>
-                  </motion.div>
+                <div className="mb-3">
+                  <h2 className="text-2xl font-bold text-gray-900 leading-tight">{currentTrend.description}</h2>
                 </div>
                 
                 {currentTrend.post_caption && (
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+                  <p className="text-gray-700 text-base mb-4 line-clamp-4 leading-relaxed">
                     {currentTrend.post_caption}
                   </p>
                 )}
 
                 {/* Metrics Display */}
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="bg-purple-50 rounded-lg p-2">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Zap className="w-3 h-3 text-purple-600" />
-                      <span className="text-xs text-purple-600">Wave Score</span>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Zap className="w-4 h-4 text-purple-600" />
+                      <span className="text-xs font-medium text-purple-700">Wave Score</span>
                     </div>
-                    <p className="text-lg font-bold text-purple-700">
+                    <p className="text-xl font-bold text-purple-800">
                       {currentTrend.wave_score?.toFixed(1) || '5.0'}/10
                     </p>
                   </div>
                   
-                  <div className="bg-green-50 rounded-lg p-2">
-                    <div className="flex items-center gap-1 mb-1">
-                      <TrendingUp className="w-3 h-3 text-green-600" />
-                      <span className="text-xs text-green-600">Growth</span>
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <TrendingUp className="w-4 h-4 text-green-600" />
+                      <span className="text-xs font-medium text-green-700">Growth</span>
                     </div>
-                    <p className="text-lg font-bold text-green-700">
+                    <p className="text-xl font-bold text-green-800">
                       {currentTrend.growth_rate || 0}%
                     </p>
                   </div>
                   
-                  <div className="bg-blue-50 rounded-lg p-2">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Heart className="w-3 h-3 text-blue-600" />
-                      <span className="text-xs text-blue-600">Engagement</span>
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Heart className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-medium text-blue-700">Engagement</span>
                     </div>
-                    <p className="text-lg font-bold text-blue-700">
+                    <p className="text-xl font-bold text-blue-800">
                       {currentTrend.engagement_rate?.toFixed(1) || '0.0'}%
                     </p>
                   </div>
@@ -650,48 +641,41 @@ export default function CleanVerifyPage() {
                 </div>
               </div>
 
-              {/* Action Buttons with Earnings Emphasis */}
-              <div className="grid grid-cols-3 gap-3">
+              {/* Action Buttons */}
+              <div className="grid grid-cols-3 gap-4">
                 <motion.button
                   onClick={() => handleVote('reject')}
                   disabled={verifying || stats.remaining_hour === 0}
-                  className="relative flex flex-col items-center justify-center py-4 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex flex-col items-center justify-center py-5 px-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                    +$0.01
-                  </div>
-                  <TrendingDown className="w-6 h-6 mb-1" />
-                  <span className="text-sm font-medium">Not Trending</span>
-                  <span className="text-xs text-red-500 mt-1">← or A</span>
+                  <TrendingDown className="w-7 h-7 mb-2" />
+                  <span className="text-base font-semibold">Not Trending</span>
+                  <span className="text-xs text-red-500 mt-1 opacity-70">← or A</span>
                 </motion.button>
 
                 <motion.button
                   onClick={() => handleVote('skip')}
-                  className="flex flex-col items-center justify-center py-4 px-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl transition-colors"
+                  className="flex flex-col items-center justify-center py-5 px-3 bg-gray-50 hover:bg-gray-100 border border-gray-300 text-gray-700 rounded-xl transition-all"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <SkipForward className="w-6 h-6 mb-1" />
-                  <span className="text-sm font-medium">Skip</span>
-                  <span className="text-xs text-gray-500 mt-1">↓ or S</span>
-                  <span className="text-xs text-gray-400 mt-0.5">No earnings</span>
+                  <SkipForward className="w-7 h-7 mb-2" />
+                  <span className="text-base font-semibold">Skip</span>
+                  <span className="text-xs text-gray-500 mt-1 opacity-70">↓ or S</span>
                 </motion.button>
 
                 <motion.button
                   onClick={() => handleVote('verify')}
                   disabled={verifying || stats.remaining_hour === 0}
-                  className="relative flex flex-col items-center justify-center py-4 px-3 bg-green-50 hover:bg-green-100 text-green-600 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex flex-col items-center justify-center py-5 px-3 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                    +$0.01
-                  </div>
-                  <TrendingUp className="w-6 h-6 mb-1" />
-                  <span className="text-sm font-medium">Trending</span>
-                  <span className="text-xs text-green-500 mt-1">→ or D</span>
+                  <TrendingUp className="w-7 h-7 mb-2" />
+                  <span className="text-base font-semibold">Trending</span>
+                  <span className="text-xs text-green-500 mt-1 opacity-70">→ or D</span>
                 </motion.button>
               </div>
 
@@ -736,7 +720,11 @@ export default function CleanVerifyPage() {
                     <span className="font-bold text-green-800">$0.01</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-green-700">Potential today:</span>
+                    <span className="text-green-700">Verified today:</span>
+                    <span className="font-bold text-green-800">{stats.verified_today}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Potential remaining:</span>
                     <span className="font-bold text-green-800">${(stats.remaining_today * 0.01).toFixed(2)}</span>
                   </div>
                   {consecutiveVerifies >= 3 && (
