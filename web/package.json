@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:ocr": "next dev -p 3001"
+    "test:ocr": "next dev -p 3001",
+    "dev:cron": "node -r dotenv/config lib/cronRunner.js",
+    "jobs:cluster": "node -r dotenv/config -e 'require(\"./lib/backgroundJobs\").backgroundJobs.clusterTrends()'",
+    "jobs:score": "node -r dotenv/config -e 'require(\"./lib/backgroundJobs\").backgroundJobs.scoreTrends()'",
+    "jobs:predict": "node -r dotenv/config -e 'require(\"./lib/backgroundJobs\").backgroundJobs.predictTrends()'",
+    "jobs:all": "node -r dotenv/config -e 'require(\"./lib/backgroundJobs\").backgroundJobs.runAllJobs()'"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
@@ -26,6 +31,7 @@
     "framer-motion": "^10.16.5",
     "lucide-react": "^0.292.0",
     "next": "14.0.3",
+    "openai": "^5.12.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.9.3",

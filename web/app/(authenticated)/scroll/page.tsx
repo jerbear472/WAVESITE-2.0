@@ -483,85 +483,138 @@ export default function LegibleScrollPage() {
           )}
         </div>
 
-        {/* Session Control & Streak Display */}
-        <div className="mb-6 bg-white rounded-2xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Scroll Session (Optional)</h2>
-              <p className="text-sm text-gray-500">
-                {isSessionActive ? 'Session active - submit trends quickly to build streak multipliers!' : 'Start a session to activate streak bonuses up to 3x earnings!'}
-              </p>
+        {/* Top Section: Submit Trend + Session Control */}
+        <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Submit a Trend Section */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+                <Link className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Submit a Trend</h2>
+                <p className="text-sm text-gray-500">Paste a URL to start the 3-step submission</p>
+              </div>
             </div>
-            
-            <button
-              onClick={isSessionActive ? endSession : startSession}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
-                isSessionActive 
-                  ? 'bg-red-500 hover:bg-red-600 text-white' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              {isSessionActive ? (
-                <>
-                  <Pause className="w-5 h-5" />
-                  End Session
-                </>
-              ) : (
-                <>
-                  <Play className="w-5 h-5" />
-                  Start Session
-                </>
-              )}
-            </button>
-          </div>
 
-          {isSessionActive ? (
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <span className="text-xs text-gray-500">Duration</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900">{formatTime(sessionDuration)}</p>
+            <form onSubmit={handleUrlSubmit} className="space-y-4">
+              <div className="relative">
+                <input
+                  type="url"
+                  value={trendUrl}
+                  onChange={(e) => setTrendUrl(e.target.value)}
+                  onPaste={handleUrlPaste}
+                  placeholder="Paste trend URL here..."
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  autoFocus
+                />
+                {trendUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setTrendUrl('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                )}
               </div>
               
-              <div className="bg-purple-50 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Flame className="w-4 h-4 text-purple-500" />
-                  <span className="text-xs text-purple-600">Streak</span>
-                </div>
-                <p className="text-xl font-bold text-purple-700">
-                  {currentStreak} {currentStreak > 0 && `(${streakMultiplier}x)`}
+              <button
+                type="submit"
+                disabled={!trendUrl}
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2"
+              >
+                <Send className="w-5 h-5" />
+                Start Submission
+              </button>
+            </form>
+
+            <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
+              <Sparkles className="w-4 h-4" />
+              <span>Auto-captures creator info & metrics</span>
+            </div>
+          </div>
+
+          {/* Session Control & Streak Display */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Scroll Session</h2>
+                <p className="text-sm text-gray-500">
+                  {isSessionActive ? 'Earn streak multipliers!' : 'Optional: Up to 3x earnings!'}
                 </p>
               </div>
               
-              {currentStreak > 0 && (
-                <div className="bg-orange-50 rounded-xl p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Timer className="w-4 h-4 text-orange-500" />
-                    <span className="text-xs text-orange-600">Time Left</span>
-                  </div>
-                  <p className="text-xl font-bold text-orange-700">{formatTime(streakTimeRemaining)}</p>
-                </div>
-              )}
+              <button
+                onClick={isSessionActive ? endSession : startSession}
+                className={`px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm ${
+                  isSessionActive 
+                    ? 'bg-red-500 hover:bg-red-600 text-white' 
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                }`}
+              >
+                {isSessionActive ? (
+                  <>
+                    <Pause className="w-4 h-4" />
+                    End
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    Start
+                  </>
+                )}
+              </button>
             </div>
-          ) : (
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Zap className="w-5 h-5 text-purple-600" />
+
+            {isSessionActive ? (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                    <span className="text-xs text-gray-500">Duration</span>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900">{formatTime(sessionDuration)}</p>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">How Streak Bonuses Work</h3>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• Submit trends within 5-minute windows to build streaks</li>
-                    <li>• Earn multipliers: 2 trends = 1.2x, 3 = 1.5x, 5 = 2x, 10 = 2.5x, 15+ = 3x</li>
-                    <li>• Sessions are optional - you can submit trends anytime!</li>
-                  </ul>
+                
+                <div className="bg-purple-50 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Flame className="w-4 h-4 text-purple-500" />
+                    <span className="text-xs text-purple-600">Streak</span>
+                  </div>
+                  <p className="text-xl font-bold text-purple-700">
+                    {currentStreak} {currentStreak > 0 && `(${streakMultiplier}x)`}
+                  </p>
+                </div>
+                
+                {currentStreak > 0 && (
+                  <div className="bg-orange-50 rounded-xl p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Timer className="w-4 h-4 text-orange-500" />
+                      <span className="text-xs text-orange-600">Time Left</span>
+                    </div>
+                    <p className="text-xl font-bold text-orange-700">{formatTime(streakTimeRemaining)}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Zap className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 mb-1">Streak Bonuses</h3>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• 5-minute windows between trends</li>
+                      <li>• 2 = 1.2x, 5 = 2x, 15+ = 3x</li>
+                      <li>• Submit anytime, no session required</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -620,56 +673,6 @@ export default function LegibleScrollPage() {
             </div>
           </div>
         )}
-
-        {/* Main Input Section */}
-        <div className="mb-6 bg-white rounded-2xl shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
-              <Link className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Submit a Trend</h2>
-              <p className="text-sm text-gray-500">Paste a URL to start the 3-step submission</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleUrlSubmit} className="space-y-4">
-            <div className="relative">
-              <input
-                type="url"
-                value={trendUrl}
-                onChange={(e) => setTrendUrl(e.target.value)}
-                onPaste={handleUrlPaste}
-                placeholder="Paste trend URL here..."
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-lg"
-                autoFocus
-              />
-              {trendUrl && (
-                <button
-                  type="button"
-                  onClick={() => setTrendUrl('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
-              )}
-            </div>
-            
-            <button
-              type="submit"
-              disabled={!trendUrl}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2 text-lg"
-            >
-              <Send className="w-5 h-5" />
-              Start Submission
-            </button>
-          </form>
-
-          <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-            <Sparkles className="w-4 h-4" />
-            <span>Auto-captures creator info, captions, and engagement metrics</span>
-          </div>
-        </div>
 
         {/* Platform Quick Access */}
         <div className="mb-6">
