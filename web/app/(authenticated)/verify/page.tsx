@@ -102,11 +102,18 @@ export default function CleanVerifyPage() {
 
   const loadTrends = async () => {
     try {
+      // Check if user is authenticated
+      if (!user?.id) {
+        console.warn('No user ID available for loading trends');
+        setLoading(false);
+        return;
+      }
+
       // Get trends user hasn't validated
       const { data: validatedTrends } = await supabase
         .from('trend_validations')
         .select('trend_id')
-        .eq('validator_id', user?.id);
+        .eq('validator_id', user.id);
 
       const validatedIds = validatedTrends?.map(v => v.trend_id) || [];
 
@@ -114,7 +121,7 @@ export default function CleanVerifyPage() {
         .from('trend_submissions')
         .select('*')
         .in('status', ['submitted', 'validating'])
-        .neq('spotter_id', user?.id) // Exclude user's own trends
+        .neq('spotter_id', user.id) // Exclude user's own trends
         .not('id', 'in', validatedIds.length > 0 ? `(${validatedIds.join(',')})` : '()')
         .order('created_at', { ascending: false })
         .limit(20);
@@ -160,8 +167,22 @@ export default function CleanVerifyPage() {
         .eq('validator_id', user?.id)
         .gte('created_at', today.toISOString());
 
-      const { data: rateLimit } = await supabase
-        .rpc('check_rate_limit', { p_user_id: user?.id });
+      // Try to get rate limits, but handle errors gracefully
+      let rateLimit = null;
+      try {
+        const { data, error } = await supabase
+          .rpc('check_rate_limit', { p_user_id: user?.id });
+        
+        if (error) {
+          console.warn('Rate limit check failed:', error);
+          // Use default limits if RPC fails
+        } else {
+          rateLimit = data;
+        }
+      } catch (rpcError) {
+        console.warn('RPC function not available:', rpcError);
+        // Continue with default limits
+      }
 
       setStats({
         verified_today: validations?.length || 0,
@@ -171,6 +192,13 @@ export default function CleanVerifyPage() {
       });
     } catch (error) {
       console.error('Error loading stats:', error);
+      // Set default stats on error
+      setStats({
+        verified_today: 0,
+        earnings_today: 0,
+        remaining_today: 100,
+        remaining_hour: 20
+      });
     }
   };
 
@@ -279,6 +307,31 @@ export default function CleanVerifyPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="text-gray-600 mt-4">Loading trends...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <X className="w-10 h-10 text-red-600" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">
+            Please log in to access the verify page.
+          </p>
+          <a 
+            href="/login" 
+            className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Go to Login
+          </a>
         </div>
       </div>
     );
