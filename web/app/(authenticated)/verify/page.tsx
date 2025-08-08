@@ -19,7 +19,10 @@ import {
   Info,
   X,
   Menu,
-  Zap
+  Zap,
+  Gauge,
+  Activity,
+  BarChart3
 } from 'lucide-react';
 
 interface TrendToVerify {
@@ -34,8 +37,17 @@ interface TrendToVerify {
   post_caption?: string;
   likes_count?: number;
   comments_count?: number;
+  shares_count?: number;
   views_count?: number;
   validation_count: number;
+  spotter_id: string;
+  evidence?: any;
+  virality_prediction?: number;
+  quality_score?: number;
+  // Calculate growth rate from these
+  initial_views?: number;
+  initial_likes?: number;
+  hours_since_post?: number;
 }
 
 export default function CleanVerifyPage() {
@@ -91,11 +103,21 @@ export default function CleanVerifyPage() {
         .from('trend_submissions')
         .select('*')
         .in('status', ['submitted', 'validating'])
+        .neq('spotter_id', user?.id) // Exclude user's own trends
         .not('id', 'in', validatedIds.length > 0 ? `(${validatedIds.join(',')})` : '()')
         .order('created_at', { ascending: false })
         .limit(20);
 
-      setTrends(trendsData || []);
+      // Process trends to calculate additional metrics
+      const processedTrends = (trendsData || []).map(trend => {
+        const hoursAgo = (Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60);
+        return {
+          ...trend,
+          hours_since_post: Math.round(hoursAgo)
+        };
+      });
+
+      setTrends(processedTrends);
     } catch (error) {
       console.error('Error loading trends:', error);
     } finally {
@@ -169,6 +191,53 @@ export default function CleanVerifyPage() {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toString();
+  };
+
+  const calculateWaveScore = (trend: TrendToVerify): number => {
+    // Calculate a wave score based on available metrics
+    let score = 50; // Base score
+    
+    // Engagement rate boost
+    if (trend.views_count && trend.views_count > 0) {
+      const engagementRate = ((trend.likes_count || 0) + (trend.comments_count || 0) + (trend.shares_count || 0)) / trend.views_count;
+      score += Math.min(20, engagementRate * 100);
+    }
+    
+    // View count boost
+    if (trend.views_count) {
+      if (trend.views_count > 1000000) score += 20;
+      else if (trend.views_count > 100000) score += 15;
+      else if (trend.views_count > 10000) score += 10;
+      else if (trend.views_count > 1000) score += 5;
+    }
+    
+    // Virality prediction boost
+    if (trend.virality_prediction) {
+      score += (trend.virality_prediction - 5) * 3; // -15 to +15 based on 0-10 scale
+    }
+    
+    // Time decay (newer is better)
+    if (trend.hours_since_post) {
+      if (trend.hours_since_post < 6) score += 10;
+      else if (trend.hours_since_post < 24) score += 5;
+      else if (trend.hours_since_post > 72) score -= 10;
+    }
+    
+    return Math.min(100, Math.max(0, Math.round(score)));
+  };
+
+  const calculateGrowthRate = (trend: TrendToVerify): string => {
+    if (!trend.views_count || !trend.hours_since_post || trend.hours_since_post === 0) {
+      return 'N/A';
+    }
+    
+    const viewsPerHour = trend.views_count / trend.hours_since_post;
+    
+    if (viewsPerHour > 100000) return '🚀 Explosive';
+    if (viewsPerHour > 10000) return '📈 Rapid';
+    if (viewsPerHour > 1000) return '⬆️ Growing';
+    if (viewsPerHour > 100) return '➡️ Steady';
+    return '⬇️ Slow';
   };
 
   const currentTrend = trends[currentIndex];
@@ -374,7 +443,7 @@ export default function CleanVerifyPage() {
                   </p>
                 )}
 
-                <div className="flex items-center gap-3 text-sm text-gray-500">
+                <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
                   {currentTrend.platform && (
                     <span className="capitalize">{currentTrend.platform}</span>
                   )}
@@ -389,6 +458,78 @@ export default function CleanVerifyPage() {
                       <span>•</span>
                       <span className="capitalize">{currentTrend.category.replace(/_/g, ' ')}</span>
                     </>
+                  )}
+                  {currentTrend.hours_since_post && (
+                    <>
+                      <span>•</span>
+                      <span>{currentTrend.hours_since_post}h ago</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Key Metrics for Decision Making */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {/* Wave Score */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3">
+                    <div className="text-xs text-blue-600 mb-1 font-medium">Wave Score</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-blue-700">
+                        {calculateWaveScore(currentTrend)}
+                      </span>
+                      <span className="text-xs text-blue-600">/100</span>
+                    </div>
+                    <div className="mt-1 h-1 bg-blue-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-blue-400 to-blue-600"
+                        style={{ width: `${calculateWaveScore(currentTrend)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Growth Rate */}
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3">
+                    <div className="text-xs text-purple-600 mb-1 font-medium">Growth Rate</div>
+                    <div className="text-lg font-bold text-purple-700">
+                      {calculateGrowthRate(currentTrend)}
+                    </div>
+                    {currentTrend.views_count && currentTrend.hours_since_post ? (
+                      <div className="text-xs text-purple-600 mt-1">
+                        {formatCount(Math.round(currentTrend.views_count / currentTrend.hours_since_post))}/hr
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Engagement Rate */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3">
+                    <div className="text-xs text-green-600 mb-1 font-medium">Engagement</div>
+                    <div className="text-2xl font-bold text-green-700">
+                      {currentTrend.views_count && currentTrend.views_count > 0 ? (
+                        `${(((currentTrend.likes_count || 0) + (currentTrend.comments_count || 0)) / currentTrend.views_count * 100).toFixed(1)}%`
+                      ) : (
+                        'N/A'
+                      )}
+                    </div>
+                    <div className="text-xs text-green-600 mt-1">
+                      {formatCount((currentTrend.likes_count || 0) + (currentTrend.comments_count || 0))} total
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Context */}
+                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Total Views</span>
+                    <span className="font-medium text-gray-900">{formatCount(currentTrend.views_count)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Validation Count</span>
+                    <span className="font-medium text-gray-900">{currentTrend.validation_count} votes</span>
+                  </div>
+                  {currentTrend.virality_prediction && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Virality Prediction</span>
+                      <span className="font-medium text-gray-900">{currentTrend.virality_prediction}/10</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -442,12 +583,27 @@ export default function CleanVerifyPage() {
           <div className="flex gap-3">
             <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-800">
-              <p className="font-medium mb-1">How to verify trends:</p>
-              <ul className="space-y-1 text-blue-700">
-                <li>• <strong>Trending:</strong> The content is gaining traction and spreading</li>
-                <li>• <strong>Not Trending:</strong> The content is not catching on or is declining</li>
-                <li>• <strong>Skip:</strong> You're unsure or prefer not to vote</li>
-              </ul>
+              <p className="font-medium mb-2">What makes a trend valid?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-blue-700">
+                <div>
+                  <p className="font-medium text-blue-800">✅ Vote Trending if:</p>
+                  <ul className="space-y-1 text-xs mt-1">
+                    <li>• Wave Score above 60</li>
+                    <li>• Growing or Explosive growth rate</li>
+                    <li>• High engagement (>2%)</li>
+                    <li>• Recent (under 24h) with momentum</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-blue-800">❌ Vote Not Trending if:</p>
+                  <ul className="space-y-1 text-xs mt-1">
+                    <li>• Wave Score below 40</li>
+                    <li>• Slow or declining growth</li>
+                    <li>• Low engagement (<1%)</li>
+                    <li>• Old content (>72h) losing steam</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
