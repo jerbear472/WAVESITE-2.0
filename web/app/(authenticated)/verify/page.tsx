@@ -19,7 +19,9 @@ import {
   Info,
   X,
   Menu,
-  Zap
+  Zap,
+  Coins,
+  CheckCircle2
 } from 'lucide-react';
 
 interface TrendToVerify {
@@ -60,6 +62,9 @@ export default function CleanVerifyPage() {
     remaining_today: 100,
     remaining_hour: 20
   });
+  const [showEarningsAnimation, setShowEarningsAnimation] = useState(false);
+  const [sessionEarnings, setSessionEarnings] = useState(0);
+  const [consecutiveVerifies, setConsecutiveVerifies] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -67,6 +72,31 @@ export default function CleanVerifyPage() {
       loadStats();
     }
   }, [user]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (verifying || !currentTrend || stats.remaining_hour === 0) return;
+      
+      switch(e.key.toLowerCase()) {
+        case 'arrowright':
+        case 'd':
+          handleVote('verify');
+          break;
+        case 'arrowleft':
+        case 'a':
+          handleVote('reject');
+          break;
+        case 'arrowdown':
+        case 's':
+          handleVote('skip');
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentTrend, verifying, stats.remaining_hour]);
 
   const loadTrends = async () => {
     try {
@@ -160,6 +190,19 @@ export default function CleanVerifyPage() {
           created_at: new Date().toISOString()
         });
 
+      // Update earnings immediately for better UX
+      setStats(prev => ({
+        ...prev,
+        verified_today: prev.verified_today + 1,
+        earnings_today: prev.earnings_today + 0.01
+      }));
+      setSessionEarnings(prev => prev + 0.01);
+      setConsecutiveVerifies(prev => prev + 1);
+      
+      // Show earnings animation
+      setShowEarningsAnimation(true);
+      setTimeout(() => setShowEarningsAnimation(false), 2000);
+      
       await loadStats();
       nextTrend();
     } catch (error) {
@@ -267,7 +310,7 @@ export default function CleanVerifyPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header with Earnings Display */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -278,13 +321,31 @@ export default function CleanVerifyPage() {
               </div>
             </div>
             
-            {/* Stats Toggle */}
-            <button
-              onClick={() => setShowStats(!showStats)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              {showStats ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            {/* Live Earnings Counter */}
+            <div className="flex items-center gap-3">
+              <motion.div
+                className="bg-green-50 px-3 py-1.5 rounded-lg flex items-center gap-2"
+                animate={showEarningsAnimation ? {
+                  scale: [1, 1.1, 1],
+                  backgroundColor: ['#f0fdf4', '#86efac', '#f0fdf4']
+                } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                <DollarSign className="w-4 h-4 text-green-600" />
+                <span className="font-bold text-green-700">
+                  ${stats.earnings_today.toFixed(2)}
+                </span>
+                <span className="text-xs text-green-600">today</span>
+              </motion.div>
+              
+              {/* Stats Toggle */}
+              <button
+                onClick={() => setShowStats(!showStats)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                {showStats ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
 
           {/* Progress Bar */}
@@ -363,6 +424,52 @@ export default function CleanVerifyPage() {
         )}
       </AnimatePresence>
 
+      {/* Earnings Animation Overlay */}
+      <AnimatePresence>
+        {showEarningsAnimation && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
+          >
+            <div className="bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
+              <Coins className="w-5 h-5" />
+              <span className="font-bold text-lg">+$0.01</span>
+              {consecutiveVerifies >= 5 && (
+                <span className="text-sm bg-green-600 px-2 py-0.5 rounded-full">
+                  {consecutiveVerifies} streak!
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Session Earnings Bar */}
+      {sessionEarnings > 0 && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
+          <div className="max-w-3xl mx-auto px-4 py-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-green-700">Session Progress</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-green-600">Verified:</span>
+                  <span className="font-bold text-green-700">{Math.floor(sessionEarnings / 0.01)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-green-600">Earned:</span>
+                  <span className="font-bold text-green-700">+${sessionEarnings.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="max-w-3xl mx-auto px-4 py-6">
         <AnimatePresence mode="wait">
@@ -413,9 +520,15 @@ export default function CleanVerifyPage() {
               <div className="mb-4">
                 <div className="flex items-start justify-between mb-2">
                   <h2 className="text-xl font-bold text-gray-900">{currentTrend.description}</h2>
-                  <span className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded">
-                    +$0.01
-                  </span>
+                  <motion.div
+                    className="flex items-center gap-1"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="bg-green-100 text-green-700 text-sm font-bold px-3 py-1.5 rounded-lg flex items-center gap-1">
+                      <Coins className="w-4 h-4" />
+                      <span>+$0.01</span>
+                    </div>
+                  </motion.div>
                 </div>
                 
                 {currentTrend.post_caption && (
@@ -476,36 +589,49 @@ export default function CleanVerifyPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons with Earnings Emphasis */}
               <div className="grid grid-cols-3 gap-3">
-                <button
+                <motion.button
                   onClick={() => handleVote('reject')}
                   disabled={verifying || stats.remaining_hour === 0}
-                  className="flex flex-col items-center justify-center py-4 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative flex flex-col items-center justify-center py-4 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
+                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                    +$0.01
+                  </div>
                   <TrendingDown className="w-6 h-6 mb-1" />
                   <span className="text-sm font-medium">Not Trending</span>
                   <span className="text-xs text-red-500 mt-1">← or A</span>
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
                   onClick={() => handleVote('skip')}
                   className="flex flex-col items-center justify-center py-4 px-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <SkipForward className="w-6 h-6 mb-1" />
                   <span className="text-sm font-medium">Skip</span>
                   <span className="text-xs text-gray-500 mt-1">↓ or S</span>
-                </button>
+                  <span className="text-xs text-gray-400 mt-0.5">No earnings</span>
+                </motion.button>
 
-                <button
+                <motion.button
                   onClick={() => handleVote('verify')}
                   disabled={verifying || stats.remaining_hour === 0}
-                  className="flex flex-col items-center justify-center py-4 px-3 bg-green-50 hover:bg-green-100 text-green-600 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="relative flex flex-col items-center justify-center py-4 px-3 bg-green-50 hover:bg-green-100 text-green-600 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
+                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                    +$0.01
+                  </div>
                   <TrendingUp className="w-6 h-6 mb-1" />
                   <span className="text-sm font-medium">Trending</span>
                   <span className="text-xs text-green-500 mt-1">→ or D</span>
-                </button>
+                </motion.button>
               </div>
 
               {/* Rate Limit Warning */}
@@ -520,17 +646,45 @@ export default function CleanVerifyPage() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Info Box */}
-        <div className="mt-6 bg-blue-50 rounded-xl p-4">
-          <div className="flex gap-3">
-            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium mb-1">How to verify trends:</p>
-              <ul className="space-y-1 text-blue-700">
-                <li>• <strong>Trending:</strong> The content is gaining traction and spreading</li>
-                <li>• <strong>Not Trending:</strong> The content is not catching on or is declining</li>
-                <li>• <strong>Skip:</strong> You're unsure or prefer not to vote</li>
-              </ul>
+        {/* Earnings Info Box */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* How to Verify */}
+          <div className="bg-blue-50 rounded-xl p-4">
+            <div className="flex gap-3">
+              <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">How to verify:</p>
+                <ul className="space-y-1 text-blue-700 text-xs">
+                  <li>• <strong>Trending:</strong> Growing content</li>
+                  <li>• <strong>Not Trending:</strong> Declining content</li>
+                  <li>• <strong>Skip:</strong> When unsure</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          {/* Earnings Tracker */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+            <div className="flex gap-3">
+              <Coins className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-green-800 mb-1">Earnings Tracker</p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Per verification:</span>
+                    <span className="font-bold text-green-800">$0.01</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-green-700">Potential today:</span>
+                    <span className="font-bold text-green-800">${(stats.remaining_today * 0.01).toFixed(2)}</span>
+                  </div>
+                  {consecutiveVerifies >= 3 && (
+                    <div className="mt-2 p-2 bg-green-100 rounded text-green-800 font-medium">
+                      🔥 {consecutiveVerifies} verifications in a row!
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
