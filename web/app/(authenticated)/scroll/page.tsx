@@ -695,65 +695,45 @@ export default function LegibleScrollPage() {
           </div>
         </div>
 
-        {/* Earnings Per Trend Section */}
-        <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
-          <div className="flex items-center justify-between mb-4">
+        {/* Earnings Summary */}
+        <div className="mb-4 bg-white/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-gray-200/50">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-gray-600">Earned today:</span>
+                <span className="text-sm font-semibold text-green-700">
+                  {formatCurrency(todaysEarnings)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-yellow-600" />
+                <span className="text-sm text-gray-600">Pending:</span>
+                <span className="text-sm font-semibold text-yellow-700">
+                  {formatCurrency(todaysPendingEarnings)}
+                </span>
+              </div>
+            </div>
+            <div className="text-xs text-gray-500">
+              {trendsLoggedToday} trends today
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500 rounded-lg">
-                <DollarSign className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Earnings Per Trend</h3>
-                <p className="text-sm text-gray-600">Paid after validation (1 approval needed)</p>
-              </div>
+              <span className="text-gray-500">
+                Base: {formatCurrency(EARNINGS_CONFIG.BASE_PAYMENT)} per trend
+              </span>
+              <span className="text-blue-600">
+                Finance bonus: +{formatCurrency(EARNINGS_CONFIG.BONUSES.FINANCE)}
+              </span>
+              {streakMultiplier > 1.0 && (
+                <span className="text-orange-600">
+                  Streak: {streakMultiplier}x multiplier
+                </span>
+              )}
             </div>
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-bold text-lg">
-              {formatCurrency(EARNINGS_CONFIG.BASE_PAYMENT)}
-            </span>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
-              <div className="flex items-center gap-2 mb-1">
-                <Coins className="w-4 h-4 text-yellow-600" />
-                <span className="text-sm font-medium text-gray-700">Finance Bonus</span>
-              </div>
-              <p className="text-lg font-bold text-yellow-700">+{formatCurrency(EARNINGS_CONFIG.BONUSES.FINANCE)}</p>
-              <p className="text-xs text-gray-500">Stocks & crypto trends</p>
-            </div>
-            
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
-              <div className="flex items-center gap-2 mb-1">
-                <Flame className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-medium text-gray-700">Streak Multiplier</span>
-              </div>
-              <p className="text-lg font-bold text-orange-700">Up to {EARNINGS_CONFIG.STREAK_MULTIPLIERS.MAX}x</p>
-              <p className="text-xs text-gray-500">Session streaks</p>
-            </div>
-            
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">Validation</span>
-              </div>
-              <p className="text-lg font-bold text-blue-700">1 ✓ to pay</p>
-              <p className="text-xs text-gray-500">2 ✗ rejects</p>
-            </div>
-          </div>
-          
-          <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-blue-900 mb-1">How Payouts Work</h4>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Submit trend → earnings marked as "pending"</li>
-                  <li>• 1 validator approves → earnings paid out</li>
-                  <li>• 2 validators reject → no payout</li>
-                  <li>• Validators earn {formatCurrency(EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION)} per validation</li>
-                </ul>
-              </div>
-            </div>
+            <span className="text-gray-500">Paid after 1 validation ✓</span>
           </div>
         </div>
 
