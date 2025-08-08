@@ -299,47 +299,33 @@ export default function CleanVerifyPage() {
         return;
       }
 
-      // Insert the validation using RPC function to avoid recursion
-      console.log('Submitting vote:', {
-        trend_submission_id: trendId,
-        validator_id: user?.id,
-        vote,
-        confidence_score: 0.75
+      // ONLY use the RPC function to avoid ALL recursion issues
+      console.log('Submitting vote via RPC:', {
+        trend_id: trendId,
+        vote_type: vote
       });
 
-      // First try the RPC function (avoids recursion issues)
-      const { data: rpcResult, error: rpcError } = await supabase
-        .rpc('submit_trend_validation', {
-          p_trend_id: trendId,
-          p_vote: vote,
-          p_confidence: 0.75
+      // Use the new cast_trend_vote function that completely bypasses RLS
+      const { data: voteResult, error: voteError } = await supabase
+        .rpc('cast_trend_vote', {
+          trend_id: trendId,
+          vote_type: vote
         });
 
-      if (rpcError || (rpcResult && !rpcResult.success)) {
-        // If RPC fails, try direct insert as fallback
-        console.log('RPC failed, trying direct insert:', rpcError || rpcResult?.error);
-        
-        const { data: insertData, error: insertError } = await supabase
-          .from('trend_validations')
-          .insert({
-            trend_submission_id: trendId,
-            validator_id: user?.id,
-            vote,
-            confidence_score: 0.75,
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+      console.log('RPC response:', { voteResult, voteError });
 
-        if (insertError) {
-          console.error('Vote submission error:', insertError);
-          throw insertError;
-        }
-
-        console.log('Vote submitted successfully via direct insert:', insertData);
-      } else {
-        console.log('Vote submitted successfully via RPC:', rpcResult);
+      // Check if the vote was successful
+      if (voteError) {
+        console.error('RPC error:', voteError);
+        throw new Error(voteError.message || 'Failed to submit vote');
       }
+
+      if (voteResult && !voteResult.success) {
+        console.error('Vote failed:', voteResult.error);
+        throw new Error(voteResult.error || 'Failed to submit vote');
+      }
+
+      console.log('Vote submitted successfully:', voteResult);
 
       // Update session earnings for this vote
       setSessionEarnings(prev => prev + EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION);
