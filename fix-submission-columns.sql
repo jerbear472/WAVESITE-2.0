@@ -1,63 +1,98 @@
--- Fix trend_submissions table to ensure all columns have proper defaults
--- This will prevent submission errors
+-- Fix missing columns in trend_submissions table
+-- This script adds any missing columns that might be causing submission errors
 
--- Add missing columns with defaults if they don't exist
-ALTER TABLE public.trend_submissions 
-ADD COLUMN IF NOT EXISTS virality_prediction INTEGER DEFAULT 5;
+-- Add platform column if missing
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'platform') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN platform TEXT;
+        RAISE NOTICE 'Added platform column';
+    END IF;
+END $$;
 
-ALTER TABLE public.trend_submissions 
-ADD COLUMN IF NOT EXISTS quality_score DECIMAL(3,2) DEFAULT 0.50;
+-- Add social media metadata columns if missing
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'creator_handle') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN creator_handle TEXT;
+        RAISE NOTICE 'Added creator_handle column';
+    END IF;
 
-ALTER TABLE public.trend_submissions 
-ADD COLUMN IF NOT EXISTS validation_count INTEGER DEFAULT 0;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'creator_name') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN creator_name TEXT;
+        RAISE NOTICE 'Added creator_name column';
+    END IF;
 
-ALTER TABLE public.trend_submissions 
-ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'submitted';
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'post_caption') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN post_caption TEXT;
+        RAISE NOTICE 'Added post_caption column';
+    END IF;
 
-ALTER TABLE public.trend_submissions 
-ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'likes_count') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN likes_count INTEGER DEFAULT 0;
+        RAISE NOTICE 'Added likes_count column';
+    END IF;
 
-ALTER TABLE public.trend_submissions 
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'comments_count') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN comments_count INTEGER DEFAULT 0;
+        RAISE NOTICE 'Added comments_count column';
+    END IF;
 
--- Make evidence column nullable if it isn't already
-ALTER TABLE public.trend_submissions 
-ALTER COLUMN evidence DROP NOT NULL;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'shares_count') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN shares_count INTEGER DEFAULT 0;
+        RAISE NOTICE 'Added shares_count column';
+    END IF;
 
--- Make screenshot_url nullable
-ALTER TABLE public.trend_submissions 
-ALTER COLUMN screenshot_url DROP NOT NULL;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'views_count') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN views_count INTEGER DEFAULT 0;
+        RAISE NOTICE 'Added views_count column';
+    END IF;
 
--- Ensure description has a default
-ALTER TABLE public.trend_submissions 
-ALTER COLUMN description SET DEFAULT 'No description provided';
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'hashtags') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN hashtags TEXT[];
+        RAISE NOTICE 'Added hashtags column';
+    END IF;
 
--- Update any NULL values in existing rows
-UPDATE public.trend_submissions 
-SET 
-  virality_prediction = COALESCE(virality_prediction, 5),
-  quality_score = COALESCE(quality_score, 0.50),
-  validation_count = COALESCE(validation_count, 0),
-  status = COALESCE(status, 'submitted'),
-  created_at = COALESCE(created_at, NOW()),
-  updated_at = COALESCE(updated_at, NOW())
-WHERE virality_prediction IS NULL 
-   OR quality_score IS NULL 
-   OR validation_count IS NULL 
-   OR status IS NULL;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'thumbnail_url') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN thumbnail_url TEXT;
+        RAISE NOTICE 'Added thumbnail_url column';
+    END IF;
 
--- Create a simplified insert policy
-DROP POLICY IF EXISTS "Simple insert for authenticated" ON public.trend_submissions;
-CREATE POLICY "Simple insert for authenticated" ON public.trend_submissions
-FOR INSERT TO authenticated
-WITH CHECK (true);
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'trend_submissions' 
+                   AND column_name = 'screenshot_url') THEN
+        ALTER TABLE public.trend_submissions ADD COLUMN screenshot_url TEXT;
+        RAISE NOTICE 'Added screenshot_url column';
+    END IF;
+END $$;
 
--- Test the table structure
+-- Show current columns in trend_submissions table
 SELECT 
-  column_name, 
-  data_type, 
-  is_nullable,
-  column_default
-FROM information_schema.columns
-WHERE table_name = 'trend_submissions'
+    column_name, 
+    data_type, 
+    is_nullable,
+    column_default
+FROM information_schema.columns 
+WHERE table_schema = 'public' 
+AND table_name = 'trend_submissions'
 ORDER BY ordinal_position;

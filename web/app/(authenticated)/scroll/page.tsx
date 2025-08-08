@@ -334,10 +334,10 @@ export default function LegibleScrollPage() {
             gender: profile?.gender,
             location: profile?.location,
             interests: profile?.interests
-          }
+          },
+          payment_amount: finalPayment // Store payment in evidence instead
         },
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
-        bounty_amount: finalPayment,
         quality_score: 7, // Default quality score
         validation_count: 0,
         created_at: new Date().toISOString()
