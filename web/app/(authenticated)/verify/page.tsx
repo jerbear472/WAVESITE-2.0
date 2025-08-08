@@ -300,7 +300,14 @@ export default function CleanVerifyPage() {
       }
 
       // Insert the validation
-      const { error: insertError } = await supabase
+      console.log('Submitting vote:', {
+        trend_submission_id: trendId,
+        validator_id: user?.id,
+        vote,
+        confidence_score: 0.75
+      });
+
+      const { data: insertData, error: insertError } = await supabase
         .from('trend_validations')
         .insert({
           trend_submission_id: trendId,
@@ -308,11 +315,16 @@ export default function CleanVerifyPage() {
           vote,
           confidence_score: 0.75,
           created_at: new Date().toISOString()
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) {
+        console.error('Vote submission error:', insertError);
         throw insertError;
       }
+
+      console.log('Vote submitted successfully:', insertData);
 
       // Update session earnings for this vote
       setSessionEarnings(prev => prev + EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION);
@@ -324,11 +336,19 @@ export default function CleanVerifyPage() {
       
       // Refresh user earnings in profile (for navigation display)
       try {
-        await supabase.rpc('refresh_user_earnings', { p_user_id: user?.id });
+        // Check if the RPC function exists before calling it
+        const { error: rpcError } = await supabase.rpc('refresh_user_earnings', { p_user_id: user?.id });
+        if (rpcError) {
+          console.warn('RPC refresh_user_earnings not available:', rpcError);
+        }
+        
         // Also refresh the user context to update navigation
-        await refreshUser();
+        if (refreshUser) {
+          await refreshUser();
+        }
       } catch (refreshError) {
         console.warn('Failed to refresh user earnings:', refreshError);
+        // Continue anyway - the vote was successful
       }
       
       // Reload stats from database to ensure accuracy
@@ -341,9 +361,25 @@ export default function CleanVerifyPage() {
       if (currentIndex >= trends.length - 1) {
         setCurrentIndex(trends.length - 1);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting vote:', error);
-      alert('Failed to submit vote. Please try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to submit vote. ';
+      
+      if (error?.message?.includes('duplicate')) {
+        errorMessage = 'You have already voted on this trend.';
+      } else if (error?.message?.includes('violates foreign key')) {
+        errorMessage = 'Invalid trend or user ID. Please refresh the page.';
+      } else if (error?.message?.includes('permission')) {
+        errorMessage = 'You do not have permission to vote. Please ensure you are logged in.';
+      } else if (error?.code === '23505') {
+        errorMessage = 'You have already voted on this trend.';
+      } else {
+        errorMessage += error?.message || 'Please try again.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setVerifying(false);
     }
