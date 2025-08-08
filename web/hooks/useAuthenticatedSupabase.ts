@@ -63,8 +63,8 @@ export async function fetchUserTrends(userId: string) {
       console.warn('User ID mismatch, using session user ID');
     }
 
-    // Query trends with validation counts
-    const { data, error } = await supabaseClient
+    // Query trends - try with validation columns first, fallback if they don't exist
+    let { data, error } = await supabaseClient
       .from('trend_submissions')
       .select(`
         *,
@@ -74,6 +74,19 @@ export async function fetchUserTrends(userId: string) {
       `)
       .eq('spotter_id', queryUserId)
       .order('created_at', { ascending: false });
+
+    // If validation columns don't exist, query without them
+    if (error && error.message.includes('does not exist')) {
+      console.log('Validation columns missing, querying trends without validation counts');
+      const fallbackQuery = await supabaseClient
+        .from('trend_submissions')
+        .select('*')
+        .eq('spotter_id', queryUserId)
+        .order('created_at', { ascending: false });
+      
+      data = fallbackQuery.data;
+      error = fallbackQuery.error;
+    }
 
     if (error) {
       console.error('Query error:', error);

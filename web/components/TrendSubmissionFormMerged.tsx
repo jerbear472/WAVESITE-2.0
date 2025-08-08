@@ -168,6 +168,9 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [dataRestored, setDataRestored] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [retryAvailable, setRetryAvailable] = useState(false);
   const [extractingMetadata, setExtractingMetadata] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -204,9 +207,42 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     wave_score: 50
   });
 
-  // Set mounted state
+  // Set mounted state and load saved form data
   useEffect(() => {
     setMounted(true);
+    
+    // Load saved form data from localStorage
+    try {
+      const savedData = localStorage.getItem('trendFormData');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        // Only restore if it's recent (within 24 hours)
+        const saveTime = localStorage.getItem('trendFormSaveTime');
+        const now = Date.now();
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (saveTime && (now - parseInt(saveTime)) < maxAge) {
+          setFormData(prev => ({ ...prev, ...parsedData }));
+          setDataRestored(true);
+          setSuccess('📋 Previous form data restored! Your work is safe.');
+          setTimeout(() => {
+            setSuccess('');
+            setDataRestored(false);
+          }, 5000);
+          console.log('Restored form data from localStorage');
+        } else {
+          // Clear old data
+          localStorage.removeItem('trendFormData');
+          localStorage.removeItem('trendFormSaveTime');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved form data:', error);
+      // Clear corrupted data
+      localStorage.removeItem('trendFormData');
+      localStorage.removeItem('trendFormSaveTime');
+    }
+    
     // Temporarily disable performance service to fix form loading
     // TODO: Re-enable once TrendSpotterPerformanceService is fixed
     /*
@@ -218,6 +254,29 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     }
     */
   }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Don't save empty form data
+    if (!formData.url && !formData.trendName && !formData.explanation) {
+      return;
+    }
+    
+    try {
+      setAutoSaveStatus('saving');
+      localStorage.setItem('trendFormData', JSON.stringify(formData));
+      localStorage.setItem('trendFormSaveTime', Date.now().toString());
+      setAutoSaveStatus('saved');
+      
+      // Reset to idle after 2 seconds
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Error saving form data:', error);
+      setAutoSaveStatus('idle');
+    }
+  }, [mounted, formData]);
 
   // Auto-extract metadata when component mounts with initialUrl
   useEffect(() => {
@@ -530,6 +589,19 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
       : [...array, item];
   };
 
+  const clearSavedData = () => {
+    localStorage.removeItem('trendFormData');
+    localStorage.removeItem('trendFormSaveTime');
+  };
+
+  const handleClose = () => {
+    // Only clear data if form is mostly empty
+    if (!formData.trendName && !formData.explanation && formData.categories.length === 0) {
+      clearSavedData();
+    }
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -540,13 +612,46 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     setLoading(true);
     setError('');
     
+    // Create timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+    });
+    
     try {
-      await onSubmit(formData);
+      // Race between submission and timeout
+      await Promise.race([
+        onSubmit(formData),
+        timeoutPromise
+      ]);
+      
+      // Success - clear saved form data
+      localStorage.removeItem('trendFormData');
+      localStorage.removeItem('trendFormSaveTime');
+      
       setSuccess('Trend submitted successfully! 🎉');
       setTimeout(() => onClose(), 3000);
     } catch (err: any) {
       console.error('Form submission error:', err);
-      setError(err.message || 'Failed to submit trend');
+      
+      // Don't lose form data on error
+      const errorMessage = err.message || 'Failed to submit trend';
+      setRetryAvailable(true);
+      
+      if (errorMessage.includes('timeout')) {
+        setError('⏱️ Submission timed out. Your data is saved - please try again.');
+      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        setError('🌐 Network error. Check your connection and try again. Your data is saved.');
+      } else {
+        setError(`❌ ${errorMessage}. Your form data is saved.`);
+      }
+      
+      // Force save current form data in case of error
+      try {
+        localStorage.setItem('trendFormData', JSON.stringify(formData));
+        localStorage.setItem('trendFormSaveTime', Date.now().toString());
+      } catch (saveError) {
+        console.error('Failed to save form data on error:', saveError);
+      }
     } finally {
       setLoading(false);
     }
@@ -606,7 +711,7 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
       >
         {/* Fixed Close Button */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 sm:p-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-600 shadow-lg"
           aria-label="Close"
         >
@@ -616,8 +721,26 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
         {/* Header with Quality Indicator */}
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">Submit New Trend</h2>
-            <p className="text-slate-400 text-sm mt-1">Help us spot the next cultural wave</p>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-white">Submit New Trend</h2>
+              {/* Auto-save status indicator */}
+              {autoSaveStatus !== 'idle' && (
+                <div className="flex items-center gap-1 text-xs text-slate-400">
+                  {autoSaveStatus === 'saving' ? (
+                    <>
+                      <LoaderIcon className="w-3 h-3 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckIcon className="w-3 h-3 text-green-400" />
+                      <span className="text-green-400">Saved</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            <p className="text-slate-400 text-sm mt-1">Help us spot the next cultural wave • Form auto-saves</p>
           </div>
           
           {/* Quality Indicator Preview */}
@@ -1345,25 +1468,76 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
                     <ArrowRightIcon className="w-4 h-4" />
                   </button>
                 ) : (
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <LoaderIcon className="w-4 h-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <SendIcon className="w-4 h-4" />
-                        Submit Trend
-                      </>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <>
+                          <LoaderIcon className="w-4 h-4 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <SendIcon className="w-4 h-4" />
+                          Submit Trend
+                        </>
+                      )}
+                    </button>
+                    
+                    {retryAvailable && !loading && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setError('');
+                          setRetryAvailable(false);
+                          handleSubmit(new Event('submit') as any);
+                        }}
+                        className="px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
+                      >
+                        <ArrowRightIcon className="w-3 h-3" />
+                        Retry Submission
+                      </button>
                     )}
-                  </button>
+                  </div>
                 )}
               </div>
+
+              {/* Success/Error Messages */}
+              <AnimatePresence>
+                {(success || error) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="mt-4 p-4 rounded-lg"
+                  >
+                    {success && (
+                      <div className="bg-green-900/20 border border-green-800 text-green-400 flex items-center gap-2">
+                        <CheckIcon className="w-4 h-4" />
+                        {success}
+                      </div>
+                    )}
+                    {error && (
+                      <div className="bg-red-900/20 border border-red-800 text-red-400 flex items-start gap-2">
+                        <div className="mt-0.5">
+                          <XIcon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <p>{error}</p>
+                          {retryAvailable && (
+                            <p className="text-xs text-red-300 mt-1">
+                              💾 Your form data is safely saved. You can retry or close and come back later.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </form>
           </div>
 

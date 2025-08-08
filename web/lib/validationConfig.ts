@@ -51,21 +51,55 @@ export async function updateValidationConfig(
 export async function getTrendValidationStatus(trendId: string): Promise<ValidationStatus | null> {
   const config = await getValidationConfig();
   
-  const { data, error } = await supabase
+  // First try to get validation status from trend_submissions table
+  const { data: trendData, error: trendError } = await supabase
     .from('trend_submissions')
     .select('approve_count, reject_count, validation_status')
     .eq('id', trendId)
     .single();
+  
+  // If columns don't exist, calculate from trend_validations table
+  if (trendError && trendError.message.includes('does not exist')) {
+    console.log('Validation columns missing, calculating from trend_validations table');
     
-  if (error || !data) {
-    console.error('Failed to fetch trend validation status:', error);
+    const { data: validations, error: validationError } = await supabase
+      .from('trend_validations')
+      .select('vote')
+      .eq('trend_submission_id', trendId);
+      
+    if (validationError) {
+      console.error('Failed to fetch trend validations:', validationError);
+      return null;
+    }
+    
+    const approveCount = validations?.filter(v => v.vote === 'verify').length || 0;
+    const rejectCount = validations?.filter(v => v.vote === 'reject').length || 0;
+    
+    let validationStatus: 'pending' | 'approved' | 'rejected' = 'pending';
+    if (approveCount >= config.required_validations) {
+      validationStatus = 'approved';
+    } else if (rejectCount >= config.rejection_threshold) {
+      validationStatus = 'rejected';
+    }
+    
+    return {
+      approve_count: approveCount,
+      reject_count: rejectCount,
+      validation_status: validationStatus,
+      required_approvals: config.required_validations,
+      required_rejections: config.rejection_threshold
+    };
+  }
+  
+  if (trendError || !trendData) {
+    console.error('Failed to fetch trend validation status:', trendError);
     return null;
   }
   
   return {
-    approve_count: data.approve_count || 0,
-    reject_count: data.reject_count || 0,
-    validation_status: data.validation_status || 'pending',
+    approve_count: trendData.approve_count || 0,
+    reject_count: trendData.reject_count || 0,
+    validation_status: trendData.validation_status || 'pending',
     required_approvals: config.required_validations,
     required_rejections: config.rejection_threshold
   };

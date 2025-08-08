@@ -483,6 +483,31 @@ export default function LegibleScrollPage() {
           )}
         </div>
 
+        {/* Subtle Success/Error Messages */}
+        <AnimatePresence>
+          {submitMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4"
+            >
+              <div className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                submitMessage.type === 'success'
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {submitMessage.type === 'success' ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <AlertCircle className="w-4 h-4" />
+                )}
+                <span>{submitMessage.text}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Top Section: Submit Trend + Session Control */}
         <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Submit a Trend Section */}
@@ -763,30 +788,6 @@ export default function LegibleScrollPage() {
           </div>
         </div>
 
-        {/* Success/Error Messages */}
-        <AnimatePresence>
-          {submitMessage && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.9 }}
-              className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50"
-            >
-              <div className={`px-6 py-3 rounded-xl shadow-2xl flex items-center gap-2 ${
-                submitMessage.type === 'success'
-                  ? 'bg-green-500 text-white'
-                  : 'bg-red-500 text-white'
-              }`}>
-                {submitMessage.type === 'success' ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <AlertCircle className="w-5 h-5" />
-                )}
-                <span className="font-medium">{submitMessage.text}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* 3-Step Trend Submission Form */}
