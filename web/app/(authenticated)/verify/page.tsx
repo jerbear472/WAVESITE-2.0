@@ -266,8 +266,20 @@ export default function ValidateTrendsPage() {
       console.log('Submitting validation:', { trend_id: trendId, vote_type: voteType });
 
       // Get current user to verify authentication
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user before vote:', user?.id, user?.email);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      console.log('Current user before vote:', currentUser?.id, currentUser?.email);
+      
+      if (!currentUser) {
+        setLastError('You must be signed in to validate trends.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+        return;
+      }
+
+      // Get fresh session to ensure auth headers are current
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session exists:', !!session);
 
       // Use the RPC function to submit vote
       const { data: result, error } = await supabase
