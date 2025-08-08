@@ -55,6 +55,10 @@ interface Trend {
   trend_momentum_score?: number;
   positive_validations?: number;
   negative_validations?: number;
+  // New validation system fields
+  approve_count?: number;
+  reject_count?: number;
+  validation_status?: 'pending' | 'approved' | 'rejected';
   // Social media metadata
   creator_handle?: string;
   creator_name?: string;
@@ -809,8 +813,20 @@ export default function Timeline() {
                                 <div className="flex items-center gap-1">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
                                   <span className="text-xs text-gray-400">
-                                    Votes: {trend.positive_validations || 0}👍 {trend.negative_validations || 0}👎
+                                    Votes: {trend.approve_count || 0}✅ {trend.reject_count || 0}❌
                                   </span>
+                                  {/* Validation Status Indicator */}
+                                  {trend.validation_status && (
+                                    <div className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                      trend.validation_status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                      trend.validation_status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                                      'bg-yellow-500/20 text-yellow-400'
+                                    }`}>
+                                      {trend.validation_status === 'approved' ? '✅ Paid' :
+                                       trend.validation_status === 'rejected' ? '❌ Rejected' :
+                                       '⏳ Pending'}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                               
@@ -976,7 +992,19 @@ export default function Timeline() {
                                 </div>
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
-                                  <span>Votes: {trend.positive_validations || 0}👍 {trend.negative_validations || 0}👎</span>
+                                  <span>Votes: {trend.approve_count || 0}✅ {trend.reject_count || 0}❌</span>
+                                  {/* Validation Status Indicator */}
+                                  {trend.validation_status && (
+                                    <div className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                      trend.validation_status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                      trend.validation_status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                                      'bg-yellow-500/20 text-yellow-400'
+                                    }`}>
+                                      {trend.validation_status === 'approved' ? '✅ Paid' :
+                                       trend.validation_status === 'rejected' ? '❌ Rejected' :
+                                       '⏳ Pending'}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 
@@ -1160,7 +1188,19 @@ export default function Timeline() {
                                   </div>
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <AwardIcon className="w-4 h-4 text-blue-400" />
-                                    <span>Votes: {trend.positive_validations || 0}👍 {trend.negative_validations || 0}👎</span>
+                                    <span>Votes: {trend.approve_count || 0}✅ {trend.reject_count || 0}❌</span>
+                                    {/* Validation Status Indicator */}
+                                    {trend.validation_status && (
+                                      <div className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                        trend.validation_status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                        trend.validation_status === 'rejected' ? 'bg-red-500/20 text-red-400' :
+                                        'bg-yellow-500/20 text-yellow-400'
+                                      }`}>
+                                        {trend.validation_status === 'approved' ? '✅ Paid' :
+                                         trend.validation_status === 'rejected' ? '❌ Rejected' :
+                                         '⏳ Pending'}
+                                      </div>
+                                    )}
                                   </div>
                                   {trend.bounty_amount > 0 && (
                                     <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${

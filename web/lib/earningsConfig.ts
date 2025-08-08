@@ -23,7 +23,8 @@ export const EARNINGS_CONFIG = {
     CAPTION_PROVIDED: 0.05,     // Has post caption
     
     // Special category bonuses
-    FINANCE_TREND: 0.25,        // Finance/stock/crypto related - higher reward
+    FINANCE_TREND: 0.10,        // Finance/stock/crypto related - 10 cents bonus
+    FINANCE: 0.10,              // Alias for FINANCE_TREND (for display purposes)
     HIGH_WAVE_SCORE: 0.20,      // Wave score > 70
     TRENDING_CATEGORY: 0.10,    // In a trending category
   },

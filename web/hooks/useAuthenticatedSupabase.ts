@@ -63,10 +63,15 @@ export async function fetchUserTrends(userId: string) {
       console.warn('User ID mismatch, using session user ID');
     }
 
-    // Query trends
+    // Query trends with validation counts
     const { data, error } = await supabaseClient
       .from('trend_submissions')
-      .select('*')
+      .select(`
+        *,
+        approve_count,
+        reject_count,
+        validation_status
+      `)
       .eq('spotter_id', queryUserId)
       .order('created_at', { ascending: false });
 
