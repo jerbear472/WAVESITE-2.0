@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { ScrollSession } from '@/components/ScrollSession';
 import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
-import TrendSubmissionFormMerged from '@/components/TrendSubmissionFormMerged';
+// import TrendSubmissionFormMerged from '@/components/TrendSubmissionFormMerged';
+import TrendSubmissionFormSimple from '@/components/TrendSubmissionFormSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
@@ -792,7 +793,7 @@ export default function LegibleScrollPage() {
             </div>
           }
         >
-          <TrendSubmissionFormMerged
+          <TrendSubmissionFormSimple
             onClose={() => {
               setShowSubmissionForm(false);
               setTrendUrl('');

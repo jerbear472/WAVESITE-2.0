@@ -4,11 +4,26 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
-import { TrendQualityIndicator } from '@/components/TrendQualityIndicator';
+// import { TrendQualityIndicator } from '@/components/TrendQualityIndicator';
+// Temporarily disabled - causing form loading issues
+/*
 import { 
   TrendSpotterPerformanceService,
   TrendQualityMetrics 
 } from '@/lib/trendSpotterPerformanceService';
+*/
+
+// Define TrendQualityMetrics type locally for now
+interface TrendQualityMetrics {
+  hasScreenshot: boolean;
+  hasVideo: boolean;
+  descriptionLength: number;
+  metadataCompleteness: number;
+  categoryRelevance: number;
+  duplicateRisk: number;
+  viralPotential: number;
+  overallQuality: number;
+}
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -1353,6 +1368,7 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
           {qualityMetrics && (
             <div className="hidden lg:block lg:w-80">
               <div className="sticky top-0">
+                {/* Temporarily disabled TrendQualityIndicator
                 {performanceService && (
                   <TrendQualityIndicator
                     qualityMetrics={qualityMetrics}
@@ -1360,6 +1376,7 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
                     userTier={estimatedPayment?.userTier || 'learning'}
                   />
                 )}
+                */}
               </div>
             </div>
           )}
