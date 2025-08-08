@@ -60,7 +60,7 @@ const STREAK_CONFIG = {
 
 export default function LegibleScrollPage() {
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { user } = useAuth(); // Removed profile - not provided by AuthContext
   const scrollSessionRef = useRef<any>();
   
   // Core states
@@ -266,7 +266,7 @@ export default function LegibleScrollPage() {
   };
 
   const handleTrendSubmit = async (formData: any) => {
-    if (!user || !profile) {
+    if (!user) {
       setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
       return;
     }
@@ -330,12 +330,8 @@ export default function LegibleScrollPage() {
           session_duration: sessionDuration,
           streak_count: isSessionActive ? currentStreak + 1 : 0,
           streak_multiplier: isSessionActive ? streakMultiplier : 1,
-          user_profile: {
-            age: profile?.age,
-            gender: profile?.gender,
-            location: profile?.location,
-            interests: profile?.interests
-          },
+          // Profile data can be added later when available
+          user_profile: {},
           payment_amount: finalPayment // Store payment in evidence instead
         },
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
