@@ -571,40 +571,57 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                 )}
                 
                 {/* Show extracted metadata immediately */}
-                {(formData.creator_handle || formData.post_caption || formData.posted_at) && (
+                {(formData.creator_handle || formData.post_caption || formData.posted_at || formData.thumbnail_url) && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mt-3 p-3 bg-wave-600/20 border border-wave-600/40 rounded-lg"
                   >
-                    <div className="flex items-start gap-2">
-                      <CheckIcon className="w-4 h-4 text-wave-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 space-y-1">
-                        <p className="text-xs text-wave-300 font-medium">Metadata captured successfully!</p>
-                        {formData.creator_handle && (
-                          <p className="text-xs text-wave-400">
-                            Creator: <span className="text-wave-200">{formData.creator_handle}</span>
-                            {formData.creator_name && formData.creator_name !== formData.creator_handle && 
-                              <span className="text-wave-300"> ({formData.creator_name})</span>
-                            }
-                          </p>
-                        )}
-                        {formData.post_caption && (
-                          <p className="text-xs text-wave-400">
-                            Caption: <span className="text-wave-200 line-clamp-2">{formData.post_caption}</span>
-                          </p>
-                        )}
-                        {formData.hashtags && formData.hashtags.length > 0 && (
-                          <p className="text-xs text-wave-400">
-                            Hashtags: <span className="text-wave-300">{formData.hashtags.slice(0, 5).map(tag => `#${tag}`).join(' ')}</span>
-                            {formData.hashtags.length > 5 && <span className="text-wave-500"> +{formData.hashtags.length - 5} more</span>}
-                          </p>
-                        )}
-                        {formData.posted_at && (
-                          <p className="text-xs text-wave-400">
-                            Posted: <span className="text-wave-300">{new Date(formData.posted_at).toLocaleDateString()}</span>
-                          </p>
-                        )}
+                    <div className="flex items-start gap-3">
+                      {/* Show thumbnail if available */}
+                      {formData.thumbnail_url && (
+                        <div className="flex-shrink-0">
+                          <img 
+                            src={formData.thumbnail_url} 
+                            alt="Trend thumbnail" 
+                            className="w-20 h-20 object-cover rounded-lg border border-wave-600/40"
+                            onError={(e) => {
+                              // Hide image if it fails to load
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="flex items-start gap-2 flex-1">
+                        <CheckIcon className="w-4 h-4 text-wave-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 space-y-1">
+                          <p className="text-xs text-wave-300 font-medium">Metadata captured successfully!</p>
+                          {formData.creator_handle && (
+                            <p className="text-xs text-wave-400">
+                              Creator: <span className="text-wave-200">{formData.creator_handle}</span>
+                              {formData.creator_name && formData.creator_name !== formData.creator_handle && 
+                                <span className="text-wave-300"> ({formData.creator_name})</span>
+                              }
+                            </p>
+                          )}
+                          {formData.post_caption && (
+                            <p className="text-xs text-wave-400">
+                              Caption: <span className="text-wave-200 line-clamp-2">{formData.post_caption}</span>
+                            </p>
+                          )}
+                          {formData.hashtags && formData.hashtags.length > 0 && (
+                            <p className="text-xs text-wave-400">
+                              Hashtags: <span className="text-wave-300">{formData.hashtags.slice(0, 5).map(tag => `#${tag}`).join(' ')}</span>
+                              {formData.hashtags.length > 5 && <span className="text-wave-500"> +{formData.hashtags.length - 5} more</span>}
+                            </p>
+                          )}
+                          {formData.posted_at && (
+                            <p className="text-xs text-wave-400">
+                              Posted: <span className="text-wave-300">{new Date(formData.posted_at).toLocaleDateString()}</span>
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -886,13 +903,36 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                   Add Image (Optional)
                 </label>
                 
+                {/* Show auto-captured thumbnail if available */}
+                {formData.thumbnail_url && !imagePreview && (
+                  <div className="mb-4 p-3 bg-wave-700/20 border border-wave-600/40 rounded-xl">
+                    <div className="flex items-start gap-3">
+                      <img 
+                        src={formData.thumbnail_url} 
+                        alt="Auto-captured thumbnail" 
+                        className="w-24 h-24 object-cover rounded-lg border border-wave-600/40"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-wave-200 font-medium mb-1">Auto-captured thumbnail</p>
+                        <p className="text-xs text-wave-400">This thumbnail was automatically extracted from the trend URL.</p>
+                        <p className="text-xs text-wave-500 mt-2">You can upload a different image below if you prefer.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {!imagePreview ? (
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     className="border-2 border-dashed border-wave-600/50 rounded-xl p-6 text-center cursor-pointer hover:border-wave-500/70 transition-all"
                   >
                     <UploadIcon className="w-8 h-8 text-wave-400 mx-auto mb-2" />
-                    <p className="text-wave-300 mb-1">Click to upload image</p>
+                    <p className="text-wave-300 mb-1">
+                      {formData.thumbnail_url ? 'Upload a different image' : 'Click to upload image'}
+                    </p>
                     <p className="text-xs text-wave-500">PNG, JPG up to 10MB</p>
                   </div>
                 ) : (
@@ -973,10 +1013,30 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                     </div>
                   </div>
 
-                  {imagePreview && (
+                  {(imagePreview || formData.thumbnail_url) && (
                     <div>
                       <span className="text-wave-400 text-sm">Image:</span>
-                      <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded-lg mt-2" />
+                      <div className="flex gap-3 mt-2">
+                        {formData.thumbnail_url && (
+                          <div>
+                            <p className="text-xs text-wave-500 mb-1">Auto-captured thumbnail:</p>
+                            <img 
+                              src={formData.thumbnail_url} 
+                              alt="Thumbnail" 
+                              className="w-32 h-32 object-cover rounded-lg border border-wave-600/40"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        {imagePreview && (
+                          <div>
+                            <p className="text-xs text-wave-500 mb-1">Uploaded image:</p>
+                            <img src={imagePreview} alt="Upload" className="w-32 h-32 object-cover rounded-lg border border-wave-600/40" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 

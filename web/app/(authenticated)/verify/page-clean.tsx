@@ -59,24 +59,6 @@ export default function CleanVerifyPage() {
     }
   }, [user]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!currentTrend || verifying) return;
-      
-      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-        handleVote('reject');
-      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-        handleVote('verify');
-      } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === ' ') {
-        handleVote('skip');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentIndex, verifying, trends]);
-
   const loadTrends = async () => {
     try {
       // Get trends user hasn't validated
