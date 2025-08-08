@@ -265,6 +265,10 @@ export default function ValidateTrendsPage() {
       
       console.log('Submitting validation:', { trend_id: trendId, vote_type: voteType });
 
+      // Get current user to verify authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user before vote:', user?.id, user?.email);
+
       // Use the RPC function to submit vote
       const { data: result, error } = await supabase
         .rpc('cast_trend_vote', {
@@ -273,6 +277,8 @@ export default function ValidateTrendsPage() {
         });
 
       console.log('Validation result:', { result, error });
+      console.log('Result type:', typeof result);
+      console.log('Result keys:', result ? Object.keys(result) : 'null');
 
       if (error) {
         console.error('Validation error:', error);
@@ -296,11 +302,25 @@ export default function ValidateTrendsPage() {
       if (result && typeof result === 'object' && 'success' in result) {
         if (!result.success) {
           console.error('Validation failed:', result.error);
-          setLastError(result.error || 'Validation failed. Please try again.');
           
-          // If already voted, move to next
-          if (result.error?.includes('already')) {
+          // Handle specific error messages from the RPC function
+          if (result.error?.includes('Not authenticated')) {
+            setLastError('Please sign in to validate trends.');
+            // Redirect to login after a short delay
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+          } else if (result.error?.includes('already voted') || result.error?.includes('already validated')) {
+            setLastError('You have already validated this trend.');
             nextTrend();
+          } else if (result.error?.includes('not found')) {
+            setLastError('This trend no longer exists.');
+            nextTrend();
+          } else if (result.error?.includes('own trend')) {
+            setLastError('You cannot validate your own trend submission.');
+            nextTrend();
+          } else {
+            setLastError(result.error || 'Validation failed. Please try again.');
           }
           return;
         }
