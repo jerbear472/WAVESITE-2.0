@@ -5,15 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 // import { TrendQualityIndicator } from '@/components/TrendQualityIndicator';
-// Temporarily disabled - causing form loading issues
-/*
-import { 
-  TrendSpotterPerformanceService,
-  TrendQualityMetrics 
-} from '@/lib/trendSpotterPerformanceService';
-*/
 
-// Define TrendQualityMetrics type locally for now
+// Define TrendQualityMetrics type locally to avoid import issues
 interface TrendQualityMetrics {
   hasScreenshot: boolean;
   hasVideo: boolean;
