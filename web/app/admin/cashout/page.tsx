@@ -105,23 +105,32 @@ export default function AdminCashOutPage() {
     setProcessing(requestId);
     
     try {
-      const { error } = await supabase.rpc('process_cashout_request', {
-        request_id: requestId,
-        new_status: newStatus,
-        notes: newStatus === 'approved' ? 'Payment sent via Venmo' : null,
-        transaction_id: transactionId || null
+      const { data, error } = await supabase.rpc('process_cashout_with_bank_check', {
+        p_request_id: requestId,
+        p_new_status: newStatus,
+        p_notes: newStatus === 'approved' ? 'Payment approved' : newStatus === 'completed' ? 'Payment sent via Venmo' : 'Request rejected',
+        p_transaction_id: transactionId || null
       });
 
       if (error) throw error;
 
-      // Refresh the list
-      await fetchRequests();
-      
-      // Show success message
-      alert(`Request ${newStatus} successfully!`);
-    } catch (error) {
+      if (data.success) {
+        // Refresh the list
+        await fetchRequests();
+        
+        // Show success message with bank info if relevant
+        if (newStatus === 'completed' && data.withdrawal_result) {
+          alert(`Payment completed! ${data.amount} withdrawn from bank. New bank balance: $${data.withdrawal_result.new_balance}`);
+        } else {
+          alert(`Request ${newStatus} successfully!`);
+        }
+      } else {
+        throw new Error(data.error || 'Failed to process request');
+      }
+
+    } catch (error: any) {
       console.error('Error processing request:', error);
-      alert('Failed to process request');
+      alert(error.message || 'Failed to process request');
     } finally {
       setProcessing(null);
     }

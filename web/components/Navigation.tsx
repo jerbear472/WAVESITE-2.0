@@ -146,6 +146,17 @@ export default function Navigation() {
     { href: '/settings', label: 'Settings', icon: '⚙️' },
   ];
 
+  const adminNavItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/admin/bank', label: 'Bank', icon: '🏦' },
+    { href: '/admin/cashout', label: 'Cashouts', icon: '💸' },
+    { href: '/admin/payments', label: 'Payments', icon: '💰' },
+    { href: '/verify', label: 'Verify', icon: '✅' },
+    { href: '/earnings', label: 'Earnings', icon: '💰' },
+    { href: '/profile', label: 'Profile', icon: '👤' },
+    { href: '/settings', label: 'Settings', icon: '⚙️' },
+  ];
+
   let navItems = userNavItems;
   if (isProfessionalView) {
     navItems = professionalNavItems;
