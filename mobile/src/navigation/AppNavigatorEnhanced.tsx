@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Platform, Pressable, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -11,18 +12,40 @@ import Animated, {
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import { BlurView } from '@react-native-community/blur';
-import { TrendCaptureScreen } from '../screens/TrendCaptureScreen';
-import { TrendsScreen } from '../screens/TrendsScreen';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+// Screens
+import { DashboardScreen } from '../screens/DashboardScreen';
+import { TrendCaptureScreenPolished } from '../screens/TrendCaptureScreenPolished';
+import { ValidationScreenPolished } from '../screens/ValidationScreenPolished';
+import { MyTimelineScreen } from '../screens/MyTimelineScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { EarningsDashboard } from '../screens/EarningsDashboard';
+import { TrendsScreen } from '../screens/TrendsScreen';
+import { MyTrendsScreen } from '../screens/MyTrendsScreen';
+import { AchievementsScreen } from '../screens/AchievementsScreen';
+
 import { enhancedTheme } from '../styles/theme.enhanced';
 
 export type AppTabParamList = {
+  Home: undefined;
   Capture: undefined;
-  Trends: undefined;
+  Validate: undefined;
+  Timeline: undefined;
   Profile: undefined;
 };
 
+export type AppStackParamList = {
+  MainTabs: undefined;
+  Earnings: undefined;
+  MyTrends: undefined;
+  Achievements: undefined;
+  Trends: undefined;
+  Leaderboard: undefined;
+};
+
 const Tab = createBottomTabNavigator<AppTabParamList>();
+const Stack = createNativeStackNavigator<AppStackParamList>();
 
 interface TabIconProps {
   name: string;
@@ -55,34 +78,30 @@ const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
     ],
   }));
 
-  const icons: { [key: string]: { icon: string; gradient: string[] } } = {
-    Capture: { 
-      icon: '🚩', 
-      gradient: enhancedTheme.colors.primaryGradient 
-    },
-    Trends: { 
-      icon: '📊', 
-      gradient: enhancedTheme.colors.successGradient 
-    },
-    Profile: { 
-      icon: '✨', 
-      gradient: enhancedTheme.colors.secondaryGradient 
-    },
+  const iconMap: { [key: string]: string } = {
+    Home: 'view-dashboard',
+    Capture: 'camera-plus',
+    Validate: 'check-decagram',
+    Timeline: 'timeline-clock',
+    Profile: 'account-circle',
   };
-
-  const { icon, gradient } = icons[name];
 
   return (
     <Animated.View style={[styles.iconContainer, animatedStyle]}>
-      {focused && (
+      {focused ? (
         <LinearGradient
-          colors={gradient}
+          colors={enhancedTheme.colors.primaryGradient}
           style={styles.iconGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-        />
+        >
+          <Icon name={iconMap[name]} size={24} color="#ffffff" />
+        </LinearGradient>
+      ) : (
+        <View style={styles.iconGradient}>
+          <Icon name={iconMap[name]} size={24} color={enhancedTheme.colors.textTertiary} />
+        </View>
       )}
-      <Text style={[styles.icon, focused && styles.iconFocused]}>{icon}</Text>
     </Animated.View>
   );
 };
@@ -141,7 +160,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   );
 };
 
-export const AppNavigatorEnhanced: React.FC = () => {
+const TabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -150,14 +169,24 @@ export const AppNavigatorEnhanced: React.FC = () => {
       }}
     >
       <Tab.Screen 
+        name="Home" 
+        component={DashboardScreen}
+        options={{ title: 'Home' }}
+      />
+      <Tab.Screen 
         name="Capture" 
-        component={TrendCaptureScreen}
+        component={TrendCaptureScreenPolished}
         options={{ title: 'Capture' }}
       />
       <Tab.Screen 
-        name="Trends" 
-        component={TrendsScreen}
-        options={{ title: 'Discover' }}
+        name="Validate" 
+        component={ValidationScreenPolished}
+        options={{ title: 'Validate' }}
+      />
+      <Tab.Screen 
+        name="Timeline" 
+        component={MyTimelineScreen}
+        options={{ title: 'Timeline' }}
       />
       <Tab.Screen 
         name="Profile" 
@@ -165,6 +194,116 @@ export const AppNavigatorEnhanced: React.FC = () => {
         options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
+  );
+};
+
+export const AppNavigatorEnhanced: React.FC = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 300,
+      }}
+    >
+      <Stack.Screen 
+        name="MainTabs" 
+        component={TabNavigator}
+      />
+      <Stack.Screen 
+        name="Earnings" 
+        component={EarningsDashboard}
+        options={{
+          headerShown: true,
+          headerTitle: 'Earnings',
+          headerStyle: {
+            backgroundColor: enhancedTheme.colors.background,
+          },
+          headerTintColor: enhancedTheme.colors.text,
+          headerTitleStyle: {
+            fontWeight: '700',
+            fontSize: 18,
+          },
+          headerShadowVisible: false,
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen 
+        name="MyTrends" 
+        component={MyTrendsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'My Trends',
+          headerStyle: {
+            backgroundColor: enhancedTheme.colors.background,
+          },
+          headerTintColor: enhancedTheme.colors.text,
+          headerTitleStyle: {
+            fontWeight: '700',
+            fontSize: 18,
+          },
+          headerShadowVisible: false,
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen 
+        name="Achievements" 
+        component={AchievementsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Achievements',
+          headerStyle: {
+            backgroundColor: enhancedTheme.colors.background,
+          },
+          headerTintColor: enhancedTheme.colors.text,
+          headerTitleStyle: {
+            fontWeight: '700',
+            fontSize: 18,
+          },
+          headerShadowVisible: false,
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen 
+        name="Trends" 
+        component={TrendsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Trending Now',
+          headerStyle: {
+            backgroundColor: enhancedTheme.colors.background,
+          },
+          headerTintColor: enhancedTheme.colors.text,
+          headerTitleStyle: {
+            fontWeight: '700',
+            fontSize: 18,
+          },
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen 
+        name="Leaderboard" 
+        component={TrendsScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Leaderboard',
+          headerStyle: {
+            backgroundColor: enhancedTheme.colors.background,
+          },
+          headerTintColor: enhancedTheme.colors.text,
+          headerTitleStyle: {
+            fontWeight: '700',
+            fontSize: 18,
+          },
+          headerShadowVisible: false,
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+    </Stack.Navigator>
   );
 };
 

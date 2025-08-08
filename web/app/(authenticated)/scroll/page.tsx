@@ -352,7 +352,18 @@ export default function LegibleScrollPage() {
       if (error) {
         console.error('Supabase submission error:', error);
         console.error('Error details:', error.message, error.details, error.hint);
-        throw error;
+        
+        // Don't let the form hang - close it and show error
+        setShowSubmissionForm(false);
+        setIsSubmitting(false);
+        setSubmitMessage({ 
+          type: 'error', 
+          text: `Submission failed: ${error.message}` 
+        });
+        
+        // Still hide message after 5 seconds
+        setTimeout(() => setSubmitMessage(null), 5000);
+        return; // Exit early instead of throwing
       }
       
       // Create earnings entry
@@ -391,6 +402,8 @@ export default function LegibleScrollPage() {
       setTodaysPendingEarnings(prev => prev + finalPayment);
       setTrendsLoggedToday(prev => prev + 1);
       
+      console.log('Showing earnings animation for amount:', finalPayment);
+      
       // Show earnings animation with calculated bonuses
       showEarningsAnimation(
         finalPayment, 
@@ -398,26 +411,38 @@ export default function LegibleScrollPage() {
         isSessionActive ? getStreakMultiplier(currentStreak + 1) : 1
       );
       
-      // Reset form
-      setTrendUrl('');
+      // Reset form and close modal FIRST
       setShowSubmissionForm(false);
+      setTrendUrl('');
+      setIsSubmitting(false); // Ensure this is reset
       
-      // Also show a temporary success message
+      // Show success message
       setSubmitMessage({ 
         type: 'success', 
-        text: `Trend submitted successfully!` 
+        text: `Trend submitted! +$${finalPayment.toFixed(2)} earned` 
       });
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSubmitMessage(null), 5000);
       
       // Reload stats
       loadTodaysStats();
       if (isFinanceTrend) loadRecentTickers();
       
     } catch (error: any) {
-      console.error('Submission error:', error);
+      console.error('Submission error caught:', error);
       const errorMessage = error?.message || error?.error_description || 'Failed to submit trend';
-      setSubmitMessage({ type: 'error', text: `Error: ${errorMessage}. Please check console for details.` });
-    } finally {
+      
+      // Make sure to close form and reset state on error
+      setShowSubmissionForm(false);
       setIsSubmitting(false);
+      
+      setSubmitMessage({ 
+        type: 'error', 
+        text: `Error: ${errorMessage}` 
+      });
+      
+      // Clear message after 5 seconds
       setTimeout(() => setSubmitMessage(null), 5000);
     }
   };

@@ -1,8 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { LoginScreen } from '../screens/LoginScreen';
-import { RegisterScreen } from '../screens/RegisterScreen';
-import { WelcomeScreen } from '../screens/WelcomeScreen';
+import { LoginScreenPolished } from '../screens/LoginScreenPolished';
+import { RegisterScreenPolished } from '../screens/RegisterScreenPolished';
+import { WelcomeScreenPolished } from '../screens/WelcomeScreenPolished';
 
 export type AuthStackParamList = {
   Welcome: undefined;
@@ -20,9 +20,9 @@ export const AuthNavigator: React.FC = () => {
         contentStyle: { backgroundColor: '#000d1a' },
       }}
     >
-      <Stack.Screen name="Welcome" component={WelcomeScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="Welcome" component={WelcomeScreenPolished} />
+      <Stack.Screen name="Login" component={LoginScreenPolished} />
+      <Stack.Screen name="Register" component={RegisterScreenPolished} />
     </Stack.Navigator>
   );
 };

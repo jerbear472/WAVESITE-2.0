@@ -1,40 +1,29 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 import { supabase } from '../config/supabase';
+import supabaseService from '../services/supabaseService';
+import { UserProfile } from '../types/database';
+import { Session, User as AuthUser } from '@supabase/supabase-js';
 
-interface User {
-  id: string;
-  email: string;
-  username: string;
-  role: string;
-  total_earnings: number;
-  pending_earnings: number;
-  trends_spotted: number;
-  accuracy_score: number;
-  validation_score: number;
-  points: number;
-  level: string;
-  validations_count: number;
-  validated_trends: number;
-  referrals_count: number;
-  persona_completed?: boolean;
-  venmo_username?: string;
-  onboarding_completed?: boolean;
-}
+type User = AuthUser & UserProfile;
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string, birthday?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,6 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const checkUser = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
       if (session?.user) {
         await loadUserProfile(session.user.id);
       }
@@ -69,146 +59,91 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loadUserProfile = async (userId: string) => {
     try {
-      // First try user_profiles table (original schema)
-      let { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      // If user_profiles doesn't exist or no profile found, try users table
-      if (error) {
-        console.log('user_profiles not found, trying users table');
-        const { data: userProfile, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .single();
-        
-        if (!userError && userProfile) {
-          // Map users table to expected profile format
-          profile = {
-            ...userProfile,
-            role: userProfile.role || 'participant',
-            total_earnings: userProfile.total_earnings || 0,
-            pending_earnings: userProfile.pending_earnings || 0,
-            level: userProfile.level || 'bronze',
-            referrals_count: userProfile.referrals_count || 0,
-          };
-        } else if (userError && userError.code === 'PGRST116') {
-          // User doesn't exist in either table, create in users table
-          console.log('Creating user profile in users table');
-          const { data: authUser } = await supabase.auth.getUser();
-          const username = authUser?.user?.email?.split('@')[0] || 'user';
-          
-          const { data: newProfile, error: createError } = await supabase
-            .from('users')
-            .insert({
-              id: userId,
-              username,
-              email: authUser?.user?.email || '',
-              points: 0,
-              trends_spotted: 0,
-              validations_count: 0,
-              validated_trends: 0,
-              accuracy_score: 0,
-              streak_days: 0,
-            })
-            .select()
-            .single();
-          
-          if (!createError && newProfile) {
-            profile = {
-              ...newProfile,
-              role: 'participant',
-              total_earnings: 0,
-              pending_earnings: 0,
-              validation_score: 0,
-              level: 'bronze',
-              referrals_count: 0,
-            };
-          }
-        }
-      }
+      const profile = await supabaseService.getUserProfile(userId);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       
-      if (profile) {
-        // Ensure username is set, use email prefix as fallback
-        if (!profile.username) {
-          const { data: authUser } = await supabase.auth.getUser();
-          if (authUser?.user?.email) {
-            profile.username = authUser.user.email.split('@')[0];
-          }
-        }
-        
-        setUser(profile);
-      } else {
-        throw new Error('Failed to load or create user profile');
+      if (authUser && profile) {
+        setUser({ ...authUser, ...profile } as User);
+      } else if (authUser) {
+        // Profile might not exist yet, set basic user
+        setUser(authUser as any);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
-      // Set basic user info from auth
-      const { data: authUser } = await supabase.auth.getUser();
-      if (authUser?.user) {
-        setUser({
-          id: authUser.user.id,
-          email: authUser.user.email || '',
-          username: authUser.user.email?.split('@')[0] || 'user',
-          role: 'participant',
-          total_earnings: 0,
-          pending_earnings: 0,
-          trends_spotted: 0,
-          accuracy_score: 0,
-          validation_score: 0,
-          points: 0,
-          level: 'bronze',
-          validations_count: 0,
-          validated_trends: 0,
-          referrals_count: 0,
-        });
-      }
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      // Always show generic error message for security
-      throw new Error('Invalid email or password');
-    }
-    
-    if (data.user) {
-      await loadUserProfile(data.user.id);
+    try {
+      setLoading(true);
+      const { data, error } = await supabaseService.signIn(email, password);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.user) {
+        await loadUserProfile(data.user.id);
+      }
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      Alert.alert(
+        'Sign In Failed',
+        error.message || 'Please check your credentials and try again.'
+      );
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, username: string, birthday?: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { 
-          username,
-          birthday 
-        },
-      },
-    });
-
-    if (error) throw error;
-    
-    if (data.user) {
-      // Profile will be created automatically by database trigger
-      await loadUserProfile(data.user.id);
+    try {
+      setLoading(true);
+      const { data, error } = await supabaseService.signUp(email, password, username, birthday);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.user) {
+        await loadUserProfile(data.user.id);
+        Alert.alert(
+          'Welcome to WaveSight!',
+          'Your account has been created successfully.'
+        );
+      }
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      Alert.alert(
+        'Sign Up Failed',
+        error.message || 'Please try again with different credentials.'
+      );
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    await AsyncStorage.clear();
+    try {
+      setLoading(true);
+      const { error } = await supabaseService.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setUser(null);
+      setSession(null);
+      await AsyncStorage.clear();
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      Alert.alert('Sign Out Failed', error.message || 'Please try again.');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const refreshUser = async () => {
@@ -216,9 +151,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await loadUserProfile(user.id);
     }
   };
+  
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    try {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabaseService.updateUserProfile(user.id, updates);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setUser({ ...user, ...data });
+      }
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      Alert.alert('Update Failed', error.message || 'Could not update profile.');
+      throw error;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, refreshUser }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, refreshUser, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

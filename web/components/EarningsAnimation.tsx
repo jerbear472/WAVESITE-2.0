@@ -20,28 +20,49 @@ export const EarningsAnimation: React.FC<EarningsAnimationProps> = ({
   onComplete 
 }) => {
   useEffect(() => {
-    if (show && onComplete) {
-      // Auto-hide after 3 seconds (longer for subtle notification)
-      const timer = setTimeout(onComplete, 3000);
-      return () => clearTimeout(timer);
+    if (show) {
+      console.log('EarningsAnimation showing with amount:', amount, 'multiplier:', multiplier);
+      if (onComplete) {
+        // Auto-hide after 4 seconds for better visibility
+        const timer = setTimeout(() => {
+          console.log('EarningsAnimation hiding');
+          onComplete();
+        }, 4000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [show, onComplete]);
+  }, [show, onComplete, amount, multiplier]);
 
   if (!show) return null;
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, x: -50, scale: 0.8 }}
-        animate={{ opacity: 0.9, x: 0, scale: 1 }}
-        exit={{ opacity: 0, x: -50, scale: 0.8 }}
-        className="fixed bottom-6 left-6 z-50"
+        initial={{ opacity: 0, y: 50, scale: 0.5 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 50, scale: 0.5 }}
+        transition={{ 
+          type: "spring",
+          damping: 15,
+          stiffness: 300
+        }}
+        className="fixed bottom-8 left-8 z-[9999] pointer-events-none"
       >
-        <div className="bg-green-500/80 backdrop-blur-sm text-white px-3 py-2 rounded-lg shadow-sm flex items-center gap-2 text-sm">
-          <DollarSign className="w-4 h-4" />
-          <span className="font-medium">+${amount.toFixed(2)}</span>
+        <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+          <div className="bg-white/20 rounded-full p-2">
+            <DollarSign className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-lg">+${amount.toFixed(2)}</span>
+            {bonuses.length > 0 && (
+              <span className="text-xs opacity-90">
+                {bonuses.slice(0, 2).join(', ')}
+                {bonuses.length > 2 && ` +${bonuses.length - 2} more`}
+              </span>
+            )}
+          </div>
           {multiplier > 1 && (
-            <span className="text-xs bg-green-600/60 px-1.5 py-0.5 rounded">
+            <span className="text-sm bg-white/20 px-2 py-1 rounded-full font-bold">
               {multiplier}x
             </span>
           )}
