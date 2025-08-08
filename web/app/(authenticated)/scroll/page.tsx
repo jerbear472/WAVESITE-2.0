@@ -35,6 +35,8 @@ import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { EarningsAnimation, useEarningsAnimation } from '@/components/EarningsAnimation';
+import { calculateTrendEarnings, getStreakMultiplier, EARNINGS_CONFIG } from '@/lib/earningsConfig';
 
 // Primary platforms with better colors
 const PLATFORMS = [
@@ -45,23 +47,12 @@ const PLATFORMS = [
   { id: 'youtube', label: 'YouTube', icon: '📺', color: 'bg-red-600', url: 'https://www.youtube.com/feed/trending' }
 ];
 
-// Streak configuration
-const STREAK_CONFIG = {
-  WINDOW_DURATION: 5 * 60 * 1000, // 5 minutes to maintain streak
-  TRENDS_FOR_MULTIPLIER: {
-    1: 1.0,   // No multiplier for first trend
-    2: 1.2,   // 20% bonus for 2 trends
-    3: 1.5,   // 50% bonus for 3 trends
-    5: 2.0,   // 2x for 5 trends
-    10: 2.5,  // 2.5x for 10 trends
-    15: 3.0   // 3x for 15+ trends
-  }
-};
 
 export default function LegibleScrollPage() {
   const router = useRouter();
   const { user } = useAuth(); // Removed profile - not provided by AuthContext
   const scrollSessionRef = useRef<any>();
+  const { showEarnings, earningsData, showEarningsAnimation, hideEarningsAnimation } = useEarningsAnimation();
   
   // Core states
   const [trendUrl, setTrendUrl] = useState('');
@@ -119,7 +110,7 @@ export default function LegibleScrollPage() {
     if (currentStreak > 0 && lastSubmissionTime) {
       const updateStreakTimer = () => {
         const elapsed = Date.now() - lastSubmissionTime.getTime();
-        const remaining = Math.max(0, STREAK_CONFIG.WINDOW_DURATION - elapsed);
+        const remaining = Math.max(0, EARNINGS_CONFIG.STREAK_WINDOW - elapsed);
         
         if (remaining === 0) {
           // Streak expired
@@ -218,16 +209,7 @@ export default function LegibleScrollPage() {
   };
 
   const calculateMultiplier = (streakCount: number): number => {
-    const thresholds = Object.keys(STREAK_CONFIG.TRENDS_FOR_MULTIPLIER)
-      .map(Number)
-      .sort((a, b) => b - a);
-    
-    for (const threshold of thresholds) {
-      if (streakCount >= threshold) {
-        return STREAK_CONFIG.TRENDS_FOR_MULTIPLIER[threshold];
-      }
-    }
-    return 1.0;
+    return getStreakMultiplier(streakCount);
   };
 
   const handleUrlPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -315,9 +297,15 @@ export default function LegibleScrollPage() {
           c.toLowerCase().includes('crypto')
         );
       
-      // Calculate payment with streak multiplier (only if session is active)
-      let basePayment = calculateBasePayment(formData, isFinanceTrend);
-      let finalPayment = isSessionActive ? basePayment * streakMultiplier : basePayment;
+      // Calculate payment using centralized config
+      const earningsResult = calculateTrendEarnings({
+        ...formData,
+        isFinanceTrend,
+        tickers
+      }, isSessionActive ? currentStreak + 1 : 0);
+      
+      const basePayment = earningsResult.baseAmount;
+      const finalPayment = earningsResult.finalAmount;
       
       // Prepare submission - use basic fields that exist in database
       const submissionData: any = {
@@ -403,20 +391,22 @@ export default function LegibleScrollPage() {
       setTodaysPendingEarnings(prev => prev + finalPayment);
       setTrendsLoggedToday(prev => prev + 1);
       
-      // Success message
-      const bonuses = [];
-      if (isSessionActive && streakMultiplier > 1) bonuses.push(`${streakMultiplier}x Streak`);
-      if (isFinanceTrend) bonuses.push('📈 Finance');
-      if (formData.wave_score > 70) bonuses.push('🌊 High Wave');
-      
-      setSubmitMessage({ 
-        type: 'success', 
-        text: `Earned ${formatCurrency(finalPayment)}! ${bonuses.length ? `(${bonuses.join(', ')})` : ''}` 
-      });
+      // Show earnings animation with calculated bonuses
+      showEarningsAnimation(
+        finalPayment, 
+        earningsResult.appliedBonuses, 
+        isSessionActive ? getStreakMultiplier(currentStreak + 1) : 1
+      );
       
       // Reset form
       setTrendUrl('');
       setShowSubmissionForm(false);
+      
+      // Also show a temporary success message
+      setSubmitMessage({ 
+        type: 'success', 
+        text: `Trend submitted successfully!` 
+      });
       
       // Reload stats
       loadTodaysStats();
@@ -432,20 +422,6 @@ export default function LegibleScrollPage() {
     }
   };
 
-  const calculateBasePayment = (data: any, isFinance: boolean): number => {
-    let payment = 0.08;
-    if (data.trendName && data.explanation) payment += 0.01;
-    if (data.screenshot) payment += 0.02;
-    if (data.ageRanges?.length > 0) payment += 0.01;
-    if (data.subcultures?.length > 0) payment += 0.01;
-    if (isFinance) payment += 0.03;
-    if (data.views_count > 100000) payment += 0.02;
-    if (data.creator_handle) payment += 0.01;
-    if (data.hashtags?.length > 3) payment += 0.01;
-    if (data.otherPlatforms?.length > 0) payment += 0.01;
-    if (data.wave_score > 70) payment += 0.02;
-    return payment;
-  };
 
   const calculateEngagementScore = (data: any): number => {
     if (!data.views_count) return 5;
@@ -799,6 +775,15 @@ export default function LegibleScrollPage() {
           />
         </ErrorBoundary>
       )}
+      
+      {/* Earnings Animation */}
+      <EarningsAnimation
+        amount={earningsData.amount}
+        show={showEarnings}
+        bonuses={earningsData.bonuses}
+        multiplier={earningsData.multiplier}
+        onComplete={hideEarningsAnimation}
+      />
     </div>
   );
 }
