@@ -109,7 +109,7 @@ export default function CleanVerifyPage() {
     return Math.min(100, Math.round(rate * 10) / 10); // Cap at 100%, round to 1 decimal
   };
 
-  const loadTrends = async () => {
+  const loadTrends = useCallback(async () => {
     try {
       // Check if user is authenticated
       if (!user?.id) {
@@ -163,24 +163,26 @@ export default function CleanVerifyPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
+      if (!user?.id) return;
+      
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       const { data: validations } = await supabase
         .from('trend_validations')
         .select('*')
-        .eq('validator_id', user?.id)
+        .eq('validator_id', user.id)
         .gte('created_at', today.toISOString());
 
       // Try to get rate limits, but handle errors gracefully
       let rateLimit = null;
       try {
         const { data, error } = await supabase
-          .rpc('check_rate_limit', { p_user_id: user?.id });
+          .rpc('check_rate_limit', { p_user_id: user.id });
         
         if (error) {
           console.warn('Rate limit check failed:', error);
@@ -209,24 +211,24 @@ export default function CleanVerifyPage() {
         remaining_hour: 20
       });
     }
-  };
+  }, [user?.id]);
 
-  const nextTrend = () => {
+  const nextTrend = useCallback(() => {
     if (currentIndex < trends.length - 1) {
       setCurrentIndex(prev => prev + 1);
     } else {
       setCurrentIndex(trends.length);
     }
-  };
+  }, [currentIndex, trends.length]);
 
-  const handleVote = async (vote: 'verify' | 'reject' | 'skip') => {
+  const handleVote = useCallback(async (vote: 'verify' | 'reject' | 'skip') => {
     if (vote === 'skip') {
       nextTrend();
       return;
     }
 
-    if (!trends[currentIndex]) {
-      console.error('No trend available to vote on');
+    if (!trends[currentIndex] || !user?.id) {
+      console.error('No trend available to vote on or user not authenticated');
       return;
     }
 
@@ -236,7 +238,7 @@ export default function CleanVerifyPage() {
         .from('trend_validations')
         .insert({
           trend_id: trends[currentIndex].id,
-          validator_id: user?.id,
+          validator_id: user.id,
           vote,
           confidence_score: 0.75,
           created_at: new Date().toISOString()
@@ -263,14 +265,14 @@ export default function CleanVerifyPage() {
     } finally {
       setVerifying(false);
     }
-  };
+  }, [currentIndex, trends, user?.id, nextTrend, loadStats]);
 
   useEffect(() => {
     if (user) {
       loadTrends();
       loadStats();
     }
-  }, [user]);
+  }, [user, loadTrends, loadStats]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -298,7 +300,7 @@ export default function CleanVerifyPage() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [trends, currentIndex, verifying, stats.remaining_hour]);
+  }, [currentIndex, trends, verifying, stats.remaining_hour, handleVote]);
 
   const currentTrend = trends[currentIndex];
 
