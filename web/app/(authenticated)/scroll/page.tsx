@@ -302,7 +302,7 @@ export default function LegibleScrollPage() {
         ...formData,
         isFinanceTrend,
         tickers
-      }, isSessionActive ? currentStreak + 1 : 0);
+      }, isSessionActive ? currentStreak + 1 : 0, user.spotter_tier || 'learning');
       
       const basePayment = earningsResult.baseAmount;
       const finalPayment = earningsResult.finalAmount;

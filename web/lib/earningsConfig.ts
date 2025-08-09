@@ -76,7 +76,7 @@ export function calculateTrendEarnings(data: {
   category?: string;
   tickers?: string[];
   isFinanceTrend?: boolean;
-}, streakCount: number = 0): { baseAmount: number; finalAmount: number; appliedBonuses: string[] } {
+}, streakCount: number = 0, spotterTier: 'elite' | 'verified' | 'learning' | 'restricted' = 'learning'): { baseAmount: number; finalAmount: number; appliedBonuses: string[]; tierMultiplier: number } {
   
   let amount = EARNINGS_CONFIG.BASE_PAYMENT;
   const appliedBonuses: string[] = [];
@@ -153,8 +153,29 @@ export function calculateTrendEarnings(data: {
   // Cap the base amount
   const baseAmount = Math.min(amount, EARNINGS_CONFIG.MAX_SINGLE_SUBMISSION);
   
+  // Apply tier multiplier based on spotter rank
+  const tierMultipliers = {
+    'elite': 1.5,
+    'verified': 1.0,
+    'learning': 0.7,
+    'restricted': 0.3
+  };
+  
+  const tierMultiplier = tierMultipliers[spotterTier] || 0.7;
+  
+  // Apply tier bonus/penalty to the bonus string
+  if (spotterTier === 'elite') {
+    appliedBonuses.push('🏆 Elite (1.5x)');
+  } else if (spotterTier === 'verified') {
+    appliedBonuses.push('✅ Verified (1.0x)');
+  } else if (spotterTier === 'learning') {
+    appliedBonuses.push('📚 Learning (0.7x)');
+  } else if (spotterTier === 'restricted') {
+    appliedBonuses.push('⚠️ Restricted (0.3x)');
+  }
+  
   // Apply streak multiplier
-  let multiplier = 1.0;
+  let streakMultiplier = 1.0;
   if (streakCount > 0) {
     // Find the appropriate multiplier
     const multiplierKeys = Object.keys(EARNINGS_CONFIG.STREAK_MULTIPLIERS)
@@ -163,22 +184,24 @@ export function calculateTrendEarnings(data: {
     
     for (const key of multiplierKeys) {
       if (streakCount >= key) {
-        multiplier = EARNINGS_CONFIG.STREAK_MULTIPLIERS[key];
+        streakMultiplier = EARNINGS_CONFIG.STREAK_MULTIPLIERS[key];
         break;
       }
     }
     
-    if (multiplier > 1) {
-      appliedBonuses.push(`${multiplier}x Streak`);
+    if (streakMultiplier > 1) {
+      appliedBonuses.push(`${streakMultiplier}x Streak`);
     }
   }
   
-  const finalAmount = baseAmount * multiplier;
+  // Apply both multipliers: tier multiplier and streak multiplier
+  const finalAmount = baseAmount * tierMultiplier * streakMultiplier;
   
   return {
     baseAmount,
     finalAmount,
-    appliedBonuses
+    appliedBonuses,
+    tierMultiplier
   };
 }
 

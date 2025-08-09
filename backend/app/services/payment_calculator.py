@@ -37,15 +37,28 @@ class PaymentCalculator:
         self,
         quality_metrics: TrendQualityMetrics,
         is_first_spotter: bool,
-        user_streak_multiplier: float
+        user_streak_multiplier: float,
+        spotter_tier: str = 'learning'
     ) -> TrendPaymentInfo:
         """
         Calculate potential payment based on quality and user status
         """
+        # Get tier multiplier
+        tier_multipliers = {
+            'elite': Decimal('1.5'),
+            'verified': Decimal('1.0'),
+            'learning': Decimal('0.7'),
+            'restricted': Decimal('0.3')
+        }
+        tier_multiplier = tier_multipliers.get(spotter_tier, Decimal('0.7'))
+        
+        # Combine tier multiplier with streak multiplier
+        combined_multiplier = Decimal(str(user_streak_multiplier)) * tier_multiplier
+        
         payment_info = TrendPaymentInfo(
             quality_metrics=quality_metrics,
             is_first_spotter=is_first_spotter,
-            multiplier=Decimal(str(user_streak_multiplier))
+            multiplier=combined_multiplier
         )
         
         # Determine payment tier based on quality

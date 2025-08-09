@@ -12,6 +12,7 @@ interface User {
   role: string;
   view_mode?: 'user' | 'professional';
   subscription_tier?: 'starter' | 'professional' | 'enterprise' | 'hedge_fund';
+  spotter_tier?: 'elite' | 'verified' | 'learning' | 'restricted';
   permissions?: {
     can_manage_users?: boolean;
     can_switch_views?: boolean;
@@ -80,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Fetch user profile when signed in
         const { data: profile } = await supabase
           .from('profiles')
-          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, created_at, updated_at')
+          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, spotter_tier, created_at, updated_at')
           .eq('id', session.user.id)
           .single();
           
@@ -117,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             validation_score: userStats.validation_score || 0,
             view_mode: 'user',
             subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
+            spotter_tier: profile.spotter_tier || 'learning',
             is_admin: isAdmin,
             account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
             permissions: isAdmin ? {
@@ -148,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Get user profile from database
         const { data: profile } = await supabase
           .from('profiles')
-          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, created_at, updated_at')
+          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, spotter_tier, created_at, updated_at')
           .eq('id', session.user.id)
           .single();
 
@@ -185,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             validation_score: userStats.validation_score || 0,
             view_mode: 'user',
             subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
+            spotter_tier: profile.spotter_tier || 'learning',
             is_admin: isAdmin,
             account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
             permissions: isAdmin ? {
