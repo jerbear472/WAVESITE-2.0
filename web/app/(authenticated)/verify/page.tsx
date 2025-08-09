@@ -134,6 +134,8 @@ export default function ValidateTrendsPage() {
         return;
       }
 
+      console.log('[Verify] Loading trends for user:', user.id);
+
       // Get already validated trends
       const { data: validatedTrends, error: validatedError } = await supabase
         .from('trend_validations')
@@ -145,6 +147,7 @@ export default function ValidateTrendsPage() {
       }
 
       const validatedIds = validatedTrends?.map(v => v.trend_submission_id) || [];
+      console.log('[Verify] Already validated:', validatedIds.length, 'trends');
       
       // Get skipped trends from localStorage
       const skippedKey = `skipped_trends_${user.id}_${new Date().toDateString()}`;
@@ -152,28 +155,96 @@ export default function ValidateTrendsPage() {
       
       const excludeIds = [...validatedIds, ...skippedTrends];
 
-      // Get trends to validate
-      // Check both status and validation_status fields for pending trends
-      // Trends need validation if:
-      // - status is 'submitted' OR
-      // - validation_status is 'pending' or null OR
-      // - validation_count is 0
-      let query = supabase
-        .from('trend_submissions')
-        .select('*')
-        .or(`status.eq.submitted,status.eq.validating,validation_status.eq.pending,validation_status.is.null,validation_count.eq.0`)
-        .neq('spotter_id', user.id);
-      
-      if (excludeIds.length > 0) {
-        query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+      // First try: Use RPC function if available (bypasses RLS)
+      let trendsData = null;
+      let trendsError = null;
+
+      try {
+        console.log('[Verify] Trying RPC function get_trends_for_validation...');
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('get_trends_for_validation', {
+            user_id: user.id,
+            limit_count: 20
+          });
+
+        if (!rpcError && rpcData) {
+          console.log('[Verify] RPC function returned', rpcData.length, 'trends');
+          trendsData = rpcData;
+        } else if (rpcError) {
+          console.log('[Verify] RPC function failed:', rpcError.message);
+        }
+      } catch (e) {
+        console.log('[Verify] RPC function not available');
       }
-      
-      const { data: trendsData, error: trendsError } = await query
-        .order('created_at', { ascending: false })
-        .limit(20);
+
+      // Second try: Regular query with multiple conditions
+      if (!trendsData) {
+        console.log('[Verify] Trying regular query...');
+        let query = supabase
+          .from('trend_submissions')
+          .select('*')
+          .neq('spotter_id', user.id);
+        
+        // Add exclusions if any
+        if (excludeIds.length > 0) {
+          query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+        }
+        
+        // Try broader query first
+        const result = await query
+          .order('created_at', { ascending: false })
+          .limit(50); // Get more initially
+
+        trendsData = result.data;
+        trendsError = result.error;
+
+        if (trendsError) {
+          console.error('[Verify] Query error:', trendsError);
+        } else {
+          console.log('[Verify] Query returned', trendsData?.length || 0, 'total trends');
+          
+          // Filter client-side for trends that need validation
+          if (trendsData && trendsData.length > 0) {
+            trendsData = trendsData.filter(trend => {
+              // Include if any of these conditions are true
+              return (
+                trend.status === 'submitted' ||
+                trend.status === 'validating' ||
+                trend.validation_status === 'pending' ||
+                trend.validation_status === null ||
+                trend.validation_count === 0 ||
+                trend.validation_count === null ||
+                trend.approve_count === 0 ||
+                trend.approve_count === null
+              );
+            }).slice(0, 20); // Limit to 20 after filtering
+            
+            console.log('[Verify] After filtering:', trendsData.length, 'trends need validation');
+          }
+        }
+      }
+
+      // Third try: If still no trends, try simpler query
+      if ((!trendsData || trendsData.length === 0) && !trendsError) {
+        console.log('[Verify] Trying simplest query - just get recent trends...');
+        const { data: simpleTrends, error: simpleError } = await supabase
+          .from('trend_submissions')
+          .select('*')
+          .neq('spotter_id', user.id)
+          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (!simpleError && simpleTrends) {
+          console.log('[Verify] Simple query found', simpleTrends.length, 'recent trends');
+          // Filter out already validated ones
+          trendsData = simpleTrends.filter(t => !excludeIds.includes(t.id));
+          console.log('[Verify] After excluding validated:', trendsData.length, 'trends available');
+        }
+      }
 
       if (trendsError) {
-        console.error('Error loading trends:', trendsError);
+        console.error('[Verify] Error loading trends:', trendsError);
         setLastError('Unable to load trends. Please refresh the page.');
       }
 
@@ -182,10 +253,14 @@ export default function ValidateTrendsPage() {
         const hoursAgo = Math.round((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60));
         return {
           ...trend,
+          validation_count: trend.validation_count || 0,
+          approve_count: trend.approve_count || 0,
+          reject_count: trend.reject_count || 0,
           hours_since_post: hoursAgo
         };
       });
 
+      console.log('[Verify] Final processed trends:', processedTrends.length);
       setTrends(processedTrends);
       
       // Set quality criteria for first trend
@@ -193,7 +268,7 @@ export default function ValidateTrendsPage() {
         setQualityCriteria(evaluateQualityCriteria(processedTrends[0]));
       }
     } catch (error) {
-      console.error('Error loading trends:', error);
+      console.error('[Verify] Error loading trends:', error);
       setLastError('Unable to load trends. Please check your connection.');
     } finally {
       setLoading(false);
