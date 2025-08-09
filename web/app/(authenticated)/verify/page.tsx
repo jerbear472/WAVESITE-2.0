@@ -73,6 +73,7 @@ export default function ValidateTrendsPage() {
   const [sessionValidations, setSessionValidations] = useState(0);
   const [qualityCriteria, setQualityCriteria] = useState<QualityCriteria[]>([]);
   const [lastError, setLastError] = useState('');
+  const [initialTrendsCount, setInitialTrendsCount] = useState(0);
 
   const formatCount = (count?: number): string => {
     if (!count || count === 0) return '';
@@ -167,6 +168,7 @@ export default function ValidateTrendsPage() {
       });
 
       setTrends(processedTrends);
+      setInitialTrendsCount(processedTrends.length);
       
       if (processedTrends.length > 0) {
         setQualityCriteria(evaluateQualityCriteria(processedTrends[0]));
@@ -309,6 +311,38 @@ export default function ValidateTrendsPage() {
     }
   }, [currentIndex, trends]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Prevent if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      if (validating || !currentTrend) return;
+      
+      switch(e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          handleValidation('reject');
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          handleValidation('approve');
+          break;
+        case 'ArrowUp':
+        case 'ArrowDown':
+        case ' ':
+          e.preventDefault();
+          handleValidation('skip');
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [validating, currentTrend]);
+
   const currentTrend = trends[currentIndex];
 
   if (loading) {
@@ -384,26 +418,25 @@ export default function ValidateTrendsPage() {
   const qualityScore = currentTrend ? calculateQualityScore(qualityCriteria) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Elegant Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+      {/* Compact Header */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-semibold text-gray-900">Trend Validation</h1>
-                  <p className="text-xs text-gray-500">Help verify trending content</p>
+                  <h1 className="text-sm font-semibold text-gray-900">Trend Validation</h1>
                 </div>
               </div>
               
               <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full">
                 <div className="w-2 h-2 rounded-full bg-blue-600"></div>
                 <span className="text-sm font-medium text-gray-700">
-                  {currentIndex + 1} of {trends.length}
+                  {initialTrendsCount - trends.length + 1} of {initialTrendsCount}
                 </span>
               </div>
             </div>
@@ -424,14 +457,14 @@ export default function ValidateTrendsPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* Main Content - Made more compact */}
+      <div className="flex-1 max-w-7xl mx-auto px-4 py-3 flex flex-col">
         {/* Error Message */}
         {lastError && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 flex items-center justify-between"
+            className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center justify-between text-sm"
           >
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5" />
@@ -443,8 +476,8 @@ export default function ValidateTrendsPage() {
           </motion.div>
         )}
 
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          <div className="grid lg:grid-cols-2">
+        <div className="bg-white rounded-xl shadow-xl overflow-hidden flex-1 flex">
+          <div className="grid lg:grid-cols-2 w-full">
             {/* Enhanced Image Section */}
             <div className="relative bg-gradient-to-br from-gray-100 to-gray-200">
               {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
@@ -453,7 +486,7 @@ export default function ValidateTrendsPage() {
                     src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
                     alt="Trend submission"
                     className="w-full h-full object-cover"
-                    style={{ minHeight: '500px', maxHeight: '600px' }}
+                    style={{ height: '400px', objectFit: 'cover' }}
                   />
                   {/* Engagement Overlay - Only show if there are values */}
                   {(currentTrend.likes_count || currentTrend.views_count || currentTrend.comments_count || currentTrend.shares_count) && (
@@ -488,7 +521,7 @@ export default function ValidateTrendsPage() {
                   )}
                 </>
               ) : (
-                <div className="h-full min-h-[500px] flex items-center justify-center">
+                <div className="h-[400px] flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-200 flex items-center justify-center">
                       <AlertCircle className="w-10 h-10 text-gray-400" />
@@ -500,18 +533,18 @@ export default function ValidateTrendsPage() {
               )}
             </div>
 
-            {/* Enhanced Details Section */}
-            <div className="p-8 flex flex-col">
+            {/* Compact Details Section */}
+            <div className="p-5 flex flex-col h-[400px] overflow-y-auto">
               {/* Trend Info */}
               <div className="flex-1">
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                    <h2 className="text-lg font-bold text-gray-900 mb-2 leading-tight">
                       {currentTrend.description || 'No description provided'}
                     </h2>
                     
                     {currentTrend.post_caption && (
-                      <p className="text-gray-600 leading-relaxed mb-4">
+                      <p className="text-gray-600 text-sm leading-relaxed mb-2 line-clamp-2">
                         {currentTrend.post_caption}
                       </p>
                     )}
@@ -519,38 +552,38 @@ export default function ValidateTrendsPage() {
                 </div>
 
                 {/* Metadata Tags */}
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex flex-wrap gap-1.5 mb-3">
                   {currentTrend.platform && (
-                    <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                    <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
                       <TrendingUp className="w-3 h-3" />
                       {currentTrend.platform}
                     </span>
                   )}
                   {currentTrend.category && (
-                    <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                    <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
                       <Hash className="w-3 h-3" />
                       {currentTrend.category.replace(/_/g, ' ')}
                     </span>
                   )}
                   {currentTrend.creator_handle && (
-                    <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                    <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
                       <User className="w-3 h-3" />
                       @{currentTrend.creator_handle}
                     </span>
                   )}
                   {currentTrend.hours_since_post && (
-                    <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                    <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
                       <Clock className="w-3 h-3" />
                       {currentTrend.hours_since_post}h ago
                     </span>
                   )}
                 </div>
 
-                {/* Quality Assessment Card */}
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-900">Quality Assessment</h3>
-                    <div className={`text-2xl font-bold ${
+                {/* Quality Assessment Card - Compact */}
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900 text-sm">Quality Assessment</h3>
+                    <div className={`text-xl font-bold ${
                       qualityScore >= 80 ? 'text-green-600' :
                       qualityScore >= 60 ? 'text-yellow-600' :
                       'text-red-600'
@@ -559,10 +592,10 @@ export default function ValidateTrendsPage() {
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {qualityCriteria.map(criterion => (
-                      <div key={criterion.id} className="flex items-start gap-3">
-                        <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center ${
+                      <div key={criterion.id} className="flex items-start gap-2">
+                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center ${
                           criterion.met ? 'bg-green-100' : 'bg-gray-200'
                         }`}>
                           {criterion.met ? (
@@ -585,46 +618,49 @@ export default function ValidateTrendsPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons with Hotkey hints */}
               <div>
-                <p className="text-center text-sm text-gray-600 mb-4 font-medium">
+                <p className="text-center text-xs text-gray-600 mb-3 font-medium">
                   Is this a legitimate trending topic?
                 </p>
                 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => handleValidation('reject')}
                     disabled={validating}
-                    className="group relative overflow-hidden bg-white border-2 border-red-200 hover:border-red-300 text-red-700 rounded-xl py-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="group relative overflow-hidden bg-white border-2 border-red-200 hover:border-red-300 text-red-700 rounded-lg py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-red-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div className="relative flex flex-col items-center gap-2">
-                      <ThumbsDown className="w-6 h-6" />
-                      <span className="text-sm font-semibold">Reject</span>
+                    <div className="relative flex flex-col items-center gap-1">
+                      <ThumbsDown className="w-5 h-5" />
+                      <span className="text-xs font-semibold">Reject</span>
+                      <span className="text-xs text-gray-400">←</span>
                     </div>
                   </button>
 
                   <button
                     onClick={() => handleValidation('skip')}
                     disabled={validating}
-                    className="group relative overflow-hidden bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-xl py-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="group relative overflow-hidden bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-lg py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div className="relative flex flex-col items-center gap-2">
-                      <SkipForward className="w-6 h-6" />
-                      <span className="text-sm font-semibold">Skip</span>
+                    <div className="relative flex flex-col items-center gap-1">
+                      <SkipForward className="w-5 h-5" />
+                      <span className="text-xs font-semibold">Skip</span>
+                      <span className="text-xs text-gray-400">Space</span>
                     </div>
                   </button>
 
                   <button
                     onClick={() => handleValidation('approve')}
                     disabled={validating}
-                    className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl py-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
+                    className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-lg py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div className="relative flex flex-col items-center gap-2">
-                      <ThumbsUp className="w-6 h-6" />
-                      <span className="text-sm font-semibold">Approve</span>
+                    <div className="relative flex flex-col items-center gap-1">
+                      <ThumbsUp className="w-5 h-5" />
+                      <span className="text-xs font-semibold">Approve</span>
+                      <span className="text-xs text-green-100">→</span>
                     </div>
                   </button>
                 </div>
@@ -633,12 +669,12 @@ export default function ValidateTrendsPage() {
           </div>
         </div>
 
-        {/* Session Progress Card */}
+        {/* Session Progress Card - Compact */}
         {sessionValidations > 0 && (
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 bg-white rounded-2xl shadow-lg p-6"
+            className="mt-3 bg-white rounded-lg shadow-md p-4"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
