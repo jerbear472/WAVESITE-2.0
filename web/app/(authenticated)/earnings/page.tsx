@@ -327,11 +327,12 @@ export default function Earnings() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">How Earnings Work</h3>
               <ul className="space-y-2 text-gray-300 text-sm">
-                <li>• Submit a trend to earn {formatCurrency(EARNINGS.SUBMISSION_REWARD)} (pending verification)</li>
-                <li>• When {EARNINGS.MIN_VOTES_REQUIRED}+ people vote and majority verify your trend, earnings become approved</li>
+                <li>• Submit a trend to earn {formatCurrency(EARNINGS.SUBMISSION_REWARD)} (awaiting verification)</li>
+                <li>• {EARNINGS.MIN_VOTES_REQUIRED} "verify" votes = trend approved, earnings become available</li>
+                <li>• {EARNINGS.MIN_VOTES_REQUIRED} "reject" votes = trend rejected, no earnings</li>
                 <li>• Participate in verifications to earn {formatCurrency(EARNINGS.VERIFICATION_REWARD)} per vote</li>
+                <li>• You CAN vote on your own trends</li>
                 <li>• Cash out when you reach {formatCurrency(EARNINGS.MINIMUM_CASHOUT)} in approved earnings</li>
-                <li>• Tie votes go in favor of the trend submitter</li>
               </ul>
             </div>
           </div>

@@ -182,10 +182,9 @@ export default function ValidateTrendsPage() {
         console.log('[Verify] Trying regular query...');
         let query = supabase
           .from('trend_submissions')
-          .select('*')
-          .neq('spotter_id', user.id);
+          .select('*');
         
-        // Add exclusions if any
+        // Add exclusions if any (but don't exclude own trends)
         if (excludeIds.length > 0) {
           query = query.not('id', 'in', `(${excludeIds.join(',')})`);
         }
@@ -230,7 +229,6 @@ export default function ValidateTrendsPage() {
         const { data: simpleTrends, error: simpleError } = await supabase
           .from('trend_submissions')
           .select('*')
-          .neq('spotter_id', user.id)
           .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
           .order('created_at', { ascending: false })
           .limit(20);
