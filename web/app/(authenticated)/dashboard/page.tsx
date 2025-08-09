@@ -22,7 +22,6 @@ import {
 interface DashboardStats {
   total_earnings: number;
   pending_earnings: number;
-  awaiting_verification: number;
   trends_spotted: number;
   trends_verified: number;
   scroll_sessions_count: number;
@@ -72,7 +71,6 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     total_earnings: 0,
     pending_earnings: 0,
-    awaiting_verification: 0,
     trends_spotted: 0,
     trends_verified: 0,
     scroll_sessions_count: 0,

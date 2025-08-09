@@ -26,7 +26,6 @@ import {
 
 interface EarningsData {
   earnings_pending: number;
-  awaiting_verification: number;
   earnings_approved: number;
   earnings_paid: number;
   total_submissions: number;
@@ -52,7 +51,6 @@ export default function Earnings() {
   const { user } = useAuth();
   const [earningsData, setEarningsData] = useState<EarningsData>({
     earnings_pending: 0,
-    awaiting_verification: 0,
     earnings_approved: 0,
     earnings_paid: 0,
     total_submissions: 0,
@@ -74,18 +72,13 @@ export default function Earnings() {
       // Fetch user profile with earnings data
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('earnings_pending, awaiting_verification, earnings_approved, earnings_paid, total_submissions, verified_submissions')
+        .select('earnings_pending, earnings_approved, earnings_paid, total_submissions, verified_submissions')
         .eq('id', user?.id)
         .single();
 
       if (profileError) throw profileError;
       
-      // Ensure awaiting_verification has a value
-      const earningsProfile = {
-        ...profile,
-        awaiting_verification: profile.awaiting_verification || 0
-      };
-      setEarningsData(earningsProfile);
+      setEarningsData(profile);
 
       // Fetch ALL earnings transactions including pending and awaiting_verification
       const { data: transactionsData, error: transError } = await supabase
@@ -119,7 +112,7 @@ export default function Earnings() {
   };
 
   const totalAvailable = earningsData.earnings_approved;
-  const totalPending = (earningsData.awaiting_verification || 0) + (earningsData.earnings_pending || 0);
+  const totalPending = earningsData.earnings_pending || 0;
   const totalEarnings = totalPending + earningsData.earnings_approved + earningsData.earnings_paid;
   const verificationRate = earningsData.total_submissions > 0 
     ? (earningsData.verified_submissions / earningsData.total_submissions * 100).toFixed(1)
@@ -227,9 +220,7 @@ export default function Earnings() {
             </div>
             <div className="text-gray-400 text-sm">Pending Verification</div>
             <div className="mt-4 text-xs text-gray-500">
-              {earningsData.awaiting_verification > 0 && `${formatCurrency(earningsData.awaiting_verification)} awaiting`}
-              {earningsData.awaiting_verification > 0 && earningsData.earnings_pending > 0 && ', '}
-              {earningsData.earnings_pending > 0 && `${formatCurrency(earningsData.earnings_pending)} pending`}
+              Includes submissions and validations
             </div>
           </motion.div>
 
