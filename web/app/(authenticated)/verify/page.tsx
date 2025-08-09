@@ -522,7 +522,8 @@ export default function ValidateTrendsPage() {
     );
   }
 
-  const qualityScore = calculateQualityScore(qualityCriteria);
+  // Calculate quality score for current trend
+  const qualityScore = currentTrend ? calculateQualityScore(qualityCriteria) : 0;
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
