@@ -484,19 +484,19 @@ export default function ValidateTrendsPage() {
         <div className="bg-white rounded-xl shadow-xl overflow-hidden flex-1 flex">
           <div className="grid lg:grid-cols-2 w-full">
             {/* Enhanced Image Section */}
-            <div className="relative bg-gradient-to-br from-gray-100 to-gray-200">
+            <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center" style={{ height: '400px' }}>
               {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
                 <>
                   <img
                     src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
                     alt="Trend submission"
-                    className="w-full h-full object-cover"
-                    style={{ height: '400px', objectFit: 'cover' }}
+                    className="w-full h-full object-contain"
+                    style={{ maxHeight: '400px' }}
                   />
-                  {/* Engagement Overlay - Only show if there are values */}
-                  {(currentTrend.likes_count || currentTrend.views_count || currentTrend.comments_count || currentTrend.shares_count) && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
-                      <div className="flex gap-6 text-white">
+                  {/* Engagement Overlay - Only show if there are meaningful values */}
+                  {(currentTrend.likes_count > 0 || currentTrend.views_count > 0 || currentTrend.comments_count > 0 || currentTrend.shares_count > 0) && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4">
+                      <div className="flex gap-4 text-white">
                         {currentTrend.views_count > 0 && (
                           <div className="flex items-center gap-2">
                             <Eye className="w-5 h-5" />
@@ -526,7 +526,7 @@ export default function ValidateTrendsPage() {
                   )}
                 </>
               ) : (
-                <div className="h-[400px] flex items-center justify-center">
+                <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-200 flex items-center justify-center">
                       <AlertCircle className="w-10 h-10 text-gray-400" />
@@ -539,25 +539,22 @@ export default function ValidateTrendsPage() {
             </div>
 
             {/* Compact Details Section with fixed buttons */}
-            <div className="p-5 flex flex-col h-[400px] relative">
-              {/* Scrollable Content Area */}
-              <div className="flex-1 overflow-y-auto pb-24">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <h2 className="text-lg font-bold text-gray-900 mb-2 leading-tight">
-                      {currentTrend.description || 'No description provided'}
-                    </h2>
-                    
-                    {currentTrend.post_caption && (
-                      <p className="text-gray-600 text-sm leading-relaxed mb-2 line-clamp-2">
-                        {currentTrend.post_caption}
-                      </p>
-                    )}
-                  </div>
-                </div>
+            <div className="p-4 flex flex-col h-[400px] relative">
+              {/* All Content Area - No scrolling needed */}
+              <div className="flex-1">
+                {/* Title and Caption - More compact */}
+                <h2 className="text-base font-bold text-gray-900 mb-1 leading-tight line-clamp-2">
+                  {currentTrend.description || 'No description provided'}
+                </h2>
+                
+                {currentTrend.post_caption && (
+                  <p className="text-gray-600 text-xs leading-relaxed mb-2 line-clamp-2">
+                    {currentTrend.post_caption}
+                  </p>
+                )}
 
-                {/* Metadata Tags */}
-                <div className="flex flex-wrap gap-1.5 mb-3">
+                {/* Metadata Tags - More compact */}
+                <div className="flex flex-wrap gap-1 mb-2">
                   {currentTrend.platform && (
                     <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
                       <TrendingUp className="w-3 h-3" />
@@ -584,11 +581,11 @@ export default function ValidateTrendsPage() {
                   )}
                 </div>
 
-                {/* Additional Info for Assessment */}
-                {(currentTrend.source_url || currentTrend.post_url || (currentTrend.hashtags && currentTrend.hashtags.length > 0) || currentTrend.trending_position) && (
-                  <div className="bg-blue-50 rounded-lg p-3 mb-3">
-                    <h4 className="text-xs font-semibold text-blue-900 mb-2">Additional Context</h4>
-                    <div className="space-y-1.5">
+                {/* Additional Info for Assessment - More compact */}
+                {(currentTrend.source_url || currentTrend.post_url || (currentTrend.hashtags && currentTrend.hashtags.length > 0) || currentTrend.trending_position || currentTrend.confidence_score) && (
+                  <div className="bg-blue-50 rounded-lg p-2 mb-2">
+                    <h4 className="text-xs font-semibold text-blue-900 mb-1">Additional Context</h4>
+                    <div className="space-y-1">
                       {currentTrend.source_url && (
                         <div className="flex items-start gap-2">
                           <span className="text-xs text-gray-600">Source:</span>
@@ -633,11 +630,11 @@ export default function ValidateTrendsPage() {
                   </div>
                 )}
 
-                {/* Quality Assessment Card - Compact */}
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-gray-900 text-sm">Quality Assessment</h3>
-                    <div className={`text-xl font-bold ${
+                {/* Quality Assessment Card - Ultra Compact */}
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-2 mb-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 text-xs">Quality</h3>
+                    <div className={`text-sm font-bold ${
                       qualityScore >= 80 ? 'text-green-600' :
                       qualityScore >= 60 ? 'text-yellow-600' :
                       'text-red-600'
@@ -646,26 +643,23 @@ export default function ValidateTrendsPage() {
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    {qualityCriteria.map(criterion => (
-                      <div key={criterion.id} className="flex items-start gap-2">
-                        <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center ${
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                    {qualityCriteria.slice(0, 4).map(criterion => (
+                      <div key={criterion.id} className="flex items-center gap-1">
+                        <div className={`w-3 h-3 rounded-full flex items-center justify-center ${
                           criterion.met ? 'bg-green-100' : 'bg-gray-200'
                         }`}>
                           {criterion.met ? (
-                            <CheckCircle className="w-3 h-3 text-green-600" />
+                            <CheckCircle className="w-2.5 h-2.5 text-green-600" />
                           ) : (
-                            <div className="w-2 h-2 rounded-full bg-gray-400" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
                           )}
                         </div>
-                        <div className="flex-1">
-                          <p className={`font-medium text-sm ${
-                            criterion.met ? 'text-gray-900' : 'text-gray-500'
-                          }`}>
-                            {criterion.label}
-                          </p>
-                          <p className="text-xs text-gray-500">{criterion.description}</p>
-                        </div>
+                        <p className={`text-xs ${
+                          criterion.met ? 'text-gray-700' : 'text-gray-400'
+                        }`}>
+                          {criterion.label}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -673,7 +667,7 @@ export default function ValidateTrendsPage() {
               </div>
 
               {/* Fixed Action Buttons at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-4">
+              <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-3">
                 <p className="text-center text-xs text-gray-600 mb-2 font-medium">
                   Is this a legitimate trending topic?
                 </p>
