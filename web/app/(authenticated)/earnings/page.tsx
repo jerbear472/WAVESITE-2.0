@@ -26,6 +26,7 @@ import {
 
 interface EarningsData {
   earnings_pending: number;
+  awaiting_verification: number;
   earnings_approved: number;
   earnings_paid: number;
   total_submissions: number;
@@ -35,7 +36,7 @@ interface EarningsData {
 interface EarningTransaction {
   id: string;
   amount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'paid';
+  status: 'pending' | 'awaiting_verification' | 'approved' | 'rejected' | 'paid';
   earning_type: string;
   created_at: string;
   approved_at?: string;
@@ -51,6 +52,7 @@ export default function Earnings() {
   const { user } = useAuth();
   const [earningsData, setEarningsData] = useState<EarningsData>({
     earnings_pending: 0,
+    awaiting_verification: 0,
     earnings_approved: 0,
     earnings_paid: 0,
     total_submissions: 0,
@@ -72,7 +74,7 @@ export default function Earnings() {
       // Fetch user profile with earnings data
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('earnings_pending, earnings_approved, earnings_paid, total_submissions, verified_submissions')
+        .select('earnings_pending, awaiting_verification, earnings_approved, earnings_paid, total_submissions, verified_submissions')
         .eq('id', user?.id)
         .single();
 
@@ -117,6 +119,8 @@ export default function Earnings() {
     switch (status) {
       case 'pending':
         return <Timer className="w-4 h-4 text-yellow-500" />;
+      case 'awaiting_verification':
+        return <Clock className="w-4 h-4 text-orange-500" />;
       case 'approved':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'rejected':
@@ -131,6 +135,8 @@ export default function Earnings() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending':
+        return 'Processing';
+      case 'awaiting_verification':
         return 'Awaiting Verification';
       case 'approved':
         return 'Verified';
@@ -201,11 +207,11 @@ export default function Earnings() {
               <div className="text-xs text-gray-500">Pending</div>
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {formatCurrency(earningsData.earnings_pending)}
+              {formatCurrency(earningsData.awaiting_verification || earningsData.earnings_pending)}
             </div>
             <div className="text-gray-400 text-sm">Awaiting Verification</div>
             <div className="mt-4 text-xs text-gray-500">
-              From {transactions.filter(t => t.status === 'pending').length} submissions
+              From {transactions.filter(t => t.status === 'pending' || t.status === 'awaiting_verification').length} submissions
             </div>
           </motion.div>
 
