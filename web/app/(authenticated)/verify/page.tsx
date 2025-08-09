@@ -153,10 +153,15 @@ export default function ValidateTrendsPage() {
       const excludeIds = [...validatedIds, ...skippedTrends];
 
       // Get trends to validate
+      // Check both status and validation_status fields for pending trends
+      // Trends need validation if:
+      // - status is 'submitted' OR
+      // - validation_status is 'pending' or null OR
+      // - validation_count is 0
       let query = supabase
         .from('trend_submissions')
         .select('*')
-        .in('status', ['submitted', 'validating'])
+        .or(`status.eq.submitted,status.eq.validating,validation_status.eq.pending,validation_status.is.null,validation_count.eq.0`)
         .neq('spotter_id', user.id);
       
       if (excludeIds.length > 0) {
