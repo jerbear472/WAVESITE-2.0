@@ -462,285 +462,286 @@ export default function ValidateTrendsPage() {
         </div>
       </div>
 
-      {/* Main Content - Made more compact */}
-      <div className="flex-1 max-w-7xl mx-auto px-4 py-3 flex flex-col">
-        {/* Error Message */}
-        {lastError && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center justify-between text-sm"
-          >
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5" />
-              <span className="font-medium">{lastError}</span>
-            </div>
-            <button onClick={() => setLastError('')} className="text-red-500 hover:text-red-700">
-              <X className="w-5 h-5" />
-            </button>
-          </motion.div>
-        )}
+      {/* Main Content - Optimized for laptop screens */}
+      <div className="flex-1 flex flex-col max-h-[calc(100vh-80px)]">
+        <div className="max-w-7xl mx-auto w-full px-4 py-2 flex-1 flex flex-col">
+          {/* Error Message */}
+          {lastError && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-2 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center justify-between text-sm"
+            >
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm">{lastError}</span>
+              </div>
+              <button onClick={() => setLastError('')} className="text-red-500 hover:text-red-700">
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          )}
 
-        <div className="bg-white rounded-xl shadow-xl overflow-hidden flex-1 flex">
-          <div className="grid lg:grid-cols-2 w-full">
-            {/* Enhanced Image Section */}
-            <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center" style={{ height: '400px' }}>
-              {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
-                <>
-                  <img
-                    src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
-                    alt="Trend submission"
-                    className="w-full h-full object-contain"
-                    style={{ maxHeight: '400px' }}
-                  />
-                  {/* Engagement Overlay - Only show if there are meaningful values */}
-                  {(currentTrend.likes_count > 0 || currentTrend.views_count > 0 || currentTrend.comments_count > 0 || currentTrend.shares_count > 0) && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4">
-                      <div className="flex gap-4 text-white">
-                        {currentTrend.views_count > 0 && (
-                          <div className="flex items-center gap-2">
-                            <Eye className="w-5 h-5" />
-                            <span className="font-medium">{formatCount(currentTrend.views_count)}</span>
-                          </div>
-                        )}
-                        {currentTrend.likes_count > 0 && (
-                          <div className="flex items-center gap-2">
-                            <Heart className="w-5 h-5" />
-                            <span className="font-medium">{formatCount(currentTrend.likes_count)}</span>
-                          </div>
-                        )}
-                        {currentTrend.comments_count > 0 && (
-                          <div className="flex items-center gap-2">
-                            <MessageCircle className="w-5 h-5" />
-                            <span className="font-medium">{formatCount(currentTrend.comments_count)}</span>
-                          </div>
-                        )}
-                        {currentTrend.shares_count > 0 && (
-                          <div className="flex items-center gap-2">
-                            <Share2 className="w-5 h-5" />
-                            <span className="font-medium">{formatCount(currentTrend.shares_count)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-200 flex items-center justify-center">
-                      <AlertCircle className="w-10 h-10 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 font-medium">No image provided</p>
-                    <p className="text-gray-400 text-sm mt-1">Visual evidence missing</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Compact Details Section with fixed buttons */}
-            <div className="p-4 flex flex-col h-[400px] relative">
-              {/* All Content Area - No scrolling needed */}
-              <div className="flex-1">
-                {/* Title and Caption - More compact */}
-                <h2 className="text-base font-bold text-gray-900 mb-1 leading-tight line-clamp-2">
-                  {currentTrend.description || 'No description provided'}
-                </h2>
-                
-                {currentTrend.post_caption && (
-                  <p className="text-gray-600 text-xs leading-relaxed mb-2 line-clamp-2">
-                    {currentTrend.post_caption}
-                  </p>
-                )}
-
-                {/* Metadata Tags - More compact */}
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {currentTrend.platform && (
-                    <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
-                      <TrendingUp className="w-3 h-3" />
-                      {currentTrend.platform}
-                    </span>
-                  )}
-                  {currentTrend.category && (
-                    <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-                      <Hash className="w-3 h-3" />
-                      {currentTrend.category.replace(/_/g, ' ')}
-                    </span>
-                  )}
-                  {currentTrend.creator_handle && (
-                    <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
-                      <User className="w-3 h-3" />
-                      @{currentTrend.creator_handle}
-                    </span>
-                  )}
-                  {currentTrend.hours_since_post && (
-                    <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
-                      <Clock className="w-3 h-3" />
-                      {currentTrend.hours_since_post}h ago
-                    </span>
-                  )}
-                </div>
-
-                {/* Additional Info for Assessment - More compact */}
-                {(currentTrend.source_url || currentTrend.post_url || (currentTrend.hashtags && currentTrend.hashtags.length > 0) || currentTrend.trending_position || currentTrend.confidence_score) && (
-                  <div className="bg-blue-50 rounded-lg p-2 mb-2">
-                    <h4 className="text-xs font-semibold text-blue-900 mb-1">Additional Context</h4>
-                    <div className="space-y-1">
-                      {currentTrend.source_url && (
-                        <div className="flex items-start gap-2">
-                          <span className="text-xs text-gray-600">Source:</span>
-                          <a href={currentTrend.source_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate flex-1">
-                            {currentTrend.source_url}
-                          </a>
-                        </div>
-                      )}
-                      {currentTrend.post_url && (
-                        <div className="flex items-start gap-2">
-                          <span className="text-xs text-gray-600">Post:</span>
-                          <a href={currentTrend.post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate flex-1">
-                            View Original
-                          </a>
-                        </div>
-                      )}
-                      {currentTrend.hashtags && currentTrend.hashtags.length > 0 && (
-                        <div className="flex items-start gap-2">
-                          <span className="text-xs text-gray-600">Tags:</span>
-                          <div className="flex flex-wrap gap-1 flex-1">
-                            {currentTrend.hashtags.slice(0, 5).map((tag, idx) => (
-                              <span key={idx} className="text-xs bg-white px-1.5 py-0.5 rounded text-blue-700">
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {currentTrend.trending_position && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600">Trending:</span>
-                          <span className="text-xs font-semibold text-blue-700">#{currentTrend.trending_position}</span>
-                        </div>
-                      )}
-                      {currentTrend.confidence_score && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600">AI Confidence:</span>
-                          <span className="text-xs font-semibold text-blue-700">{Math.round(currentTrend.confidence_score * 100)}%</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Quality Assessment Card - Ultra Compact */}
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-2 mb-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 text-xs">Quality</h3>
-                    <div className={`text-sm font-bold ${
-                      qualityScore >= 80 ? 'text-green-600' :
-                      qualityScore >= 60 ? 'text-yellow-600' :
-                      'text-red-600'
-                    }`}>
-                      {qualityScore}%
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-                    {qualityCriteria.slice(0, 4).map(criterion => (
-                      <div key={criterion.id} className="flex items-center gap-1">
-                        <div className={`w-3 h-3 rounded-full flex items-center justify-center ${
-                          criterion.met ? 'bg-green-100' : 'bg-gray-200'
-                        }`}>
-                          {criterion.met ? (
-                            <CheckCircle className="w-2.5 h-2.5 text-green-600" />
-                          ) : (
-                            <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+          <div className="bg-white rounded-xl shadow-xl flex-1 overflow-hidden">
+            <div className="grid lg:grid-cols-2 h-full">
+              {/* Image Section - Fixed height that fits screen */}
+              <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center h-full">
+                {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
+                  <>
+                    <img
+                      src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
+                      alt="Trend submission"
+                      className="w-full h-full object-contain p-4"
+                    />
+                    {/* Engagement Overlay - Only show if there are meaningful values */}
+                    {(currentTrend.likes_count > 0 || currentTrend.views_count > 0 || currentTrend.comments_count > 0 || currentTrend.shares_count > 0) && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
+                        <div className="flex gap-3 text-white">
+                          {currentTrend.views_count > 0 && (
+                            <div className="flex items-center gap-1.5">
+                              <Eye className="w-4 h-4" />
+                              <span className="text-sm font-medium">{formatCount(currentTrend.views_count)}</span>
+                            </div>
+                          )}
+                          {currentTrend.likes_count > 0 && (
+                            <div className="flex items-center gap-1.5">
+                              <Heart className="w-4 h-4" />
+                              <span className="text-sm font-medium">{formatCount(currentTrend.likes_count)}</span>
+                            </div>
+                          )}
+                          {currentTrend.comments_count > 0 && (
+                            <div className="flex items-center gap-1.5">
+                              <MessageCircle className="w-4 h-4" />
+                              <span className="text-sm font-medium">{formatCount(currentTrend.comments_count)}</span>
+                            </div>
+                          )}
+                          {currentTrend.shares_count > 0 && (
+                            <div className="flex items-center gap-1.5">
+                              <Share2 className="w-4 h-4" />
+                              <span className="text-sm font-medium">{formatCount(currentTrend.shares_count)}</span>
+                            </div>
                           )}
                         </div>
-                        <p className={`text-xs ${
-                          criterion.met ? 'text-gray-700' : 'text-gray-400'
-                        }`}>
-                          {criterion.label}
-                        </p>
                       </div>
-                    ))}
+                    )}
+                  </>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-200 flex items-center justify-center">
+                        <AlertCircle className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500 font-medium">No image provided</p>
+                      <p className="text-gray-400 text-sm mt-1">Visual evidence missing</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Fixed Action Buttons at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-3">
-                <p className="text-center text-xs text-gray-600 mb-2 font-medium">
-                  Is this a legitimate trending topic?
-                </p>
-                
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => handleValidation('reject')}
-                    disabled={validating}
-                    className="group relative overflow-hidden bg-white border-2 border-red-200 hover:border-red-300 text-red-700 rounded-lg py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-red-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div className="relative flex flex-col items-center gap-1">
-                      <ThumbsDown className="w-5 h-5" />
-                      <span className="text-xs font-semibold">Reject</span>
-                      <span className="text-xs text-gray-400">←</span>
-                    </div>
-                  </button>
+              {/* Details Section - Properly sized for content */}
+              <div className="flex flex-col h-full">
+                {/* Scrollable content area */}
+                <div className="flex-1 overflow-y-auto p-4 pb-0">
+                  {/* Title and Caption */}
+                  <h2 className="text-lg font-bold text-gray-900 mb-2 leading-tight">
+                    {currentTrend.description || 'No description provided'}
+                  </h2>
+                  
+                  {currentTrend.post_caption && (
+                    <p className="text-gray-600 text-sm leading-relaxed mb-3">
+                      {currentTrend.post_caption}
+                    </p>
+                  )}
 
-                  <button
-                    onClick={() => handleValidation('skip')}
-                    disabled={validating}
-                    className="group relative overflow-hidden bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-700 rounded-lg py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div className="relative flex flex-col items-center gap-1">
-                      <SkipForward className="w-5 h-5" />
-                      <span className="text-xs font-semibold">Skip</span>
-                      <span className="text-xs text-gray-400">Space</span>
-                    </div>
-                  </button>
+                  {/* Metadata Tags */}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {currentTrend.platform && (
+                      <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <TrendingUp className="w-3 h-3" />
+                        {currentTrend.platform}
+                      </span>
+                    )}
+                    {currentTrend.category && (
+                      <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <Hash className="w-3 h-3" />
+                        {currentTrend.category.replace(/_/g, ' ')}
+                      </span>
+                    )}
+                    {currentTrend.creator_handle && (
+                      <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <User className="w-3 h-3" />
+                        @{currentTrend.creator_handle}
+                      </span>
+                    )}
+                    {currentTrend.hours_since_post && (
+                      <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <Clock className="w-3 h-3" />
+                        {currentTrend.hours_since_post}h ago
+                      </span>
+                    )}
+                  </div>
 
-                  <button
-                    onClick={() => handleValidation('approve')}
-                    disabled={validating}
-                    className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-lg py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div className="relative flex flex-col items-center gap-1">
-                      <ThumbsUp className="w-5 h-5" />
-                      <span className="text-xs font-semibold">Approve</span>
-                      <span className="text-xs text-green-100">→</span>
+                  {/* Additional Context */}
+                  {(currentTrend.source_url || currentTrend.post_url || (currentTrend.hashtags && currentTrend.hashtags.length > 0) || currentTrend.trending_position || currentTrend.confidence_score) && (
+                    <div className="bg-blue-50 rounded-lg p-3 mb-3">
+                      <h4 className="text-sm font-semibold text-blue-900 mb-2">Additional Context</h4>
+                      <div className="space-y-1.5">
+                        {currentTrend.source_url && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-gray-600 mt-0.5">Source:</span>
+                            <a href={currentTrend.source_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline break-all">
+                              {currentTrend.source_url}
+                            </a>
+                          </div>
+                        )}
+                        {currentTrend.post_url && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-gray-600">Post:</span>
+                            <a href={currentTrend.post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                              View Original
+                            </a>
+                          </div>
+                        )}
+                        {currentTrend.hashtags && currentTrend.hashtags.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-gray-600 mt-0.5">Tags:</span>
+                            <div className="flex flex-wrap gap-1">
+                              {currentTrend.hashtags.slice(0, 5).map((tag, idx) => (
+                                <span key={idx} className="text-xs bg-white px-2 py-0.5 rounded text-blue-700">
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {currentTrend.trending_position && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600">Trending:</span>
+                            <span className="text-xs font-semibold text-blue-700">#{currentTrend.trending_position}</span>
+                          </div>
+                        )}
+                        {currentTrend.confidence_score && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600">AI Confidence:</span>
+                            <span className="text-xs font-semibold text-blue-700">{Math.round(currentTrend.confidence_score * 100)}%</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </button>
+                  )}
+
+                  {/* Quality Assessment */}
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900 text-sm">Quality Assessment</h3>
+                      <div className={`text-lg font-bold ${
+                        qualityScore >= 80 ? 'text-green-600' :
+                        qualityScore >= 60 ? 'text-yellow-600' :
+                        'text-red-600'
+                      }`}>
+                        {qualityScore}%
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      {qualityCriteria.map(criterion => (
+                        <div key={criterion.id} className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                            criterion.met ? 'bg-green-100' : 'bg-gray-200'
+                          }`}>
+                            {criterion.met ? (
+                              <CheckCircle className="w-3 h-3 text-green-600" />
+                            ) : (
+                              <div className="w-2 h-2 rounded-full bg-gray-400" />
+                            )}
+                          </div>
+                          <p className={`text-xs ${
+                            criterion.met ? 'text-gray-700 font-medium' : 'text-gray-400'
+                          }`}>
+                            {criterion.label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fixed Action Buttons */}
+                <div className="border-t bg-white p-4">
+                  <p className="text-center text-sm text-gray-600 mb-3 font-medium">
+                    Is this a legitimate trending topic?
+                  </p>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => handleValidation('reject')}
+                      disabled={validating}
+                      className="group relative overflow-hidden bg-white border-2 border-red-200 hover:border-red-400 text-red-700 rounded-lg py-2.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-red-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="relative flex flex-col items-center gap-1">
+                        <ThumbsDown className="w-5 h-5" />
+                        <span className="text-xs font-semibold">Reject</span>
+                        <span className="text-[10px] text-gray-400">←</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleValidation('skip')}
+                      disabled={validating}
+                      className="group relative overflow-hidden bg-white border-2 border-gray-200 hover:border-gray-400 text-gray-700 rounded-lg py-2.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="relative flex flex-col items-center gap-1">
+                        <SkipForward className="w-5 h-5" />
+                        <span className="text-xs font-semibold">Skip</span>
+                        <span className="text-[10px] text-gray-400">Space</span>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleValidation('approve')}
+                      disabled={validating}
+                      className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-lg py-2.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="relative flex flex-col items-center gap-1">
+                        <ThumbsUp className="w-5 h-5" />
+                        <span className="text-xs font-semibold">Approve</span>
+                        <span className="text-[10px] text-green-100">→</span>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Session Progress Card - Compact */}
-        {sessionValidations > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-3 bg-white rounded-lg shadow-md p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <Award className="w-6 h-6 text-white" />
+          {/* Session Progress Card - Compact */}
+          {sessionValidations > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-2 bg-white rounded-lg shadow-md p-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                    <Award className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Session Progress</p>
+                    <p className="text-sm font-bold text-gray-900">Great work!</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Session Progress</p>
-                  <p className="text-lg font-bold text-gray-900">Great work!</p>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Validated: <span className="font-bold text-gray-900">{sessionValidations}</span></p>
+                  <p className="text-sm font-bold text-green-600">+${(sessionValidations * 0.01).toFixed(2)}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Validated: <span className="font-bold text-gray-900">{sessionValidations}</span></p>
-                <p className="text-lg font-bold text-green-600">+${(sessionValidations * 0.01).toFixed(2)}</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );
