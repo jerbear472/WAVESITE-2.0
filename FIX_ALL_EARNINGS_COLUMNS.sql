@@ -69,10 +69,10 @@ CREATE TRIGGER on_trend_submission_created
 CREATE OR REPLACE FUNCTION handle_new_validation()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Add $0.01 to validator's pending earnings
+    -- Add $0.01 DIRECTLY to validator's APPROVED earnings (no approval needed!)
     UPDATE profiles
     SET 
-        earnings_pending = COALESCE(earnings_pending, 0) + 0.01,
+        earnings_approved = COALESCE(earnings_approved, 0) + 0.01,
         total_earnings = COALESCE(total_earnings, 0) + 0.01
     WHERE id = NEW.validator_id;
     

@@ -1,5 +1,5 @@
--- CRITICAL FIX: Create the missing cast_trend_vote function
--- This function is called by the verify page but doesn't exist!
+-- FIX VALIDATOR EARNINGS - Goes directly to earnings_approved
+-- Validators get paid immediately since no one approves validations
 
 DROP FUNCTION IF EXISTS public.cast_trend_vote(UUID, TEXT);
 
@@ -108,7 +108,7 @@ BEGIN
         WHERE id = v_spotter_id;
     END IF;
     
-    -- Add validator reward ($0.01 directly to approved - no approval needed for validations!)
+    -- VALIDATOR REWARD: $0.01 DIRECTLY TO APPROVED (no approval needed for validations!)
     UPDATE profiles
     SET 
         earnings_approved = COALESCE(earnings_approved, 0) + 0.01,
@@ -135,11 +135,48 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
+-- Also update the trigger for new validations
+CREATE OR REPLACE FUNCTION handle_new_validation()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Add $0.01 DIRECTLY to validator's APPROVED earnings (not pending!)
+    UPDATE profiles
+    SET 
+        earnings_approved = COALESCE(earnings_approved, 0) + 0.01,
+        total_earnings = COALESCE(total_earnings, 0) + 0.01
+    WHERE id = NEW.validator_id;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Recreate trigger
+DROP TRIGGER IF EXISTS on_validation_created ON trend_validations;
+CREATE TRIGGER on_validation_created
+    AFTER INSERT ON trend_validations
+    FOR EACH ROW
+    EXECUTE FUNCTION handle_new_validation();
+
 -- Grant permissions
 GRANT EXECUTE ON FUNCTION public.cast_trend_vote TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cast_trend_vote TO anon;
 
--- Verify function exists
+-- Fix any existing validator earnings that are in pending instead of approved
+-- Move all validation earnings from pending to approved
+UPDATE profiles p
+SET 
+    earnings_approved = COALESCE(earnings_approved, 0) + validation_earnings,
+    earnings_pending = GREATEST(0, COALESCE(earnings_pending, 0) - validation_earnings)
+FROM (
+    SELECT 
+        validator_id,
+        COUNT(*) * 0.01 as validation_earnings
+    FROM trend_validations
+    GROUP BY validator_id
+) v
+WHERE p.id = v.validator_id
+AND p.earnings_pending > 0;
+
 SELECT 
-    'cast_trend_vote function created successfully' as status,
-    'Validation system should now work' as message;
+    'Validator earnings fixed!' as status,
+    'All validation rewards now go directly to earnings_approved' as message;
