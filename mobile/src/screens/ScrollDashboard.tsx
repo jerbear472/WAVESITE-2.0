@@ -45,7 +45,7 @@ const MainDashboard: React.FC = () => {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Text style={styles.headerTitle}>WaveSite</Text>
+          <Text style={styles.headerTitle}>WaveSight</Text>
           <Text style={styles.headerSubtitle}>Ride the wave of trends</Text>
         </LinearGradient>
 

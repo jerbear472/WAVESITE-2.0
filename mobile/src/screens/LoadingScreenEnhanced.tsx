@@ -117,7 +117,7 @@ export const LoadingScreenEnhanced: React.FC = () => {
         </View>
         
         <Animated.View style={textAnimatedStyle}>
-          <Text style={styles.title}>WAVESITE</Text>
+          <Text style={styles.title}>WaveSight</Text>
           <Text style={styles.subtitle}>Ride the Wave of Trends</Text>
         </Animated.View>
         

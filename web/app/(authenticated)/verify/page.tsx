@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle,
@@ -76,8 +76,7 @@ export default function ValidateTrendsPage() {
   const [qualityCriteria, setQualityCriteria] = useState<QualityCriteria[]>([]);
   const [lastError, setLastError] = useState('');
   
-  // Create Supabase client with proper auth context
-  const supabase = createClientComponentClient();
+  // Supabase client is imported from lib/supabase
 
   const formatCount = (count?: number): string => {
     if (!count) return '0';
@@ -346,27 +345,18 @@ export default function ValidateTrendsPage() {
       
       console.log('Submitting validation:', { trend_id: trendId, vote_type: voteType });
 
-      // Get current user to verify authentication
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      console.log('Current user before vote:', currentUser?.id, currentUser?.email);
-      
-      if (!currentUser) {
+      // Ensure we have a user from context
+      if (!user?.id) {
         setLastError('You must be signed in to validate trends.');
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
+        setValidating(false);
         return;
       }
 
-      // Get fresh session to ensure auth headers are current
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session exists:', !!session);
-
-      // Use the RPC function to submit vote
+      // Use the RPC function to submit vote (correct parameter names)
       const { data: result, error } = await supabase
         .rpc('cast_trend_vote', {
-          trend_id: trendId,
-          vote_type: voteType
+          p_trend_id: trendId,
+          p_vote: voteType
         });
 
       console.log('Validation result:', { result, error });
@@ -375,43 +365,24 @@ export default function ValidateTrendsPage() {
 
       if (error) {
         console.error('Validation error:', error);
-        
-        // Provide user-friendly error messages
-        if (error.message?.includes('already voted')) {
-          setLastError('You have already validated this trend.');
-          nextTrend();
-        } else if (error.message?.includes('not found')) {
-          setLastError('This trend no longer exists.');
-          nextTrend();
-        } else if (error.message?.includes('authenticated')) {
-          setLastError('Please sign in to validate trends.');
-        } else {
-          setLastError('Unable to submit validation. Please try again.');
-        }
+        setLastError(error.message || 'Unable to submit validation. Please try again.');
         return;
       }
 
       // Check the result from RPC
-      if (result && typeof result === 'object' && 'success' in result) {
-        if (!result.success) {
+      if (result && typeof result === 'object') {
+        if (result.success === false) {
           console.error('Validation failed:', result.error);
           
-          // Handle specific error messages from the RPC function
-          if (result.error?.includes('Not authenticated')) {
-            setLastError('Please sign in to validate trends.');
-            // Redirect to login after a short delay
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 2000);
-          } else if (result.error?.includes('already voted') || result.error?.includes('already validated')) {
+          // Handle specific errors
+          if (result.error?.includes('already voted')) {
             setLastError('You have already validated this trend.');
             nextTrend();
           } else if (result.error?.includes('not found')) {
             setLastError('This trend no longer exists.');
             nextTrend();
-          } else if (result.error?.includes('own trend')) {
-            setLastError('You cannot validate your own trend submission.');
-            nextTrend();
+          } else if (result.error?.includes('authenticated')) {
+            setLastError('Please sign in to validate trends.');
           } else {
             setLastError(result.error || 'Validation failed. Please try again.');
           }
@@ -554,15 +525,20 @@ export default function ValidateTrendsPage() {
   const qualityScore = calculateQualityScore(qualityCriteria);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3">
+      <div className="bg-gray-900/95 backdrop-blur-sm border-b border-purple-800/50 sticky top-0 z-10 shadow-lg">
+        <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-purple-600" />
-              <h1 className="text-lg font-semibold text-gray-900">Validate Trends</h1>
-              <div className="bg-purple-100 text-purple-700 text-xs font-medium px-2 py-1 rounded-full">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">Validate Trends</h1>
+                <p className="text-xs text-purple-300">Help identify quality content</p>
+              </div>
+              <div className="bg-purple-500/20 text-purple-300 text-sm font-medium px-3 py-1.5 rounded-full border border-purple-500/30">
                 {currentIndex + 1} of {trends.length}
               </div>
             </div>
@@ -570,28 +546,28 @@ export default function ValidateTrendsPage() {
             {/* Earnings Display */}
             <div className="flex items-center gap-3">
               <motion.div
-                className="bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-lg flex items-center gap-2 border border-green-200"
+                className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-4 py-2 rounded-lg flex items-center gap-2 border border-green-500/30 backdrop-blur-sm"
                 animate={showRewardAnimation ? { scale: [1, 1.05, 1] } : {}}
               >
-                <Coins className="w-5 h-5 text-green-600" />
+                <Coins className="w-5 h-5 text-green-400" />
                 <div>
-                  <span className="font-bold text-green-800">${stats.earnings_today.toFixed(2)}</span>
-                  <span className="text-xs text-green-600 ml-1">Today</span>
+                  <span className="font-bold text-green-300">${stats.earnings_today.toFixed(2)}</span>
+                  <span className="text-xs text-green-400 ml-1">Today</span>
                 </div>
               </motion.div>
               
               <button
                 onClick={() => setShowHelp(!showHelp)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-purple-800/30 rounded-lg transition-colors"
               >
-                <Info className="w-5 h-5 text-gray-600" />
+                <Info className="w-5 h-5 text-purple-400" />
               </button>
               
               <button
                 onClick={() => setShowStats(!showStats)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-purple-800/30 rounded-lg transition-colors"
               >
-                {showStats ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {showStats ? <X className="w-5 h-5 text-purple-400" /> : <Menu className="w-5 h-5 text-purple-400" />}
               </button>
             </div>
           </div>
@@ -710,13 +686,17 @@ export default function ValidateTrendsPage() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Error Message */}
         {lastError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            {lastError}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 flex items-center gap-3 backdrop-blur-sm"
+          >
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm">{lastError}</span>
+          </motion.div>
         )}
 
         <AnimatePresence mode="wait">
@@ -725,12 +705,12 @@ export default function ValidateTrendsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden"
+            className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-purple-800/30 shadow-2xl overflow-hidden"
           >
             {/* Content Section */}
             <div className="grid md:grid-cols-2 gap-0">
               {/* Left: Image */}
-              <div className="bg-gray-100 relative">
+              <div className="bg-gray-900 relative">
                 {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
                   <img
                     src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
@@ -739,10 +719,10 @@ export default function ValidateTrendsPage() {
                     style={{ maxHeight: '500px' }}
                   />
                 ) : (
-                  <div className="h-full min-h-[400px] flex items-center justify-center">
+                  <div className="h-full min-h-[400px] flex items-center justify-center bg-gradient-to-br from-purple-900/20 to-pink-900/20">
                     <div className="text-center">
-                      <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-500">No image provided</p>
+                      <AlertCircle className="w-12 h-12 text-purple-400 mx-auto mb-2" />
+                      <p className="text-purple-300">No image provided</p>
                     </div>
                   </div>
                 )}
@@ -775,36 +755,36 @@ export default function ValidateTrendsPage() {
               </div>
 
               {/* Right: Details */}
-              <div className="p-6">
+              <div className="p-6 bg-gray-900/50">
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-xl font-bold text-white mb-2">
                     {currentTrend.description || 'No description'}
                   </h2>
                   
                   {currentTrend.post_caption && (
-                    <p className="text-gray-600 text-sm mb-3">
+                    <p className="text-gray-400 text-sm mb-3">
                       {currentTrend.post_caption}
                     </p>
                   )}
 
                   <div className="flex flex-wrap gap-2 text-xs">
                     {currentTrend.platform && (
-                      <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                      <span className="bg-gray-700/50 text-gray-300 px-2 py-1 rounded border border-gray-600/30">
                         {currentTrend.platform}
                       </span>
                     )}
                     {currentTrend.category && (
-                      <span className="bg-purple-100 text-purple-600 px-2 py-1 rounded">
+                      <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded border border-purple-500/30">
                         {currentTrend.category.replace(/_/g, ' ')}
                       </span>
                     )}
                     {currentTrend.creator_handle && (
-                      <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded">
+                      <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded border border-blue-500/30">
                         @{currentTrend.creator_handle}
                       </span>
                     )}
                     {currentTrend.hours_since_post !== undefined && (
-                      <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
+                      <span className="bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded border border-yellow-500/30">
                         {currentTrend.hours_since_post}h ago
                       </span>
                     )}
@@ -812,13 +792,13 @@ export default function ValidateTrendsPage() {
                 </div>
 
                 {/* Quality Checklist */}
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Quality Check</span>
+                <div className="mb-4 p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-purple-300">Quality Check</span>
                     <span className={`text-lg font-bold ${
-                      qualityScore >= 80 ? 'text-green-600' :
-                      qualityScore >= 60 ? 'text-yellow-600' :
-                      'text-red-600'
+                      qualityScore >= 80 ? 'text-green-400' :
+                      qualityScore >= 60 ? 'text-yellow-400' :
+                      'text-red-400'
                     }`}>
                       {qualityScore}%
                     </span>
@@ -828,11 +808,11 @@ export default function ValidateTrendsPage() {
                     {qualityCriteria.map(criterion => (
                       <div key={criterion.id} className="flex items-center gap-2 text-xs">
                         {criterion.met ? (
-                          <CheckSquare className="w-3 h-3 text-green-600" />
+                          <CheckSquare className="w-3 h-3 text-green-400" />
                         ) : (
-                          <Square className="w-3 h-3 text-gray-400" />
+                          <Square className="w-3 h-3 text-gray-500" />
                         )}
-                        <span className={criterion.met ? 'text-gray-700' : 'text-gray-500'}>
+                        <span className={criterion.met ? 'text-gray-300' : 'text-gray-500'}>
                           {criterion.label}
                         </span>
                       </div>
@@ -843,8 +823,8 @@ export default function ValidateTrendsPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="bg-gray-50 p-6 border-t border-gray-200">
-              <p className="text-center text-sm text-gray-600 mb-4">
+            <div className="bg-gray-900/70 p-6 border-t border-purple-800/30">
+              <p className="text-center text-sm text-purple-300 mb-4">
                 Is this a high-quality trend submission?
               </p>
               
@@ -852,62 +832,65 @@ export default function ValidateTrendsPage() {
                 <motion.button
                   onClick={() => handleValidation('reject')}
                   disabled={validating}
-                  className="flex flex-col items-center justify-center py-4 px-3 bg-red-50 hover:bg-red-100 border-2 border-red-200 text-red-700 rounded-xl transition-all disabled:opacity-50"
+                  className="flex flex-col items-center justify-center py-4 px-3 bg-red-500/10 hover:bg-red-500/20 border-2 border-red-500/30 text-red-400 rounded-xl transition-all disabled:opacity-50 backdrop-blur-sm"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <ThumbsDown className="w-6 h-6 mb-2" />
                   <span className="text-sm font-semibold">Reject</span>
-                  <span className="text-xs text-red-500 mt-0.5">Press 2</span>
+                  <span className="text-xs text-red-400/70 mt-0.5">Press 2</span>
                 </motion.button>
 
                 <motion.button
                   onClick={() => handleValidation('skip')}
                   disabled={validating}
-                  className="flex flex-col items-center justify-center py-4 px-3 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 text-gray-700 rounded-xl transition-all disabled:opacity-50"
+                  className="flex flex-col items-center justify-center py-4 px-3 bg-gray-700/30 hover:bg-gray-700/50 border-2 border-gray-600/30 text-gray-300 rounded-xl transition-all disabled:opacity-50 backdrop-blur-sm"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <SkipForward className="w-6 h-6 mb-2" />
                   <span className="text-sm font-semibold">Skip</span>
-                  <span className="text-xs text-gray-500 mt-0.5">Press 3</span>
+                  <span className="text-xs text-gray-400/70 mt-0.5">Press 3</span>
                 </motion.button>
 
                 <motion.button
                   onClick={() => handleValidation('approve')}
                   disabled={validating}
-                  className="flex flex-col items-center justify-center py-4 px-3 bg-green-50 hover:bg-green-100 border-2 border-green-200 text-green-700 rounded-xl transition-all disabled:opacity-50"
+                  className="flex flex-col items-center justify-center py-4 px-3 bg-green-500/10 hover:bg-green-500/20 border-2 border-green-500/30 text-green-400 rounded-xl transition-all disabled:opacity-50 backdrop-blur-sm"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <ThumbsUp className="w-6 h-6 mb-2" />
                   <span className="text-sm font-semibold">Approve</span>
-                  <span className="text-xs text-green-500 mt-0.5">Press 1</span>
+                  <span className="text-xs text-green-400/70 mt-0.5">Press 1</span>
                 </motion.button>
               </div>
             </div>
+            </div>
+          </div>
           </motion.div>
         </AnimatePresence>
 
         {/* Session Progress */}
         {sessionValidations > 0 && (
-          <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
+          <div className="mt-4 p-4 bg-gray-800/50 rounded-lg border border-purple-800/30 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-purple-600" />
-                <span className="text-sm font-medium text-gray-700">Session Progress</span>
+                <Award className="w-5 h-5 text-purple-400" />
+                <span className="text-sm font-medium text-purple-300">Session Progress</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">
-                  Validated: <strong>{sessionValidations}</strong>
+                <span className="text-sm text-gray-400">
+                  Validated: <strong className="text-white">{sessionValidations}</strong>
                 </span>
-                <span className="text-sm text-gray-600">
-                  Earned: <strong className="text-green-600">+${(sessionValidations * 0.01).toFixed(2)}</strong>
+                <span className="text-sm text-gray-400">
+                  Earned: <strong className="text-green-400">+${(sessionValidations * 0.01).toFixed(2)}</strong>
                 </span>
               </div>
             </div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Reward Animation */}

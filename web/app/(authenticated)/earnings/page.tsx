@@ -79,9 +79,15 @@ export default function Earnings() {
         .single();
 
       if (profileError) throw profileError;
-      setEarningsData(profile);
+      
+      // Ensure awaiting_verification has a value
+      const earningsProfile = {
+        ...profile,
+        awaiting_verification: profile.awaiting_verification || 0
+      };
+      setEarningsData(earningsProfile);
 
-      // Fetch earnings transactions
+      // Fetch ALL earnings transactions including pending and awaiting_verification
       const { data: transactionsData, error: transError } = await supabase
         .from('earnings_ledger')
         .select(`
@@ -96,7 +102,14 @@ export default function Earnings() {
         .order('created_at', { ascending: false });
 
       if (transError) throw transError;
-      setTransactions(transactionsData || []);
+      
+      // Map transaction types properly
+      const mappedTransactions = (transactionsData || []).map(t => ({
+        ...t,
+        earning_type: t.type === 'submission' ? 'submission' : t.type === 'validation' ? 'validation' : t.type
+      }));
+      
+      setTransactions(mappedTransactions);
 
     } catch (error) {
       console.error('Error fetching earnings data:', error);
@@ -106,14 +119,17 @@ export default function Earnings() {
   };
 
   const totalAvailable = earningsData.earnings_approved;
-  const totalEarnings = earningsData.earnings_pending + earningsData.earnings_approved + earningsData.earnings_paid;
+  const totalPending = (earningsData.awaiting_verification || 0) + (earningsData.earnings_pending || 0);
+  const totalEarnings = totalPending + earningsData.earnings_approved + earningsData.earnings_paid;
   const verificationRate = earningsData.total_submissions > 0 
     ? (earningsData.verified_submissions / earningsData.total_submissions * 100).toFixed(1)
     : '0';
 
-  const filteredTransactions = transactions.filter(t => 
-    filter === 'all' || t.status === filter
-  );
+  const filteredTransactions = transactions.filter(t => {
+    if (filter === 'all') return true;
+    if (filter === 'pending') return t.status === 'pending' || t.status === 'awaiting_verification';
+    return t.status === filter;
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -207,11 +223,13 @@ export default function Earnings() {
               <div className="text-xs text-gray-500">Pending</div>
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {formatCurrency(earningsData.awaiting_verification || earningsData.earnings_pending)}
+              {formatCurrency(totalPending)}
             </div>
-            <div className="text-gray-400 text-sm">Awaiting Verification</div>
+            <div className="text-gray-400 text-sm">Pending Verification</div>
             <div className="mt-4 text-xs text-gray-500">
-              From {transactions.filter(t => t.status === 'pending' || t.status === 'awaiting_verification').length} submissions
+              {earningsData.awaiting_verification > 0 && `${formatCurrency(earningsData.awaiting_verification)} awaiting`}
+              {earningsData.awaiting_verification > 0 && earningsData.earnings_pending > 0 && ', '}
+              {earningsData.earnings_pending > 0 && `${formatCurrency(earningsData.earnings_pending)} pending`}
             </div>
           </motion.div>
 

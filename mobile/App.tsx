@@ -168,7 +168,7 @@ function AppContent(): React.JSX.Element {
         contentContainerStyle={styles.contentContainer}>
         
         <View style={styles.header}>
-          <Text style={styles.title}>WAVESITE 2.0</Text>
+          <Text style={styles.title}>WaveSight 2.0</Text>
           <Text style={styles.subtitle}>Trend Capture App</Text>
         </View>
 

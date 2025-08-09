@@ -180,7 +180,7 @@ const CaptureTrendsScreenEnhanced: React.FC = () => {
           >
             <Icon name="wave" size={48} color="#fff" />
           </LinearGradient>
-          <Text style={styles.brandName}>WAVESITE</Text>
+          <Text style={styles.brandName}>WaveSight</Text>
         </View>
 
         {/* Title */}
@@ -235,7 +235,7 @@ const CaptureTrendsScreenEnhanced: React.FC = () => {
           <View style={styles.instructionsList}>
             {[
               { icon: 'eye-outline', text: 'Find trending content on social media' },
-              { icon: 'share-outline', text: 'Share to WAVESITE or copy link' },
+              { icon: 'share-outline', text: 'Share to WaveSight or copy link' },
               { icon: 'chart-line', text: 'Track trends and earn rewards' },
             ].map((item, index) => (
               <View key={index} style={styles.instructionItem}>

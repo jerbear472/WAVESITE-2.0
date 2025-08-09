@@ -131,7 +131,7 @@ async function tryDatabaseInsert(supabase: any, data: any, id: string) {
         category: data.category,
         image_url: data.image_url,
         metadata: data.metadata,
-        status: 'pending',
+        status: 'submitted',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -199,7 +199,7 @@ async function saveToQueue(supabase: any, data: any, id: string) {
       .insert({
         id,
         submission_data: data,
-        status: 'pending',
+        status: 'submitted',
         created_at: new Date().toISOString()
       });
 

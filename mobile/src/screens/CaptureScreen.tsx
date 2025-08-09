@@ -21,7 +21,7 @@ const CaptureScreen: React.FC = () => {
     try {
       Alert.alert(
         'How to Capture',
-        'To capture trending content:\n\n1. Open TikTok or Instagram\n2. Find the content you want to save\n3. Tap the Share button\n4. Select "WaveSite2" from the share menu\n\nThe trend will be automatically added to your timeline!',
+        'To capture trending content:\n\n1. Open TikTok or Instagram\n2. Find the content you want to save\n3. Tap the Share button\n4. Select "WaveSight" from the share menu\n\nThe trend will be automatically added to your timeline!',
         [
           {
             text: 'Got it',

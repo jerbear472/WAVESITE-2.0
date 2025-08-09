@@ -287,7 +287,7 @@ export const ProfileScreen: React.FC = () => {
             delay={1400}
             style={styles.version}
           >
-            WAVESITE v2.0.0
+            WaveSight v2.0.0
           </AnimatedText>
         </ScrollView>
       </SafeAreaView>

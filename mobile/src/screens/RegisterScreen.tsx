@@ -74,7 +74,7 @@ export const RegisterScreen: React.FC = () => {
 
             <View style={styles.header}>
               <Logo size="medium" showText={false} />
-              <Text style={styles.title}>Join WAVESITE</Text>
+              <Text style={styles.title}>Join WaveSight</Text>
               <Text style={styles.subtitle}>Start spotting trends</Text>
             </View>
 

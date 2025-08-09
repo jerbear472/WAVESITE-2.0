@@ -145,7 +145,7 @@ export const RecordingScreenEnhanced: React.FC = () => {
       
       Alert.alert(
         '🎬 Start Screen Recording',
-        `To record ${platform === 'tiktok' ? 'TikTok' : 'Instagram'}:\n\n1. Swipe to Control Center\n2. Long press Screen Recording\n3. Select WAVESITE2\n4. Tap "Start Recording"\n\nWe'll open ${platform === 'tiktok' ? 'TikTok' : 'Instagram'} automatically!`,
+        `To record ${platform === 'tiktok' ? 'TikTok' : 'Instagram'}:\n\n1. Swipe to Control Center\n2. Long press Screen Recording\n3. Select WaveSight\n4. Tap "Start Recording"\n\nWe'll open ${platform === 'tiktok' ? 'TikTok' : 'Instagram'} automatically!`,
         [
           {
             text: 'Cancel',

@@ -189,7 +189,7 @@ const CaptureTrendsScreen: React.FC = () => {
               style={styles.mainLogo}
               resizeMode="contain"
             />
-            <Text style={styles.wavesiteText}>WAVESITE</Text>
+            <Text style={styles.wavesiteText}>WaveSight</Text>
           </View>
         </View>
 
@@ -243,7 +243,7 @@ const CaptureTrendsScreen: React.FC = () => {
               <View style={styles.instructionNumberContainer}>
                 <Text style={styles.instructionNumber}>2</Text>
               </View>
-              <Text style={styles.instructionText}>Copy link or share to WAVESIGHT</Text>
+              <Text style={styles.instructionText}>Copy link or share to WaveSight</Text>
             </View>
             <View style={styles.instructionItem}>
               <View style={styles.instructionNumberContainer}>
