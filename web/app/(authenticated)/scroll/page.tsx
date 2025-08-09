@@ -37,6 +37,7 @@ import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EarningsAnimation, useEarningsAnimation } from '@/components/EarningsAnimation';
 import { calculateTrendEarnings, getStreakMultiplier, EARNINGS_CONFIG } from '@/lib/earningsConfig';
+import { calculateQualityScore } from '@/lib/calculateQualityScore';
 
 // Primary platforms with better colors
 const PLATFORMS = [
@@ -323,7 +324,7 @@ export default function LegibleScrollPage() {
           payment_amount: finalPayment // Store payment in evidence instead
         },
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
-        quality_score: 7, // Default quality score
+        quality_score: calculateQualityScore(formData), // Calculate actual quality score
         validation_count: 0,
         created_at: new Date().toISOString()
       };
