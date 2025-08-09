@@ -525,21 +525,50 @@ export default function ValidateTrendsPage() {
   const qualityScore = calculateQualityScore(qualityCriteria);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-blue-900/20" />
+        <div className="absolute top-0 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+        <div className="absolute top-0 -right-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-32 left-20 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
+      </div>
+      
+      <div className="relative z-10">
       {/* Header */}
-      <div className="bg-gray-900/95 backdrop-blur-sm border-b border-purple-800/50 sticky top-0 z-10 shadow-lg">
-        <div className="max-w-5xl mx-auto px-4 py-4">
+      <div className="bg-black/50 backdrop-blur-xl border-b border-white/10 sticky top-0 z-20 shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-blue-600/10" />
+        <div className="relative max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-white" />
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl blur group-hover:blur-md transition-all" />
+                <div className="relative p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Validate Trends</h1>
-                <p className="text-xs text-purple-300">Help identify quality content</p>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">Validate Trends</h1>
+                <p className="text-xs text-purple-300/80">Earn rewards for quality control</p>
               </div>
-              <div className="bg-purple-500/20 text-purple-300 text-sm font-medium px-3 py-1.5 rounded-full border border-purple-500/30">
-                {currentIndex + 1} of {trends.length}
+              <div className="ml-4">
+                <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+                  <div className="flex gap-1">
+                    {[...Array(trends.length)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                          i < currentIndex ? 'bg-green-400' :
+                          i === currentIndex ? 'bg-purple-400 w-6' :
+                          'bg-gray-600'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-white/80 ml-2">
+                    {currentIndex + 1}/{trends.length}
+                  </span>
+                </div>
               </div>
             </div>
             
