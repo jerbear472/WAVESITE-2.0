@@ -2,7 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { AuthNavigator } from './AuthNavigator';
-import { AppNavigatorEnhanced } from './AppNavigatorEnhanced';
+import { AppNavigatorClean } from './AppNavigatorClean';
 import { OnboardingNavigator } from './OnboardingNavigator';
 import { LoadingScreenEnhanced } from '../screens/LoadingScreenEnhanced';
 import { PersonaBuilderScreen } from '../screens/PersonaBuilderScreen';
@@ -51,7 +51,7 @@ export const RootNavigator: React.FC = () => {
           <>
             <Stack.Screen 
               name="App" 
-              component={AppNavigatorEnhanced}
+              component={AppNavigatorClean}
               options={{
                 animation: 'fade',
               }}

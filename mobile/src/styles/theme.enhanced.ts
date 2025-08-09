@@ -168,5 +168,23 @@ export const enhancedTheme = {
     fast: 200,
     normal: 300,
     slow: 500,
+    // Spring animations - clean and subtle
+    spring: {
+      subtle: {
+        damping: 20,
+        stiffness: 300,
+        mass: 0.8,
+      },
+      smooth: {
+        damping: 25,
+        stiffness: 200,
+        mass: 1,
+      },
+      responsive: {
+        damping: 15,
+        stiffness: 400,
+        mass: 0.5,
+      },
+    },
   },
 };

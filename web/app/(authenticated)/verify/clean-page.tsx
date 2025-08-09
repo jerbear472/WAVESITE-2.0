@@ -231,15 +231,11 @@ export default function ValidateTrendsPage() {
         return;
       }
 
-      console.log('Calling cast_trend_vote with:', { p_trend_id: trendId, p_vote: voteType });
-      
       const { data: result, error } = await supabase
         .rpc('cast_trend_vote', {
           p_trend_id: trendId,
           p_vote: voteType
         });
-
-      console.log('RPC Response:', { result, error });
 
       if (error) {
         console.error('Validation error:', error);
@@ -248,11 +244,6 @@ export default function ValidateTrendsPage() {
       }
 
       if (result && typeof result === 'object') {
-        // Log debug info if available
-        if (result.debug) {
-          console.log('Debug info:', result.debug);
-        }
-        
         if (result.success === false) {
           console.error('Validation failed:', result.error);
           
