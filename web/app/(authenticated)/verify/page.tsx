@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle,
@@ -75,6 +75,9 @@ export default function ValidateTrendsPage() {
   const [sessionValidations, setSessionValidations] = useState(0);
   const [qualityCriteria, setQualityCriteria] = useState<QualityCriteria[]>([]);
   const [lastError, setLastError] = useState('');
+  
+  // Create Supabase client with proper auth context
+  const supabase = createClientComponentClient();
 
   const formatCount = (count?: number): string => {
     if (!count) return '0';
