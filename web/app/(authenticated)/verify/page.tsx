@@ -181,7 +181,7 @@ export default function ValidateTrendsPage() {
     }
   };
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -206,9 +206,9 @@ export default function ValidateTrendsPage() {
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  };
+  }, [user]);
 
-  const nextTrend = () => {
+  const nextTrend = useCallback(() => {
     if (currentIndex < trends.length - 1) {
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
@@ -217,9 +217,9 @@ export default function ValidateTrendsPage() {
     } else {
       setCurrentIndex(trends.length);
     }
-  };
+  }, [currentIndex, trends]);
 
-  const handleValidation = async (decision: 'approve' | 'reject' | 'skip') => {
+  const handleValidation = useCallback(async (decision: 'approve' | 'reject' | 'skip') => {
     if (!trends[currentIndex]) return;
 
     const trendId = trends[currentIndex].id;
@@ -296,20 +296,22 @@ export default function ValidateTrendsPage() {
     } finally {
       setValidating(false);
     }
-  };
+  }, [currentIndex, trends, user, nextTrend, loadStats]);
 
   useEffect(() => {
     if (user) {
       loadTrends();
       loadStats();
     }
-  }, [user]);
+  }, [user, loadStats]);
 
   useEffect(() => {
     if (trends[currentIndex]) {
       setQualityCriteria(evaluateQualityCriteria(trends[currentIndex]));
     }
   }, [currentIndex, trends]);
+
+  const currentTrend = trends[currentIndex];
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -341,9 +343,7 @@ export default function ValidateTrendsPage() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [validating, currentTrend]);
-
-  const currentTrend = trends[currentIndex];
+  }, [validating, currentTrend, handleValidation]);
 
   if (loading) {
     return (
