@@ -27,8 +27,7 @@ import {
   User,
   Hash,
   Sparkles,
-  ArrowRight,
-  RefreshCw
+  ArrowRight
 } from 'lucide-react';
 import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
 
