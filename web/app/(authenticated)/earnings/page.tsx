@@ -341,6 +341,7 @@ export default function Earnings() {
                 <li>• {EARNINGS.MIN_VOTES_REQUIRED} "reject" votes = trend rejected, no earnings</li>
                 <li>• Participate in verifications to earn {formatCurrency(EARNINGS.VERIFICATION_REWARD)} per vote</li>
                 <li>• You CAN vote on your own trends</li>
+                <li>• Scroll sessions maintain streak multipliers (up to 3x earnings on trends)</li>
                 <li>• Cash out when you reach {formatCurrency(EARNINGS.MINIMUM_CASHOUT)} in approved earnings</li>
               </ul>
             </div>

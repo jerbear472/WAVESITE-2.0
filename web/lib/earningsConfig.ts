@@ -30,6 +30,7 @@ export const EARNINGS_CONFIG = {
   },
   
   // Streak multipliers (applied to final amount)
+  // Scroll sessions are used to maintain streaks but don't generate earnings
   STREAK_MULTIPLIERS: {
     1: 1.0,   // No multiplier for first trend
     2: 1.2,   // 20% bonus for 2 trends
@@ -52,6 +53,9 @@ export const EARNINGS_CONFIG = {
   // Maximum earnings caps - INCREASED
   MAX_SINGLE_SUBMISSION: 3.00,  // Max for a single submission
   MAX_DAILY_EARNINGS: 50.00,    // Max daily earnings
+  
+  // NOTE: Scroll sessions no longer generate direct earnings
+  // They are only used for maintaining streak multipliers
 };
 
 // Helper function to calculate earnings for a trend submission

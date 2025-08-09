@@ -81,7 +81,7 @@ export const EarningsDashboard: React.FC = () => {
           break;
       }
 
-      // Fetch sessions
+      // Fetch sessions (for streak tracking only - no earnings)
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('scroll_sessions')
         .select('*')
@@ -91,77 +91,89 @@ export const EarningsDashboard: React.FC = () => {
 
       if (sessionsError) throw sessionsError;
 
+      // Fetch trend submissions
+      const { data: trendsData, error: trendsError } = await supabase
+        .from('trend_submissions')
+        .select('*')
+        .eq('spotter_id', user?.id)
+        .gte('created_at', startDate.toISOString());
+
+      if (trendsError) throw trendsError;
+
       // Fetch verifications
       const { data: verificationsData, error: verError } = await supabase
-        .from('trend_verifications')
+        .from('trend_validations')
         .select('*')
-        .eq('user_id', user?.id)
-        .gte('timestamp', startDate.toISOString());
+        .eq('validator_id', user?.id)
+        .gte('created_at', startDate.toISOString());
 
       if (verError) throw verError;
 
-      // Calculate earnings
-      const totalEarnings = sessionsData?.reduce((sum, session) => sum + (session.earnings || 0), 0) || 0;
-      const verificationEarnings = (verificationsData?.length || 0) * 0.05;
-      const combinedEarnings = totalEarnings + verificationEarnings;
+      // Calculate earnings (only from trends and validations)
+      const trendEarnings = (trendsData?.length || 0) * 1.00; // $1 per trend
+      const verificationEarnings = (verificationsData?.length || 0) * 0.01; // $0.01 per validation
+      const combinedEarnings = trendEarnings + verificationEarnings;
 
       // Calculate weekly earnings
       const weekAgo = new Date();
       weekAgo.setDate(now.getDate() - 7);
-      const weeklySessionsEarnings = sessionsData
-        ?.filter(s => new Date(s.start_time) >= weekAgo)
-        .reduce((sum, session) => sum + (session.earnings || 0), 0) || 0;
+      const weeklyTrendEarnings = trendsData
+        ?.filter(t => new Date(t.created_at) >= weekAgo).length * 1.00 || 0;
+      const weeklyVerificationEarnings = verificationsData
+        ?.filter(v => new Date(v.created_at) >= weekAgo).length * 0.01 || 0;
+      const weeklyEarnings = weeklyTrendEarnings + weeklyVerificationEarnings;
 
-      // Calculate bonuses
-      const bonusesEarned = sessionsData?.reduce((sum, session) => {
-        const baseEarning = (session.duration_ms / 60000) * 0.10;
-        return sum + (session.earnings - baseEarning);
-      }, 0) || 0;
+      // Calculate bonuses from quality trends
+      const bonusesEarned = verificationEarnings; // Simplified - validations are the main bonus
 
       setEarnings({
         totalEarnings: combinedEarnings,
-        weeklyEarnings: weeklySessionsEarnings,
-        sessionsCompleted: sessionsData?.length || 0,
-        avgPerSession: sessionsData?.length ? combinedEarnings / sessionsData.length : 0,
+        weeklyEarnings: weeklyEarnings,
+        sessionsCompleted: sessionsData?.length || 0, // Still track sessions for streaks
+        avgPerSession: trendsData?.length ? trendEarnings / trendsData.length : 0,
         trendsVerified: verificationsData?.length || 0,
-        bonusesEarned: bonusesEarned + verificationEarnings,
+        bonusesEarned: bonusesEarned,
       });
 
-      // Process sessions for table
+      // Process sessions for table (no earnings, just tracking)
       const processedSessions = sessionsData?.map(session => {
         const duration = session.duration_ms / 60000; // minutes
-        const baseEarning = duration * 0.10;
-        const bonuses = session.earnings - baseEarning;
-
+        
         return {
           id: session.id,
           date: new Date(session.start_time).toLocaleDateString(),
           duration,
-          baseEarning,
-          bonuses,
-          total: session.earnings,
+          baseEarning: 0, // No earnings from sessions
+          bonuses: 0, // No bonuses from sessions
+          total: 0, // No earnings from sessions
           trendsLogged: session.trends_logged || 0,
         };
       }) || [];
 
       setSessions(processedSessions);
 
-      // Prepare chart data for last 7 days
+      // Prepare chart data for last 7 days (from trends and validations)
       const chartDays = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
         date.setHours(0, 0, 0, 0);
         
-        const dayEarnings = sessionsData
-          ?.filter(s => {
-            const sessionDate = new Date(s.start_time);
-            sessionDate.setHours(0, 0, 0, 0);
-            return sessionDate.getTime() === date.getTime();
-          })
-          .reduce((sum, session) => sum + session.earnings, 0) || 0;
+        const dayTrendEarnings = trendsData
+          ?.filter(t => {
+            const trendDate = new Date(t.created_at);
+            trendDate.setHours(0, 0, 0, 0);
+            return trendDate.getTime() === date.getTime();
+          }).length * 1.00 || 0;
         
-        chartDays.push(dayEarnings);
+        const dayValidationEarnings = verificationsData
+          ?.filter(v => {
+            const validationDate = new Date(v.created_at);
+            validationDate.setHours(0, 0, 0, 0);
+            return validationDate.getTime() === date.getTime();
+          }).length * 0.01 || 0;
+        
+        chartDays.push(dayTrendEarnings + dayValidationEarnings);
       }
       setChartData(chartDays);
 
@@ -250,13 +262,13 @@ export const EarningsDashboard: React.FC = () => {
         <View style={styles.statsGrid}>
           <StatCard
             icon="calendar-check"
-            label="Sessions"
+            label="Streak Sessions"
             value={earnings.sessionsCompleted}
             color={enhancedTheme.colors.primary}
           />
           <StatCard
             icon="currency-usd"
-            label="Avg/Session"
+            label="Avg/Trend"
             value={earnings.avgPerSession}
             color={enhancedTheme.colors.accent}
             prefix="$"
@@ -314,7 +326,7 @@ export const EarningsDashboard: React.FC = () => {
         {/* Session History */}
         <Animated.View entering={FadeIn.delay(400)}>
           <GlassCard style={styles.historyCard}>
-            <Text style={styles.historyTitle}>Session History</Text>
+            <Text style={styles.historyTitle}>Session History (Streak Tracking Only)</Text>
             
             {/* Table Header */}
             <View style={styles.tableHeader}>
@@ -338,10 +350,10 @@ export const EarningsDashboard: React.FC = () => {
                   {Math.floor(session.duration)}m
                 </Text>
                 <Text style={[styles.tableText, styles.earningsColumn]}>
-                  ${session.total.toFixed(2)}
+                  -
                 </Text>
-                <Text style={[styles.tableText, styles.bonusColumn, { color: enhancedTheme.colors.success }]}>
-                  +${session.bonuses.toFixed(2)}
+                <Text style={[styles.tableText, styles.bonusColumn, { color: enhancedTheme.colors.textSecondary }]}>
+                  Streak only
                 </Text>
               </Animated.View>
             ))}
