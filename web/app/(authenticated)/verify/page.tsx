@@ -49,6 +49,11 @@ interface TrendToValidate {
   validation_count: number;
   spotter_id: string;
   hours_since_post?: number;
+  source_url?: string;
+  hashtags?: string[];
+  post_url?: string;
+  trending_position?: number;
+  confidence_score?: number;
 }
 
 interface QualityCriteria {
@@ -441,15 +446,15 @@ export default function ValidateTrendsPage() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="hidden sm:block text-right">
-                <p className="text-xs text-gray-500">Today's Earnings</p>
-                <p className="text-lg font-bold text-gray-900">${stats.earnings_today.toFixed(2)}</p>
+                <p className="text-xs text-gray-500">Earnings</p>
+                <p className="text-sm font-bold text-gray-900">${stats.earnings_today.toFixed(2)}</p>
               </div>
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-4 h-4" />
-                  <span className="font-bold">{sessionValidations}</span>
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white px-3 py-1.5 rounded-lg">
+                <div className="flex items-center gap-1.5">
+                  <Coins className="w-3 h-3" />
+                  <span className="text-sm font-bold">{sessionValidations}</span>
                 </div>
               </div>
             </div>
@@ -533,10 +538,10 @@ export default function ValidateTrendsPage() {
               )}
             </div>
 
-            {/* Compact Details Section */}
-            <div className="p-5 flex flex-col h-[400px] overflow-y-auto">
-              {/* Trend Info */}
-              <div className="flex-1">
+            {/* Compact Details Section with fixed buttons */}
+            <div className="p-5 flex flex-col h-[400px] relative">
+              {/* Scrollable Content Area */}
+              <div className="flex-1 overflow-y-auto pb-24">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <h2 className="text-lg font-bold text-gray-900 mb-2 leading-tight">
@@ -579,6 +584,55 @@ export default function ValidateTrendsPage() {
                   )}
                 </div>
 
+                {/* Additional Info for Assessment */}
+                {(currentTrend.source_url || currentTrend.post_url || (currentTrend.hashtags && currentTrend.hashtags.length > 0) || currentTrend.trending_position) && (
+                  <div className="bg-blue-50 rounded-lg p-3 mb-3">
+                    <h4 className="text-xs font-semibold text-blue-900 mb-2">Additional Context</h4>
+                    <div className="space-y-1.5">
+                      {currentTrend.source_url && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-xs text-gray-600">Source:</span>
+                          <a href={currentTrend.source_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate flex-1">
+                            {currentTrend.source_url}
+                          </a>
+                        </div>
+                      )}
+                      {currentTrend.post_url && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-xs text-gray-600">Post:</span>
+                          <a href={currentTrend.post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate flex-1">
+                            View Original
+                          </a>
+                        </div>
+                      )}
+                      {currentTrend.hashtags && currentTrend.hashtags.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-xs text-gray-600">Tags:</span>
+                          <div className="flex flex-wrap gap-1 flex-1">
+                            {currentTrend.hashtags.slice(0, 5).map((tag, idx) => (
+                              <span key={idx} className="text-xs bg-white px-1.5 py-0.5 rounded text-blue-700">
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {currentTrend.trending_position && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600">Trending:</span>
+                          <span className="text-xs font-semibold text-blue-700">#{currentTrend.trending_position}</span>
+                        </div>
+                      )}
+                      {currentTrend.confidence_score && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600">AI Confidence:</span>
+                          <span className="text-xs font-semibold text-blue-700">{Math.round(currentTrend.confidence_score * 100)}%</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Quality Assessment Card - Compact */}
                 <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 mb-4">
                   <div className="flex items-center justify-between mb-3">
@@ -618,9 +672,9 @@ export default function ValidateTrendsPage() {
                 </div>
               </div>
 
-              {/* Action Buttons with Hotkey hints */}
-              <div>
-                <p className="text-center text-xs text-gray-600 mb-3 font-medium">
+              {/* Fixed Action Buttons at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-4">
+                <p className="text-center text-xs text-gray-600 mb-2 font-medium">
                   Is this a legitimate trending topic?
                 </p>
                 
