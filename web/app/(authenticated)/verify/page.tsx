@@ -896,8 +896,6 @@ export default function ValidateTrendsPage() {
                 </motion.button>
               </div>
             </div>
-            </div>
-          </div>
           </motion.div>
         </AnimatePresence>
 
