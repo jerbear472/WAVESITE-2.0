@@ -1,7 +1,7 @@
 // Centralized earnings configuration for consistency across the app
 export const EARNINGS_CONFIG = {
-  // Base payment for submitting a trend - INCREASED to attract participation
-  BASE_PAYMENT: 0.50,
+  // Base payment for submitting a trend - Matches database trigger ($1.00)
+  BASE_PAYMENT: 1.00,
   
   // Bonus amounts for various criteria - INCREASED across the board
   BONUSES: {
