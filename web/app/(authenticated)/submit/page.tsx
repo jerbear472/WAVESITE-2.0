@@ -150,12 +150,24 @@ export default function WorkingSubmitPage() {
       };
 
       // Add social media metadata if available
+      // Ensure numeric values are within safe ranges for database
+      const MAX_SAFE_COUNT = 2147483647; // Max value for INTEGER type (will be upgraded to BIGINT)
+      
       if (trendData.creator_handle) submission.creator_handle = trendData.creator_handle;
       if (trendData.creator_name) submission.creator_name = trendData.creator_name;
       if (trendData.post_caption) submission.post_caption = trendData.post_caption;
-      if (trendData.likes_count !== undefined) submission.likes_count = trendData.likes_count;
-      if (trendData.comments_count !== undefined) submission.comments_count = trendData.comments_count;
-      if (trendData.views_count !== undefined) submission.views_count = trendData.views_count;
+      
+      // Safely handle numeric fields - cap at max safe value
+      if (trendData.likes_count !== undefined) {
+        submission.likes_count = Math.min(trendData.likes_count, MAX_SAFE_COUNT);
+      }
+      if (trendData.comments_count !== undefined) {
+        submission.comments_count = Math.min(trendData.comments_count, MAX_SAFE_COUNT);
+      }
+      if (trendData.views_count !== undefined) {
+        submission.views_count = Math.min(trendData.views_count, MAX_SAFE_COUNT);
+      }
+      
       if (trendData.hashtags?.length) submission.hashtags = trendData.hashtags;
       if (trendData.thumbnail_url) submission.thumbnail_url = trendData.thumbnail_url;
       if (trendData.posted_at) submission.posted_at = trendData.posted_at;
