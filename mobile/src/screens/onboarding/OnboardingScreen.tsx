@@ -24,7 +24,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import LottieView from 'lottie-react-native';
+// import LottieView from 'lottie-react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useNavigation } from '@react-navigation/native';
 import { storage } from '../../../App';
@@ -50,7 +50,7 @@ const slides: OnboardingSlide[] = [
     description: 'Discover trending content and earn rewards for your insights',
     gradient: ['#667eea', '#764ba2'],
     icon: '🌊',
-    animation: require('../../assets/animations/welcome.json'),
+    // animation: require('../../assets/animations/welcome.json'),
   },
   {
     id: '2',
@@ -59,7 +59,7 @@ const slides: OnboardingSlide[] = [
     description: 'Spot emerging trends from your favorite social platforms',
     gradient: ['#f093fb', '#f5576c'],
     icon: '📸',
-    animation: require('../../assets/animations/capture.json'),
+    // animation: require('../../assets/animations/capture.json'),
   },
   {
     id: '3',
@@ -68,7 +68,7 @@ const slides: OnboardingSlide[] = [
     description: 'Validate trends and earn points for accurate predictions',
     gradient: ['#4facfe', '#00f2fe'],
     icon: '💎',
-    animation: require('../../assets/animations/rewards.json'),
+    // animation: require('../../assets/animations/rewards.json'),
   },
   {
     id: '4',
@@ -77,7 +77,7 @@ const slides: OnboardingSlide[] = [
     description: 'Share insights with trend spotters worldwide',
     gradient: ['#43e97b', '#38f9d7'],
     icon: '🌍',
-    animation: require('../../assets/animations/community.json'),
+    // animation: require('../../assets/animations/community.json'),
   },
 ];
 
@@ -181,18 +181,9 @@ const OnboardingScreen: React.FC = () => {
           <View style={styles.slideContent}>
             {/* Icon or Animation */}
             <View style={styles.animationContainer}>
-              {slide.animation ? (
-                <LottieView
-                  source={slide.animation}
-                  autoPlay
-                  loop
-                  style={styles.animation}
-                />
-              ) : (
-                <Animated.Text style={[styles.emoji, titleStyle]}>
-                  {slide.icon}
-                </Animated.Text>
-              )}
+              <Animated.Text style={[styles.emoji, titleStyle]}>
+                {slide.icon}
+              </Animated.Text>
             </View>
 
             {/* Title Section */}

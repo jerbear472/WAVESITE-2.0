@@ -137,6 +137,7 @@ export default function ValidatePageFixed() {
       }
 
       console.log('Loading trends for validation. User ID:', user.id);
+      console.log('User email:', user.email);
 
       // Get already validated trends by this user
       const { data: validatedTrends, error: validationError } = await supabase
@@ -148,11 +149,12 @@ export default function ValidatePageFixed() {
         console.error('Error loading validated trends:', validationError);
       }
 
-      const validatedIds = validatedTrends?.map(v => v.trend_submission_id) || [];
+      const validatedIds = validatedTrends?.map(v => v.trend_submission_id).filter(id => id != null) || [];
       console.log('Already validated trend IDs:', validatedIds.length);
+      console.log('Validated IDs:', validatedIds);
       
-      // Build query for trends to validate
-      let query = supabase
+      // Get all trends that aren't from this user
+      const { data: trendsData, error } = await supabase
         .from('trend_submissions')
         .select(`
           id,
@@ -181,28 +183,34 @@ export default function ValidatePageFixed() {
           created_at,
           updated_at
         `)
-        .neq('spotter_id', user.id); // Exclude user's own trends
-      
-      // Exclude already validated trends
-      if (validatedIds.length > 0) {
-        query = query.not('id', 'in', `(${validatedIds.join(',')})`);
-      }
-      
-      // Get trends that need validation, ordered by newest first
-      const { data: trendsData, error } = await query
+        .neq('spotter_id', user.id) // Exclude user's own trends
         .in('status', ['submitted', 'validating'])
         .order('created_at', { ascending: false }) // NEWEST FIRST
-        .limit(100); // Get more trends to ensure we have enough
+        .limit(200); // Get more trends to handle filtering
+      
+      console.log('Excluding trends from spotter_id:', user.id);
 
       console.log('Trends loaded for validation:', trendsData?.length || 0, 'trends');
+      console.log('Query filters used:', {
+        excludingSpotterId: user.id,
+        excludingValidatedIds: validatedIds,
+        statusFilter: ['submitted', 'validating']
+      });
       
       if (error) {
         console.error('Error loading trends:', error);
         setLastError('Unable to load trends. Please refresh the page.');
       }
 
+      // Filter out already validated trends client-side
+      const filteredTrends = (trendsData || []).filter(trend => 
+        !validatedIds.includes(trend.id)
+      );
+      
+      console.log(`After filtering out validated trends: ${filteredTrends.length} trends available`);
+      
       // Process trends and calculate time since submission
-      const processedTrends = (trendsData || []).map(trend => {
+      const processedTrends = filteredTrends.map(trend => {
         const hoursAgo = Math.round((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60));
         return {
           ...trend,
@@ -336,11 +344,17 @@ export default function ValidatePageFixed() {
       setSessionValidations(prev => prev + 1);
       await loadStats();
       
-      // Remove validated trend from list
-      setTrends(prev => prev.filter(t => t.id !== trendId));
-      if (currentIndex >= trends.length - 1) {
-        setCurrentIndex(Math.max(0, trends.length - 2));
-      }
+      // Remove validated trend from list and handle index properly
+      setTrends(prev => {
+        const filtered = prev.filter(t => t.id !== trendId);
+        // Adjust currentIndex if needed
+        if (currentIndex >= filtered.length && filtered.length > 0) {
+          setCurrentIndex(filtered.length - 1);
+        } else if (filtered.length === 0) {
+          setCurrentIndex(0);
+        }
+        return filtered;
+      })
       
     } catch (error: any) {
       console.error('Unexpected error:', error);

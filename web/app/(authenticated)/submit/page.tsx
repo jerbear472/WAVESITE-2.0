@@ -195,11 +195,12 @@ export default function WorkingSubmitPage() {
       // Calculate earnings using unified config
       const { calculateTrendEarnings } = await import('@/lib/earningsConfig');
       const earningsData = {
-        trendName: formData.get('name') as string,
-        explanation: formData.get('description') as string,
-        screenshot: formData.get('screenshot'),
-        category: formData.get('category') as string,
-        // Add more fields as needed
+        trendName: trendData.trendName || submission.evidence?.title || 'Untitled',
+        explanation: trendData.explanation || submission.description,
+        screenshot: screenshotUrl || trendData.screenshot_url,
+        category: displayCategory,
+        platform: trendData.platform,
+        url: trendData.url
       };
       
       const { finalAmount } = calculateTrendEarnings(earningsData, 0, user?.spotter_tier || 'learning');

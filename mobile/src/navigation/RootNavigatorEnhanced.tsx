@@ -1,24 +1,47 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { AuthNavigatorClean } from './AuthNavigatorClean';
 import { AppNavigatorBeautiful } from './AppNavigatorBeautiful';
+import { OnboardingNavigator } from './OnboardingNavigator';
 import { LoadingScreenBeautiful } from '../screens/LoadingScreenBeautiful';
-import { PersonaBuilderScreen } from '../screens/PersonaBuilderScreen';
 import { theme } from '../styles/theme';
+import { storage } from '../../App';
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   Auth: undefined;
   App: undefined;
-  PersonaBuilder: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigatorEnhanced: React.FC = () => {
   const { user, loading } = useAuth();
+  const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean | null>(null);
 
-  if (loading) {
+  useEffect(() => {
+    checkOnboardingStatus();
+  }, []);
+
+  const checkOnboardingStatus = () => {
+    try {
+      const onboardingCompleted = storage.getString('onboarding_completed');
+      const permissionsGranted = storage.getString('permissions_granted');
+      const personalizationCompleted = storage.getString('personalization_completed');
+      
+      // Consider onboarding complete if all steps are done
+      const isComplete = onboardingCompleted === 'true' && 
+                        permissionsGranted && 
+                        personalizationCompleted === 'true';
+      
+      setIsOnboardingComplete(isComplete);
+    } catch (error) {
+      setIsOnboardingComplete(false);
+    }
+  };
+
+  if (loading || isOnboardingComplete === null) {
     return <LoadingScreenBeautiful />;
   }
 
@@ -33,37 +56,23 @@ export const RootNavigatorEnhanced: React.FC = () => {
         },
       }}
     >
-      {user ? (
-        <>
-          <Stack.Screen 
-            name="App" 
-            component={AppNavigatorBeautiful}
-            options={{
-              animation: 'fade',
-            }}
-          />
-          <Stack.Screen 
-            name="PersonaBuilder" 
-            component={PersonaBuilderScreen}
-            options={{
-              headerShown: true,
-              headerTitle: 'Personalize Your Experience',
-              headerStyle: {
-                backgroundColor: theme.colors.background,
-              },
-              headerTintColor: theme.colors.text,
-              headerBackTitle: 'Back',
-              presentation: 'modal',
-              animation: 'slide_from_bottom',
-              headerTitleStyle: {
-                fontWeight: '400',
-                fontSize: 18,
-                color: theme.colors.text,
-              },
-              headerShadowVisible: false,
-            }}
-          />
-        </>
+      {!isOnboardingComplete ? (
+        <Stack.Screen 
+          name="Onboarding" 
+          component={OnboardingNavigator}
+          options={{
+            animation: 'fade',
+            gestureEnabled: false,
+          }}
+        />
+      ) : user ? (
+        <Stack.Screen 
+          name="App" 
+          component={AppNavigatorBeautiful}
+          options={{
+            animation: 'fade',
+          }}
+        />
       ) : (
         <Stack.Screen 
           name="Auth" 

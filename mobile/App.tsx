@@ -5,10 +5,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { enableScreens } from 'react-native-screens';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { MMKV } from 'react-native-mmkv';
 import { RootNavigatorEnhanced } from './src/navigation/RootNavigatorEnhanced';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 // Enable screens for better performance
 enableScreens();
+
+// Initialize MMKV storage
+export const storage = new MMKV({
+  id: 'wavesight-storage',
+  encryptionKey: !__DEV__ ? 'wavesight-prod-key-2024' : undefined,
+});
 
 // Production environment check
 const isProduction = !__DEV__;
@@ -43,15 +51,17 @@ function App(): React.JSX.Element {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <NavigationContainer>
-            <RootNavigatorEnhanced />
-          </NavigationContainer>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <NavigationContainer>
+              <RootNavigatorEnhanced />
+            </NavigationContainer>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 

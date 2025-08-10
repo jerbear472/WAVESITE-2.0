@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DashboardScreenClean } from '../screens/DashboardScreenClean';
-import { CaptureScreenClean } from '../screens/CaptureScreenClean';
+import SubmitTrendScreen from '../screens/SubmitTrendScreen';
 import { TimelineScreen } from '../screens/TimelineScreen';
 import { ValidationScreenUpdated } from '../screens/ValidationScreenUpdated';
 import { ProfileScreenClean } from '../screens/ProfileScreenClean';
@@ -53,7 +53,7 @@ export const AppNavigatorBeautiful: React.FC = () => {
       />
       <Tab.Screen
         name="Capture"
-        component={CaptureScreenClean}
+        component={SubmitTrendScreen}
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon="📸" label="Capture" />
