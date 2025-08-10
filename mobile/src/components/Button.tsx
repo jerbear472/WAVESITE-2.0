@@ -6,19 +6,21 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  View,
 } from 'react-native';
 import { theme } from '../styles/theme';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'small' | 'medium' | 'large';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
   icon?: React.ReactNode;
+  fullWidth?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -31,12 +33,14 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
   icon,
+  fullWidth = false,
 }) => {
   const buttonStyles = [
     styles.base,
     styles[variant],
     styles[size],
     disabled && styles.disabled,
+    fullWidth && styles.fullWidth,
     style,
   ];
 
@@ -44,6 +48,7 @@ export const Button: React.FC<ButtonProps> = ({
     styles.text,
     styles[`${variant}Text`],
     styles[`${size}Text`],
+    disabled && styles.disabledText,
     textStyle,
   ];
 
@@ -52,7 +57,7 @@ export const Button: React.FC<ButtonProps> = ({
       style={buttonStyles}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
       {loading ? (
         <ActivityIndicator 
@@ -60,10 +65,10 @@ export const Button: React.FC<ButtonProps> = ({
           size="small"
         />
       ) : (
-        <>
-          {icon}
+        <View style={styles.content}>
+          {icon && <View style={styles.icon}>{icon}</View>}
           <Text style={textStyles}>{title}</Text>
-        </>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -71,23 +76,35 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.md,
+    transition: 'all 0.2s',
+  },
+  
+  content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: theme.borderRadius.round,
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.sm,
   },
   
-  // Variants
+  icon: {
+    marginRight: theme.spacing.sm,
+  },
+  
+  // Variants - Clean and minimal
   primary: {
     backgroundColor: theme.colors.primary,
-    ...theme.shadows.glow,
+    ...theme.shadows.md,
   },
   secondary: {
+    backgroundColor: theme.colors.wave[50],
+    ...theme.shadows.sm,
+  },
+  outline: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -97,15 +114,17 @@ const styles = StyleSheet.create({
   small: {
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
+    minHeight: 36,
   },
   medium: {
-    paddingVertical: theme.spacing.md + 2,
-    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.sm + 4,
+    paddingHorizontal: theme.spacing.lg,
+    minHeight: 44,
   },
   large: {
-    paddingVertical: theme.spacing.lg - 4,
-    paddingHorizontal: theme.spacing.xl + 8,
-    minWidth: 250,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    minHeight: 52,
   },
   
   // States
@@ -113,9 +132,14 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   
-  // Text styles
+  fullWidth: {
+    width: '100%',
+  },
+  
+  // Text styles - Clean typography
   text: {
-    fontWeight: '600',
+    fontFamily: 'System',
+    fontWeight: '500',
   },
   primaryText: {
     color: '#ffffff',
@@ -123,18 +147,24 @@ const styles = StyleSheet.create({
   secondaryText: {
     color: theme.colors.primary,
   },
+  outlineText: {
+    color: theme.colors.text,
+  },
   ghostText: {
-    color: theme.colors.textSecondary,
+    color: theme.colors.primary,
+  },
+  disabledText: {
+    color: theme.colors.textMuted,
   },
   
   smallText: {
     fontSize: theme.typography.bodySmall.fontSize,
   },
   mediumText: {
-    fontSize: theme.typography.body.fontSize,
+    fontSize: theme.typography.button.fontSize,
   },
   largeText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
 });

@@ -4,6 +4,6 @@
 
 import 'react-native-gesture-handler';
 import { AppRegistry } from 'react-native';
-import App from './App';
+import AppClean from './AppClean';
 
-AppRegistry.registerComponent('mobile', () => App);
+AppRegistry.registerComponent('mobile', () => AppClean);

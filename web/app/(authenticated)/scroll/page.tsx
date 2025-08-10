@@ -51,7 +51,7 @@ const PLATFORMS = [
 
 export default function LegibleScrollPage() {
   const router = useRouter();
-  const { user } = useAuth(); // Removed profile - not provided by AuthContext
+  const { user, refreshUser } = useAuth();
   const scrollSessionRef = useRef<any>();
   const { showEarnings, earningsData, showEarningsAnimation, hideEarningsAnimation } = useEarningsAnimation();
   
@@ -145,20 +145,30 @@ export default function LegibleScrollPage() {
     today.setHours(0, 0, 0, 0);
     
     try {
-      const { data: earnings } = await supabase
-        .from('earnings_ledger')
-        .select('amount, status')
-        .eq('user_id', user.id)
-        .eq('type', 'trend_submission')
-        .gte('created_at', today.toISOString());
+      // Get user's current earnings from profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('earnings_pending, earnings_approved, total_earnings')
+        .eq('id', user.id)
+        .single();
       
-      const confirmedEarnings = earnings?.filter(e => e.status === 'confirmed')
-        .reduce((sum, e) => sum + parseFloat(e.amount), 0) || 0;
-      const pendingEarnings = earnings?.filter(e => e.status === 'pending')
-        .reduce((sum, e) => sum + parseFloat(e.amount), 0) || 0;
-      
-      setTodaysEarnings(confirmedEarnings);
-      setTodaysPendingEarnings(pendingEarnings);
+      if (profile) {
+        // For now, show all pending earnings (not just today's)
+        setTodaysPendingEarnings(profile.earnings_pending || 0);
+        
+        // Get today's approved earnings from trend_submissions
+        const { data: todaysTrends } = await supabase
+          .from('trend_submissions')
+          .select('total_earned, status')
+          .eq('spotter_id', user.id)
+          .gte('created_at', today.toISOString());
+        
+        const todaysApproved = todaysTrends
+          ?.filter(t => t.status === 'approved')
+          .reduce((sum, t) => sum + (t.total_earned || 0), 0) || 0;
+        
+        setTodaysEarnings(todaysApproved);
+      }
       
       const { count } = await supabase
         .from('trend_submissions')
@@ -426,8 +436,9 @@ export default function LegibleScrollPage() {
       // Clear success message after 5 seconds
       setTimeout(() => setSubmitMessage(null), 5000);
       
-      // Reload stats
+      // Reload stats and refresh user data to update pending earnings
       loadTodaysStats();
+      if (refreshUser) refreshUser(); // This will update the user context with new pending earnings
       if (isFinanceTrend) loadRecentTickers();
       
     } catch (error: any) {

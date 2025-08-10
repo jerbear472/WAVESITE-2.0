@@ -1,28 +1,55 @@
 export const theme = {
   colors: {
-    // Primary colors
+    // Wave color palette from web app
+    wave: {
+      50: '#e6f2ff',
+      100: '#b3d9ff',
+      200: '#80c0ff',
+      300: '#4da8ff',
+      400: '#1a8fff',
+      500: '#0080ff',
+      600: '#0066cc',
+      700: '#004d99',
+      800: '#003366',
+      900: '#001a33',
+      950: '#000d1a',
+    },
+    
+    // Primary colors matching web
     primary: '#0080ff',
     primaryDark: '#0066cc',
     primaryLight: '#4da8ff',
     
-    // Background colors
-    background: '#000d1a',
-    backgroundLight: '#001a33',
-    backgroundCard: '#001a33',
+    // Clean, minimal backgrounds
+    background: '#ffffff',
+    backgroundDark: '#f9fafb',
+    backgroundCard: '#ffffff',
     
-    // Text colors
-    text: '#ffffff',
-    textSecondary: '#4da8ff',
-    textMuted: '#4da8ff80',
+    // Text colors for clean design
+    text: '#111827',
+    textLight: '#6b7280',
+    textSecondary: '#0080ff',
+    textMuted: '#9ca3af',
+    
+    // Dark mode colors
+    dark: {
+      background: '#0f0f0f',
+      backgroundCard: '#1a1a1a',
+      text: '#ffffff',
+      textLight: '#e5e7eb',
+      textMuted: '#9ca3af',
+    },
     
     // Status colors
-    success: '#00ff88',
-    error: '#ff3030',
-    warning: '#ffaa00',
+    success: '#10b981',
+    error: '#ef4444',
+    warning: '#f59e0b',
+    info: '#3b82f6',
     
-    // Border colors
-    border: '#0080ff30',
-    borderLight: '#0080ff20',
+    // Border colors - subtle and clean
+    border: '#e5e7eb',
+    borderLight: '#f3f4f6',
+    borderFocus: '#0080ff',
   },
   
   spacing: {
@@ -35,56 +62,83 @@ export const theme = {
   },
   
   borderRadius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    round: 30,
+    sm: 6,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    round: 9999,
+    wave: 30,
   },
   
   typography: {
     h1: {
-      fontSize: 36,
-      fontWeight: 'bold' as const,
-      letterSpacing: 0.5,
+      fontSize: 32,
+      fontWeight: '300' as const,
+      letterSpacing: -0.5,
+      lineHeight: 40,
     },
     h2: {
-      fontSize: 28,
-      fontWeight: 'bold' as const,
-      letterSpacing: 0.3,
+      fontSize: 24,
+      fontWeight: '400' as const,
+      letterSpacing: -0.3,
+      lineHeight: 32,
     },
     h3: {
-      fontSize: 24,
-      fontWeight: '600' as const,
+      fontSize: 20,
+      fontWeight: '500' as const,
+      lineHeight: 28,
     },
     body: {
       fontSize: 16,
-      fontWeight: 'normal' as const,
+      fontWeight: '400' as const,
+      lineHeight: 24,
     },
     bodySmall: {
       fontSize: 14,
-      fontWeight: 'normal' as const,
+      fontWeight: '400' as const,
+      lineHeight: 20,
     },
     caption: {
       fontSize: 12,
-      fontWeight: 'normal' as const,
+      fontWeight: '400' as const,
+      lineHeight: 16,
+    },
+    button: {
+      fontSize: 16,
+      fontWeight: '500' as const,
+      letterSpacing: 0.2,
     },
   },
   
   shadows: {
-    glow: {
-      shadowColor: '#0080ff',
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.5,
-      shadowRadius: 20,
-      elevation: 10,
+    // Subtle shadows for clean design
+    sm: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
     },
-    card: {
+    md: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    lg: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 5,
+    },
+    glow: {
+      shadowColor: '#0080ff',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+      elevation: 8,
     },
   },
 };
