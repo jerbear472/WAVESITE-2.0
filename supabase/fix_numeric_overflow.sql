@@ -1,7 +1,17 @@
 -- Fix numeric field overflow by changing INTEGER columns to BIGINT
 -- BIGINT can hold values up to 9,223,372,036,854,775,807
 
--- First, alter the columns in trend_submissions table
+-- First, drop ALL views that depend on the columns we're changing
+-- This must be done in order to avoid the "column used by view" error
+DROP VIEW IF EXISTS public.trends_for_validation CASCADE;
+DROP VIEW IF EXISTS public.public_trends CASCADE;
+DROP VIEW IF EXISTS public.verify_page CASCADE;
+DROP VIEW IF EXISTS public.trend_tiles_content CASCADE;
+DROP VIEW IF EXISTS public.user_trend_stats CASCADE;
+DROP VIEW IF EXISTS public.trending_content CASCADE;
+DROP VIEW IF EXISTS public.validation_queue CASCADE;
+
+-- Now we can safely alter the columns in trend_submissions table
 ALTER TABLE public.trend_submissions 
 ALTER COLUMN likes_count TYPE BIGINT,
 ALTER COLUMN comments_count TYPE BIGINT,
@@ -11,11 +21,6 @@ ALTER COLUMN views_count TYPE BIGINT;
 -- Also update validation_count to handle large numbers
 ALTER TABLE public.trend_submissions
 ALTER COLUMN validation_count TYPE BIGINT;
-
--- Update any views that reference these columns
-DROP VIEW IF EXISTS public.public_trends CASCADE;
-DROP VIEW IF EXISTS public.verify_page CASCADE;
-DROP VIEW IF EXISTS public.trend_tiles_content CASCADE;
 
 -- Recreate the public_trends view with updated column types
 CREATE OR REPLACE VIEW public.public_trends AS
@@ -78,9 +83,43 @@ LEFT JOIN public.user_profiles up ON ts.spotter_id = up.id
 WHERE ts.status IN ('submitted', 'validating')
 ORDER BY ts.created_at DESC;
 
+-- Recreate trends_for_validation view (the one causing the error)
+CREATE OR REPLACE VIEW public.trends_for_validation AS
+SELECT 
+    ts.id,
+    ts.spotter_id,
+    ts.category,
+    ts.description,
+    ts.screenshot_url,
+    ts.thumbnail_url,
+    ts.post_url,
+    ts.creator_handle,
+    ts.creator_name,
+    ts.post_caption,
+    ts.likes_count,
+    ts.comments_count,
+    ts.shares_count,
+    ts.views_count,
+    ts.hashtags,
+    ts.posted_at,
+    ts.platform,
+    ts.virality_prediction,
+    ts.quality_score,
+    ts.validation_count,
+    ts.approve_count,
+    ts.reject_count,
+    ts.status,
+    ts.created_at,
+    up.username as spotter_username
+FROM public.trend_submissions ts
+LEFT JOIN public.user_profiles up ON ts.spotter_id = up.id
+WHERE ts.status IN ('submitted', 'validating')
+ORDER BY ts.created_at DESC;
+
 -- Grant necessary permissions
 GRANT SELECT ON public.public_trends TO authenticated;
 GRANT SELECT ON public.verify_page TO authenticated;
+GRANT SELECT ON public.trends_for_validation TO authenticated;
 
 -- Add a check to ensure the values don't exceed BIGINT limits in the application
 -- This is handled in the application code, but we can add a constraint as safety
