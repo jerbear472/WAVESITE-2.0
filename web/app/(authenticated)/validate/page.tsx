@@ -63,7 +63,7 @@ interface QualityCriteria {
   met: boolean;
 }
 
-export default function ValidateTrendsPage() {
+export default function ValidatePage() {
   const { user, refreshUser } = useAuth();
   const [trends, setTrends] = useState<TrendToValidate[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -135,13 +135,29 @@ export default function ValidateTrendsPage() {
         return;
       }
 
-      // Get already validated trends
-      const { data: validatedTrends } = await supabase
+      console.log('Loading trends for validation. User ID:', user.id);
+
+      // Get already validated trends by this user
+      const { data: validatedTrends, error: validationError } = await supabase
         .from('trend_validations')
         .select('trend_submission_id')
         .eq('validator_id', user.id);
 
+      if (validationError) {
+        console.error('Error loading validated trends:', validationError);
+      }
+
       const validatedIds = validatedTrends?.map(v => v.trend_submission_id) || [];
+      console.log('Already validated trend IDs:', validatedIds);
+      
+      // First, let's check all trends regardless of status to debug
+      const { data: allTrends, error: allError } = await supabase
+        .from('trend_submissions')
+        .select('id, status, spotter_id, created_at, description')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      console.log('Sample of all trends in database:', allTrends);
       
       // Get trends to validate - use specific columns to avoid ambiguity
       let query = supabase
@@ -184,6 +200,9 @@ export default function ValidateTrendsPage() {
         .order('created_at', { ascending: false })
         .limit(20);
 
+      console.log('Trends loaded for validation:', trendsData?.length || 0, 'trends');
+      console.log('First few trends:', trendsData?.slice(0, 3));
+
       if (error) {
         console.error('Error loading trends:', error);
         setLastError('Unable to load trends. Please refresh the page.');
@@ -200,11 +219,46 @@ export default function ValidateTrendsPage() {
         };
       });
 
-      setTrends(processedTrends);
-      setInitialTrendsCount(processedTrends.length);
-      
-      if (processedTrends.length > 0) {
-        setQualityCriteria(evaluateQualityCriteria(processedTrends[0]));
+      // If no trends found with filters, try a simpler query
+      if (processedTrends.length === 0) {
+        console.log('No trends found with filters, trying simpler query...');
+        
+        const { data: simpleTrends, error: simpleError } = await supabase
+          .from('trend_submissions')
+          .select('*')
+          .neq('spotter_id', user.id)
+          .eq('status', 'submitted')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (simpleTrends && simpleTrends.length > 0) {
+          console.log('Found trends with simpler query:', simpleTrends.length);
+          const simpleProcessed = simpleTrends.map(trend => {
+            const hoursAgo = Math.round((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60));
+            return {
+              ...trend,
+              validation_count: trend.validation_count || 0,
+              approve_count: trend.approve_count || 0,
+              reject_count: trend.reject_count || 0,
+              hours_since_post: hoursAgo
+            };
+          });
+          setTrends(simpleProcessed);
+          setInitialTrendsCount(simpleProcessed.length);
+          if (simpleProcessed.length > 0) {
+            setQualityCriteria(evaluateQualityCriteria(simpleProcessed[0]));
+          }
+        } else {
+          setTrends(processedTrends);
+          setInitialTrendsCount(processedTrends.length);
+        }
+      } else {
+        setTrends(processedTrends);
+        setInitialTrendsCount(processedTrends.length);
+        
+        if (processedTrends.length > 0) {
+          setQualityCriteria(evaluateQualityCriteria(processedTrends[0]));
+        }
       }
     } catch (error) {
       console.error('Error loading trends:', error);
@@ -417,9 +471,13 @@ export default function ValidateTrendsPage() {
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center animate-bounce">
             <CheckCircle className="w-12 h-12 text-white" />
           </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">All Done!</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            {trends.length === 0 && initialTrendsCount === 0 ? 'No Trends Available' : 'All Done!'}
+          </h2>
           <p className="text-gray-600 text-lg mb-8">
-            You've validated all available trends. Great work!
+            {trends.length === 0 && initialTrendsCount === 0 
+              ? 'There are no trends to validate at the moment. Check back soon!'
+              : "You've validated all available trends. Great work!"}
           </p>
           
           <div className="bg-white rounded-2xl p-8 shadow-xl mb-6">
@@ -437,7 +495,10 @@ export default function ValidateTrendsPage() {
           </div>
           
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              setLoading(true);
+              loadTrends().finally(() => setLoading(false));
+            }}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all transform hover:scale-105"
           >
             <RefreshCw className="w-5 h-5" />
@@ -462,7 +523,7 @@ export default function ValidateTrendsPage() {
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-sm font-semibold text-gray-900">Trend Validation</h1>
+                  <h1 className="text-sm font-semibold text-gray-900">Validate Trends</h1>
                 </div>
               </div>
               
@@ -475,6 +536,17 @@ export default function ValidateTrendsPage() {
             </div>
             
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setLoading(true);
+                  loadTrends().finally(() => setLoading(false));
+                }}
+                disabled={loading}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                title="Refresh trends"
+              >
+                <RefreshCw className={`w-4 h-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+              </button>
               <div className="hidden sm:block text-right">
                 <p className="text-xs text-gray-500">Earnings</p>
                 <p className="text-sm font-bold text-gray-900">${stats.earnings_today.toFixed(2)}</p>

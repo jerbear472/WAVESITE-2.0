@@ -761,8 +761,8 @@ export default function Dashboard() {
                 <Link href="/scroll" className="block w-full btn-primary text-center">
                   Start Scrolling
                 </Link>
-                <Link href="/verify" className="block w-full btn-secondary text-center">
-                  Verify Trends
+                <Link href="/validate" className="block w-full btn-secondary text-center">
+                  Validate Trends
                 </Link>
                 <Link href="/profile" className="block w-full btn-ghost text-center">
                   View Profile
