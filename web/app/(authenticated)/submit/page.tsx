@@ -145,8 +145,8 @@ export default function WorkingSubmitPage() {
         quality_score: 0.5,
         validation_count: 0,
         screenshot_url: screenshotUrl || trendData.screenshot_url || null,
-        post_url: trendData.url || null,
-        created_at: new Date().toISOString()
+        post_url: trendData.url || null
+        // Remove created_at - it's handled by database default
       };
 
       // Add social media metadata if available
@@ -180,8 +180,18 @@ export default function WorkingSubmitPage() {
       console.log('Submission successful:', data);
       setRecentSubmission(data);
 
-      // Update earnings (0.10 per submission)
-      updateUserEarnings(0.10);
+      // Calculate earnings using unified config
+      const { calculateTrendEarnings } = await import('@/lib/earningsConfig');
+      const earningsData = {
+        trendName: formData.get('name') as string,
+        explanation: formData.get('description') as string,
+        screenshot: formData.get('screenshot'),
+        category: formData.get('category') as string,
+        // Add more fields as needed
+      };
+      
+      const { finalAmount } = calculateTrendEarnings(earningsData, 0, user?.spotter_tier || 'learning');
+      updateUserEarnings(finalAmount);
 
       // Show success state
       setShowForm(false);
@@ -244,7 +254,7 @@ export default function WorkingSubmitPage() {
               <div>
                 <p className="text-white font-semibold">Trend submitted successfully!</p>
                 <p className="text-green-200 text-sm">
-                  Your submission is now in the verification queue. You earned $0.10!
+                  Your submission is now in the verification queue. You earned $1.00 + bonuses!
                 </p>
               </div>
             </div>
@@ -335,7 +345,7 @@ export default function WorkingSubmitPage() {
           <ol className="space-y-2 text-sm text-gray-300">
             <li>1. Submit trends you spot on social media</li>
             <li>2. Other users verify your submissions</li>
-            <li>3. Approved trends earn you $0.10 + bonuses</li>
+            <li>3. Approved trends earn you $1.00 + bonuses (up to $3.00)</li>
             <li>4. Verified trends feed into enterprise dashboard</li>
             <li>5. Track your performance in Timeline</li>
           </ol>

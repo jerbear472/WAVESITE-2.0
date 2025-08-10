@@ -26,13 +26,18 @@ export function useAuthenticatedSupabase() {
 
       // Verify user IDs match
       if (session.user.id !== user.id) {
-        console.error('Session user mismatch!', {
+        console.warn('Session user mismatch detected, refreshing...', {
           authContextUser: user.id,
           sessionUser: session.user.id
         });
         
         // Force refresh the session
-        await supabaseClient.auth.refreshSession();
+        const { data: refreshed, error: refreshError } = await supabaseClient.auth.refreshSession();
+        if (refreshError) {
+          console.error('Failed to refresh session:', refreshError);
+          setIsReady(false);
+          return;
+        }
       }
 
       setIsReady(true);
@@ -63,33 +68,12 @@ export async function fetchUserTrends(userId: string) {
       console.warn('User ID mismatch, using session user ID');
     }
 
-    // Query trends with all vote-related columns
-    let { data, error } = await supabaseClient
+    // Query trends - columns should exist after FIX_CRITICAL_ERRORS.sql
+    const { data, error } = await supabaseClient
       .from('trend_submissions')
-      .select(`
-        *,
-        approve_count,
-        reject_count,
-        validation_status,
-        validation_count,
-        bounty_paid,
-        bounty_amount
-      `)
+      .select('*')
       .eq('spotter_id', queryUserId)
       .order('created_at', { ascending: false });
-
-    // If validation columns don't exist, query without them
-    if (error && error.message.includes('does not exist')) {
-      console.log('Validation columns missing, querying trends without validation counts');
-      const fallbackQuery = await supabaseClient
-        .from('trend_submissions')
-        .select('*')
-        .eq('spotter_id', queryUserId)
-        .order('created_at', { ascending: false });
-      
-      data = fallbackQuery.data;
-      error = fallbackQuery.error;
-    }
 
     if (error) {
       console.error('Query error:', error);

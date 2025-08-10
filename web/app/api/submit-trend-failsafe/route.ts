@@ -74,8 +74,8 @@ export async function POST(request: NextRequest) {
       data: {
         id: result.trend_id || submissionId,
         ...trendData,
-        status: 'submitted',
-        created_at: new Date().toISOString()
+        status: 'submitted'
+        // Remove created_at - handled by database default
       },
       message: result.message || 'Trend submitted successfully',
       method: result.method
@@ -131,9 +131,8 @@ async function tryDatabaseInsert(supabase: any, data: any, id: string) {
         category: data.category,
         image_url: data.image_url,
         metadata: data.metadata,
-        status: 'submitted',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        status: 'submitted'
+        // Remove created_at and updated_at - handled by database defaults
       })
       .select()
       .single();
@@ -199,8 +198,8 @@ async function saveToQueue(supabase: any, data: any, id: string) {
       .insert({
         id,
         submission_data: data,
-        status: 'submitted',
-        created_at: new Date().toISOString()
+        status: 'submitted'
+        // Remove created_at - handled by database default
       });
 
     if (error) throw error;

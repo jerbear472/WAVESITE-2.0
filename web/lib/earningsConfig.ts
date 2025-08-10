@@ -1,9 +1,9 @@
 // Centralized earnings configuration for consistency across the app
 export const EARNINGS_CONFIG = {
-  // Base payment for submitting a trend - Matches database trigger ($1.00)
+  // Base payment for submitting a trend - Goes to PENDING until approved
   BASE_PAYMENT: 1.00,
   
-  // Bonus amounts for various criteria - INCREASED across the board
+  // Bonus amounts for various criteria
   BONUSES: {
     // Content quality bonuses
     COMPLETE_INFO: 0.10,        // Has both title and explanation
@@ -23,8 +23,8 @@ export const EARNINGS_CONFIG = {
     CAPTION_PROVIDED: 0.05,     // Has post caption
     
     // Special category bonuses
-    FINANCE_TREND: 0.10,        // Finance/stock/crypto related - 10 cents bonus
-    FINANCE: 0.10,              // Alias for FINANCE_TREND (for display purposes)
+    FINANCE_TREND: 0.10,        // Finance/stock/crypto related
+    FINANCE: 0.10,              // Alias for FINANCE_TREND
     HIGH_WAVE_SCORE: 0.20,      // Wave score > 70
     TRENDING_CATEGORY: 0.10,    // In a trending category
   },
@@ -45,10 +45,12 @@ export const EARNINGS_CONFIG = {
   
   // Validation rewards (for verify page)
   VALIDATION_REWARDS: {
-    CORRECT_VALIDATION: 0.01,    // 1 cent for validating a trend
-    CONSENSUS_BONUS: 0.005,      // Half cent for agreeing with majority
-    SPEED_BONUS: 0.005,          // Half cent for quick validation (< 5 seconds)
+    BASE_VALIDATION: 0.10,        // $0.10 for each validation vote
+    // No bonuses - simple flat rate per validation
   },
+  
+  // Approval settings
+  VOTES_TO_DECIDE: 2,            // 2 votes (approve or reject) decides outcome
   
   // Maximum earnings caps - INCREASED
   MAX_SINGLE_SUBMISSION: 3.00,  // Max for a single submission

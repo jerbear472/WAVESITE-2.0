@@ -143,10 +143,36 @@ export default function ValidateTrendsPage() {
 
       const validatedIds = validatedTrends?.map(v => v.trend_submission_id) || [];
       
-      // Get trends to validate
+      // Get trends to validate - use specific columns to avoid ambiguity
       let query = supabase
         .from('trend_submissions')
-        .select('*');
+        .select(`
+          id,
+          spotter_id,
+          category,
+          description,
+          screenshot_url,
+          thumbnail_url,
+          platform,
+          creator_handle,
+          creator_name,
+          post_caption,
+          likes_count,
+          comments_count,
+          shares_count,
+          views_count,
+          hashtags,
+          post_url,
+          posted_at,
+          virality_prediction,
+          quality_score,
+          validation_count,
+          approve_count,
+          reject_count,
+          status,
+          created_at,
+          updated_at
+        `);
       
       if (validatedIds.length > 0) {
         query = query.not('id', 'in', `(${validatedIds.join(',')})`);
@@ -204,9 +230,9 @@ export default function ValidateTrendsPage() {
 
       setStats({
         validated_today: todayValidations?.length || 0,
-        earnings_today: parseFloat(((todayValidations?.length || 0) * 0.01).toFixed(2)),
+        earnings_today: parseFloat(((todayValidations?.length || 0) * 0.10).toFixed(2)),
         validated_total: allValidations?.length || 0,
-        earnings_total: parseFloat(((allValidations?.length || 0) * 0.01).toFixed(2))
+        earnings_total: parseFloat(((allValidations?.length || 0) * 0.10).toFixed(2))
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -630,6 +656,30 @@ export default function ValidateTrendsPage() {
                     </div>
                   )}
 
+                  {/* Validation Status - Show vote progress */}
+                  {(currentTrend.approve_count > 0 || currentTrend.reject_count > 0) && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Validation Progress</h4>
+                      <div className="flex gap-4 mb-2">
+                        <div className="flex items-center gap-2">
+                          <ThumbsUp className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium">{currentTrend.approve_count || 0}/2 approvals</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ThumbsDown className="w-4 h-4 text-red-600" />
+                          <span className="text-sm font-medium">{currentTrend.reject_count || 0}/2 rejections</span>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-300"
+                          style={{ width: `${Math.min((currentTrend.approve_count || 0) * 50, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">First to 2 votes decides</p>
+                    </div>
+                  )}
+
                   {/* Quality Assessment */}
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3">
                     <div className="flex items-center justify-between mb-2">
@@ -736,7 +786,7 @@ export default function ValidateTrendsPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500">Validated: <span className="font-bold text-gray-900">{sessionValidations}</span></p>
-                  <p className="text-sm font-bold text-green-600">+${(sessionValidations * 0.01).toFixed(2)}</p>
+                  <p className="text-sm font-bold text-green-600">+${(sessionValidations * 0.10).toFixed(2)}</p>
                 </div>
               </div>
             </motion.div>

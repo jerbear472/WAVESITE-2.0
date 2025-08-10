@@ -442,7 +442,7 @@ export class TrendSubmissionService {
       status: 'submitted',
       quality_score: 0.5,
       validation_count: 0,
-      created_at: new Date().toISOString(),
+      // Remove created_at - it's handled by database default
       // Social media metadata
       creator_handle: metadata.creator_handle || trendData.creator_handle || null,
       creator_name: metadata.creator_name || trendData.creator_name || null,

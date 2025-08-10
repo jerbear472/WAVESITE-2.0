@@ -75,9 +75,8 @@ export class ReliableTrendSubmissionService {
           category: this.validateCategory(data.category),
           image_url: data.image_url,
           metadata: data.metadata || {},
-          status: 'pending',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          status: 'pending'
+          // Remove created_at and updated_at - handled by database defaults
         })
         .select()
         .single();

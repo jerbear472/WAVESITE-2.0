@@ -23,7 +23,7 @@ export class FallbackSubmission {
         status: 'submitted',
         quality_score: 0.5,
         validation_count: 0,
-        created_at: new Date().toISOString(),
+        // Remove created_at - it's handled by database default
         post_url: trendData.url || ''
       };
 
