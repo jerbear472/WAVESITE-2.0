@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   TextInput,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -165,7 +166,7 @@ export const CaptureScreenClean: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <LinearGradient
         colors={[theme.colors.background, theme.colors.wave[50], theme.colors.background]}
         style={styles.gradient}
@@ -292,7 +293,7 @@ export const CaptureScreenClean: React.FC = () => {
           </View>
         </Card>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

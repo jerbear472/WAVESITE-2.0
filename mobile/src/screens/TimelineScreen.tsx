@@ -8,9 +8,10 @@ import {
   RefreshControl,
   Image,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import supabaseService from '../services/supabaseService';
 import { Card } from '../components/ui/Card';
 import { theme } from '../styles/theme';
@@ -85,7 +86,7 @@ export const TimelineScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <LinearGradient
         colors={[theme.colors.background, theme.colors.wave[50], theme.colors.background]}
         style={styles.gradient}
@@ -180,7 +181,7 @@ export const TimelineScreen: React.FC = () => {
           ))
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

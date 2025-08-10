@@ -3,6 +3,7 @@
 
 -- First, drop ALL views that depend on the columns we're changing
 -- This must be done in order to avoid the "column used by view" error
+DROP VIEW IF EXISTS public.available_trends_for_verification CASCADE;
 DROP VIEW IF EXISTS public.trends_for_validation CASCADE;
 DROP VIEW IF EXISTS public.public_trends CASCADE;
 DROP VIEW IF EXISTS public.verify_page CASCADE;
@@ -116,10 +117,44 @@ LEFT JOIN public.user_profiles up ON ts.spotter_id = up.id
 WHERE ts.status IN ('submitted', 'validating')
 ORDER BY ts.created_at DESC;
 
+-- Recreate available_trends_for_verification view (another view causing the error)
+CREATE OR REPLACE VIEW public.available_trends_for_verification AS
+SELECT 
+    ts.id,
+    ts.spotter_id,
+    ts.category,
+    ts.description,
+    ts.screenshot_url,
+    ts.thumbnail_url,
+    ts.post_url,
+    ts.creator_handle,
+    ts.creator_name,
+    ts.post_caption,
+    ts.likes_count,
+    ts.comments_count,
+    ts.shares_count,
+    ts.views_count,
+    ts.hashtags,
+    ts.posted_at,
+    ts.platform,
+    ts.virality_prediction,
+    ts.quality_score,
+    ts.validation_count,
+    ts.approve_count,
+    ts.reject_count,
+    ts.status,
+    ts.created_at,
+    up.username as spotter_username
+FROM public.trend_submissions ts
+LEFT JOIN public.user_profiles up ON ts.spotter_id = up.id
+WHERE ts.status IN ('submitted', 'validating')
+ORDER BY ts.created_at DESC;
+
 -- Grant necessary permissions
 GRANT SELECT ON public.public_trends TO authenticated;
 GRANT SELECT ON public.verify_page TO authenticated;
 GRANT SELECT ON public.trends_for_validation TO authenticated;
+GRANT SELECT ON public.available_trends_for_verification TO authenticated;
 
 -- Add a check to ensure the values don't exceed BIGINT limits in the application
 -- This is handled in the application code, but we can add a constraint as safety

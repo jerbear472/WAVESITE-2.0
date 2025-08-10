@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   RefreshControl,
+  SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -113,7 +114,7 @@ export const ProfileScreenClean: React.FC = () => {
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <LinearGradient
         colors={[theme.colors.background, theme.colors.wave[50], theme.colors.background]}
         style={styles.gradient}
@@ -264,7 +265,7 @@ export const ProfileScreenClean: React.FC = () => {
 
         <Text style={styles.version}>Version 1.0.0</Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

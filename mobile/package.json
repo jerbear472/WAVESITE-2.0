@@ -11,7 +11,15 @@
     "setup:validation": "node scripts/setup-validation.js",
     "setup:database": "node scripts/setup-database.js",
     "debug:validation": "node scripts/debug-validation.js",
-    "fix:validation": "node scripts/fix-validation-data.js"
+    "fix:validation": "node scripts/fix-validation-data.js",
+    "build:ios": "cd ios && xcodebuild -workspace mobile.xcworkspace -scheme mobile -configuration Release -sdk iphoneos -derivedDataPath ios/build",
+    "build:android": "cd android && ./gradlew assembleRelease",
+    "build:android:bundle": "cd android && ./gradlew bundleRelease",
+    "deploy:ios": "bash scripts/build-production-ios.sh",
+    "deploy:android": "bash scripts/build-production-android.sh",
+    "generate:icons": "node scripts/generate-app-icons.js",
+    "clean": "cd android && ./gradlew clean && cd ../ios && rm -rf build && pod deintegrate && pod install",
+    "reset": "rm -rf node_modules && npm install && cd ios && pod install"
   },
   "dependencies": {
     "@notifee/react-native": "^7.8.0",

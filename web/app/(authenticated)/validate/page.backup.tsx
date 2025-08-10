@@ -17,16 +17,18 @@ import {
   AlertCircle,
   ThumbsUp,
   ThumbsDown,
+  CheckSquare,
+  Square,
   Award,
   X,
   TrendingUp,
   Share2,
+  Calendar,
   User,
   Hash,
   Sparkles,
   ArrowRight,
-  RefreshCw,
-  Image as ImageIcon
+  RefreshCw
 } from 'lucide-react';
 import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
 
@@ -52,8 +54,6 @@ interface TrendToValidate {
   post_url?: string;
   trending_position?: number;
   confidence_score?: number;
-  approve_count?: number;
-  reject_count?: number;
 }
 
 interface QualityCriteria {
@@ -63,7 +63,7 @@ interface QualityCriteria {
   met: boolean;
 }
 
-export default function ValidatePageFixed() {
+export default function ValidatePage() {
   const { user, refreshUser } = useAuth();
   const [trends, setTrends] = useState<TrendToValidate[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -79,10 +79,9 @@ export default function ValidatePageFixed() {
   const [qualityCriteria, setQualityCriteria] = useState<QualityCriteria[]>([]);
   const [lastError, setLastError] = useState('');
   const [initialTrendsCount, setInitialTrendsCount] = useState(0);
-  const [imageError, setImageError] = useState(false);
 
   const formatCount = (count?: number): string => {
-    if (!count || count === 0) return '0';
+    if (!count || count === 0) return '';
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toString();
@@ -111,14 +110,14 @@ export default function ValidatePageFixed() {
       {
         id: 'recent',
         label: 'Timely',
-        description: 'Recently submitted',
-        met: trend.hours_since_post ? trend.hours_since_post <= 72 : true
+        description: 'Posted within 48 hours',
+        met: trend.hours_since_post ? trend.hours_since_post <= 48 : true
       },
       {
         id: 'has_engagement',
-        label: 'Engagement Data',
-        description: 'Shows social metrics',
-        met: (trend.likes_count || 0) > 0 || (trend.views_count || 0) > 0 || (trend.comments_count || 0) > 0
+        label: 'Engagement',
+        description: 'Shows social proof',
+        met: (trend.likes_count || 0) > 0 || (trend.views_count || 0) > 0
       }
     ];
   };
@@ -149,9 +148,18 @@ export default function ValidatePageFixed() {
       }
 
       const validatedIds = validatedTrends?.map(v => v.trend_submission_id) || [];
-      console.log('Already validated trend IDs:', validatedIds.length);
+      console.log('Already validated trend IDs:', validatedIds);
       
-      // Build query for trends to validate
+      // First, let's check all trends regardless of status to debug
+      const { data: allTrends, error: allError } = await supabase
+        .from('trend_submissions')
+        .select('id, status, spotter_id, created_at, description')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      console.log('Sample of all trends in database:', allTrends);
+      
+      // Get trends to validate - use specific columns to avoid ambiguity
       let query = supabase
         .from('trend_submissions')
         .select(`
@@ -183,25 +191,24 @@ export default function ValidatePageFixed() {
         `)
         .neq('spotter_id', user.id); // Exclude user's own trends
       
-      // Exclude already validated trends
       if (validatedIds.length > 0) {
         query = query.not('id', 'in', `(${validatedIds.join(',')})`);
       }
       
-      // Get trends that need validation, ordered by newest first
+      // First get trends with 'submitted' status, ordered by newest first
       const { data: trendsData, error } = await query
-        .in('status', ['submitted', 'validating'])
-        .order('created_at', { ascending: false }) // NEWEST FIRST
-        .limit(100); // Get more trends to ensure we have enough
+        .in('status', ['submitted', 'validating']) // Only show trends awaiting validation
+        .order('created_at', { ascending: false }) // Newest submissions first
+        .limit(50); // Increase limit to get more trends
 
       console.log('Trends loaded for validation:', trendsData?.length || 0, 'trends');
-      
+      console.log('First few trends:', trendsData?.slice(0, 3));
+
       if (error) {
         console.error('Error loading trends:', error);
         setLastError('Unable to load trends. Please refresh the page.');
       }
 
-      // Process trends and calculate time since submission
       const processedTrends = (trendsData || []).map(trend => {
         const hoursAgo = Math.round((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60));
         return {
@@ -213,22 +220,46 @@ export default function ValidatePageFixed() {
         };
       });
 
-      // Sort again client-side to ensure newest first
-      processedTrends.sort((a, b) => {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-
-      console.log('Processed trends (newest first):', processedTrends.slice(0, 3).map(t => ({
-        id: t.id,
-        created_at: t.created_at,
-        description: t.description?.substring(0, 30)
-      })));
-
-      setTrends(processedTrends);
-      setInitialTrendsCount(processedTrends.length);
-      
-      if (processedTrends.length > 0) {
-        setQualityCriteria(evaluateQualityCriteria(processedTrends[0]));
+      // If no trends found with filters, try a simpler query
+      if (processedTrends.length === 0) {
+        console.log('No trends found with filters, trying simpler query...');
+        
+        const { data: simpleTrends, error: simpleError } = await supabase
+          .from('trend_submissions')
+          .select('*')
+          .neq('spotter_id', user.id)
+          .eq('status', 'submitted')
+          .order('created_at', { ascending: false }) // Newest first
+          .limit(50); // Increase limit to get more trends
+        
+        if (simpleTrends && simpleTrends.length > 0) {
+          console.log('Found trends with simpler query:', simpleTrends.length);
+          const simpleProcessed = simpleTrends.map(trend => {
+            const hoursAgo = Math.round((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60));
+            return {
+              ...trend,
+              validation_count: trend.validation_count || 0,
+              approve_count: trend.approve_count || 0,
+              reject_count: trend.reject_count || 0,
+              hours_since_post: hoursAgo
+            };
+          });
+          setTrends(simpleProcessed);
+          setInitialTrendsCount(simpleProcessed.length);
+          if (simpleProcessed.length > 0) {
+            setQualityCriteria(evaluateQualityCriteria(simpleProcessed[0]));
+          }
+        } else {
+          setTrends(processedTrends);
+          setInitialTrendsCount(processedTrends.length);
+        }
+      } else {
+        setTrends(processedTrends);
+        setInitialTrendsCount(processedTrends.length);
+        
+        if (processedTrends.length > 0) {
+          setQualityCriteria(evaluateQualityCriteria(processedTrends[0]));
+        }
       }
     } catch (error) {
       console.error('Error loading trends:', error);
@@ -271,7 +302,6 @@ export default function ValidatePageFixed() {
       setCurrentIndex(nextIdx);
       setQualityCriteria(evaluateQualityCriteria(trends[nextIdx]));
       setLastError('');
-      setImageError(false); // Reset image error for next trend
     } else {
       setCurrentIndex(trends.length);
     }
@@ -316,6 +346,11 @@ export default function ValidatePageFixed() {
       }
 
       if (result && typeof result === 'object') {
+        // Log debug info if available
+        if (result.debug) {
+          console.log('Debug info:', result.debug);
+        }
+        
         if (result.success === false) {
           console.error('Validation failed:', result.error);
           
@@ -325,6 +360,8 @@ export default function ValidatePageFixed() {
           } else if (result.error?.includes('not found')) {
             setLastError('This trend no longer exists.');
             nextTrend();
+          } else if (result.error?.includes('authenticated')) {
+            setLastError('Please sign in to validate trends.');
           } else {
             setLastError(result.error || 'Validation failed. Please try again.');
           }
@@ -336,10 +373,9 @@ export default function ValidatePageFixed() {
       setSessionValidations(prev => prev + 1);
       await loadStats();
       
-      // Remove validated trend from list
       setTrends(prev => prev.filter(t => t.id !== trendId));
       if (currentIndex >= trends.length - 1) {
-        setCurrentIndex(Math.max(0, trends.length - 2));
+        setCurrentIndex(trends.length - 1);
       }
       
     } catch (error: any) {
@@ -360,7 +396,6 @@ export default function ValidatePageFixed() {
   useEffect(() => {
     if (trends[currentIndex]) {
       setQualityCriteria(evaluateQualityCriteria(trends[currentIndex]));
-      setImageError(false); // Reset image error when trend changes
     }
   }, [currentIndex, trends]);
 
@@ -369,6 +404,7 @@ export default function ValidatePageFixed() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Prevent if user is typing in an input field
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
@@ -475,7 +511,6 @@ export default function ValidatePageFixed() {
   }
 
   const qualityScore = currentTrend ? calculateQualityScore(qualityCriteria) : 0;
-  const imageUrl = currentTrend.thumbnail_url || currentTrend.screenshot_url;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
@@ -494,9 +529,9 @@ export default function ValidatePageFixed() {
               </div>
               
               <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full">
-                <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></div>
+                <div className="w-2 h-2 rounded-full bg-blue-600"></div>
                 <span className="text-sm font-medium text-gray-700">
-                  {trends.length} new trends to validate
+                  {initialTrendsCount - trends.length + 1} of {initialTrendsCount}
                 </span>
               </div>
             </div>
@@ -514,7 +549,7 @@ export default function ValidatePageFixed() {
                 <RefreshCw className={`w-4 h-4 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
               </button>
               <div className="hidden sm:block text-right">
-                <p className="text-xs text-gray-500">Today's Earnings</p>
+                <p className="text-xs text-gray-500">Earnings</p>
                 <p className="text-sm font-bold text-gray-900">${stats.earnings_today.toFixed(2)}</p>
               </div>
               <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white px-3 py-1.5 rounded-lg">
@@ -528,7 +563,7 @@ export default function ValidatePageFixed() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Optimized for laptop screens */}
       <div className="flex-1 flex flex-col max-h-[calc(100vh-80px)]">
         <div className="max-w-7xl mx-auto w-full px-4 py-2 flex-1 flex flex-col">
           {/* Error Message */}
@@ -550,20 +585,22 @@ export default function ValidatePageFixed() {
 
           <div className="bg-white rounded-xl shadow-xl flex-1 overflow-hidden">
             <div className="grid lg:grid-cols-2 h-full">
-              {/* Image Section */}
+              {/* Image Section - Fixed height that fits screen */}
               <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center h-full">
-                {imageUrl && !imageError ? (
+                {/* Display thumbnail first, then screenshot as fallback */}
+                {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
                   <>
                     <img
-                      src={imageUrl}
+                      src={currentTrend.thumbnail_url || currentTrend.screenshot_url || ''}
                       alt="Trend submission"
                       className="w-full h-full object-contain p-4"
-                      onError={() => {
-                        console.log('Image failed to load:', imageUrl);
-                        setImageError(true);
+                      onError={(e) => {
+                        // If image fails to load, hide it
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
                       }}
                     />
-                    {/* Engagement Overlay */}
+                    {/* Engagement Overlay - Only show if there are meaningful values */}
                     {(currentTrend.likes_count > 0 || currentTrend.views_count > 0 || currentTrend.comments_count > 0 || currentTrend.shares_count > 0) && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
                         <div className="flex gap-3 text-white">
@@ -599,24 +636,19 @@ export default function ValidatePageFixed() {
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center">
                       <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-200 flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-gray-400" />
+                        <AlertCircle className="w-8 h-8 text-gray-400" />
                       </div>
-                      <p className="text-gray-500 font-medium">No image available</p>
+                      <p className="text-gray-500 font-medium">No image provided</p>
                       <p className="text-gray-400 text-sm mt-1">Visual evidence missing</p>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Details Section */}
+              {/* Details Section - Properly sized for content */}
               <div className="flex flex-col h-full">
+                {/* Scrollable content area */}
                 <div className="flex-1 overflow-y-auto p-4 pb-0">
-                  {/* Submission Time Badge */}
-                  <div className="mb-3 inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-xs font-medium">
-                    <Clock className="w-3 h-3" />
-                    Submitted {currentTrend.hours_since_post}h ago
-                  </div>
-
                   {/* Title and Caption */}
                   <h2 className="text-lg font-bold text-gray-900 mb-2 leading-tight">
                     {currentTrend.description || 'No description provided'}
@@ -648,22 +680,64 @@ export default function ValidatePageFixed() {
                         @{currentTrend.creator_handle}
                       </span>
                     )}
+                    {currentTrend.hours_since_post && (
+                      <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <Clock className="w-3 h-3" />
+                        {currentTrend.hours_since_post}h ago
+                      </span>
+                    )}
                   </div>
 
-                  {/* Hashtags */}
-                  {currentTrend.hashtags && currentTrend.hashtags.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex flex-wrap gap-1">
-                        {currentTrend.hashtags.slice(0, 5).map((tag, idx) => (
-                          <span key={idx} className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">
-                            #{tag}
-                          </span>
-                        ))}
+                  {/* Additional Context */}
+                  {(currentTrend.source_url || currentTrend.post_url || (currentTrend.hashtags && currentTrend.hashtags.length > 0) || currentTrend.trending_position || currentTrend.confidence_score) && (
+                    <div className="bg-blue-50 rounded-lg p-3 mb-3">
+                      <h4 className="text-sm font-semibold text-blue-900 mb-2">Additional Context</h4>
+                      <div className="space-y-1.5">
+                        {currentTrend.source_url && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-gray-600 mt-0.5">Source:</span>
+                            <a href={currentTrend.source_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline break-all">
+                              {currentTrend.source_url}
+                            </a>
+                          </div>
+                        )}
+                        {currentTrend.post_url && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-gray-600">Post:</span>
+                            <a href={currentTrend.post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                              View Original
+                            </a>
+                          </div>
+                        )}
+                        {currentTrend.hashtags && currentTrend.hashtags.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-gray-600 mt-0.5">Tags:</span>
+                            <div className="flex flex-wrap gap-1">
+                              {currentTrend.hashtags.slice(0, 5).map((tag, idx) => (
+                                <span key={idx} className="text-xs bg-white px-2 py-0.5 rounded text-blue-700">
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {currentTrend.trending_position && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600">Trending:</span>
+                            <span className="text-xs font-semibold text-blue-700">#{currentTrend.trending_position}</span>
+                          </div>
+                        )}
+                        {currentTrend.confidence_score && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600">AI Confidence:</span>
+                            <span className="text-xs font-semibold text-blue-700">{Math.round(currentTrend.confidence_score * 100)}%</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
 
-                  {/* Validation Progress */}
+                  {/* Validation Status - Show vote progress */}
                   {(currentTrend.approve_count > 0 || currentTrend.reject_count > 0) && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Validation Progress</h4>
@@ -683,6 +757,7 @@ export default function ValidatePageFixed() {
                           style={{ width: `${Math.min((currentTrend.approve_count || 0) * 50, 100)}%` }}
                         />
                       </div>
+                      <p className="text-xs text-gray-500 mt-1">First to 2 votes decides</p>
                     </div>
                   )}
 
@@ -773,7 +848,7 @@ export default function ValidatePageFixed() {
             </div>
           </div>
 
-          {/* Session Progress Card */}
+          {/* Session Progress Card - Compact */}
           {sessionValidations > 0 && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}

@@ -402,7 +402,7 @@ class SupabaseService {
     notes?: string
   ) {
     try {
-      const rewardAmount = confirmed ? 5 : 2; // Different rewards for positive/negative validation
+      const rewardAmount = 0.01; // $0.01 per validation regardless of approve/reject per constants.ts
 
       const { data, error } = await supabase
         .from('trend_validations')
@@ -420,7 +420,7 @@ class SupabaseService {
 
       // Update user earnings and stats
       await this.incrementUserStats(userId, 'pending_earnings', rewardAmount);
-      await this.incrementUserStats(userId, 'wave_score', confirmed ? 5 : 2);
+      await this.incrementUserStats(userId, 'wave_score', 1); // Small wave score increase per validation
 
       // Update trend validation count
       await supabase.rpc('increment', {

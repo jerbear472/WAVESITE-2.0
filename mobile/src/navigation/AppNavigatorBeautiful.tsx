@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DashboardScreenClean } from '../screens/DashboardScreenClean';
 import { CaptureScreenClean } from '../screens/CaptureScreenClean';
 import { TimelineScreen } from '../screens/TimelineScreen';
-import { ValidationScreenClean } from '../screens/ValidationScreenClean';
+import { ValidationScreenUpdated } from '../screens/ValidationScreenUpdated';
 import { ProfileScreenClean } from '../screens/ProfileScreenClean';
 import { theme } from '../styles/theme';
 
@@ -71,7 +71,7 @@ export const AppNavigatorBeautiful: React.FC = () => {
       />
       <Tab.Screen
         name="Validate"
-        component={ValidationScreenClean}
+        component={ValidationScreenUpdated}
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon="✅" label="Validate" />

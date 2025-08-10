@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,27 +6,148 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Logo } from '../components/Logo';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/Button';
 import { theme } from '../styles/theme';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../config/supabase';
+
+interface DashboardData {
+  totalEarnings: number;
+  trendsSpotted: number;
+  recentActivity: Array<{
+    id: string;
+    title: string;
+    description: string;
+    time: string;
+    earnings?: string;
+    status?: string;
+  }>;
+}
 
 export const DashboardScreenClean: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    totalEarnings: 0,
+    trendsSpotted: 0,
+    recentActivity: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadDashboardData();
+    }
+  }, [user?.id]);
+
+  const loadDashboardData = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Get user profile data
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_earned, wave_score')
+        .eq('id', user.id)
+        .single();
+
+      // Get trends count
+      const { count: trendsCount } = await supabase
+        .from('captured_trends')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Get recent activity (validations and trends)
+      const { data: recentTrends } = await supabase
+        .from('captured_trends')
+        .select('id, title, status, captured_at, validation_reward')
+        .eq('user_id', user.id)
+        .order('captured_at', { ascending: false })
+        .limit(5);
+
+      const { data: recentValidations } = await supabase
+        .from('trend_validations')
+        .select('id, created_at, reward_amount')
+        .eq('validator_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Format recent activity
+      const activity = [];
+      
+      // Add recent trends
+      recentTrends?.forEach(trend => {
+        const timeAgo = getTimeAgo(new Date(trend.captured_at));
+        if (trend.status === 'validated') {
+          activity.push({
+            id: trend.id,
+            title: 'Trend Validated',
+            description: trend.title || 'Your submission was approved',
+            time: timeAgo,
+            earnings: trend.validation_reward ? `+$${trend.validation_reward.toFixed(2)}` : '+$2.50',
+          });
+        } else if (trend.status === 'pending_validation') {
+          activity.push({
+            id: trend.id,
+            title: 'New Trend Captured',
+            description: trend.title || 'Trend submission pending',
+            time: timeAgo,
+            status: 'pending',
+          });
+        }
+      });
+
+      // Add recent validations
+      recentValidations?.forEach(validation => {
+        const timeAgo = getTimeAgo(new Date(validation.created_at));
+        activity.push({
+          id: validation.id,
+          title: 'Validation Completed',
+          description: 'You validated a trend',
+          time: timeAgo,
+          earnings: `+$${validation.reward_amount.toFixed(2)}`,
+        });
+      });
+
+      // Sort activity by time and take most recent
+      activity.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      
+      setDashboardData({
+        totalEarnings: profile?.total_earned || 0,
+        trendsSpotted: trendsCount || 0,
+        recentActivity: activity.slice(0, 3),
+      });
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (days > 0) return `${days} day${days === 1 ? '' : 's'} ago`;
+    if (hours > 0) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    return 'Just now';
+  };
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    // Refresh data here
-    setTimeout(() => setRefreshing(false), 2000);
+    loadDashboardData().finally(() => setRefreshing(false));
   }, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Logo size="small" showText={true} />
@@ -59,11 +180,11 @@ export const DashboardScreenClean: React.FC = () => {
         {/* Stats Cards */}
         <View style={styles.statsGrid}>
           <Card style={styles.statCard} variant="elevated">
-            <Text style={styles.statValue}>$125.50</Text>
+            <Text style={styles.statValue}>${dashboardData.totalEarnings.toFixed(2)}</Text>
             <Text style={styles.statLabel}>Total Earnings</Text>
           </Card>
           <Card style={styles.statCard} variant="elevated">
-            <Text style={styles.statValue}>47</Text>
+            <Text style={styles.statValue}>{dashboardData.trendsSpotted}</Text>
             <Text style={styles.statLabel}>Trends Spotted</Text>
           </Card>
         </View>
@@ -103,26 +224,25 @@ export const DashboardScreenClean: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
           <Card variant="outlined">
-            <ActivityItem
-              title="Trend Validated"
-              description="Your submission was approved"
-              time="2 hours ago"
-              earnings="+$2.50"
-            />
-            <View style={styles.divider} />
-            <ActivityItem
-              title="New Trend Captured"
-              description="Fashion trend submission pending"
-              time="5 hours ago"
-              status="pending"
-            />
-            <View style={styles.divider} />
-            <ActivityItem
-              title="Weekly Bonus"
-              description="Consistency streak reward"
-              time="1 day ago"
-              earnings="+$10.00"
-            />
+            {dashboardData.recentActivity.length > 0 ? (
+              dashboardData.recentActivity.map((activity, index) => (
+                <React.Fragment key={activity.id}>
+                  <ActivityItem
+                    title={activity.title}
+                    description={activity.description}
+                    time={activity.time}
+                    earnings={activity.earnings}
+                    status={activity.status}
+                  />
+                  {index < dashboardData.recentActivity.length - 1 && <View style={styles.divider} />}
+                </React.Fragment>
+              ))
+            ) : (
+              <View style={styles.emptyActivity}>
+                <Text style={styles.emptyText}>No recent activity</Text>
+                <Text style={styles.emptySubtext}>Start capturing trends to see your activity here</Text>
+              </View>
+            )}
           </Card>
         </View>
       </ScrollView>
@@ -134,7 +254,7 @@ export const DashboardScreenClean: React.FC = () => {
       >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -340,5 +460,19 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: '#ffffff',
     fontWeight: '300',
+  },
+  emptyActivity: {
+    padding: theme.spacing.lg,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: theme.typography.body.fontSize,
+    color: theme.colors.textLight,
+    marginBottom: theme.spacing.xs,
+  },
+  emptySubtext: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
   },
 });
