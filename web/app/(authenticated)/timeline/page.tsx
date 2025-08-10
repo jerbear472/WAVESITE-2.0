@@ -167,6 +167,10 @@ export default function Timeline() {
       console.log('Timeline: Found trends:', data?.length || 0);
       if (data && data.length > 0) {
         console.log('Timeline: Latest trend:', data[0]);
+        console.log('Timeline: First trend thumbnail_url:', data[0].thumbnail_url);
+        console.log('Timeline: First trend screenshot_url:', data[0].screenshot_url);
+        console.log('Timeline: First trend post_url:', data[0].post_url);
+        console.log('Timeline: First trend wave_score:', data[0].wave_score);
       }
       setTrends(data || []);
 
@@ -686,15 +690,24 @@ export default function Timeline() {
                       <div className="relative bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-800 overflow-hidden hover:border-gray-700 transition-all duration-300">
                         {/* Thumbnail */}
                         <div className="relative h-48 bg-gray-800 overflow-hidden">
-                          {(trend.thumbnail_url || trend.screenshot_url) ? (
+                          {(trend.thumbnail_url || trend.screenshot_url || trend.post_url) ? (
                             <>
                               <img 
-                                src={trend.thumbnail_url || trend.screenshot_url} 
+                                src={trend.thumbnail_url || trend.screenshot_url || ''}
                                 alt="Trend"
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 onError={(e) => {
-                                  // Hide image on error and show placeholder
-                                  e.currentTarget.style.display = 'none';
+                                  const target = e.currentTarget as HTMLImageElement;
+                                  // Try YouTube thumbnail if it's a YouTube URL
+                                  if (trend.post_url && trend.post_url.includes('youtube')) {
+                                    const match = trend.post_url.match(/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                                    if (match && match[1]) {
+                                      target.src = `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+                                      return;
+                                    }
+                                  }
+                                  // Otherwise hide and show placeholder
+                                  target.style.display = 'none';
                                 }}
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60" />
@@ -930,7 +943,7 @@ export default function Timeline() {
                           {(trend.thumbnail_url || trend.screenshot_url) && (
                             <div className="relative w-32 h-32 rounded-lg overflow-hidden flex-shrink-0">
                               <img 
-                                src={trend.thumbnail_url || trend.screenshot_url} 
+                                src={trend.thumbnail_url || trend.screenshot_url || ''} 
                                 alt="Trend"
                                 className="w-full h-full object-cover"
                               />
@@ -1140,7 +1153,7 @@ export default function Timeline() {
                               {(trend.thumbnail_url || trend.screenshot_url) && (
                                 <div className="relative w-48 h-full flex-shrink-0">
                                   <img 
-                                    src={trend.thumbnail_url || trend.screenshot_url} 
+                                    src={trend.thumbnail_url || trend.screenshot_url || ''} 
                                     alt="Trend"
                                     className="w-full h-full object-cover"
                                   />

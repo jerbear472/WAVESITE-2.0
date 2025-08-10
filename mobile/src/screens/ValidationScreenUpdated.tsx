@@ -11,7 +11,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import supabaseService from '../services/supabaseService';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/Button';

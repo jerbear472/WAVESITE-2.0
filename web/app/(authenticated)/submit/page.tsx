@@ -147,7 +147,7 @@ export default function WorkingSubmitPage() {
         quality_score: 0.5,
         validation_count: 0,
         screenshot_url: screenshotUrl || trendData.screenshot_url || null,
-        post_url: trendData.url || null
+        post_url: trendData.url ? trendData.url.trim() : null
         // Remove created_at - it's handled by database default
       };
 
@@ -171,7 +171,11 @@ export default function WorkingSubmitPage() {
       }
       
       if (trendData.hashtags?.length) submission.hashtags = trendData.hashtags;
-      if (trendData.thumbnail_url) submission.thumbnail_url = trendData.thumbnail_url;
+      
+      // CRITICAL: Always set thumbnail_url, even if it's undefined
+      submission.thumbnail_url = trendData.thumbnail_url || null;
+      console.log('Setting thumbnail_url to:', submission.thumbnail_url);
+      
       if (trendData.posted_at) submission.posted_at = trendData.posted_at;
       
       // Add wave_score if available - convert percentage to 0-10 scale

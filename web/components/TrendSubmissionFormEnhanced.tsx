@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { SimpleMetadataExtractor } from '@/lib/metadataExtractorSimple';
 import { EnhancedThumbnailExtractor } from '@/lib/enhancedThumbnailExtractor';
+import { DirectThumbnailExtractor } from '@/lib/directThumbnailExtractor';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -211,17 +212,25 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       // Try the main extractor first
       let metadata = await MetadataExtractor.extractFromUrl(url);
       
-      // If no thumbnail was captured, try enhanced thumbnail extraction
+      // Try direct extraction first (most reliable for known patterns)
       if (!metadata.thumbnail_url) {
-        console.log('No thumbnail from oEmbed, trying enhanced extraction');
-        const thumbnailResult = await EnhancedThumbnailExtractor.getThumbnail(url);
-        if (thumbnailResult.thumbnail_url) {
-          console.log(`Got thumbnail via ${thumbnailResult.source} with ${thumbnailResult.confidence} confidence`);
-          metadata.thumbnail_url = thumbnailResult.thumbnail_url;
+        console.log('No thumbnail from oEmbed, trying direct extraction');
+        const directThumbnail = DirectThumbnailExtractor.extractThumbnail(url);
+        if (directThumbnail) {
+          console.log('Got thumbnail via direct extraction:', directThumbnail);
+          metadata.thumbnail_url = directThumbnail;
         } else {
-          // Last resort: try simple extractor
-          const simpleMetadata = SimpleMetadataExtractor.extractFromUrl(url);
-          metadata = { ...metadata, ...simpleMetadata };
+          // Try enhanced extraction with proxy
+          console.log('Direct extraction failed, trying enhanced extraction');
+          const thumbnailResult = await EnhancedThumbnailExtractor.getThumbnail(url);
+          if (thumbnailResult.thumbnail_url) {
+            console.log(`Got thumbnail via ${thumbnailResult.source} with ${thumbnailResult.confidence} confidence`);
+            metadata.thumbnail_url = thumbnailResult.thumbnail_url;
+          } else {
+            // Last resort: try simple extractor
+            const simpleMetadata = SimpleMetadataExtractor.extractFromUrl(url);
+            metadata = { ...metadata, ...simpleMetadata };
+          }
         }
       }
       

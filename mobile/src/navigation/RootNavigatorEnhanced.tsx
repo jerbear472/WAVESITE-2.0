@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../hooks/useAuth';
 import { AuthNavigatorClean } from './AuthNavigatorClean';
-import { AppNavigatorBeautiful } from './AppNavigatorBeautiful';
+import { AppStackNavigator } from './AppStackNavigator';
 import { OnboardingNavigator } from './OnboardingNavigator';
 import { LoadingScreenBeautiful } from '../screens/LoadingScreenBeautiful';
 import { theme } from '../styles/theme';
@@ -60,7 +60,7 @@ export const RootNavigatorEnhanced: React.FC = () => {
       ) : user ? (
         <Stack.Screen 
           name="App" 
-          component={AppNavigatorBeautiful}
+          component={AppStackNavigator}
           options={{
             animation: 'fade',
           }}
