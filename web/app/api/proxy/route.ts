@@ -1,5 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export async function HEAD(request: NextRequest) {
+  // Handle HEAD requests for testing URL availability
+  const searchParams = request.nextUrl.searchParams;
+  const url = searchParams.get('url');
+
+  if (!url) {
+    return new NextResponse(null, { status: 400 });
+  }
+
+  const decodedUrl = decodeURIComponent(url);
+  
+  try {
+    const response = await fetch(decodedUrl, {
+      method: 'HEAD',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      },
+      signal: AbortSignal.timeout(5000), // 5 second timeout for HEAD requests
+    });
+
+    return new NextResponse(null, { 
+      status: response.ok ? 200 : response.status,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
+  } catch (error) {
+    return new NextResponse(null, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const url = searchParams.get('url');

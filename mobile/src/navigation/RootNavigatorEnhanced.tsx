@@ -27,15 +27,7 @@ export const RootNavigatorEnhanced: React.FC = () => {
   const checkOnboardingStatus = () => {
     try {
       const onboardingCompleted = storage.getString('onboarding_completed');
-      const permissionsGranted = storage.getString('permissions_granted');
-      const personalizationCompleted = storage.getString('personalization_completed');
-      
-      // Consider onboarding complete if all steps are done
-      const isComplete = onboardingCompleted === 'true' && 
-                        permissionsGranted && 
-                        personalizationCompleted === 'true';
-      
-      setIsOnboardingComplete(isComplete);
+      setIsOnboardingComplete(onboardingCompleted === 'true');
     } catch (error) {
       setIsOnboardingComplete(false);
     }

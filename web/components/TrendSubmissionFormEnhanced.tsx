@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { SimpleMetadataExtractor } from '@/lib/metadataExtractorSimple';
+import { EnhancedThumbnailExtractor } from '@/lib/enhancedThumbnailExtractor';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -210,11 +211,18 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       // Try the main extractor first
       let metadata = await MetadataExtractor.extractFromUrl(url);
       
-      // If no thumbnail was captured, try the simple extractor
+      // If no thumbnail was captured, try enhanced thumbnail extraction
       if (!metadata.thumbnail_url) {
-        console.log('No thumbnail from oEmbed, trying simple extractor');
-        const simpleMetadata = SimpleMetadataExtractor.extractFromUrl(url);
-        metadata = { ...metadata, ...simpleMetadata };
+        console.log('No thumbnail from oEmbed, trying enhanced extraction');
+        const thumbnailResult = await EnhancedThumbnailExtractor.getThumbnail(url);
+        if (thumbnailResult.thumbnail_url) {
+          console.log(`Got thumbnail via ${thumbnailResult.source} with ${thumbnailResult.confidence} confidence`);
+          metadata.thumbnail_url = thumbnailResult.thumbnail_url;
+        } else {
+          // Last resort: try simple extractor
+          const simpleMetadata = SimpleMetadataExtractor.extractFromUrl(url);
+          metadata = { ...metadata, ...simpleMetadata };
+        }
       }
       
       // Auto-detect platform immediately
@@ -688,6 +696,38 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                     </button>
                   ))}
                 </div>
+
+                {/* Thumbnail Preview if auto-captured */}
+                {formData.thumbnail_url && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-4 bg-slate-800/50 rounded-lg p-3"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-medium text-slate-400">Auto-captured Thumbnail</label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="relative w-full h-32 bg-slate-900 rounded overflow-hidden">
+                      <img 
+                        src={formData.thumbnail_url} 
+                        alt="Trend thumbnail"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.log('Thumbnail failed to load:', formData.thumbnail_url);
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Screenshot Upload */}
                 <div className="mt-3">

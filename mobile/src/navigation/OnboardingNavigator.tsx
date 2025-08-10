@@ -1,13 +1,9 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
-import PersonalizationScreen from '../screens/onboarding/PersonalizationScreen';
-import PermissionsScreen from '../screens/onboarding/PermissionsScreen';
+import SimpleOnboarding from '../screens/onboarding/SimpleOnboarding';
 
 export type OnboardingStackParamList = {
   Welcome: undefined;
-  Personalization: undefined;
-  Permissions: undefined;
 };
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
@@ -17,14 +13,11 @@ export const OnboardingNavigator: React.FC = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        animation: 'fade',
         gestureEnabled: false,
-        contentStyle: { backgroundColor: '#fff' },
       }}
     >
-      <Stack.Screen name="Welcome" component={OnboardingScreen} />
-      <Stack.Screen name="Personalization" component={PersonalizationScreen} />
-      <Stack.Screen name="Permissions" component={PermissionsScreen} />
+      <Stack.Screen name="Welcome" component={SimpleOnboarding} />
     </Stack.Navigator>
   );
 };
