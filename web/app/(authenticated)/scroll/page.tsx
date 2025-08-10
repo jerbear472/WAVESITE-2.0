@@ -59,6 +59,7 @@ export default function LegibleScrollPage() {
   const [trendUrl, setTrendUrl] = useState('');
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
   // Session & Streak states
@@ -354,22 +355,70 @@ export default function LegibleScrollPage() {
       
       console.log('Submitting to Supabase:', submissionData);
       
-      const { data, error } = await supabase
-        .from('trend_submissions')
-        .insert(submissionData)
-        .select()
-        .single();
+      // Retry logic for submission
+      let retries = 3;
+      let data = null;
+      let error = null;
       
-      if (error) {
-        console.error('Supabase submission error:', error);
-        console.error('Error details:', error.message, error.details, error.hint);
+      while (retries > 0 && !data) {
+        try {
+          // Create a promise that rejects after 45 seconds
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Request timeout after 45 seconds')), 45000);
+          });
+          
+          // Race between the actual request and the timeout
+          const result = await Promise.race([
+            supabase
+              .from('trend_submissions')
+              .insert(submissionData)
+              .select()
+              .single(),
+            timeoutPromise
+          ]);
+          
+          if ('data' in result) {
+            data = result.data;
+            error = result.error;
+          }
+          
+          if (error) {
+            console.error(`Submission attempt ${4 - retries} failed:`, error);
+            retries--;
+            if (retries > 0) {
+              setRetryStatus(`Connection issue - retrying... (${retries} attempts left)`);
+              console.log(`Retrying submission... (${retries} attempts left)`);
+              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+            }
+          } else {
+            break; // Success!
+          }
+        } catch (timeoutError) {
+          console.error(`Submission attempt ${4 - retries} timed out`);
+          retries--;
+          error = timeoutError;
+          if (retries > 0) {
+            setRetryStatus(`Request timed out - retrying... (${retries} attempts left)`);
+            console.log(`Retrying after timeout... (${retries} attempts left)`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        }
+      }
+      
+      if (error || !data) {
+        console.error('Final submission error after all retries:', error);
         
         // Don't let the form hang - close it and show error
         setShowSubmissionForm(false);
         setIsSubmitting(false);
+        setRetryStatus(null); // Clear retry status
+        
+        const errorMessage = error?.message || 'Submission failed after multiple attempts';
         setSubmitMessage({ 
           type: 'error', 
-          text: `Submission failed: ${error.message}` 
+          text: errorMessage.includes('timeout') 
+            ? 'Connection timeout - please check your internet and try again' 
+            : `Submission failed: ${errorMessage}` 
         });
         
         // Still hide message after 5 seconds
@@ -377,8 +426,11 @@ export default function LegibleScrollPage() {
         return; // Exit early instead of throwing
       }
       
-      // Create earnings entry
-      const { error: earningsError } = await supabase
+      // Clear retry status on success
+      setRetryStatus(null);
+      
+      // Create earnings entry asynchronously - don't block main submission
+      supabase
         .from('earnings_ledger')
         .insert({
           user_id: user.id,
@@ -394,12 +446,13 @@ export default function LegibleScrollPage() {
             streak_multiplier: isSessionActive ? streakMultiplier : 1,
             base_payment: basePayment
           }
+        })
+        .then(({ error: earningsError }) => {
+          if (earningsError) {
+            console.error('Earnings ledger error:', earningsError);
+            // Don't throw - trend was submitted successfully
+          }
         });
-      
-      if (earningsError) {
-        console.error('Earnings ledger error:', earningsError);
-        // Don't throw - trend was submitted successfully
-      }
       
       // Update streak only if session is active
       if (isSessionActive) {
