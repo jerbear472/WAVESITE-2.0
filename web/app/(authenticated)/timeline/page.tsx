@@ -655,14 +655,25 @@ export default function Timeline() {
                       
                       <div className="relative bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-800 overflow-hidden hover:border-gray-700 transition-all duration-300">
                         {/* Thumbnail */}
-                        {(trend.thumbnail_url || trend.screenshot_url) && (
-                          <div className="relative h-48 bg-gray-800 overflow-hidden">
-                            <img 
-                              src={trend.thumbnail_url || trend.screenshot_url} 
-                              alt="Trend"
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60" />
+                        <div className="relative h-48 bg-gray-800 overflow-hidden">
+                          {(trend.thumbnail_url || trend.screenshot_url) ? (
+                            <>
+                              <img 
+                                src={trend.thumbnail_url || trend.screenshot_url} 
+                                alt="Trend"
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                onError={(e) => {
+                                  // Hide image on error and show placeholder
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60" />
+                            </>
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center">
+                              <TrendingUpIcon className="w-16 h-16 text-gray-600" />
+                            </div>
+                          )}
                             
                             {/* Status Badge with Stage */}
                             <div className="absolute top-3 right-3 space-y-2">
@@ -713,7 +724,6 @@ export default function Timeline() {
                               </a>
                             )}
                           </div>
-                        )}
 
                         <div className="p-6">
                           {/* Creator Info */}

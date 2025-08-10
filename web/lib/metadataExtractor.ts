@@ -95,6 +95,15 @@ export class MetadataExtractor {
             caption = caption.substring(0, hashtagIndex).trim();
           }
           
+          // Ensure we have a thumbnail URL - use high quality version if available
+          let thumbnailUrl = data.thumbnail_url;
+          if (!thumbnailUrl && data.thumbnail_url_hd) {
+            thumbnailUrl = data.thumbnail_url_hd;
+          }
+          if (!thumbnailUrl && data.thumbnail_url_sd) {
+            thumbnailUrl = data.thumbnail_url_sd;
+          }
+          
           return {
             platform: 'tiktok',
             metadata: {
@@ -102,7 +111,7 @@ export class MetadataExtractor {
               creator_handle: creatorHandle,
               creator_name: data.author_name || creatorHandle,
               post_caption: caption,
-              thumbnail_url: data.thumbnail_url,
+              thumbnail_url: thumbnailUrl,
               hashtags: this.extractHashtags(data.title || ''),
               posted_at: this.estimateTikTokPostDate(videoId)
             },
@@ -155,6 +164,14 @@ export class MetadataExtractor {
       if (response.ok) {
         const data = await response.json();
         
+        // Extract video ID for high-quality thumbnail
+        let thumbnailUrl = data.thumbnail_url;
+        const videoIdMatch = url.match(/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (videoIdMatch && videoIdMatch[1]) {
+          // Use maxresdefault for highest quality, fall back to hqdefault
+          thumbnailUrl = `https://img.youtube.com/vi/${videoIdMatch[1]}/maxresdefault.jpg`;
+        }
+        
         return {
           platform: 'youtube',
           metadata: {
@@ -162,7 +179,7 @@ export class MetadataExtractor {
             creator_handle: data.author_name ? `@${data.author_name.replace(/\s+/g, '')}` : basicData.metadata.creator_handle,
             creator_name: data.author_name,
             post_caption: data.title || '',
-            thumbnail_url: data.thumbnail_url,
+            thumbnail_url: thumbnailUrl,
             hashtags: this.extractHashtags(data.title || '')
           },
           title: data.title || basicData.title,
