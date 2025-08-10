@@ -187,10 +187,28 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
 
   // Auto-extract metadata when component mounts with initialUrl
   useEffect(() => {
-    if (initialUrl) {
-      extractMetadata(initialUrl);
+    if (initialUrl && initialUrl.trim()) {
+      console.log('TrendForm: Auto-extracting metadata for initialUrl:', initialUrl);
+      extractMetadata(initialUrl.trim());
     }
   }, [initialUrl]);
+
+  // Manual thumbnail test function
+  const testThumbnailExtraction = async (url: string) => {
+    console.log('🧪 TESTING THUMBNAIL EXTRACTION FOR:', url);
+    
+    // Direct extraction test
+    const directThumbnail = DirectThumbnailExtractor.extractThumbnail(url);
+    console.log('Direct extraction result:', directThumbnail);
+    
+    if (directThumbnail) {
+      setFormData(prev => ({
+        ...prev,
+        thumbnail_url: directThumbnail
+      }));
+      console.log('✅ Thumbnail set manually:', directThumbnail);
+    }
+  };
 
   // Auto-detect platform from URL
   const detectPlatform = (url: string): string => {
@@ -498,11 +516,17 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submission started with data:', formData);
+    console.log('🚀 FORM SUBMISSION STARTED');
+    console.log('=====================================');
+    console.log('Full form data:', formData);
+    console.log('Thumbnail URL:', formData.thumbnail_url);
+    console.log('Wave Score:', formData.wave_score);
+    console.log('Post URL:', formData.url);
+    console.log('=====================================');
     
     // Validate current step before submission
     if (!validateStep(step)) {
-      console.log('Validation failed for step:', step);
+      console.log('❌ Validation failed for step:', step);
       return;
     }
     
@@ -510,18 +534,17 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     setError('');
     
     try {
-      console.log('Calling onSubmit with form data');
+      console.log('📤 Calling onSubmit with form data');
       await onSubmit(formData);
-      console.log('onSubmit completed successfully');
+      console.log('✅ onSubmit completed successfully');
       setSuccess('Trend submitted successfully! 🎉');
       setTimeout(() => onClose(), 3000);
     } catch (err: any) {
-      console.error('Form submission error - Full details:', {
-        error: err,
-        message: err.message,
-        stack: err.stack,
-        details: err.details
-      });
+      console.error('❌ FORM SUBMISSION ERROR:');
+      console.error('Error:', err);
+      console.error('Message:', err.message);
+      console.error('Stack:', err.stack);
+      console.error('Details:', err.details);
       setError(err.message || 'Failed to submit trend');
     } finally {
       setLoading(false);
@@ -662,9 +685,12 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                     type="url"
                     value={formData.url}
                     onChange={(e) => {
-                      const url = e.target.value;
+                      const url = e.target.value.trim();
                       setFormData(prev => ({ ...prev, url }));
-                      if (url) extractMetadata(url);
+                      if (url && url.startsWith('http')) {
+                        console.log('TrendForm: URL changed, extracting metadata for:', url);
+                        extractMetadata(url);
+                      }
                     }}
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none pr-32"
                     placeholder="Paste TikTok, Instagram, YouTube link..."
@@ -705,6 +731,19 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                     </button>
                   ))}
                 </div>
+
+                {/* Test thumbnail extraction button */}
+                {formData.url && !formData.thumbnail_url && (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => testThumbnailExtraction(formData.url)}
+                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded"
+                    >
+                      🔄 Try Extract Thumbnail
+                    </button>
+                  </div>
+                )}
 
                 {/* Thumbnail Preview if auto-captured */}
                 {formData.thumbnail_url && (

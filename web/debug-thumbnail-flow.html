@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Thumbnail Flow</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #fff; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        input, button { padding: 8px; margin: 5px; }
+        img { max-width: 200px; max-height: 150px; border: 1px solid #666; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Thumbnail Extraction Flow</h1>
+    
+    <div class="test-section">
+        <h3>Step 1: URL Input Test</h3>
+        <input type="url" id="testUrl" placeholder="Paste YouTube URL here" style="width: 400px;">
+        <button onclick="testExtraction()">Extract Thumbnail</button>
+        <div id="result1"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 2: Thumbnail Display Test</h3>
+        <div id="thumbnailDisplay"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 3: Data Structure Test</h3>
+        <pre id="dataStructure"></pre>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 4: Submission Data Test</h3>
+        <button onclick="testSubmissionData()">Generate Submission Object</button>
+        <pre id="submissionData"></pre>
+    </div>
+
+    <script>
+        // Simulate DirectThumbnailExtractor
+        function extractThumbnail(url) {
+            if (!url) return null;
+            
+            url = url.trim();
+            console.log('🔍 Extracting from:', url);
+            
+            // YouTube
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                const patterns = [
+                    /(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+                    /^([a-zA-Z0-9_-]{11})$/
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = url.match(pattern);
+                    if (match && match[1]) {
+                        const videoId = match[1];
+                        const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                        console.log('✅ Extracted:', thumbnail);
+                        return thumbnail;
+                    }
+                }
+            }
+            
+            // TikTok
+            if (url.includes('tiktok.com')) {
+                const videoIdMatch = url.match(/video\/(\d+)/);
+                if (videoIdMatch && videoIdMatch[1]) {
+                    const videoId = videoIdMatch[1];
+                    const thumbnail = `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-noop.image`;
+                    console.log('✅ Extracted (unverified):', thumbnail);
+                    return thumbnail;
+                }
+            }
+            
+            console.log('❌ No thumbnail extracted');
+            return null;
+        }
+
+        let currentFormData = {
+            url: '',
+            thumbnail_url: '',
+            wave_score: 75,
+            trendName: 'Test Trend',
+            explanation: 'This is a test trend submission'
+        };
+
+        function testExtraction() {
+            const url = document.getElementById('testUrl').value;
+            const result = document.getElementById('result1');
+            const display = document.getElementById('thumbnailDisplay');
+            const data = document.getElementById('dataStructure');
+            
+            result.innerHTML = '<div class="warning">Extracting...</div>';
+            
+            // Test extraction
+            const thumbnail = extractThumbnail(url);
+            
+            if (thumbnail) {
+                result.innerHTML = `<div class="success">✅ Extracted: ${thumbnail}</div>`;
+                
+                // Test image loading
+                const img = new Image();
+                img.onload = () => {
+                    display.innerHTML = `
+                        <div class="success">✅ Image loads successfully!</div>
+                        <img src="${thumbnail}" alt="Thumbnail">
+                    `;
+                };
+                img.onerror = () => {
+                    display.innerHTML = `<div class="error">❌ Image failed to load (CORS or 404)</div>`;
+                };
+                img.src = thumbnail;
+                
+                // Update form data
+                currentFormData.url = url;
+                currentFormData.thumbnail_url = thumbnail;
+                
+            } else {
+                result.innerHTML = '<div class="error">❌ No thumbnail extracted</div>';
+                display.innerHTML = '<div class="warning">No thumbnail to display</div>';
+            }
+            
+            // Show form data structure
+            data.textContent = JSON.stringify(currentFormData, null, 2);
+        }
+
+        function testSubmissionData() {
+            const submissionData = {
+                spotter_id: 'test-user-id',
+                category: 'meme_format', 
+                description: currentFormData.explanation || 'Test description',
+                evidence: {
+                    url: currentFormData.url,
+                    title: currentFormData.trendName,
+                    platform: 'youtube'
+                },
+                status: 'submitted',
+                virality_prediction: 7,
+                quality_score: 0.7,
+                validation_count: 0,
+                thumbnail_url: currentFormData.thumbnail_url || null,
+                post_url: currentFormData.url || null,
+                wave_score: Math.round((currentFormData.wave_score || 50) / 10) // Convert 0-100 to 0-10
+            };
+            
+            document.getElementById('submissionData').textContent = JSON.stringify(submissionData, null, 2);
+            
+            console.log('📤 Would submit:', submissionData);
+            console.log('Thumbnail URL:', submissionData.thumbnail_url);
+            console.log('Wave Score:', submissionData.wave_score);
+        }
+
+        // Auto-test with Rick Roll
+        window.onload = () => {
+            document.getElementById('testUrl').value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+            testExtraction();
+        };
+    </script>
+</body>
+</html>
