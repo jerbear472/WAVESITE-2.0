@@ -71,6 +71,8 @@ interface Trend {
   post_url?: string;
   thumbnail_url?: string;
   posted_at?: string;
+  wave_score?: number;
+  trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'peaked' | 'declining';
 }
 
 // Add new types for filtering and sorting
@@ -268,6 +270,34 @@ export default function Timeline() {
       case 'rejected': return <ClockIcon className="w-4 h-4" />;
       case 'validating': return <EyeIcon className="w-4 h-4" />;
       default: return <TrendingUpIcon className="w-4 h-4" />;
+    }
+  };
+
+  const getTrendVelocity = (trend: Trend) => {
+    // Determine velocity based on stage, status, or other metrics
+    if (trend.trend_velocity) return trend.trend_velocity;
+    
+    if (trend.stage === 'viral' || trend.status === 'viral') return 'viral';
+    if (trend.stage === 'declining') return 'declining';
+    if (trend.stage === 'peaked') return 'peaked';
+    if (trend.stage === 'trending' || (trend.wave_score && trend.wave_score >= 7)) return 'picking_up';
+    if (trend.stage === 'submitted' || trend.stage === 'validating') return 'just_starting';
+    
+    // Fallback based on score
+    const score = trend.wave_score || trend.virality_prediction || 5;
+    if (score >= 8) return 'viral';
+    if (score >= 6) return 'picking_up';
+    return 'just_starting';
+  };
+
+  const getVelocityDisplay = (velocity: string) => {
+    switch (velocity) {
+      case 'just_starting': return { text: '🚀 Just Starting', color: 'text-blue-400' };
+      case 'picking_up': return { text: '📈 Picking Up', color: 'text-green-400' };
+      case 'viral': return { text: '🔥 Going Viral', color: 'text-red-400' };
+      case 'peaked': return { text: '⚡ Peaked', color: 'text-purple-400' };
+      case 'declining': return { text: '📉 Declining', color: 'text-orange-400' };
+      default: return { text: '📊 Tracking', color: 'text-gray-400' };
     }
   };
 
@@ -818,7 +848,12 @@ export default function Timeline() {
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-1">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span className="text-xs text-gray-400">Momentum: {trend.trend_momentum_score || trend.virality_prediction || 5}/10</span>
+                                  <span className="text-xs text-gray-400">Wave Score: {trend.wave_score || trend.virality_prediction || 5}/10</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className={`text-xs font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                                    {getVelocityDisplay(getTrendVelocity(trend)).text}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
@@ -998,7 +1033,12 @@ export default function Timeline() {
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span>Momentum: {trend.trend_momentum_score || trend.virality_prediction || 5}/10</span>
+                                  <span>Wave Score: {trend.wave_score || trend.virality_prediction || 5}/10</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                                    {getVelocityDisplay(getTrendVelocity(trend)).text}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
@@ -1194,7 +1234,12 @@ export default function Timeline() {
                                 <div className="flex items-center gap-3 mb-3 text-sm">
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                    <span>Momentum: {trend.trend_momentum_score || trend.virality_prediction || 5}/10</span>
+                                    <span>Wave Score: {trend.wave_score || trend.virality_prediction || 5}/10</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                                      {getVelocityDisplay(getTrendVelocity(trend)).text}
+                                    </span>
                                   </div>
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <AwardIcon className="w-4 h-4 text-blue-400" />

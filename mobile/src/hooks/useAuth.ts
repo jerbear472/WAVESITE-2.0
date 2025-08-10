@@ -1,8 +1,12 @@
+// This file re-exports from AuthContext for backward compatibility
+export { useAuth } from '../contexts/AuthContext';
+
+// Legacy hook implementation (deprecated)
 import { useState, useEffect } from 'react';
 import { supabase } from '../config/supabase';
 import { Session, User } from '@supabase/supabase-js';
 
-export function useAuth() {
+export function useAuthLegacy() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);

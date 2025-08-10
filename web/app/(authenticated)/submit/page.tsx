@@ -92,6 +92,8 @@ export default function WorkingSubmitPage() {
 
     setSubmitting(true);
     console.log('Submitting trend data:', trendData);
+    console.log('Thumbnail URL:', trendData.thumbnail_url);
+    console.log('Wave Score:', trendData.wave_score);
 
     try {
       // Handle screenshot upload first if present
@@ -125,7 +127,7 @@ export default function WorkingSubmitPage() {
         category: mappedCategory,
         description: trendData.explanation || trendData.trendName || 'Untitled Trend',
         evidence: {
-          url: trendData.url || '',
+          url: trendData.url ? trendData.url.trim() : '',
           title: trendData.trendName || 'Untitled',
           platform: trendData.platform || 'other',
           categories: trendData.categories || [],
@@ -172,10 +174,15 @@ export default function WorkingSubmitPage() {
       if (trendData.thumbnail_url) submission.thumbnail_url = trendData.thumbnail_url;
       if (trendData.posted_at) submission.posted_at = trendData.posted_at;
       
-      // Add wave_score if available
-      if (trendData.wave_score !== undefined) submission.wave_score = trendData.wave_score;
+      // Add wave_score if available - convert percentage to 0-10 scale
+      if (trendData.wave_score !== undefined) {
+        submission.wave_score = Math.round(trendData.wave_score / 10); // Convert 0-100 to 0-10
+      }
 
       console.log('Final submission object:', submission);
+      console.log('Thumbnail URL in submission:', submission.thumbnail_url);
+      console.log('Wave Score in submission:', submission.wave_score);
+      console.log('Post URL in submission:', submission.post_url);
 
       // Submit to database
       const { data, error } = await supabase

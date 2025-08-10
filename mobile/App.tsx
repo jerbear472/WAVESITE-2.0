@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MMKV } from 'react-native-mmkv';
 import { RootNavigatorEnhanced } from './src/navigation/RootNavigatorEnhanced';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import { AuthProvider } from './src/contexts/AuthContext';
 
 // Enable screens for better performance
 enableScreens();
@@ -55,9 +56,11 @@ function App(): React.JSX.Element {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <QueryClientProvider client={queryClient}>
-            <NavigationContainer>
-              <RootNavigatorEnhanced />
-            </NavigationContainer>
+            <AuthProvider>
+              <NavigationContainer>
+                <RootNavigatorEnhanced />
+              </NavigationContainer>
+            </AuthProvider>
           </QueryClientProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>
