@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractor';
+import { SimpleMetadataExtractor } from '@/lib/metadataExtractorSimple';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -206,7 +207,15 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     setExtractingMetadata(true);
     setError('');
     try {
-      const metadata = await MetadataExtractor.extractFromUrl(url);
+      // Try the main extractor first
+      let metadata = await MetadataExtractor.extractFromUrl(url);
+      
+      // If no thumbnail was captured, try the simple extractor
+      if (!metadata.thumbnail_url) {
+        console.log('No thumbnail from oEmbed, trying simple extractor');
+        const simpleMetadata = SimpleMetadataExtractor.extractFromUrl(url);
+        metadata = { ...metadata, ...simpleMetadata };
+      }
       
       // Auto-detect platform immediately
       const detectedPlatform = detectPlatform(url);

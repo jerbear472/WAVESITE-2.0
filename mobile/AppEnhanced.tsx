@@ -21,7 +21,7 @@ import performanceNow from 'react-native-performance';
 
 // Enhanced imports
 import MainNavigator from './src/navigation/MainNavigatorEnhanced';
-import { LoadingScreen } from './src/screens/LoadingScreenEnhanced';
+import { LoadingScreenEnhanced } from './src/screens/LoadingScreenEnhanced';
 import { AuthNavigator } from './src/navigation/AuthNavigator';
 import ShareExtensionService from './src/services/ShareExtensionService';
 import TrendStorageService from './src/services/TrendStorageService';

@@ -28,14 +28,23 @@ class SupabaseService {
 
       if (error) throw error;
 
-      // Update profile with additional data
+      // Create or update profile with additional data
       if (data.user) {
-        await this.updateUserProfile(data.user.id, {
-          username,
-          birthday,
-          onboarding_completed: false,
-          persona_completed: false,
-        });
+        // First try to create the profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            username,
+            birthday,
+            onboarding_completed: false,
+            persona_completed: false,
+            created_at: new Date().toISOString(),
+          });
+        
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
       }
 
       return { data, error: null };
@@ -92,7 +101,7 @@ class SupabaseService {
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
@@ -108,7 +117,7 @@ class SupabaseService {
   async updateUserProfile(userId: string, updates: Partial<UserProfile>) {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update(updates)
         .eq('id', userId)
         .select()
@@ -125,7 +134,7 @@ class SupabaseService {
   async savePersona(userId: string, personaData: PersonaData) {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({
           demographics: personaData,
           interests: personaData.interests,
@@ -257,7 +266,7 @@ class SupabaseService {
               id: validation.id,
               type: 'validation_approved',
               title: 'Validation approved',
-              subtitle: validation.trend?.title || 'Trend validated',
+              subtitle: (validation as any).trend?.title || 'Trend validated',
               value: `+${validation.reward_amount}`,
               timestamp: validation.created_at,
               icon: 'check-circle',
@@ -360,7 +369,7 @@ class SupabaseService {
         .from('trend_submissions')
         .select(`
           *,
-          spotter:user_profiles!spotter_id(username, avatar_url),
+          spotter:profiles!spotter_id(username, avatar_url),
           validations:trend_validations(validator_id)
         `)
         .neq('spotter_id', userId)
@@ -436,15 +445,15 @@ class SupabaseService {
   ) {
     try {
       const { data: currentProfile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select(field as string)
         .eq('id', userId)
         .single();
 
       if (currentProfile) {
-        const currentValue = (currentProfile[field] as number) || 0;
+        const currentValue = (currentProfile[field as string] as number) || 0;
         await supabase
-          .from('user_profiles')
+          .from('profiles')
           .update({ [field]: currentValue + amount })
           .eq('id', userId);
       }
@@ -463,7 +472,7 @@ class SupabaseService {
           validations:trend_validations(
             confirmed,
             created_at,
-            validator:user_profiles!validator_id(username, avatar_url)
+            validator:profiles!validator_id(username, avatar_url)
           )
         `)
         .eq('spotter_id', userId)
@@ -484,7 +493,7 @@ class SupabaseService {
         .from('trend_submissions')
         .select(`
           *,
-          spotter:user_profiles!spotter_id(username, avatar_url),
+          spotter:profiles!spotter_id(username, avatar_url),
           validations:trend_validations(confirmed)
         `)
         .in('status', ['approved', 'viral'])
@@ -513,13 +522,13 @@ class SupabaseService {
 
   subscribeToUserStats(userId: string, callback: (payload: any) => void) {
     return supabase
-      .channel(`public:user_profiles:id=eq.${userId}`)
+      .channel(`public:profiles:id=eq.${userId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'user_profiles',
+          table: 'profiles',
           filter: `id=eq.${userId}`,
         },
         callback

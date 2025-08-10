@@ -8,15 +8,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'URL parameter is required' }, { status: 400 });
   }
 
+  const decodedUrl = decodeURIComponent(url);
+  console.log('Proxy request for:', decodedUrl);
+
   try {
-    // Add CORS headers for production
+    // Add comprehensive headers for better compatibility
     const headers = new Headers({
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'application/json, text/plain, */*',
       'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Referer': 'https://www.tiktok.com/',
     });
 
-    const response = await fetch(decodeURIComponent(url), {
+    const response = await fetch(decodedUrl, {
       headers: headers,
       // Add timeout for production
       signal: AbortSignal.timeout(10000), // 10 second timeout
@@ -24,8 +31,11 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       console.error('Proxy fetch failed:', response.status, response.statusText);
+      // Try to get error body for debugging
+      const errorText = await response.text();
+      console.error('Error response:', errorText.substring(0, 500));
       return NextResponse.json(
-        { error: 'Failed to fetch data', status: response.status }, 
+        { error: 'Failed to fetch data', status: response.status, details: errorText.substring(0, 200) }, 
         { status: response.status }
       );
     }

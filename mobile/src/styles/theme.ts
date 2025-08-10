@@ -19,17 +19,24 @@ export const theme = {
     primary: '#0080ff',
     primaryDark: '#0066cc',
     primaryLight: '#4da8ff',
+    secondary: '#00d4ff',
+    secondaryDark: '#00a8cc',
+    secondaryLight: '#66e5ff',
     
     // Clean, minimal backgrounds
     background: '#ffffff',
     backgroundDark: '#f9fafb',
     backgroundCard: '#ffffff',
+    backgroundSecondary: '#f3f4f6',
+    surface: '#ffffff',
+    card: '#ffffff',
     
     // Text colors for clean design
     text: '#111827',
     textLight: '#6b7280',
     textSecondary: '#0080ff',
     textMuted: '#9ca3af',
+    textInverse: '#ffffff',
     
     // Dark mode colors
     dark: {

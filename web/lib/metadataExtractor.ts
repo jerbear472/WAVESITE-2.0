@@ -63,15 +63,18 @@ export class MetadataExtractor {
   
   private static async extractTikTokMetadata(url: string, basicData: ExtractedData): Promise<ExtractedData> {
     try {
-      // Extract video ID from URL
+      // Extract video ID and username from URL
       const videoIdMatch = url.match(/video\/(\d+)/);
       const videoId = videoIdMatch ? videoIdMatch[1] : null;
+      const usernameMatch = url.match(/@([^\/\?]+)/);
+      const username = usernameMatch ? usernameMatch[1] : null;
       
       // Try to use TikTok's oEmbed API
       if (videoId) {
         const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
         const proxyUrl = `/api/proxy?url=${encodeURIComponent(oembedUrl)}`;
         
+        console.log('Fetching TikTok metadata from:', oembedUrl);
         const response = await fetch(proxyUrl);
         
         if (response.ok) {
@@ -118,10 +121,41 @@ export class MetadataExtractor {
             title: caption.substring(0, 50) || 'TikTok Video',
             description: data.title || basicData.description
           };
+        } else {
+          // oEmbed failed, use fallback data
+          console.log('TikTok oEmbed failed, using fallback');
+          if (username) {
+            return {
+              platform: 'tiktok',
+              metadata: {
+                ...basicData.metadata,
+                creator_handle: `@${username}`,
+                creator_name: username,
+                // Generate a thumbnail URL based on video ID (this might work for some videos)
+                thumbnail_url: videoId ? `https://p16-sign.tiktokcdn.com/obj/${videoId}~c5_720x720.jpeg` : undefined,
+                posted_at: this.estimateTikTokPostDate(videoId)
+              },
+              title: `TikTok Video by @${username}`,
+              description: basicData.description || `TikTok video from @${username}`
+            };
+          }
         }
       }
     } catch (error) {
-      // Silently fall back
+      console.error('TikTok metadata extraction error:', error);
+      // Return fallback data if we at least have username
+      if (username) {
+        return {
+          platform: 'tiktok',
+          metadata: {
+            ...basicData.metadata,
+            creator_handle: `@${username}`,
+            creator_name: username
+          },
+          title: `TikTok Video by @${username}`,
+          description: basicData.description || `TikTok video from @${username}`
+        };
+      }
     }
     
     return basicData;

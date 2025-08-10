@@ -3,8 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,6 +13,8 @@ import { Logo } from '../components/Logo';
 import { Button } from '../components/Button';
 import { theme } from '../styles/theme';
 import LinearGradient from 'react-native-linear-gradient';
+
+const { height } = Dimensions.get('window');
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Welcome'>;
 
@@ -38,33 +40,16 @@ export const WelcomeScreenClean: React.FC = () => {
 
         <View style={styles.heroSection}>
           <Text style={styles.headline}>
-            Catch the Wave of{'\n'}
-            <Text style={styles.highlightText}>Social Trends</Text>
+            Get Paid to{'\n'}
+            <Text style={styles.highlightText}>Spot Trends</Text>
           </Text>
           
           <Text style={styles.description}>
-            Discover what's trending, validate content, and earn rewards for your insights
+            Turn your social media scrolling into cash by identifying viral content before it takes off
           </Text>
         </View>
 
-        <View style={styles.features}>
-          <FeatureItem 
-            icon="📈"
-            title="Spot Trends"
-            description="Identify emerging trends before they go viral"
-          />
-          <FeatureItem 
-            icon="✓"
-            title="Validate Content"
-            description="Help verify and curate quality content"
-          />
-          <FeatureItem 
-            icon="💰"
-            title="Earn Rewards"
-            description="Get paid for your valuable contributions"
-          />
-        </View>
-
+        {/* Buttons moved up, before features */}
         <View style={styles.buttonContainer}>
           <Button
             title="Get Started"
@@ -83,8 +68,26 @@ export const WelcomeScreenClean: React.FC = () => {
           />
         </View>
 
+        <View style={styles.features}>
+          <FeatureItem 
+            icon="👀"
+            title="Spot Early"
+            description="Find trending content before it goes viral"
+          />
+          <FeatureItem 
+            icon="✅"
+            title="Validate"
+            description="Verify and rate emerging trends"
+          />
+          <FeatureItem 
+            icon="💵"
+            title="Get Paid"
+            description="Earn real money for accurate predictions"
+          />
+        </View>
+
         <Text style={styles.footer}>
-          Join thousands of trend spotters worldwide
+          Join 10,000+ users earning daily
         </Text>
       </ScrollView>
     </View>
@@ -121,38 +124,46 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.xxl * 2,
+    paddingTop: height * 0.08, // Reduced top padding
     paddingBottom: theme.spacing.xxl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.xl, // Reduced margin
   },
   heroSection: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.xl, // Reduced margin
   },
   headline: {
-    fontSize: 36,
-    fontWeight: '300',
+    fontSize: 42,
+    fontWeight: '700',
     textAlign: 'center',
     color: theme.colors.text,
-    lineHeight: 44,
+    lineHeight: 50,
     marginBottom: theme.spacing.md,
+    letterSpacing: -1,
   },
   highlightText: {
     color: theme.colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   description: {
-    fontSize: theme.typography.body.fontSize,
+    fontSize: 18,
     color: theme.colors.textLight,
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: theme.spacing.lg,
+    lineHeight: 26,
+    paddingHorizontal: theme.spacing.md,
+  },
+  buttonContainer: {
+    marginBottom: theme.spacing.xxl,
+    marginTop: theme.spacing.lg,
+  },
+  secondaryButton: {
+    marginTop: theme.spacing.md,
   },
   features: {
-    marginBottom: theme.spacing.xxl,
+    marginBottom: theme.spacing.xl,
   },
   featureItem: {
     flexDirection: 'row',
@@ -160,11 +171,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.backgroundCard,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
     ...theme.shadows.sm,
   },
   featureIcon: {
-    fontSize: 32,
+    fontSize: 28,
     marginRight: theme.spacing.md,
   },
   featureContent: {
@@ -172,24 +183,19 @@ const styles = StyleSheet.create({
   },
   featureTitle: {
     fontSize: theme.typography.h3.fontSize,
-    fontWeight: '500',
+    fontWeight: '600',
     color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginBottom: 2,
   },
   featureDescription: {
     fontSize: theme.typography.bodySmall.fontSize,
     color: theme.colors.textLight,
-    lineHeight: 20,
-  },
-  buttonContainer: {
-    marginBottom: theme.spacing.xl,
-  },
-  secondaryButton: {
-    marginTop: theme.spacing.md,
+    lineHeight: 18,
   },
   footer: {
-    fontSize: theme.typography.caption.fontSize,
+    fontSize: theme.typography.bodySmall.fontSize,
     color: theme.colors.textMuted,
     textAlign: 'center',
+    fontWeight: '500',
   },
 });

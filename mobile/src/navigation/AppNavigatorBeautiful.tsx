@@ -2,15 +2,17 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DashboardScreenClean } from '../screens/DashboardScreenClean';
-import { CaptureScreen } from '../screens/CaptureScreen';
-import { ValidationScreen } from '../screens/ValidationScreen';
-import { ProfileScreen } from '../screens/ProfileScreen';
+import { CaptureScreenClean } from '../screens/CaptureScreenClean';
+import { TimelineScreen } from '../screens/TimelineScreen';
+import { ValidationScreenClean } from '../screens/ValidationScreenClean';
+import { ProfileScreenClean } from '../screens/ProfileScreenClean';
 import { theme } from '../styles/theme';
 
 export type AppTabParamList = {
-  Dashboard: undefined;
+  Home: undefined;
   Capture: undefined;
-  Validation: undefined;
+  Timeline: undefined;
+  Validate: undefined;
   Profile: undefined;
 };
 
@@ -41,7 +43,7 @@ export const AppNavigatorBeautiful: React.FC = () => {
       }}
     >
       <Tab.Screen
-        name="Dashboard"
+        name="Home"
         component={DashboardScreenClean}
         options={{
           tabBarIcon: ({ focused }) => (
@@ -51,7 +53,7 @@ export const AppNavigatorBeautiful: React.FC = () => {
       />
       <Tab.Screen
         name="Capture"
-        component={CaptureScreen}
+        component={CaptureScreenClean}
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon="📸" label="Capture" />
@@ -59,8 +61,17 @@ export const AppNavigatorBeautiful: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="Validation"
-        component={ValidationScreen}
+        name="Timeline"
+        component={TimelineScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} icon="📊" label="My Timeline" />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Validate"
+        component={ValidationScreenClean}
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon="✅" label="Validate" />
@@ -69,7 +80,7 @@ export const AppNavigatorBeautiful: React.FC = () => {
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileScreenClean}
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon="👤" label="Profile" />

@@ -59,8 +59,8 @@ export const RegisterScreenBeautiful: React.FC = () => {
 
     setLoading(true);
     try {
-      // Pass username as part of metadata (no persona required)
-      await signUp(email, password, { username, persona_completed: false });
+      // Pass username directly (no persona required)
+      await signUp(email, password, username);
       Alert.alert(
         'Success!', 
         'Your account has been created. Welcome to WaveSight!',

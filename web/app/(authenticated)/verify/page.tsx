@@ -172,13 +172,15 @@ export default function ValidateTrendsPage() {
           status,
           created_at,
           updated_at
-        `);
+        `)
+        .neq('spotter_id', user.id); // Exclude user's own trends
       
       if (validatedIds.length > 0) {
         query = query.not('id', 'in', `(${validatedIds.join(',')})`);
       }
       
       const { data: trendsData, error } = await query
+        .in('status', ['submitted', 'validating']) // Only show trends awaiting validation
         .order('created_at', { ascending: false })
         .limit(20);
 

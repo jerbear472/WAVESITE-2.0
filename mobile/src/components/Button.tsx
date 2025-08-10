@@ -79,7 +79,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.borderRadius.md,
-    transition: 'all 0.2s',
   },
   
   content: {
