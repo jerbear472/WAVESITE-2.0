@@ -142,14 +142,15 @@ export default function ValidatePageFixed() {
       // Get already validated trends by this user
       const { data: validatedTrends, error: validationError } = await supabase
         .from('trend_validations')
-        .select('trend_submission_id')
+        .select('trend_id')
         .eq('validator_id', user.id);
 
       if (validationError) {
         console.error('Error loading validated trends:', validationError);
+        setLastError('Unable to load your validation history. Some trends may appear that you\'ve already voted on.');
       }
 
-      const validatedIds = validatedTrends?.map(v => v.trend_submission_id).filter(id => id != null) || [];
+      const validatedIds = validatedTrends?.map(v => v.trend_id).filter(id => id != null) || [];
       console.log('Already validated trend IDs:', validatedIds.length);
       console.log('Validated IDs:', validatedIds);
       
@@ -208,6 +209,16 @@ export default function ValidatePageFixed() {
       );
       
       console.log(`After filtering out validated trends: ${filteredTrends.length} trends available`);
+      
+      // Debug: Show which trends were filtered out
+      const filteredOutTrends = (trendsData || []).filter(trend => 
+        validatedIds.includes(trend.id)
+      );
+      if (filteredOutTrends.length > 0) {
+        console.log(`🚫 Filtered out ${filteredOutTrends.length} already validated trends:`, 
+          filteredOutTrends.map(t => ({ id: t.id.substring(0, 8), desc: t.description.substring(0, 30) }))
+        );
+      }
       
       // Process trends and calculate time since submission
       const processedTrends = filteredTrends.map(trend => {
@@ -328,8 +339,14 @@ export default function ValidatePageFixed() {
           console.error('Validation failed:', result.error);
           
           if (result.error?.includes('already voted')) {
-            setLastError('You have already validated this trend.');
+            setLastError('You have already validated this trend. This should have been filtered out - refreshing the page may help.');
+            console.log('🚨 User encountered already voted error for trend:', trendId);
             nextTrend();
+            // Reload trends after a delay to refresh the list
+            setTimeout(() => {
+              setLoading(true);
+              loadTrends().finally(() => setLoading(false));
+            }, 2000);
           } else if (result.error?.includes('not found')) {
             setLastError('This trend no longer exists.');
             nextTrend();
