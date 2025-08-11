@@ -25,7 +25,7 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: NEXT_PUBLIC_SUPABASE_URL
-          value: "https://achuavagkhjenaypawij.supabase.co"
+          value: "https://aicahushpcslwjwrlqbo.supabase.co"
         - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
           valueFrom:
             secretKeyRef:

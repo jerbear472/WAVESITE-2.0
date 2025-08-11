@@ -1,13 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Supabase configuration
-const supabaseUrl = 'https://achuavagkhjenaypawij.supabase.co';
+const supabaseUrl = 'https://aicahushpcslwjwrlqbo.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseServiceKey) {
   console.error('Error: SUPABASE_SERVICE_KEY environment variable is required');
   console.log('\nTo run this script:');
-  console.log('1. Get your service key from: https://app.supabase.com/project/achuavagkhjenaypawij/settings/api');
+  console.log('1. Get your service key from: https://app.supabase.com/project/aicahushpcslwjwrlqbo/settings/api');
   console.log('2. Run: SUPABASE_SERVICE_KEY="your-service-key" node scripts/setup-database.js');
   process.exit(1);
 }

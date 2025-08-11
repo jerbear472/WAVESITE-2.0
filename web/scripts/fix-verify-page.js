@@ -43,7 +43,7 @@ async function fixVerifyPageSchema() {
 
     console.log('\n✅ Database schema updates completed!');
     console.log('\n📝 Note: If you see errors above, you may need to run the SQL directly in Supabase:');
-    console.log('1. Go to https://supabase.com/dashboard/project/achuavagkhjenaypawij/sql/new');
+    console.log('1. Go to https://supabase.com/dashboard/project/aicahushpcslwjwrlqbo/sql/new');
     console.log('2. Copy the contents of supabase/fix_verify_page_schema.sql');
     console.log('3. Paste and run the SQL');
     

@@ -1,7 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = 'https://achuavagkhjenaypawij.supabase.co';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjaHVhdmFna2hqZW5heXBhd2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1OTY0MjQsImV4cCI6MjA2ODE3MjQyNH0.L4J5SIVGZDYAFAwNuR9b_hIvcpTJWGfu0Dvry7Umg2g';
+const supabaseUrl = 'https://aicahushpcslwjwrlqbo.supabase.co';
+const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpY2FodXNocGNzbHdqd3JscWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4ODc1NTQsImV4cCI6MjA3MDQ2MzU1NH0.rLPnouZXA1ejWG0tuurIb5sgo5CCHe15M4knaANrR2w';
 
 async function setupDatabase() {
   console.log('Setting up WaveSight Mobile database tables...\n');
@@ -9,7 +9,7 @@ async function setupDatabase() {
   try {
     // For now, let's output the SQL that needs to be run
     console.log('Please run the following SQL in your Supabase dashboard:');
-    console.log('1. Go to https://supabase.com/dashboard/project/achuavagkhjenaypawij/sql');
+    console.log('1. Go to https://supabase.com/dashboard/project/aicahushpcslwjwrlqbo/sql');
     console.log('2. Copy and paste this SQL:\n');
     
     const sql = `

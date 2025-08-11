@@ -16,7 +16,7 @@ if (fs.existsSync(rootEnv)) {
     const url = urlMatch[1];
     if (url.includes('aicahushpcslwjwrlqbo')) {
       console.log('  ✅ NEW Supabase:', url);
-    } else if (url.includes('achuavagkhjenaypawij')) {
+    } else if (url.includes('aicahushpcslwjwrlqbo')) {
       console.log('  ❌ OLD Supabase:', url);
     } else {
       console.log('  ❓ Unknown:', url);
@@ -34,7 +34,7 @@ if (fs.existsSync(webEnvLocal)) {
     const url = urlMatch[1];
     if (url.includes('aicahushpcslwjwrlqbo')) {
       console.log('  ✅ NEW Supabase:', url);
-    } else if (url.includes('achuavagkhjenaypawij')) {
+    } else if (url.includes('aicahushpcslwjwrlqbo')) {
       console.log('  ❌ OLD Supabase:', url);
     } else {
       console.log('  ❓ Unknown:', url);
@@ -52,7 +52,7 @@ if (fs.existsSync(webEnvProd)) {
     const url = urlMatch[1];
     if (url.includes('aicahushpcslwjwrlqbo')) {
       console.log('  ✅ NEW Supabase:', url);
-    } else if (url.includes('achuavagkhjenaypawij')) {
+    } else if (url.includes('aicahushpcslwjwrlqbo')) {
       console.log('  ❌ OLD Supabase:', url);
     } else {
       console.log('  ❓ Unknown:', url);
@@ -61,7 +61,7 @@ if (fs.existsSync(webEnvProd)) {
 }
 
 console.log('\n📝 Summary:');
-console.log('  OLD Supabase: achuavagkhjenaypawij (has numeric overflow issues)');
+console.log('  OLD Supabase: aicahushpcslwjwrlqbo (has numeric overflow issues)');
 console.log('  NEW Supabase: aicahushpcslwjwrlqbo (fresh, clean instance)');
 console.log('\nIf you see OLD anywhere above, that file needs updating!');
 
@@ -72,7 +72,7 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 if (url) {
   if (url.includes('aicahushpcslwjwrlqbo')) {
     console.log('✅ App SHOULD be using NEW Supabase');
-  } else if (url.includes('achuavagkhjenaypawij')) {
+  } else if (url.includes('aicahushpcslwjwrlqbo')) {
     console.log('❌ App IS STILL using OLD Supabase!');
     console.log('  This explains the numeric overflow errors!');
   }

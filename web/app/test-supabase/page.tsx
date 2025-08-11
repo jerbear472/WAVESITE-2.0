@@ -14,7 +14,7 @@ export default function TestSupabase() {
       
       // Check which instance
       const isNew = url.includes('aicahushpcslwjwrlqbo');
-      const isOld = url.includes('achuavagkhjenaypawij');
+      const isOld = url.includes('aicahushpcslwjwrlqbo');
       
       // Try to query users to see which database
       const { data: profiles, error: profileError } = await supabase
