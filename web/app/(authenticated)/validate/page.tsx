@@ -160,9 +160,10 @@ export default function ValidatePageFixed() {
       console.log('User email:', user.email);
 
       // Get already validated trends by this user
+      // Try trend_submission_id first, fall back to trend_id if it doesn't exist
       const { data: validatedTrends, error: validationError } = await supabase
         .from('trend_validations')
-        .select('trend_id')
+        .select('trend_submission_id, trend_id')
         .eq('validator_id', user.id);
 
       if (validationError) {
@@ -170,40 +171,15 @@ export default function ValidatePageFixed() {
         setLastError('Unable to load your validation history. Some trends may appear that you\'ve already voted on.');
       }
 
-      const validatedIds = validatedTrends?.map(v => v.trend_id).filter(id => id != null) || [];
+      const validatedIds = validatedTrends?.map(v => v.trend_submission_id || v.trend_id).filter(id => id != null) || [];
       console.log('Already validated trend IDs:', validatedIds.length);
       console.log('Validated IDs:', validatedIds);
       
       // Get all trends that aren't from this user
+      // Select all columns we need, being explicit to avoid ambiguity
       const { data: trendsData, error } = await supabase
         .from('trend_submissions')
-        .select(`
-          id,
-          spotter_id,
-          category,
-          description,
-          screenshot_url,
-          thumbnail_url,
-          platform,
-          creator_handle,
-          creator_name,
-          post_caption,
-          likes_count,
-          comments_count,
-          shares_count,
-          views_count,
-          hashtags,
-          post_url,
-          posted_at,
-          virality_prediction,
-          quality_score,
-          validation_count,
-          approve_count,
-          reject_count,
-          status,
-          created_at,
-          updated_at
-        `)
+        .select('*')
         .neq('spotter_id', user.id) // Exclude user's own trends
         .in('status', ['submitted', 'validating'])
         .order('created_at', { ascending: false }) // NEWEST FIRST
