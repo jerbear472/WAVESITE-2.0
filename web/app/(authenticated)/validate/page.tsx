@@ -509,47 +509,45 @@ export default function ValidatePageFixed() {
   const imageUrl = currentTrend.thumbnail_url || currentTrend.screenshot_url;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
-      {/* Compact Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-3 py-1.5">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
+      {/* Elegant Header */}
+      <div className="max-w-5xl mx-auto mb-6">
+        <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-white/20 shadow-xl p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                  <Sparkles className="w-3 h-3 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-sm font-semibold text-gray-900">Validate</h1>
-              </div>
-              
-              <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></div>
-                <span className="text-xs font-medium text-gray-700">
-                  {trends.length} trends
-                </span>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900">Trend Validation</h1>
+                  <p className="text-sm text-gray-600">{trends.length} trends waiting</p>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => {
                   setLoading(true);
                   loadTrends().finally(() => setLoading(false));
                 }}
                 disabled={loading}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50 group"
                 title="Refresh trends"
               >
-                <RefreshCw className={`w-3 h-3 text-gray-600 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 text-gray-600 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`} />
               </button>
-              <div className="hidden lg:block text-right mr-2">
-                <p className="text-[10px] text-gray-500">Today</p>
-                <p className="text-xs font-bold text-gray-900">${stats.earnings_today.toFixed(2)}</p>
-              </div>
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white px-2 py-1 rounded-md">
-                <div className="flex items-center gap-1">
-                  <Coins className="w-3 h-3" />
-                  <span className="text-xs font-bold">{sessionValidations}</span>
+              <div className="hidden lg:flex items-center gap-3 text-right">
+                <div>
+                  <p className="text-xs text-gray-500">Today's Earnings</p>
+                  <p className="text-sm font-bold text-gray-900">${stats.earnings_today.toFixed(2)}</p>
+                </div>
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl shadow-md">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-4 h-4" />
+                    <span className="text-sm font-bold">{sessionValidations} validated</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -557,30 +555,30 @@ export default function ValidatePageFixed() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col max-h-[calc(100vh-50px)]">
-        <div className="max-w-6xl mx-auto w-full px-2 py-1 flex-1 flex flex-col">
-          {/* Error Message */}
-          {lastError && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-1 p-2 bg-red-50 border border-red-200 rounded-md text-red-700 flex items-center justify-between text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-3 h-3" />
-                <span className="text-xs">{lastError}</span>
-              </div>
-              <button onClick={() => setLastError('')} className="text-red-500 hover:text-red-700">
-                <X className="w-3 h-3" />
-              </button>
-            </motion.div>
-          )}
+      {/* Main Content Container */}
+      <div className="max-w-5xl mx-auto flex-1 flex flex-col">
+        {/* Error Message */}
+        {lastError && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-red-50/80 backdrop-blur border border-red-200/50 rounded-xl text-red-700 flex items-center justify-between shadow-sm"
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">{lastError}</span>
+            </div>
+            <button onClick={() => setLastError('')} className="text-red-500 hover:text-red-700 p-1 hover:bg-red-100 rounded-lg transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
 
-          <div className="bg-white rounded-lg shadow-lg flex-1 overflow-hidden">
-            <div className="grid lg:grid-cols-3 h-full">
-              {/* Image Section */}
-              <div className="relative bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center h-full">
+        {/* Main Validation Card */}
+        <div className="bg-white/90 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl flex-1 overflow-hidden">
+          <div className="grid lg:grid-cols-5 h-full min-h-[600px]">
+            {/* Image Section - Larger */}
+            <div className="lg:col-span-3 relative bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center h-full">
                 {imageUrl && !imageError ? (
                   <>
                     <img
@@ -637,9 +635,9 @@ export default function ValidatePageFixed() {
                 )}
               </div>
 
-              {/* Details Section */}
-              <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto p-3 pb-0">
+            {/* Details Section - Narrower but taller */}
+            <div className="lg:col-span-2 flex flex-col h-full bg-gradient-to-b from-white to-gray-50/50">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
                   {/* Submission Time Badge */}
                   <div className="mb-2 inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
                     <Clock className="w-3 h-3" />
@@ -751,78 +749,82 @@ export default function ValidatePageFixed() {
                   </div>
                 </div>
 
-                {/* Fixed Action Buttons */}
-                <div className="border-t bg-white p-3">
-                  <p className="text-center text-xs text-gray-600 mb-2 font-medium">
-                    Is this trending?
-                  </p>
-                  
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <button
-                      onClick={() => handleValidation('reject')}
-                      disabled={validating}
-                      className="group relative overflow-hidden bg-white border-2 border-red-200 hover:border-red-400 text-red-700 rounded-md py-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-red-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="relative flex flex-col items-center gap-0.5">
-                        <ThumbsDown className="w-4 h-4" />
-                        <span className="text-xs font-semibold">Reject</span>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleValidation('skip')}
-                      disabled={validating}
-                      className="group relative overflow-hidden bg-white border-2 border-gray-200 hover:border-gray-400 text-gray-700 rounded-md py-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="relative flex flex-col items-center gap-0.5">
-                        <SkipForward className="w-4 h-4" />
-                        <span className="text-xs font-semibold">Skip</span>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleValidation('approve')}
-                      disabled={validating}
-                      className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-md py-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="relative flex flex-col items-center gap-0.5">
-                        <ThumbsUp className="w-4 h-4" />
-                        <span className="text-xs font-semibold">Approve</span>
-                      </div>
-                    </button>
-                  </div>
+              {/* Action Buttons */}
+              <div className="border-t border-gray-200/50 bg-white/80 backdrop-blur p-6">
+                <div className="text-center mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Is this trending?</h3>
+                  <p className="text-xs text-gray-600">Help validate this trend submission</p>
                 </div>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => handleValidation('reject')}
+                    disabled={validating}
+                    className="group relative overflow-hidden bg-white border-2 border-red-200 hover:border-red-400 hover:shadow-lg text-red-700 rounded-xl py-3 px-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-red-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="relative flex flex-col items-center gap-1">
+                      <ThumbsDown className="w-5 h-5" />
+                      <span className="text-xs font-semibold">Reject</span>
+                      <span className="text-[10px] text-gray-500">← key</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => handleValidation('skip')}
+                    disabled={validating}
+                    className="group relative overflow-hidden bg-white border-2 border-gray-200 hover:border-gray-400 hover:shadow-lg text-gray-700 rounded-xl py-3 px-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="relative flex flex-col items-center gap-1">
+                      <SkipForward className="w-5 h-5" />
+                      <span className="text-xs font-semibold">Skip</span>
+                      <span className="text-[10px] text-gray-500">space</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => handleValidation('approve')}
+                    disabled={validating}
+                    className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl py-3 px-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl transform hover:scale-105"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="relative flex flex-col items-center gap-1">
+                      <ThumbsUp className="w-5 h-5" />
+                      <span className="text-xs font-semibold">Approve</span>
+                      <span className="text-[10px] text-green-100">→ key</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
               </div>
             </div>
           </div>
 
-          {/* Session Progress Card */}
-          {sessionValidations > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-1 bg-white rounded-md shadow-md p-2"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <Award className="w-3 h-3 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Session</p>
-                    <p className="text-xs font-bold text-gray-900">{sessionValidations} done</p>
-                  </div>
+        {/* Session Progress Card */}
+        {sessionValidations > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 bg-white/80 backdrop-blur-lg rounded-2xl border border-white/20 shadow-lg p-4"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
+                  <Award className="w-5 h-5 text-white" />
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold text-green-600">+${(sessionValidations * 0.10).toFixed(2)}</p>
+                <div>
+                  <p className="text-sm text-gray-600">Great work this session!</p>
+                  <p className="text-lg font-bold text-gray-900">{sessionValidations} trends validated</p>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Session Earnings</p>
+                <p className="text-xl font-bold text-green-600">+${(sessionValidations * 0.10).toFixed(2)}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );
