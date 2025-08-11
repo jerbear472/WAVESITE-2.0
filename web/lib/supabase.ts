@@ -6,18 +6,6 @@ export const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBL
     persistSession: true,
     autoRefreshToken: true,
   },
-  global: {
-    fetch: (url, options = {}) => {
-      // Add timeout to all requests (60 seconds instead of default 30)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-      
-      return fetch(url, {
-        ...options,
-        signal: controller.signal,
-      }).finally(() => clearTimeout(timeoutId));
-    },
-  },
   db: {
     schema: 'public',
   },

@@ -80,7 +80,17 @@ export default function RegisterPage() {
       // we'll show the confirmation message and handle
       // the session in the AuthContext
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+      console.error('Registration error:', err);
+      // Handle different error types
+      if (err.message?.includes('fetch')) {
+        setError('Network error: Unable to connect to server. Please check your connection and try again.');
+      } else if (err.message?.includes('already registered')) {
+        setError('This email is already registered. Please use a different email or login.');
+      } else if (err.message?.includes('Invalid')) {
+        setError(err.message);
+      } else {
+        setError(err.message || 'Failed to create account. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

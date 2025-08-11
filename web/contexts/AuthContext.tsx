@@ -300,6 +300,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     interests?: any;
   }) => {
     try {
+      console.log('Starting registration for:', userData.email);
+      
       // Use Supabase auth directly
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
@@ -312,7 +314,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Supabase auth error:', authError);
+        throw authError;
+      }
+      
+      console.log('Auth signup successful:', authData);
 
       // Check if email confirmation is required
       const needsEmailConfirmation = !!(authData.user && !authData.session) || 
