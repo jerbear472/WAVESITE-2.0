@@ -5,11 +5,11 @@ import { supabase } from '@/lib/supabase';
 // Returns trends that haven't been assigned to any umbrella/category
 export async function GET() {
   try {
-    // Get unassigned trends from database
+    // Get approved trends from database
+    // Note: trend_umbrella_id is deprecated, returning all approved trends
     const { data: trends, error } = await supabase
       .from('trend_submissions')
       .select('*')
-      .is('trend_umbrella_id', null)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(20);
