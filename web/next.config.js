@@ -7,7 +7,7 @@ const nextConfig = {
     return 'build-' + Date.now()
   },
   images: {
-    domains: ['achuavagkhjenaypawij.supabase.co'],
+    domains: ['aicahushpcslwjwrlqbo.supabase.co'], // NEW Supabase instance
   },
   typescript: {
     // Temporarily ignore build errors to deploy
