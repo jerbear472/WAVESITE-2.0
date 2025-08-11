@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import TrendTile from './TrendTile'
 import TrendTimeline from './TrendTimeline'
-import UnassignedTrendsPool from './UnassignedTrendsPool'
+// UnassignedTrendsPool removed - deprecated feature
 import { PlusIcon, FunnelIcon, ViewColumnsIcon, Squares2X2Icon } from './icons/TrendIcons'
 
 interface TrendTileData {
@@ -376,10 +376,7 @@ export default function TrendTilesGrid() {
           </div>
         )}
         
-        {/* Unassigned Trends Pool */}
-        <div className="mt-8">
-          <UnassignedTrendsPool onRefresh={() => window.location.reload()} />
-        </div>
+        {/* Unassigned Trends Pool - deprecated feature removed */}
       </div>
     </div>
   )
