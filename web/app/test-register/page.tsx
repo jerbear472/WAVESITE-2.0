@@ -1,14 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import dynamic from 'next/dynamic';
 
-export default function TestRegister() {
+function TestRegisterComponent() {
   const [result, setResult] = useState<any>({});
   const [loading, setLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const [supabase, setSupabase] = useState<any>(null);
+  
+  // Initialize supabase on client side only
+  useEffect(() => {
+    setSupabase(createClientComponentClient());
+  }, []);
   
   const testRegistration = async () => {
+    if (!supabase) {
+      setResult({ error: 'Supabase not initialized yet' });
+      return;
+    }
+    
     setLoading(true);
     const timestamp = Date.now();
     const testData = {
@@ -180,3 +191,8 @@ export default function TestRegister() {
     </div>
   );
 }
+
+// Export as dynamic component to avoid SSR issues
+export default dynamic(() => Promise.resolve(TestRegisterComponent), {
+  ssr: false
+});
