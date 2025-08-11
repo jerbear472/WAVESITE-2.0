@@ -13,9 +13,9 @@ async function testCompleteFlow() {
   console.log('🧪 Testing Complete Flow\n');
   console.log('================================\n');
   
-  // Use existing test user
-  const testEmail = 'john.doe.1754889053@gmail.com';
-  const testPassword = 'TestPassword123!';
+  // Use confirmed test user from new instance
+  const testEmail = 'tester.1754889443@wavesight.com';
+  const testPassword = 'Test123!';
   
   try {
     // Step 1: Sign in as test user
