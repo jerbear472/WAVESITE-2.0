@@ -862,7 +862,7 @@ export default function Timeline() {
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-1">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span className="text-xs text-gray-400">Wave Score: {trend.wave_score || trend.virality_prediction || 5}/10</span>
+                                  <span className="text-xs text-gray-400">Wave Score: {((trend.wave_score || trend.virality_prediction || 5) * 10)}/100</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <span className={`text-xs font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
@@ -872,7 +872,7 @@ export default function Timeline() {
                                 <div className="flex items-center gap-1">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
                                   <span className="text-xs text-gray-400">
-                                    Votes: {trend.approve_count || 0}✅ {trend.reject_count || 0}❌
+                                    Votes: {trend.approve_count || 0}👍 {trend.reject_count || 0}👎
                                   </span>
                                   {/* Validation Status Indicator */}
                                   {trend.validation_status && (
@@ -1047,7 +1047,7 @@ export default function Timeline() {
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span>Wave Score: {trend.wave_score || trend.virality_prediction || 5}/10</span>
+                                  <span>Wave Score: {((trend.wave_score || trend.virality_prediction || 5) * 10)}/100</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
@@ -1056,7 +1056,7 @@ export default function Timeline() {
                                 </div>
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <AwardIcon className="w-4 h-4 text-blue-400" />
-                                  <span>Votes: {trend.approve_count || 0}✅ {trend.reject_count || 0}❌</span>
+                                  <span>Votes: {trend.approve_count || 0}👍 {trend.reject_count || 0}👎</span>
                                   {/* Validation Status Indicator */}
                                   {trend.validation_status && (
                                     <div className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -1248,7 +1248,7 @@ export default function Timeline() {
                                 <div className="flex items-center gap-3 mb-3 text-sm">
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                    <span>Wave Score: {trend.wave_score || trend.virality_prediction || 5}/10</span>
+                                    <span>Wave Score: {((trend.wave_score || trend.virality_prediction || 5) * 10)}/100</span>
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
@@ -1257,7 +1257,7 @@ export default function Timeline() {
                                   </div>
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <AwardIcon className="w-4 h-4 text-blue-400" />
-                                    <span>Votes: {trend.approve_count || 0}✅ {trend.reject_count || 0}❌</span>
+                                    <span>Votes: {trend.approve_count || 0}👍 {trend.reject_count || 0}👎</span>
                                     {/* Validation Status Indicator */}
                                     {trend.validation_status && (
                                       <div className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${

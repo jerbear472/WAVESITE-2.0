@@ -197,7 +197,7 @@ export default function ProfessionalDashboard() {
                     <h3 className="font-medium text-gray-900">{trend.description}</h3>
                   </div>
                   <div className="flex items-center space-x-4 text-sm text-gray-700">
-                    <span>Virality: {trend.virality_prediction}/10</span>
+                    <span>Virality: {(trend.virality_prediction * 10)}/100</span>
                     <span>Quality: {(trend.quality_score * 100).toFixed(0)}%</span>
                     <span>{trend.validation_count} validations</span>
                   </div>

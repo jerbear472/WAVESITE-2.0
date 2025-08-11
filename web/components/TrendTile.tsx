@@ -200,7 +200,7 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
                   {/* Wave Score Tag */}
                   <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full inline-flex items-center gap-1">
                     <SparklesIcon className="w-3 h-3" />
-                    Wave: {trend.waveScore}
+                    Wave: {trend.waveScore * 10}/100
                   </span>
                   
                   {/* Sentiment Tag */}
@@ -213,7 +213,7 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
                   {/* Virality Prediction Tag */}
                   {trend.viralityPrediction && (
                     <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
-                      Virality: {trend.viralityPrediction}/10
+                      Virality: {(trend.viralityPrediction * 10)}/100
                     </span>
                   )}
                   
