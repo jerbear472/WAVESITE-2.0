@@ -1,100 +1,62 @@
-# Setup Instructions for Fresh Supabase Instance
+# Database Setup Instructions
 
-## Current Status ✅
-1. **Database Schema**: Created and running (FRESH_START_SCHEMA.sql executed)
-2. **Environment Variables**: Configured in .env and web/.env.local
-3. **Test Users**: Created but need email confirmation
-4. **Application**: Running on http://localhost:3001
+## Quick Setup - Run in Supabase SQL Editor
 
-## Required Actions
+1. Go to your Supabase Dashboard: https://supabase.com/dashboard/project/aicahushpcslwjwrlqbo
+2. Navigate to **SQL Editor** (left sidebar)
+3. Click **New Query**
+4. Copy and paste the contents of `supabase/COMPLETE_SCHEMA.sql`
+5. Click **Run** button
 
-### 1. Fix RLS Policies (REQUIRED)
-Run the following in your Supabase SQL Editor:
+## What This Schema Creates
 
-```sql
--- File: FINAL_RLS_FIX.sql
--- This fixes the trend submission RLS policy issue
-```
+### Core Tables
+- ✅ `user_profiles` - Main user data table
+- ✅ `profiles` - View alias for compatibility with frontend  
+- ✅ `trend_submissions` - All trend submissions
+- ✅ `trend_validations` - Voting/validation data
+- ✅ `earnings_ledger` - Track all earnings
+- ✅ `cashout_requests` - Venmo cashout requests
+- ✅ `user_account_settings` - User preferences
 
-1. Go to your Supabase dashboard
-2. Navigate to **SQL Editor**
-3. Copy and paste the contents of `FINAL_RLS_FIX.sql`
-4. Click **Run**
+### Mobile App Tables  
+- ✅ `captured_trends` - Trends captured from TikTok/Instagram
+- ✅ `scroll_sessions` - Track scrolling sessions for earnings
 
-### 2. Configure Email Confirmation (Choose One)
+### Support Tables
+- ✅ `submission_queue` - Failsafe for submissions
 
-#### Option A: Disable Email Confirmation (Development)
-1. Go to Supabase Dashboard
-2. Navigate to **Authentication** → **Email Templates**
-3. Under **Settings**, disable "Enable email confirmations"
+### Features
+- ✅ Auto-create user profile on signup (trigger)
+- ✅ Auto-update timestamps (triggers)
+- ✅ Row Level Security policies
+- ✅ Helper functions (cast_trend_vote, get_user_dashboard_stats)
+- ✅ Proper indexes for performance
 
-#### Option B: Use Magic Link (Recommended)
-1. Check the confirmation emails sent to test accounts
-2. Click the confirmation link in the email
+## After Running Schema
 
-### 3. Test the Application
+The database will be ready for:
+1. User registration/login
+2. Trend submissions
+3. Validation/voting
+4. Earnings tracking
+5. Mobile app integration
 
-After completing the above steps, you can:
+## Test It
 
-1. **Login**: http://localhost:3001/login
-   - Email: `john.doe.1754889053@gmail.com`
-   - Password: `TestPassword123!`
-
-2. **Submit Trends**: http://localhost:3001/submit
-   - Upload screenshots
-   - Add trend descriptions
-   - Earn $1.00 per submission
-
-3. **Validate Trends**: http://localhost:3001/validate
-   - Vote on submitted trends
-   - Earn $0.10 per validation
-
-4. **View Earnings**: http://localhost:3001/earnings
-   - Track your earnings
-   - Request cashouts
-
-## Test Users Created
-
-| Email | Password | Role |
-|-------|----------|------|
-| john.doe.1754889053@gmail.com | TestPassword123! | Spotter |
-| jane.smith.1754889056@gmail.com | TestPassword123! | Validator |
-
-## Files Reference
-
-- `FRESH_START_SCHEMA.sql` - Complete database schema ✅
-- `FINAL_RLS_FIX.sql` - RLS policy fixes (needs to be run)
-- `test-complete-flow.js` - Automated testing script
-- `web/lib/EARNINGS_STANDARD.ts` - Single source of truth for earnings
+After running the schema, test by:
+1. Creating a new account on the website
+2. Submitting a trend
+3. Voting on trends
+4. Checking earnings
 
 ## Troubleshooting
 
-### "Email not confirmed" Error
-- Go to Authentication settings in Supabase
-- Disable email confirmation for development
-- Or check email for confirmation link
+If you get errors about "already exists":
+- That's OK! It means some tables were already created
+- The schema uses `IF NOT EXISTS` for safety
 
-### "Cannot submit trends" Error
-- Run FINAL_RLS_FIX.sql in SQL Editor
-- Ensure you're logged in
-
-### Numeric Overflow Errors
-- Already fixed in FRESH_START_SCHEMA.sql
-- Uses proper column types (BIGINT, INTEGER, DECIMAL)
-
-## Next Steps
-
-1. Run `FINAL_RLS_FIX.sql` in Supabase SQL Editor
-2. Configure email settings
-3. Test the application flow
-4. Start developing new features!
-
-## Development Server
-
-The app is currently running at: http://localhost:3001
-
-To restart if needed:
-```bash
-cd web
-npm run dev
-```
+If user registration still fails:
+- Check the auth trigger is created
+- Verify RLS policies are in place
+- Check browser console for specific errors
