@@ -370,11 +370,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Note: user_settings table doesn't exist in our schema
         // Account settings are created by the trigger or helper function
-
-        // Account settings are handled by trigger or helper function
-        } catch (err) {
-          console.log('Error creating account settings:', err);
-        }
       }
 
       // If session exists (email confirmation disabled), auto-login
