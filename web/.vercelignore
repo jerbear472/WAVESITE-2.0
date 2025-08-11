@@ -1,0 +1,12 @@
+.env.local
+.env
+node_modules
+.next
+.vercel
+*.log
+scripts/
+debug-*
+check-*
+verify-*
+fix-*
+*.sql
