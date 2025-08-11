@@ -1,0 +1,10 @@
+{
+  "version": "2.0.1",
+  "deployed": "2025-01-11",
+  "fixes": [
+    "Removed problematic fetch wrapper in Supabase client",
+    "Enhanced error handling in signup flow",
+    "Added better error messages"
+  ],
+  "timestamp": "2025-01-11T22:05:00Z"
+}
