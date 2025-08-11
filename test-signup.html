@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Signup</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Signup - Direct Supabase</h1>
+    
+    <form id="signupForm">
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="birthday">Birthday:</label>
+            <input type="date" id="birthday" required>
+        </div>
+        
+        <button type="submit">Sign Up</button>
+    </form>
+    
+    <div id="result"></div>
+    <div id="log" class="log"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://aicahushpcslwjwrlqbo.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpY2FodXNocGNzbHdqd3JscWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4ODc1NTQsImV4cCI6MjA3MDQ2MzU1NH0.rLPnouZXA1ejWG0tuurIb5sgo5CCHe15M4knaANrR2w';
+        
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const log = (message) => {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toISOString().split('T')[1].slice(0, 8);
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+        
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const birthday = document.getElementById('birthday').value;
+            
+            log('Starting signup process...');
+            log(`Email: ${email}, Username: ${username}`);
+            
+            try {
+                // Step 1: Sign up
+                log('Calling supabase.auth.signUp...');
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            username,
+                            birthday
+                        }
+                    }
+                });
+                
+                if (authError) {
+                    log(`Auth error: ${authError.message}`);
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>Signup Failed:</strong><br>${authError.message}`;
+                    return;
+                }
+                
+                log('Auth signup successful!');
+                log(`User ID: ${authData.user?.id}`);
+                log(`Session: ${authData.session ? 'Created' : 'Not created'}`);
+                log(`Email confirmed: ${authData.user?.email_confirmed_at ? 'Yes' : 'No'}`);
+                
+                // Step 2: Check profile creation
+                if (authData.user) {
+                    log('Waiting 1 second for profile creation...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    log('Checking profiles table...');
+                    const { data: profile, error: profileError } = await supabaseClient
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', authData.user.id)
+                        .single();
+                    
+                    if (profileError) {
+                        log(`Profile check error: ${profileError.message}`);
+                    } else {
+                        log('Profile found in database!');
+                    }
+                    
+                    // Try RPC function
+                    log('Calling complete_user_registration RPC...');
+                    const { data: rpcData, error: rpcError } = await supabaseClient
+                        .rpc('complete_user_registration', {
+                            p_user_id: authData.user.id,
+                            p_email: email,
+                            p_username: username,
+                            p_birthday: birthday
+                        });
+                    
+                    if (rpcError) {
+                        log(`RPC error: ${rpcError.message}`);
+                    } else {
+                        log('RPC succeeded!');
+                    }
+                }
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <strong>Signup Successful!</strong><br>
+                    User ID: ${authData.user?.id}<br>
+                    Email: ${email}<br>
+                    Session: ${authData.session ? 'Active' : 'None (confirmation required)'}<br>
+                    ${!authData.session ? 'Check your email for confirmation link' : 'You can now login!'}
+                `;
+                
+            } catch (error) {
+                log(`Unexpected error: ${error.message}`);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>Error:</strong><br>${error.message}`;
+            }
+        });
+        
+        // Pre-fill with test data
+        document.getElementById('email').value = `test${Date.now()}@example.com`;
+        document.getElementById('username').value = `testuser${Date.now()}`;
+        document.getElementById('password').value = 'TestPassword123!';
+        document.getElementById('birthday').value = '2000-01-01';
+    </script>
+</body>
+</html>
