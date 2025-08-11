@@ -7,6 +7,22 @@ export default function SimpleRegister() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  
+  // Check if environment variables are set
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+          <h2 className="text-red-800 text-lg font-semibold mb-2">Configuration Error</h2>
+          <p className="text-red-600">
+            Supabase environment variables are not configured. 
+            Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
   const supabase = createClientComponentClient();
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
