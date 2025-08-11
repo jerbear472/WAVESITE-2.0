@@ -5,7 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/formatters';
-import { EARNINGS } from '@/lib/constants';
+import { 
+  EARNINGS_STANDARD,
+  formatEarnings,
+  canCashOut,
+  getEarningStatusDisplay
+} from '@/lib/EARNINGS_STANDARD';
 import CashOutModal from '@/components/CashOutModal';
 import PaymentHistory from '@/components/PaymentHistory';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -197,10 +202,10 @@ export default function Earnings() {
             <div className="text-green-100 text-sm">Available to Cash Out</div>
             <button
               onClick={() => setShowCashOutModal(true)}
-              disabled={totalAvailable < EARNINGS.MINIMUM_CASHOUT}
+              disabled={!canCashOut(totalAvailable)}
               className="mt-4 w-full bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg py-2 text-sm font-medium transition-colors"
             >
-              {totalAvailable >= EARNINGS.MINIMUM_CASHOUT ? 'Cash Out' : `Need ${formatCurrency(EARNINGS.MINIMUM_CASHOUT - totalAvailable)} more`}
+              {canCashOut(totalAvailable) ? 'Cash Out' : `Need ${formatCurrency(EARNINGS_STANDARD.LIMITS.MIN_CASHOUT_AMOUNT - totalAvailable)} more`}
             </button>
           </motion.div>
 
@@ -336,13 +341,13 @@ export default function Earnings() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">How Earnings Work</h3>
               <ul className="space-y-2 text-gray-300 text-sm">
-                <li>• Submit a trend to earn {formatCurrency(EARNINGS.SUBMISSION_REWARD)} (awaiting verification)</li>
-                <li>• {EARNINGS.MIN_VOTES_REQUIRED} "verify" votes = trend approved, earnings become available</li>
-                <li>• {EARNINGS.MIN_VOTES_REQUIRED} "reject" votes = trend rejected, no earnings</li>
-                <li>• Participate in verifications to earn {formatCurrency(EARNINGS.VERIFICATION_REWARD)} per vote</li>
+                <li>• Submit a trend to earn {formatCurrency(EARNINGS_STANDARD.BASE_RATES.TREND_SUBMISSION)} (awaiting verification)</li>
+                <li>• {EARNINGS_STANDARD.VALIDATION.VOTES_TO_APPROVE} "verify" votes = trend approved, earnings become available</li>
+                <li>• {EARNINGS_STANDARD.VALIDATION.VOTES_TO_REJECT} "reject" votes = trend rejected, no earnings</li>
+                <li>• Participate in verifications to earn {formatCurrency(EARNINGS_STANDARD.BASE_RATES.VALIDATION_VOTE)} per vote</li>
                 <li>• You CAN vote on your own trends</li>
                 <li>• Scroll sessions maintain streak multipliers (up to 3x earnings on trends)</li>
-                <li>• Cash out when you reach {formatCurrency(EARNINGS.MINIMUM_CASHOUT)} in approved earnings</li>
+                <li>• Cash out when you reach {formatCurrency(EARNINGS_STANDARD.LIMITS.MIN_CASHOUT_AMOUNT)} in approved earnings</li>
               </ul>
             </div>
           </div>

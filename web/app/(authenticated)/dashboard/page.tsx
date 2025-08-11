@@ -5,7 +5,12 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency as formatCurrencyLib } from '@/lib/formatters';
-import { EARNINGS } from '@/lib/constants';
+import { 
+  EARNINGS_STANDARD,
+  formatEarnings,
+  canCashOut,
+  getEarningStatusDisplay
+} from '@/lib/EARNINGS_STANDARD';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 

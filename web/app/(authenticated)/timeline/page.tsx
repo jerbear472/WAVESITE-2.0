@@ -10,6 +10,7 @@ import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
+import { formatEarnings, getEarningStatusDisplay } from '@/lib/EARNINGS_STANDARD';
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,
@@ -895,7 +896,7 @@ export default function Timeline() {
                                     : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
                                   <DollarSignIcon className="w-3 h-3" />
-                                  <span>${trend.bounty_amount}</span>
+                                  <span>{formatEarnings(trend.bounty_amount || 0)}</span>
                                 </div>
                               )}
                             </div>
@@ -1078,7 +1079,7 @@ export default function Timeline() {
                                     : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
                                   <DollarSignIcon className="w-4 h-4" />
-                                  <span>${trend.bounty_amount}</span>
+                                  <span>{formatEarnings(trend.bounty_amount || 0)}</span>
                                 </div>
                               )}
                             </div>
@@ -1277,7 +1278,7 @@ export default function Timeline() {
                                         : 'bg-yellow-500/20 text-yellow-400'
                                     }`}>
                                       <DollarSignIcon className="w-3 h-3" />
-                                      <span>${trend.bounty_amount}</span>
+                                      <span>{formatEarnings(trend.bounty_amount || 0)}</span>
                                     </div>
                                   )}
                                 </div>
