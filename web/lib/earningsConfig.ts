@@ -1,223 +1,113 @@
-// Centralized earnings configuration for consistency across the app
+/**
+ * DEPRECATED - Use EARNINGS_STANDARD.ts instead
+ * 
+ * This file is maintained for backward compatibility only.
+ * All new code should import from '@/lib/EARNINGS_STANDARD'
+ * 
+ * @deprecated since version 1.0.0
+ */
+
+import {
+  EARNINGS_STANDARD,
+  calculateTrendSubmissionEarnings,
+  calculateValidationEarnings,
+  calculateApprovalBonus,
+  getStreakMultiplier,
+  canCashOut,
+  formatEarnings,
+  getEarningStatusDisplay,
+  validateEarningAmount,
+  type SpotterTier,
+  type EarningType,
+  type EarningStatus,
+  type EarningCalculation,
+  type TrendSubmissionData
+} from './EARNINGS_STANDARD';
+
+// Re-export the standard configuration with old name for backward compatibility
 export const EARNINGS_CONFIG = {
-  // Base payment for submitting a trend - Goes to PENDING until approved
-  BASE_PAYMENT: 1.00,
+  // Map old structure to new structure
+  BASE_PAYMENT: EARNINGS_STANDARD.BASE_RATES.TREND_SUBMISSION,
   
-  // Bonus amounts for various criteria
   BONUSES: {
-    // Content quality bonuses
-    COMPLETE_INFO: 0.10,        // Has both title and explanation
-    SCREENSHOT: 0.15,           // Includes screenshot
-    DEMOGRAPHICS: 0.10,         // Includes age ranges
-    SUBCULTURES: 0.10,          // Includes subcultures
-    OTHER_PLATFORMS: 0.10,      // Seen on multiple platforms
-    
-    // Engagement bonuses
-    HIGH_VIEWS: 0.25,           // Views > 100k
-    VIRAL_CONTENT: 0.50,        // Views > 1M
-    HIGH_ENGAGEMENT: 0.20,      // High likes/comments ratio
-    
-    // Metadata bonuses
-    CREATOR_INFO: 0.05,         // Has creator handle
-    RICH_HASHTAGS: 0.05,        // Has 3+ hashtags
-    CAPTION_PROVIDED: 0.05,     // Has post caption
-    
-    // Special category bonuses
-    FINANCE_TREND: 0.10,        // Finance/stock/crypto related
-    FINANCE: 0.10,              // Alias for FINANCE_TREND
-    HIGH_WAVE_SCORE: 0.20,      // Wave score > 70
-    TRENDING_CATEGORY: 0.10,    // In a trending category
+    COMPLETE_INFO: EARNINGS_STANDARD.QUALITY_BONUSES.COMPLETE_INFO,
+    SCREENSHOT: EARNINGS_STANDARD.QUALITY_BONUSES.SCREENSHOT,
+    DEMOGRAPHICS: EARNINGS_STANDARD.QUALITY_BONUSES.DEMOGRAPHICS,
+    SUBCULTURES: EARNINGS_STANDARD.QUALITY_BONUSES.SUBCULTURES,
+    OTHER_PLATFORMS: EARNINGS_STANDARD.QUALITY_BONUSES.MULTI_PLATFORM,
+    HIGH_VIEWS: EARNINGS_STANDARD.PERFORMANCE_BONUSES.HIGH_VIEWS,
+    VIRAL_CONTENT: EARNINGS_STANDARD.PERFORMANCE_BONUSES.VIRAL_CONTENT,
+    HIGH_ENGAGEMENT: EARNINGS_STANDARD.PERFORMANCE_BONUSES.HIGH_ENGAGEMENT,
+    CREATOR_INFO: EARNINGS_STANDARD.QUALITY_BONUSES.CREATOR_INFO,
+    RICH_HASHTAGS: EARNINGS_STANDARD.QUALITY_BONUSES.RICH_HASHTAGS,
+    CAPTION_PROVIDED: EARNINGS_STANDARD.QUALITY_BONUSES.CAPTION_PROVIDED,
+    FINANCE_TREND: EARNINGS_STANDARD.PERFORMANCE_BONUSES.FINANCE_TREND,
+    FINANCE: EARNINGS_STANDARD.PERFORMANCE_BONUSES.FINANCE_TREND, // Alias
+    HIGH_WAVE_SCORE: EARNINGS_STANDARD.PERFORMANCE_BONUSES.HIGH_WAVE_SCORE,
+    TRENDING_CATEGORY: EARNINGS_STANDARD.PERFORMANCE_BONUSES.TRENDING_CATEGORY,
   },
   
-  // Streak multipliers (applied to final amount)
-  // Scroll sessions are used to maintain streaks but don't generate earnings
-  STREAK_MULTIPLIERS: {
-    1: 1.0,   // No multiplier for first trend
-    2: 1.2,   // 20% bonus for 2 trends
-    3: 1.5,   // 50% bonus for 3 trends
-    5: 2.0,   // 2x for 5 trends
-    10: 2.5,  // 2.5x for 10 trends
-    15: 3.0   // 3x for 15+ trends
-  },
+  STREAK_MULTIPLIERS: EARNINGS_STANDARD.STREAK_MULTIPLIERS,
+  STREAK_WINDOW: EARNINGS_STANDARD.LIMITS.STREAK_WINDOW_MINUTES * 60 * 1000, // Convert to milliseconds
   
-  // Time windows
-  STREAK_WINDOW: 5 * 60 * 1000, // 5 minutes to maintain streak
-  
-  // Validation rewards (for verify page)
   VALIDATION_REWARDS: {
-    BASE_VALIDATION: 0.10,        // $0.10 for each validation vote
-    // No bonuses - simple flat rate per validation
+    BASE_VALIDATION: EARNINGS_STANDARD.BASE_RATES.VALIDATION_VOTE,
+    CORRECT_VALIDATION: EARNINGS_STANDARD.BASE_RATES.VALIDATION_VOTE, // Alias for compatibility
   },
   
-  // Approval settings
-  VOTES_TO_DECIDE: 2,            // 2 votes (approve or reject) decides outcome
-  
-  // Maximum earnings caps - INCREASED
-  MAX_SINGLE_SUBMISSION: 3.00,  // Max for a single submission
-  MAX_DAILY_EARNINGS: 50.00,    // Max daily earnings
-  
-  // NOTE: Scroll sessions no longer generate direct earnings
-  // They are only used for maintaining streak multipliers
+  VOTES_TO_DECIDE: EARNINGS_STANDARD.VALIDATION.VOTES_TO_APPROVE,
+  MAX_SINGLE_SUBMISSION: EARNINGS_STANDARD.LIMITS.MAX_SINGLE_SUBMISSION,
+  MAX_DAILY_EARNINGS: EARNINGS_STANDARD.LIMITS.MAX_DAILY_EARNINGS,
 };
 
-// Helper function to calculate earnings for a trend submission
-export function calculateTrendEarnings(data: {
-  trendName?: string;
-  explanation?: string;
-  screenshot?: any;
-  ageRanges?: any[];
-  subcultures?: any[];
-  otherPlatforms?: any[];
-  views_count?: number;
-  likes_count?: number;
-  comments_count?: number;
-  creator_handle?: string;
-  hashtags?: string[];
-  post_caption?: string;
-  wave_score?: number;
-  category?: string;
-  tickers?: string[];
-  isFinanceTrend?: boolean;
-}, streakCount: number = 0, spotterTier: 'elite' | 'verified' | 'learning' | 'restricted' = 'learning'): { baseAmount: number; finalAmount: number; appliedBonuses: string[]; tierMultiplier: number } {
+// Legacy function wrapper for backward compatibility
+export function calculateTrendEarnings(
+  data: any,
+  streakCount: number = 0,
+  spotterTier: 'elite' | 'verified' | 'learning' | 'restricted' = 'learning'
+): { baseAmount: number; finalAmount: number; appliedBonuses: string[]; tierMultiplier: number } {
   
-  let amount = EARNINGS_CONFIG.BASE_PAYMENT;
-  const appliedBonuses: string[] = [];
+  console.warn('calculateTrendEarnings is deprecated. Use calculateTrendSubmissionEarnings from EARNINGS_STANDARD instead.');
   
-  // Apply bonuses
-  if (data.trendName && data.explanation) {
-    amount += EARNINGS_CONFIG.BONUSES.COMPLETE_INFO;
-    appliedBonuses.push('Complete Info');
-  }
-  
-  if (data.screenshot) {
-    amount += EARNINGS_CONFIG.BONUSES.SCREENSHOT;
-    appliedBonuses.push('📸 Screenshot');
-  }
-  
-  if (data.ageRanges && data.ageRanges.length > 0) {
-    amount += EARNINGS_CONFIG.BONUSES.DEMOGRAPHICS;
-    appliedBonuses.push('Demographics');
-  }
-  
-  if (data.subcultures && data.subcultures.length > 0) {
-    amount += EARNINGS_CONFIG.BONUSES.SUBCULTURES;
-    appliedBonuses.push('Subcultures');
-  }
-  
-  if (data.otherPlatforms && data.otherPlatforms.length > 0) {
-    amount += EARNINGS_CONFIG.BONUSES.OTHER_PLATFORMS;
-    appliedBonuses.push('Multi-Platform');
-  }
-  
-  if (data.views_count) {
-    if (data.views_count > 1000000) {
-      amount += EARNINGS_CONFIG.BONUSES.VIRAL_CONTENT;
-      appliedBonuses.push('🔥 Viral');
-    } else if (data.views_count > 100000) {
-      amount += EARNINGS_CONFIG.BONUSES.HIGH_VIEWS;
-      appliedBonuses.push('High Views');
-    }
-  }
-  
-  if (data.likes_count && data.views_count) {
-    const engagementRate = data.likes_count / data.views_count;
-    if (engagementRate > 0.1) { // 10% engagement rate
-      amount += EARNINGS_CONFIG.BONUSES.HIGH_ENGAGEMENT;
-      appliedBonuses.push('High Engagement');
-    }
-  }
-  
-  if (data.creator_handle) {
-    amount += EARNINGS_CONFIG.BONUSES.CREATOR_INFO;
-    appliedBonuses.push('Creator Info');
-  }
-  
-  if (data.hashtags && data.hashtags.length >= 3) {
-    amount += EARNINGS_CONFIG.BONUSES.RICH_HASHTAGS;
-    appliedBonuses.push('Hashtags');
-  }
-  
-  if (data.post_caption) {
-    amount += EARNINGS_CONFIG.BONUSES.CAPTION_PROVIDED;
-    appliedBonuses.push('Caption');
-  }
-  
-  if (data.isFinanceTrend || (data.tickers && data.tickers.length > 0)) {
-    amount += EARNINGS_CONFIG.BONUSES.FINANCE_TREND;
-    appliedBonuses.push('📈 Finance');
-  }
-  
-  if (data.wave_score && data.wave_score > 70) {
-    amount += EARNINGS_CONFIG.BONUSES.HIGH_WAVE_SCORE;
-    appliedBonuses.push('🌊 High Wave');
-  }
-  
-  // Cap the base amount
-  const baseAmount = Math.min(amount, EARNINGS_CONFIG.MAX_SINGLE_SUBMISSION);
-  
-  // Apply tier multiplier based on spotter rank
-  const tierMultipliers = {
-    'elite': 1.5,
-    'verified': 1.0,
-    'learning': 0.7,
-    'restricted': 0.3
+  // Map old data structure to new TrendSubmissionData interface
+  const mappedData: TrendSubmissionData = {
+    trendName: data.trendName || '',
+    description: data.explanation || data.description || '',
+    screenshot_url: data.screenshot || data.screenshot_url,
+    ageRanges: data.ageRanges,
+    subcultures: data.subcultures,
+    otherPlatforms: data.otherPlatforms,
+    creator_handle: data.creator_handle,
+    hashtags: data.hashtags,
+    post_caption: data.post_caption,
+    views_count: data.views_count,
+    likes_count: data.likes_count,
+    comments_count: data.comments_count,
+    wave_score: data.wave_score,
+    category: data.category,
+    platform: data.platform,
+    tickers: data.tickers,
+    isFinanceTrend: data.isFinanceTrend,
   };
   
-  const tierMultiplier = tierMultipliers[spotterTier] || 0.7;
+  // Call the new standard function
+  const result = calculateTrendSubmissionEarnings(
+    mappedData,
+    spotterTier as SpotterTier,
+    streakCount
+  );
   
-  // Apply tier bonus/penalty to the bonus string
-  if (spotterTier === 'elite') {
-    appliedBonuses.push('🏆 Elite (1.5x)');
-  } else if (spotterTier === 'verified') {
-    appliedBonuses.push('✅ Verified (1.0x)');
-  } else if (spotterTier === 'learning') {
-    appliedBonuses.push('📚 Learning (0.7x)');
-  } else if (spotterTier === 'restricted') {
-    appliedBonuses.push('⚠️ Restricted (0.3x)');
-  }
-  
-  // Apply streak multiplier
-  let streakMultiplier = 1.0;
-  if (streakCount > 0) {
-    // Find the appropriate multiplier
-    const multiplierKeys = Object.keys(EARNINGS_CONFIG.STREAK_MULTIPLIERS)
-      .map(k => parseInt(k))
-      .sort((a, b) => b - a);
-    
-    for (const key of multiplierKeys) {
-      if (streakCount >= key) {
-        streakMultiplier = EARNINGS_CONFIG.STREAK_MULTIPLIERS[key];
-        break;
-      }
-    }
-    
-    if (streakMultiplier > 1) {
-      appliedBonuses.push(`${streakMultiplier}x Streak`);
-    }
-  }
-  
-  // Apply both multipliers: tier multiplier and streak multiplier
-  const finalAmount = baseAmount * tierMultiplier * streakMultiplier;
-  
+  // Return in old format for compatibility
   return {
-    baseAmount,
-    finalAmount,
-    appliedBonuses,
-    tierMultiplier
+    baseAmount: result.baseAmount,
+    finalAmount: result.finalAmount,
+    appliedBonuses: result.appliedBonuses,
+    tierMultiplier: result.tierMultiplier
   };
 }
 
-// Helper to get streak multiplier
-export function getStreakMultiplier(streakCount: number): number {
-  const multiplierKeys = Object.keys(EARNINGS_CONFIG.STREAK_MULTIPLIERS)
-    .map(k => parseInt(k))
-    .sort((a, b) => b - a);
-  
-  for (const key of multiplierKeys) {
-    if (streakCount >= key) {
-      return EARNINGS_CONFIG.STREAK_MULTIPLIERS[key];
-    }
-  }
-  
-  return 1.0;
-}
+// Re-export other functions
+export { getStreakMultiplier };
+
+// Export types for compatibility
+export type { SpotterTier, EarningType, EarningStatus };

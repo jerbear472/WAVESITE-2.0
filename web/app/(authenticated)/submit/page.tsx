@@ -203,19 +203,48 @@ export default function WorkingSubmitPage() {
       console.log('Submission successful:', data);
       setRecentSubmission(data);
 
-      // Calculate earnings using unified config
-      const { calculateTrendEarnings } = await import('@/lib/earningsConfig');
+      // Calculate earnings using EARNINGS_STANDARD
+      const { calculateTrendSubmissionEarnings, formatEarnings } = await import('@/lib/EARNINGS_STANDARD');
+      
+      // Build earnings data matching TrendSubmissionData interface
       const earningsData = {
         trendName: trendData.trendName || submission.evidence?.title || 'Untitled',
-        explanation: trendData.explanation || submission.description,
-        screenshot: screenshotUrl || trendData.screenshot_url,
+        description: trendData.explanation || submission.description,
+        screenshot_url: screenshotUrl || trendData.screenshot_url,
+        ageRanges: trendData.ageRanges || [],
+        subcultures: trendData.subcultures || [],
+        otherPlatforms: trendData.otherPlatforms || [],
+        creator_handle: trendData.creator_handle,
+        hashtags: trendData.hashtags || [],
+        post_caption: trendData.post_caption,
+        views_count: trendData.views_count,
+        likes_count: trendData.likes_count,
+        comments_count: trendData.comments_count,
+        wave_score: trendData.wave_score,
         category: displayCategory,
         platform: trendData.platform,
-        url: trendData.url
+        isFinanceTrend: displayCategory === 'Finance' || trendData.tickers?.length > 0
       };
       
-      const { finalAmount } = calculateTrendEarnings(earningsData, 0, user?.spotter_tier || 'learning');
-      updateUserEarnings(finalAmount);
+      // Get current streak from user profile
+      const currentStreak = user?.current_streak || 0;
+      const spotterTier = user?.spotter_tier || 'learning';
+      
+      const earningResult = calculateTrendSubmissionEarnings(
+        earningsData,
+        spotterTier as any,
+        currentStreak
+      );
+      
+      console.log('Earning calculation:', {
+        base: earningResult.baseAmount,
+        bonus: earningResult.bonusAmount,
+        final: earningResult.finalAmount,
+        bonuses: earningResult.appliedBonuses
+      });
+      
+      // Update user earnings with the calculated amount
+      updateUserEarnings(earningResult.finalAmount);
 
       // Show success state
       setShowForm(false);

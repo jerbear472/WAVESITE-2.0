@@ -28,7 +28,13 @@ import {
   RefreshCw,
   Image as ImageIcon
 } from 'lucide-react';
-import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
+import { 
+  EARNINGS_STANDARD,
+  calculateValidationEarnings,
+  formatEarnings,
+  getEarningStatusDisplay,
+  SpotterTier
+} from '@/lib/EARNINGS_STANDARD';
 
 interface TrendToValidate {
   id: string;
@@ -40,11 +46,11 @@ interface TrendToValidate {
   platform?: string;
   creator_handle?: string;
   post_caption?: string;
-  likes_count?: number;
-  comments_count?: number;
-  shares_count?: number;
-  views_count?: number;
-  validation_count: number;
+  likes_count?: number | string;
+  comments_count?: number | string;
+  shares_count?: number | string;
+  views_count?: number | string;
+  validation_count: number | string;
   spotter_id: string;
   hours_since_post?: number;
   source_url?: string;
@@ -52,8 +58,8 @@ interface TrendToValidate {
   post_url?: string;
   trending_position?: number;
   confidence_score?: number;
-  approve_count?: number;
-  reject_count?: number;
+  approve_count?: number | string;
+  reject_count?: number | string;
 }
 
 interface QualityCriteria {
@@ -81,11 +87,25 @@ export default function ValidatePageFixed() {
   const [initialTrendsCount, setInitialTrendsCount] = useState(0);
   const [imageError, setImageError] = useState(false);
 
-  const formatCount = (count?: number): string => {
-    if (!count || count === 0) return '0';
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-    return count.toString();
+  const formatCount = (count?: number | string): string => {
+    // Handle potential numeric overflow by converting to BigInt if needed
+    let numCount: number;
+    
+    if (typeof count === 'string') {
+      // Parse string numbers that might be too large
+      const parsed = parseFloat(count);
+      if (isNaN(parsed) || !isFinite(parsed)) return '0';
+      numCount = parsed;
+    } else if (typeof count === 'number') {
+      if (!count || isNaN(count) || !isFinite(count)) return '0';
+      numCount = count;
+    } else {
+      return '0';
+    }
+    
+    if (numCount >= 1000000) return `${(numCount / 1000000).toFixed(1)}M`;
+    if (numCount >= 1000) return `${(numCount / 1000).toFixed(1)}K`;
+    return Math.floor(numCount).toString();
   };
 
   const evaluateQualityCriteria = (trend: TrendToValidate): QualityCriteria[] => {
@@ -118,7 +138,7 @@ export default function ValidatePageFixed() {
         id: 'has_engagement',
         label: 'Engagement Data',
         description: 'Shows social metrics',
-        met: (trend.likes_count || 0) > 0 || (trend.views_count || 0) > 0 || (trend.comments_count || 0) > 0
+        met: Number(trend.likes_count || 0) > 0 || Number(trend.views_count || 0) > 0 || Number(trend.comments_count || 0) > 0
       }
     ];
   };
@@ -225,6 +245,11 @@ export default function ValidatePageFixed() {
         const hoursAgo = Math.round((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60));
         return {
           ...trend,
+          // Ensure numeric fields are properly handled
+          likes_count: trend.likes_count,
+          comments_count: trend.comments_count,
+          shares_count: trend.shares_count,
+          views_count: trend.views_count,
           validation_count: trend.validation_count || 0,
           approve_count: trend.approve_count || 0,
           reject_count: trend.reject_count || 0,
@@ -273,11 +298,16 @@ export default function ValidatePageFixed() {
         .select('*')
         .eq('validator_id', user?.id);
 
+      // Calculate earnings using EARNINGS_STANDARD
+      const spotterTier = (user?.spotter_tier || 'learning') as SpotterTier;
+      const todayEarnings = (todayValidations?.length || 0) * calculateValidationEarnings(true, spotterTier);
+      const totalEarnings = (allValidations?.length || 0) * calculateValidationEarnings(true, spotterTier);
+      
       setStats({
         validated_today: todayValidations?.length || 0,
-        earnings_today: parseFloat(((todayValidations?.length || 0) * 0.10).toFixed(2)),
+        earnings_today: parseFloat(todayEarnings.toFixed(2)),
         validated_total: allValidations?.length || 0,
-        earnings_total: parseFloat(((allValidations?.length || 0) * 0.10).toFixed(2))
+        earnings_total: parseFloat(totalEarnings.toFixed(2))
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -591,28 +621,28 @@ export default function ValidatePageFixed() {
                       }}
                     />
                     {/* Engagement Overlay */}
-                    {(currentTrend.likes_count > 0 || currentTrend.views_count > 0 || currentTrend.comments_count > 0 || currentTrend.shares_count > 0) && (
+                    {(Number(currentTrend.likes_count) > 0 || Number(currentTrend.views_count) > 0 || Number(currentTrend.comments_count) > 0 || Number(currentTrend.shares_count) > 0) && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2">
                         <div className="flex gap-2 text-white">
-                          {currentTrend.views_count > 0 && (
+                          {Number(currentTrend.views_count) > 0 && (
                             <div className="flex items-center gap-1">
                               <Eye className="w-3 h-3" />
                               <span className="text-xs font-medium">{formatCount(currentTrend.views_count)}</span>
                             </div>
                           )}
-                          {currentTrend.likes_count > 0 && (
+                          {Number(currentTrend.likes_count) > 0 && (
                             <div className="flex items-center gap-1">
                               <Heart className="w-3 h-3" />
                               <span className="text-xs font-medium">{formatCount(currentTrend.likes_count)}</span>
                             </div>
                           )}
-                          {currentTrend.comments_count > 0 && (
+                          {Number(currentTrend.comments_count) > 0 && (
                             <div className="flex items-center gap-1">
                               <MessageCircle className="w-3 h-3" />
                               <span className="text-xs font-medium">{formatCount(currentTrend.comments_count)}</span>
                             </div>
                           )}
-                          {currentTrend.shares_count > 0 && (
+                          {Number(currentTrend.shares_count) > 0 && (
                             <div className="flex items-center gap-1">
                               <Share2 className="w-3 h-3" />
                               <span className="text-xs font-medium">{formatCount(currentTrend.shares_count)}</span>
@@ -691,23 +721,23 @@ export default function ValidatePageFixed() {
                   )}
 
                   {/* Validation Progress */}
-                  {(currentTrend.approve_count > 0 || currentTrend.reject_count > 0) && (
+                  {(Number(currentTrend.approve_count) > 0 || Number(currentTrend.reject_count) > 0) && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-md p-2 mb-2">
                       <h4 className="text-xs font-semibold text-gray-900 mb-1">Validation Progress</h4>
                       <div className="flex gap-3 mb-1">
                         <div className="flex items-center gap-1">
                           <ThumbsUp className="w-3 h-3 text-green-600" />
-                          <span className="text-xs font-medium">{currentTrend.approve_count || 0}/2</span>
+                          <span className="text-xs font-medium">{Number(currentTrend.approve_count) || 0}/2</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <ThumbsDown className="w-3 h-3 text-red-600" />
-                          <span className="text-xs font-medium">{currentTrend.reject_count || 0}/2</span>
+                          <span className="text-xs font-medium">{Number(currentTrend.reject_count) || 0}/2</span>
                         </div>
                       </div>
                       <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-300"
-                          style={{ width: `${Math.min((currentTrend.approve_count || 0) * 50, 100)}%` }}
+                          style={{ width: `${Math.min((Number(currentTrend.approve_count) || 0) * 50, 100)}%` }}
                         />
                       </div>
                     </div>
@@ -820,7 +850,7 @@ export default function ValidatePageFixed() {
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Session Earnings</p>
-                <p className="text-xl font-bold text-green-600">+${(sessionValidations * 0.10).toFixed(2)}</p>
+                <p className="text-xl font-bold text-green-600">+{formatEarnings(sessionValidations * calculateValidationEarnings(true, (user?.spotter_tier || 'learning') as SpotterTier))}</p>
               </div>
             </div>
           </motion.div>

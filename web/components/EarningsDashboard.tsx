@@ -15,7 +15,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/formatters';
-import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
+import { 
+  EARNINGS_STANDARD,
+  formatEarnings,
+  calculateValidationEarnings,
+  SpotterTier
+} from '@/lib/EARNINGS_STANDARD';
 
 interface Session {
   id: string;
@@ -90,7 +95,9 @@ export const EarningsDashboard: React.FC = () => {
 
       // Calculate total earnings
       const sessionEarnings = sessions.reduce((sum, s) => sum + s.total_earnings, 0);
-      const verificationEarnings = (verificationsCount || 0) * EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION;
+      // Calculate verification earnings using EARNINGS_STANDARD
+      const spotterTier = (user?.spotter_tier || 'learning') as SpotterTier;
+      const verificationEarnings = (verificationsCount || 0) * calculateValidationEarnings(true, spotterTier);
       setTotalEarnings(sessionEarnings + verificationEarnings);
 
       // Calculate stats

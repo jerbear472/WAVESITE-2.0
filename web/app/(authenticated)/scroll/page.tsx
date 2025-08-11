@@ -36,7 +36,13 @@ import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EarningsAnimation, useEarningsAnimation } from '@/components/EarningsAnimation';
-import { calculateTrendEarnings, getStreakMultiplier, EARNINGS_CONFIG } from '@/lib/earningsConfig';
+import { 
+  calculateTrendSubmissionEarnings,
+  getStreakMultiplier,
+  EARNINGS_STANDARD,
+  formatEarnings,
+  SpotterTier
+} from '@/lib/EARNINGS_STANDARD';
 import { calculateQualityScore } from '@/lib/calculateQualityScore';
 
 // Primary platforms with better colors
@@ -112,7 +118,7 @@ export default function LegibleScrollPage() {
     if (currentStreak > 0 && lastSubmissionTime) {
       const updateStreakTimer = () => {
         const elapsed = Date.now() - lastSubmissionTime.getTime();
-        const remaining = Math.max(0, EARNINGS_CONFIG.STREAK_WINDOW - elapsed);
+        const remaining = Math.max(0, EARNINGS_STANDARD.LIMITS.STREAK_WINDOW_MINUTES * 60 * 1000 - elapsed);
         
         if (remaining === 0) {
           // Streak expired
@@ -309,12 +315,19 @@ export default function LegibleScrollPage() {
           c.toLowerCase().includes('crypto')
         );
       
-      // Calculate payment using centralized config
-      const earningsResult = calculateTrendEarnings({
-        ...formData,
-        isFinanceTrend,
-        tickers
-      }, isSessionActive ? currentStreak + 1 : 0, user.spotter_tier || 'learning');
+      // Calculate payment using EARNINGS_STANDARD
+      const spotterTier = (user.spotter_tier || 'learning') as SpotterTier;
+      const streakCount = isSessionActive ? currentStreak + 1 : 0;
+      
+      const earningsResult = calculateTrendSubmissionEarnings(
+        {
+          ...formData,
+          isFinanceTrend,
+          tickers
+        },
+        spotterTier,
+        streakCount
+      );
       
       const basePayment = earningsResult.baseAmount;
       const finalPayment = earningsResult.finalAmount;
@@ -844,10 +857,10 @@ export default function LegibleScrollPage() {
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-3">
               <span className="text-gray-500">
-                Base: {formatCurrency(EARNINGS_CONFIG.BASE_PAYMENT)} per trend
+                Base: {formatCurrency(EARNINGS_STANDARD.BASE_RATES.TREND_SUBMISSION)} per trend
               </span>
               <span className="text-blue-600">
-                Finance bonus: +{formatCurrency(EARNINGS_CONFIG.BONUSES.FINANCE)}
+                Finance bonus: +{formatCurrency(EARNINGS_STANDARD.PERFORMANCE_BONUSES.FINANCE_TREND)}
               </span>
               {streakMultiplier > 1.0 && (
                 <span className="text-orange-600">
@@ -872,7 +885,7 @@ export default function LegibleScrollPage() {
               </div>
             </div>
             <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-semibold">
-              +{formatCurrency(EARNINGS_CONFIG.BONUSES.FINANCE)} bonus
+              +{formatCurrency(EARNINGS_STANDARD.PERFORMANCE_BONUSES.FINANCE_TREND)} bonus
             </span>
           </div>
           
