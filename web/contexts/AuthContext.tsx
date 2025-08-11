@@ -325,72 +325,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Create user profile in database (if not created by trigger)
       if (authData.user) {
+        // Wait a moment for trigger to execute
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // First check if profile already exists
         const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, created_at, updated_at')
+          .from('user_profiles')
+          .select('*')
           .eq('id', authData.user.id)
           .single();
 
         if (!existingProfile) {
-          // Try to create profile
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              email: userData.email,
-              username: userData.username,
-              birthday: userData.birthday,
-              age_verified: userData.birthday ? true : false,
-              subscription_tier: 'starter',
-              total_earnings: 0,
-              pending_earnings: 0,
-              trends_spotted: 0,
-              accuracy_score: 0,
-              validation_score: 0
-            })
-            .select()
-            .single();
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            // Don't throw - the trigger might have created it
+          // Use the helper function to complete registration
+          const { data: registrationResult, error: registrationError } = await supabase
+            .rpc('complete_user_registration', {
+              p_user_id: authData.user.id,
+              p_email: userData.email,
+              p_username: userData.username,
+              p_birthday: userData.birthday || null
+            });
+          
+          if (registrationError) {
+            console.error('Registration helper error:', registrationError);
+            
+            // Last resort: try direct insert into user_profiles
+            const { error: directError } = await supabase
+              .from('user_profiles')
+              .insert({
+                id: authData.user.id,
+                email: userData.email,
+                username: userData.username,
+                birthday: userData.birthday || null,
+                age_verified: !!userData.birthday
+              });
+              
+            if (directError) {
+              console.error('Direct profile insert error:', directError);
+              // Still don't throw - user is created in auth
+            }
+          } else {
+            console.log('Registration completed:', registrationResult);
           }
         }
 
-        // Also ensure user settings exist
-        try {
-          const { error: settingsError } = await supabase
-            .from('user_settings')
-            .insert({
-              user_id: authData.user.id,
-              notification_preferences: { email: true, push: true, trends: true },
-              privacy_settings: { profile_visibility: 'public', show_earnings: false }
-            })
-            .select()
-            .single();
-          
-          if (settingsError) {
-            console.log('User settings might already exist:', settingsError);
-          }
-        } catch (err) {
-          console.log('Error creating user settings:', err);
-        }
+        // Note: user_settings table doesn't exist in our schema
+        // Account settings are created by the trigger or helper function
 
-        // And user account settings
-        try {
-          const { error: accountError } = await supabase
-            .from('user_account_settings')
-            .insert({
-              user_id: authData.user.id,
-              account_type: 'user'
-            })
-            .select()
-            .single();
-          
-          if (accountError) {
-            console.log('Account settings might already exist:', accountError);
-          }
+        // Account settings are handled by trigger or helper function
         } catch (err) {
           console.log('Error creating account settings:', err);
         }
