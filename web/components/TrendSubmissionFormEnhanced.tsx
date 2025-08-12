@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
+import { getProxiedImageUrl } from '@/lib/imageProxy';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -209,14 +210,14 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     setExtractingMetadata(true);
     setError('');
     
-    // Use ultra simple synchronous extractor first
+    // Use ultra simple synchronous extractor (now returns proxied URLs for TikTok)
     console.log('Extracting thumbnail for:', url);
     const metadata = getUltraSimpleThumbnail(url);
     console.log('Initial extraction:', metadata);
     
-    // For TikTok, try the API route for better extraction
-    if (url.includes('tiktok.com')) {
-      console.log('TikTok URL detected, trying API route for better extraction...');
+    // For TikTok, if we didn't get a thumbnail, try the API route
+    if (url.includes('tiktok.com') && !metadata.thumbnail_url) {
+      console.log('TikTok URL without thumbnail, trying API route...');
       try {
         const response = await fetch('/api/tiktok-thumbnail', {
           method: 'POST',
@@ -232,7 +233,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
           if (apiData.thumbnail_url) {
             // Use proxied URL to avoid CORS issues
             metadata.thumbnail_url = `/api/proxy-image?url=${encodeURIComponent(apiData.thumbnail_url)}`;
-            console.log('Using proxied thumbnail URL:', metadata.thumbnail_url);
+            console.log('Using API thumbnail (proxied):', metadata.thumbnail_url);
           }
           if (apiData.creator_handle) {
             metadata.creator_handle = apiData.creator_handle;
@@ -243,12 +244,6 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
         }
       } catch (error) {
         console.log('API fallback failed:', error);
-        // If API fails but we have a thumbnail from simple extraction, proxy it
-        if (metadata.thumbnail_url && metadata.thumbnail_url.includes('tiktokcdn.com')) {
-          const originalUrl = metadata.thumbnail_url;
-          metadata.thumbnail_url = `/api/proxy-image?url=${encodeURIComponent(originalUrl)}`;
-          console.log('Proxying simple extraction thumbnail:', metadata.thumbnail_url);
-        }
       }
     }
     

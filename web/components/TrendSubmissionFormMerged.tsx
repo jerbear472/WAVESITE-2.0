@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
+import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
+import { getProxiedImageUrl } from '@/lib/imageProxy';
 // import { TrendQualityIndicator } from '@/components/TrendQualityIndicator';
 
 // Define TrendQualityMetrics type locally to avoid import issues
@@ -340,7 +342,35 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     setExtractingMetadata(true);
     setError('');
     try {
+      // First get basic metadata
       const metadata = await MetadataExtractor.extractFromUrl(url);
+      
+      // Extract thumbnail using our enhanced extractor
+      const thumbnailData = getUltraSimpleThumbnail(url);
+      console.log('Extracted thumbnail data:', thumbnailData);
+      
+      // For TikTok, if we didn't get a thumbnail, try the API route
+      let finalThumbnailUrl = thumbnailData.thumbnail_url;
+      if (url.includes('tiktok.com') && !finalThumbnailUrl) {
+        try {
+          const response = await fetch('/api/tiktok-thumbnail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+          
+          if (response.ok) {
+            const apiData = await response.json();
+            if (apiData.thumbnail_url) {
+              // Use proxied URL for TikTok thumbnails
+              finalThumbnailUrl = getProxiedImageUrl(apiData.thumbnail_url);
+              console.log('Got thumbnail from API:', finalThumbnailUrl);
+            }
+          }
+        } catch (error) {
+          console.log('API thumbnail extraction failed:', error);
+        }
+      }
       
       // Auto-detect platform immediately
       const detectedPlatform = detectPlatform(url);
@@ -349,14 +379,14 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
         const updates = {
           ...prev,
           platform: detectedPlatform,
-          creator_handle: metadata.creator_handle || prev.creator_handle,
+          thumbnail_url: finalThumbnailUrl || prev.thumbnail_url,
+          creator_handle: metadata.creator_handle || thumbnailData.creator_handle || prev.creator_handle,
           creator_name: metadata.creator_name || prev.creator_name,
           post_caption: metadata.post_caption || prev.post_caption,
           likes_count: metadata.likes_count !== undefined ? metadata.likes_count : prev.likes_count,
           comments_count: metadata.comments_count !== undefined ? metadata.comments_count : prev.comments_count,
           views_count: metadata.views_count !== undefined ? metadata.views_count : prev.views_count,
           hashtags: metadata.hashtags || prev.hashtags || [],
-          thumbnail_url: metadata.thumbnail_url || prev.thumbnail_url,
           
           // Don't auto-capture trend name - user must input this
           trendName: prev.trendName || '',
