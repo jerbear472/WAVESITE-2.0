@@ -510,7 +510,7 @@ export default function Timeline() {
                   <DollarSignIcon className="w-4 h-4 text-green-400" />
                 </div>
                 <p className="text-2xl font-bold text-white">
-                  ${totalEarnings.toFixed(2)}
+                  {formatEarnings(totalEarnings)}
                 </p>
               </motion.div>
 

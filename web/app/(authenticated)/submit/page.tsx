@@ -215,7 +215,6 @@ export default function WorkingSubmitPage() {
       }
 
       console.log('Submission successful:', data);
-      setRecentSubmission(data);
 
       // Calculate earnings using EARNINGS_STANDARD
       const { calculateTrendSubmissionEarnings, formatEarnings } = await import('@/lib/EARNINGS_STANDARD');
@@ -259,6 +258,13 @@ export default function WorkingSubmitPage() {
       
       // Update user earnings with the calculated amount
       updateUserEarnings(earningResult.finalAmount);
+      
+      // Store submission with earnings info for display
+      setRecentSubmission({
+        ...data,
+        calculatedEarnings: earningResult.finalAmount,
+        formattedEarnings: formatEarnings(earningResult.finalAmount)
+      });
 
       // Show success state
       setShowForm(false);
@@ -321,7 +327,7 @@ export default function WorkingSubmitPage() {
               <div>
                 <p className="text-white font-semibold">Trend submitted successfully!</p>
                 <p className="text-green-200 text-sm">
-                  Your submission is now in the verification queue. You earned $1.00 + bonuses!
+                  Your submission is now in the verification queue. You earned {recentSubmission.formattedEarnings || '$1.00'}!
                 </p>
               </div>
             </div>

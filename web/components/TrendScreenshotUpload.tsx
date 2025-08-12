@@ -217,7 +217,8 @@ export default function TrendScreenshotUpload({ onClose, onSubmit }: TrendScreen
       const earnedAmount = 0.25;
       updateUserEarnings(earnedAmount);
       
-      setSuccess(`Trend submitted! You earned $${earnedAmount.toFixed(2)}`);
+      const { formatEarnings } = await import('@/lib/EARNINGS_STANDARD');
+      setSuccess(`Trend submitted! You earned ${formatEarnings(earnedAmount)}`);
       
       // Clear form and close after success
       setTimeout(() => {
