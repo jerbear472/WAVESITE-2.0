@@ -4,14 +4,23 @@
 export function getUltraSimpleThumbnail(url: string): { thumbnail_url?: string; platform?: string; creator_handle?: string } {
   if (!url) return {};
   
-  // TikTok - don't try to get thumbnails, they're unreliable
+  // TikTok - Extract video ID and generate thumbnail URL
   if (url.includes('tiktok.com')) {
     const usernameMatch = url.match(/@([^\/\?]+)/);
+    const videoIdMatch = url.match(/video\/(\d+)/);
+    
+    // If we have a video ID, we can generate a thumbnail URL
+    let thumbnailUrl = undefined;
+    if (videoIdMatch) {
+      const videoId = videoIdMatch[1];
+      // Use the CDN pattern that works most reliably
+      thumbnailUrl = `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-obj.jpg`;
+    }
     
     return {
       platform: 'tiktok',
-      creator_handle: usernameMatch ? `@${usernameMatch[1]}` : undefined
-      // No thumbnail_url - TikTok CDN is too restrictive
+      creator_handle: usernameMatch ? `@${usernameMatch[1]}` : undefined,
+      thumbnail_url: thumbnailUrl
     };
   }
   

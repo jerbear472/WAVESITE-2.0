@@ -202,17 +202,55 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     return 'other';
   };
 
-  // Extract metadata when URL changes - ULTRA SIMPLE VERSION
-  const extractMetadata = (url: string) => {
+  // Extract metadata when URL changes - ENHANCED VERSION WITH API FALLBACK
+  const extractMetadata = async (url: string) => {
     if (!url) return;
     
     setExtractingMetadata(true);
     setError('');
     
-    // Use ultra simple synchronous extractor
+    // Use ultra simple synchronous extractor first
     console.log('Extracting thumbnail for:', url);
     const metadata = getUltraSimpleThumbnail(url);
-    console.log('Extracted:', metadata);
+    console.log('Initial extraction:', metadata);
+    
+    // For TikTok, try the API route for better extraction
+    if (url.includes('tiktok.com')) {
+      console.log('TikTok URL detected, trying API route for better extraction...');
+      try {
+        const response = await fetch('/api/tiktok-thumbnail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        
+        if (response.ok) {
+          const apiData = await response.json();
+          console.log('API response:', apiData);
+          
+          // Update metadata with API results
+          if (apiData.thumbnail_url) {
+            // Use proxied URL to avoid CORS issues
+            metadata.thumbnail_url = `/api/proxy-image?url=${encodeURIComponent(apiData.thumbnail_url)}`;
+            console.log('Using proxied thumbnail URL:', metadata.thumbnail_url);
+          }
+          if (apiData.creator_handle) {
+            metadata.creator_handle = apiData.creator_handle;
+          }
+          if (apiData.creator_name) {
+            metadata.creator_name = apiData.creator_name;
+          }
+        }
+      } catch (error) {
+        console.log('API fallback failed:', error);
+        // If API fails but we have a thumbnail from simple extraction, proxy it
+        if (metadata.thumbnail_url && metadata.thumbnail_url.includes('tiktokcdn.com')) {
+          const originalUrl = metadata.thumbnail_url;
+          metadata.thumbnail_url = `/api/proxy-image?url=${encodeURIComponent(originalUrl)}`;
+          console.log('Proxying simple extraction thumbnail:', metadata.thumbnail_url);
+        }
+      }
+    }
     
     setFormData(prev => ({
       ...prev,
@@ -234,6 +272,8 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       console.log('✅ Got thumbnail:', metadata.thumbnail_url);
       setSuccess('✨ Thumbnail captured!');
       setTimeout(() => setSuccess(''), 3000);
+    } else {
+      console.log('⚠️ No thumbnail extracted for URL:', url);
     }
     
     setExtractingMetadata(false);
