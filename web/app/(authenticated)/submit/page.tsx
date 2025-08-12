@@ -152,7 +152,8 @@ export default function WorkingSubmitPage() {
         quality_score: 0.5,
         validation_count: 0,
         screenshot_url: screenshotUrl || trendData.screenshot_url || null,
-        post_url: trendData.url ? trendData.url.trim() : null
+        post_url: trendData.url ? trendData.url.trim() : null,
+        thumbnail_url: trendData.thumbnail_url || null // Ensure thumbnail_url is included
         // Remove created_at - it's handled by database default
       };
 
@@ -177,7 +178,7 @@ export default function WorkingSubmitPage() {
       
       if (trendData.hashtags?.length) submission.hashtags = trendData.hashtags;
       
-      // CRITICAL: Always set thumbnail_url, handle both undefined and empty string
+      // Override thumbnail_url to ensure it's properly set
       const thumbnailToSave = (trendData.thumbnail_url && trendData.thumbnail_url.trim()) ? trendData.thumbnail_url.trim() : null;
       submission.thumbnail_url = thumbnailToSave;
       

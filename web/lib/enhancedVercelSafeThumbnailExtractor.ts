@@ -80,20 +80,67 @@ export class EnhancedVercelSafeThumbnailExtractor {
     if (videoIdMatch) {
       const videoId = videoIdMatch[1];
       
-      // Use our proxy endpoint to get the thumbnail
-      // This will attempt oEmbed first, then fall back to CDN patterns
-      metadata.thumbnail_url = `/api/tiktok-thumbnail?id=${videoId}`;
+      try {
+        // Call our API endpoint to get the thumbnail
+        const response = await fetch('/api/tiktok-thumbnail', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.thumbnail_url) {
+            metadata.thumbnail_url = data.thumbnail_url;
+            console.log('✅ [ENHANCED] Got thumbnail from API:', data.thumbnail_url);
+          }
+          if (data.post_caption) {
+            metadata.post_caption = data.post_caption;
+          }
+          if (data.creator_handle) {
+            metadata.creator_handle = data.creator_handle;
+            metadata.creator_name = data.creator_name || data.creator_handle.replace('@', '');
+          }
+        } else {
+          console.log('⚠️ [ENHANCED] API endpoint failed, using direct CDN patterns');
+          // Fallback to direct CDN patterns
+          metadata.thumbnail_url = `https://p16-sign-sg.tiktokcdn.com/obj/${videoId}~c5_300x400.jpeg`;
+        }
+      } catch (error) {
+        console.log('⚠️ [ENHANCED] Failed to call API, using fallback thumbnail');
+        // Use a direct CDN pattern as fallback
+        metadata.thumbnail_url = `https://p16.tiktokcdn.com/obj/tos-maliva-p-0068/${videoId}`;
+      }
       
       console.log('📹 [ENHANCED] TikTok video ID:', videoId);
-      console.log('🖼️ [ENHANCED] Using placeholder thumbnail (TikTok CDN restricted)');
-      console.log('💡 [ENHANCED] User can upload screenshot for actual thumbnail');
+      console.log('🖼️ [ENHANCED] Thumbnail URL:', metadata.thumbnail_url);
     } else {
       console.log('⚠️ [ENHANCED] No video ID found in TikTok URL:', url);
       
       // Try to extract from mobile share URLs or short URLs
       const shortIdMatch = url.match(/\/t\/([A-Za-z0-9]+)/);
       if (shortIdMatch) {
-        metadata.thumbnail_url = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='400' height='400' fill='%23000'/%3E%3Ctext x='200' y='200' font-family='Arial' font-size='20' fill='%23ff0050' text-anchor='middle'%3ETikTok Short Link%3C/text%3E%3C/svg%3E`;
+        // Try to call API with the short URL
+        try {
+          const response = await fetch('/api/tiktok-thumbnail', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.thumbnail_url) {
+              metadata.thumbnail_url = data.thumbnail_url;
+            }
+          }
+        } catch (error) {
+          metadata.thumbnail_url = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='400' height='400' fill='%23000'/%3E%3Ctext x='200' y='200' font-family='Arial' font-size='20' fill='%23ff0050' text-anchor='middle'%3ETikTok Short Link%3C/text%3E%3C/svg%3E`;
+        }
         console.log('📱 [ENHANCED] Mobile/Short URL detected');
       }
     }
@@ -117,7 +164,8 @@ export class EnhancedVercelSafeThumbnailExtractor {
       if (match && match[1]) {
         const videoId = match[1];
         // YouTube thumbnails are always available at these URLs
-        metadata.thumbnail_url = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        // Try maxresdefault first, then fall back to hqdefault
+        metadata.thumbnail_url = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         console.log('📺 YouTube video ID:', videoId);
         console.log('🖼️ YouTube thumbnail:', metadata.thumbnail_url);
         break;
