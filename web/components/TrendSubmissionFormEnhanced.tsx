@@ -184,6 +184,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     comments_count: 0,
     views_count: 0,
     hashtags: [],
+    thumbnail_url: '', // CRITICAL: Must initialize this!
     wave_score: 50
   });
 
@@ -255,7 +256,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
           comments_count: metadata.comments_count !== undefined ? metadata.comments_count : prev.comments_count,
           views_count: metadata.views_count !== undefined ? metadata.views_count : prev.views_count,
           hashtags: metadata.hashtags || prev.hashtags || [],
-          thumbnail_url: metadata.thumbnail_url || prev.thumbnail_url,
+          thumbnail_url: metadata.thumbnail_url || prev.thumbnail_url || '',
           
           // Don't auto-capture trend name - user must input this
           trendName: prev.trendName || '',
@@ -291,6 +292,9 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
             updates.spreadSpeed = detectSpreadSpeed(metadata.likes_count || 0, metadata.views_count || 0, detectedPlatform);
           }
         }
+        
+        // Debug logging for thumbnail
+        console.log('📸 FormData Update - Thumbnail URL:', updates.thumbnail_url);
         
         return updates;
       });

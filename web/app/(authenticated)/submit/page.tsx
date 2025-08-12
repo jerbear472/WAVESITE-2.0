@@ -172,8 +172,8 @@ export default function WorkingSubmitPage() {
       
       if (trendData.hashtags?.length) submission.hashtags = trendData.hashtags;
       
-      // CRITICAL: Always set thumbnail_url, even if it's undefined
-      submission.thumbnail_url = trendData.thumbnail_url || null;
+      // CRITICAL: Always set thumbnail_url, handle both undefined and empty string
+      submission.thumbnail_url = (trendData.thumbnail_url && trendData.thumbnail_url.trim()) ? trendData.thumbnail_url.trim() : null;
       console.log('Setting thumbnail_url to:', submission.thumbnail_url);
       
       if (trendData.posted_at) submission.posted_at = trendData.posted_at;
