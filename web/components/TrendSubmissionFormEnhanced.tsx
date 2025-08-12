@@ -9,6 +9,7 @@ import { EnhancedThumbnailExtractor } from '@/lib/enhancedThumbnailExtractor';
 import { DirectThumbnailExtractor } from '@/lib/directThumbnailExtractor';
 import { ImprovedMetadataExtractor } from '@/lib/improvedMetadataExtractor';
 import { VercelSafeMetadataExtractor } from '@/lib/vercelSafeMetadataExtractor';
+import { EnhancedVercelSafeThumbnailExtractor } from '@/lib/enhancedVercelSafeThumbnailExtractor';
 import { getProxiedImageUrl } from '@/lib/imageProxy';
 import { 
   Link as LinkIcon,
@@ -231,9 +232,9 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     setExtractingMetadata(true);
     setError('');
     try {
-      // Use Vercel-safe extractor for production compatibility
+      // Use Enhanced Vercel-safe extractor for better thumbnail extraction
       console.log('Extracting metadata for URL:', url);
-      const metadata = await VercelSafeMetadataExtractor.extractFromUrl(url);
+      const metadata = await EnhancedVercelSafeThumbnailExtractor.extractFromUrl(url);
       console.log('Extracted metadata:', metadata);
       
       // Log thumbnail URL specifically
