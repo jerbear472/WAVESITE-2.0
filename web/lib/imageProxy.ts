@@ -22,6 +22,7 @@ export function getProxiedImageUrl(imageUrl: string | undefined | null): string 
   // Check if we need to proxy (TikTok, Instagram, etc.)
   const needsProxy = (
     imageUrl.includes('tiktokcdn.com') ||
+    imageUrl.includes('tiktok.com') ||
     imageUrl.includes('instagram.com') ||
     imageUrl.includes('fbcdn.net') ||
     imageUrl.includes('cdninstagram.com') ||

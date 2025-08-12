@@ -7,6 +7,7 @@ import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { SimpleMetadataExtractor } from '@/lib/metadataExtractorSimple';
 import { EnhancedThumbnailExtractor } from '@/lib/enhancedThumbnailExtractor';
 import { DirectThumbnailExtractor } from '@/lib/directThumbnailExtractor';
+import { getProxiedImageUrl } from '@/lib/imageProxy';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -764,7 +765,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                     </div>
                     <div className="relative w-full h-32 bg-slate-900 rounded overflow-hidden">
                       <img 
-                        src={formData.thumbnail_url} 
+                        src={getProxiedImageUrl(formData.thumbnail_url)} 
                         alt="Trend thumbnail"
                         className="w-full h-full object-cover"
                         onError={(e) => {

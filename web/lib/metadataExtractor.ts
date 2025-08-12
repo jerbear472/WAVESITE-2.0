@@ -1,6 +1,8 @@
 // Clean MetadataExtractor without excessive logging that interferes with login
 // Replace web/lib/metadataExtractor.ts with this version
 
+import { TikTokDirectExtractor } from './tiktokDirectExtractor';
+
 interface PostMetadata {
   creator_handle?: string;
   creator_name?: string;
@@ -63,14 +65,29 @@ export class MetadataExtractor {
   
   private static async extractTikTokMetadata(url: string, basicData: ExtractedData): Promise<ExtractedData> {
     try {
-      // Extract video ID and username from URL
+      // Use direct extraction since oEmbed API is currently broken
+      const directMetadata = TikTokDirectExtractor.extract(url);
+      
+      if (directMetadata.creator_handle) {
+        return {
+          platform: 'tiktok',
+          metadata: {
+            ...basicData.metadata,
+            creator_handle: directMetadata.creator_handle,
+            creator_name: directMetadata.creator_name || directMetadata.creator_handle,
+            thumbnail_url: directMetadata.thumbnail_url,
+            posted_at: directMetadata.posted_at
+          },
+          title: `TikTok Video by ${directMetadata.creator_handle}`,
+          description: basicData.description || `TikTok video from ${directMetadata.creator_handle}`
+        };
+      }
+      
+      // Fallback to trying oEmbed API (though it's currently broken)
       const videoIdMatch = url.match(/video\/(\d+)/);
       const videoId = videoIdMatch ? videoIdMatch[1] : null;
-      const usernameMatch = url.match(/@([^\/\?]+)/);
-      const username = usernameMatch ? usernameMatch[1] : null;
       
-      // Try to use TikTok's oEmbed API
-      if (videoId) {
+      if (videoId && false) { // Disabled oEmbed for now
         const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
         const proxyUrl = `/api/proxy?url=${encodeURIComponent(oembedUrl)}`;
         
@@ -121,41 +138,10 @@ export class MetadataExtractor {
             title: caption.substring(0, 50) || 'TikTok Video',
             description: data.title || basicData.description
           };
-        } else {
-          // oEmbed failed, use fallback data
-          console.log('TikTok oEmbed failed, using fallback');
-          if (username) {
-            return {
-              platform: 'tiktok',
-              metadata: {
-                ...basicData.metadata,
-                creator_handle: `@${username}`,
-                creator_name: username,
-                // Generate a thumbnail URL based on video ID (this might work for some videos)
-                thumbnail_url: videoId ? `https://p16-sign.tiktokcdn.com/obj/${videoId}~c5_720x720.jpeg` : undefined,
-                posted_at: this.estimateTikTokPostDate(videoId)
-              },
-              title: `TikTok Video by @${username}`,
-              description: basicData.description || `TikTok video from @${username}`
-            };
-          }
         }
       }
     } catch (error) {
       console.error('TikTok metadata extraction error:', error);
-      // Return fallback data if we at least have username
-      if (username) {
-        return {
-          platform: 'tiktok',
-          metadata: {
-            ...basicData.metadata,
-            creator_handle: `@${username}`,
-            creator_name: username
-          },
-          title: `TikTok Video by @${username}`,
-          description: basicData.description || `TikTok video from @${username}`
-        };
-      }
     }
     
     return basicData;
