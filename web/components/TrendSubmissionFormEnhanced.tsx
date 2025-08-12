@@ -3,14 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { MetadataExtractor } from '@/lib/metadataExtractor';
-import { SimpleMetadataExtractor } from '@/lib/metadataExtractorSimple';
-import { EnhancedThumbnailExtractor } from '@/lib/enhancedThumbnailExtractor';
-import { DirectThumbnailExtractor } from '@/lib/directThumbnailExtractor';
-import { ImprovedMetadataExtractor } from '@/lib/improvedMetadataExtractor';
-import { VercelSafeMetadataExtractor } from '@/lib/vercelSafeMetadataExtractor';
-import { EnhancedVercelSafeThumbnailExtractor } from '@/lib/enhancedVercelSafeThumbnailExtractor';
-import { getProxiedImageUrl } from '@/lib/imageProxy';
+import { SimpleThumbnailExtractor } from '@/lib/simpleThumbnailExtractor';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -198,22 +191,6 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     }
   }, [initialUrl]);
 
-  // Manual thumbnail test function
-  const testThumbnailExtraction = async (url: string) => {
-    console.log('🧪 TESTING THUMBNAIL EXTRACTION FOR:', url);
-    
-    // Direct extraction test
-    const directThumbnail = DirectThumbnailExtractor.extractThumbnail(url);
-    console.log('Direct extraction result:', directThumbnail);
-    
-    if (directThumbnail) {
-      setFormData(prev => ({
-        ...prev,
-        thumbnail_url: directThumbnail
-      }));
-      console.log('✅ Thumbnail set manually:', directThumbnail);
-    }
-  };
 
   // Auto-detect platform from URL
   const detectPlatform = (url: string): string => {
@@ -225,102 +202,44 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     return 'other';
   };
 
-  // Extract metadata when URL changes
+  // Extract metadata when URL changes - SIMPLE VERSION
   const extractMetadata = async (url: string) => {
     if (!url) return;
     
     setExtractingMetadata(true);
     setError('');
     try {
-      // Use Enhanced Vercel-safe extractor for better thumbnail extraction
-      console.log('Extracting metadata for URL:', url);
-      const metadata = await EnhancedVercelSafeThumbnailExtractor.extractFromUrl(url);
-      console.log('Extracted metadata:', metadata);
+      // Use simple extractor that just works
+      console.log('Extracting thumbnail for:', url);
+      const metadata = await SimpleThumbnailExtractor.extractFromUrl(url);
+      console.log('Extracted:', metadata);
       
-      // Log thumbnail URL specifically
-      if (metadata.thumbnail_url) {
-        console.log('✅ Thumbnail URL extracted:', metadata.thumbnail_url);
-      } else {
-        console.log('⚠️ No thumbnail URL extracted');
-      }
-      
-      // Auto-detect platform immediately
+      // Auto-detect platform
       const detectedPlatform = detectPlatform(url);
       
-      setFormData(prev => {
-        // CRITICAL: Log what we're about to set
-        console.log('📝 [FORM] Setting formData with metadata:', {
-          received_thumbnail: metadata.thumbnail_url,
-          previous_thumbnail: prev.thumbnail_url,
-          will_set_thumbnail: metadata.thumbnail_url || prev.thumbnail_url || ''
-        });
+      setFormData(prev => ({
+        ...prev,
+        platform: detectedPlatform,
+        thumbnail_url: metadata.thumbnail_url || '',
+        creator_handle: metadata.creator_handle || prev.creator_handle,
         
-        const updates = {
-          ...prev,
-          platform: detectedPlatform,
-          creator_handle: metadata.creator_handle || prev.creator_handle,
-          creator_name: metadata.creator_name || prev.creator_name,
-          post_caption: metadata.post_caption || prev.post_caption,
-          likes_count: metadata.likes_count !== undefined ? metadata.likes_count : prev.likes_count,
-          comments_count: metadata.comments_count !== undefined ? metadata.comments_count : prev.comments_count,
-          views_count: metadata.views_count !== undefined ? metadata.views_count : prev.views_count,
-          hashtags: metadata.hashtags || prev.hashtags || [],
-          thumbnail_url: metadata.thumbnail_url || prev.thumbnail_url || '',
-          
-          // Don't auto-capture trend name - user must input this
-          trendName: prev.trendName || '',
-          
-          // Auto-populate explanation if we have a caption
-          explanation: prev.explanation || (metadata.post_caption ? `Trending ${detectedPlatform} content: "${metadata.post_caption.substring(0, 100)}${metadata.post_caption.length > 100 ? '...' : ''}"` : ''),
-          
-          // Smart category detection based on hashtags and content
-          categories: prev.categories.length > 0 ? prev.categories : detectCategories(metadata.hashtags || [], metadata.post_caption || ''),
-          
-          // Smart age range detection based on platform
-          ageRanges: prev.ageRanges.length > 0 ? prev.ageRanges : detectAgeRange(detectedPlatform),
-          
-          // Auto-populate moods based on content
-          moods: prev.moods.length > 0 ? prev.moods : detectMoods(metadata.hashtags || [], metadata.post_caption || ''),
-          
-          // Auto-populate motivation based on platform and content
-          motivation: prev.motivation || detectMotivation(detectedPlatform, metadata.post_caption || ''),
-          
-          // Auto-set platform-specific defaults
-          firstSeen: prev.firstSeen || (metadata.posted_at ? formatDateForFirstSeen(metadata.posted_at) : 'today'),
-          otherPlatforms: prev.otherPlatforms.length > 0 ? prev.otherPlatforms : suggestOtherPlatforms(detectedPlatform)
-        };
-        
-        // If we got engagement data, pre-fill the required engagement counts
-        if (metadata.likes_count !== undefined || metadata.views_count !== undefined) {
-          updates.likes_count = metadata.likes_count || 0;
-          updates.views_count = metadata.views_count || 0;
-          updates.comments_count = metadata.comments_count || 0;
-          
-          // Auto-detect spread speed based on engagement
-          if (!prev.spreadSpeed) {
-            updates.spreadSpeed = detectSpreadSpeed(metadata.likes_count || 0, metadata.views_count || 0, detectedPlatform);
-          }
-        }
-        
-        // Debug logging for thumbnail
-        console.log('📸 FormData Update - Thumbnail URL:', updates.thumbnail_url);
-        
-        return updates;
-      });
+        // Auto-set some defaults based on platform
+        ageRanges: prev.ageRanges.length > 0 ? prev.ageRanges : detectAgeRange(detectedPlatform),
+        categories: prev.categories.length > 0 ? prev.categories : ['Lifestyle'],
+        moods: prev.moods.length > 0 ? prev.moods : [],
+        spreadSpeed: prev.spreadSpeed || 'emerging',
+        motivation: prev.motivation || 'Social connection and entertainment',
+        firstSeen: prev.firstSeen || 'today',
+        otherPlatforms: prev.otherPlatforms.length > 0 ? prev.otherPlatforms : suggestOtherPlatforms(detectedPlatform)
+      }));
       
-      // Show success message with more detail
-      const capturedItems = [];
-      if (metadata.creator_handle || metadata.creator_name) capturedItems.push('creator');
-      if (metadata.post_caption) capturedItems.push('caption');
-      if (metadata.likes_count !== undefined) capturedItems.push('engagement');
-      if (metadata.hashtags?.length) capturedItems.push('hashtags');
-      
-      if (capturedItems.length > 0) {
-        setSuccess(`✨ Auto-captured: ${capturedItems.join(', ')} from ${detectedPlatform}`);
-        setTimeout(() => setSuccess(''), 4000);
+      if (metadata.thumbnail_url) {
+        console.log('✅ Got thumbnail:', metadata.thumbnail_url);
+        setSuccess('✨ Thumbnail captured!');
+        setTimeout(() => setSuccess(''), 3000);
       }
     } catch (error) {
-      console.error('Metadata extraction failed:', error);
+      console.error('Extraction failed:', error);
     } finally {
       setExtractingMetadata(false);
     }
