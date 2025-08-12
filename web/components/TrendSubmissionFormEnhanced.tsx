@@ -247,6 +247,13 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
       const detectedPlatform = detectPlatform(url);
       
       setFormData(prev => {
+        // CRITICAL: Log what we're about to set
+        console.log('📝 [FORM] Setting formData with metadata:', {
+          received_thumbnail: metadata.thumbnail_url,
+          previous_thumbnail: prev.thumbnail_url,
+          will_set_thumbnail: metadata.thumbnail_url || prev.thumbnail_url || ''
+        });
+        
         const updates = {
           ...prev,
           platform: detectedPlatform,

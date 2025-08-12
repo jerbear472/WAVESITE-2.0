@@ -84,12 +84,22 @@ export class VercelSafeMetadataExtractor {
     if (videoIdMatch) {
       const videoId = videoIdMatch[1];
       
-      // Use the most common TikTok CDN pattern
-      // This works most of the time without verification
-      metadata.thumbnail_url = `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}`;
+      // Multiple TikTok CDN patterns to try (in order of likelihood to work)
+      const patterns = [
+        `https://p16-sign.tiktokcdn.com/obj/${videoId}~c5_300x400.jpeg`,
+        `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}`,
+        `https://p77-sign-sg.tiktokcdn.com/${videoId}~tplv-obj.image`,
+        `https://p16.tiktokcdn.com/obj/${videoId}`,
+      ];
       
-      console.log('📹 TikTok video ID:', videoId);
-      console.log('🖼️ TikTok thumbnail:', metadata.thumbnail_url);
+      // Use the first pattern as default (most likely to work)
+      metadata.thumbnail_url = patterns[0];
+      
+      console.log('📹 [VERCEL-SAFE] TikTok video ID:', videoId);
+      console.log('🖼️ [VERCEL-SAFE] TikTok thumbnail:', metadata.thumbnail_url);
+      console.log('🔗 [VERCEL-SAFE] Alternative patterns available:', patterns.length);
+    } else {
+      console.log('⚠️ [VERCEL-SAFE] No video ID found in TikTok URL:', url);
     }
 
     return metadata;

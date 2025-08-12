@@ -91,9 +91,14 @@ export default function WorkingSubmitPage() {
     }
 
     setSubmitting(true);
-    console.log('Submitting trend data:', trendData);
-    console.log('Thumbnail URL:', trendData.thumbnail_url);
-    console.log('Wave Score:', trendData.wave_score);
+    console.log('📤 [SUBMIT PAGE] Submitting trend data:', trendData);
+    console.log('🖼️ [SUBMIT PAGE] Thumbnail URL received:', trendData.thumbnail_url);
+    console.log('📊 [SUBMIT PAGE] Wave Score:', trendData.wave_score);
+    
+    // CRITICAL DEBUG: Check thumbnail before submission
+    if (!trendData.thumbnail_url || trendData.thumbnail_url === '') {
+      console.error('⚠️ [SUBMIT PAGE] WARNING: No thumbnail URL in trendData!');
+    }
 
     try {
       // Handle screenshot upload first if present
@@ -173,8 +178,16 @@ export default function WorkingSubmitPage() {
       if (trendData.hashtags?.length) submission.hashtags = trendData.hashtags;
       
       // CRITICAL: Always set thumbnail_url, handle both undefined and empty string
-      submission.thumbnail_url = (trendData.thumbnail_url && trendData.thumbnail_url.trim()) ? trendData.thumbnail_url.trim() : null;
-      console.log('Setting thumbnail_url to:', submission.thumbnail_url);
+      const thumbnailToSave = (trendData.thumbnail_url && trendData.thumbnail_url.trim()) ? trendData.thumbnail_url.trim() : null;
+      submission.thumbnail_url = thumbnailToSave;
+      
+      console.log('🎯 [SUBMIT PAGE] Final thumbnail_url to save:', submission.thumbnail_url);
+      console.log('📦 [SUBMIT PAGE] Full submission object keys:', Object.keys(submission));
+      
+      // Double-check the thumbnail is in the submission
+      if (!submission.thumbnail_url) {
+        console.error('❌ [SUBMIT PAGE] CRITICAL: No thumbnail in final submission object!');
+      }
       
       if (trendData.posted_at) submission.posted_at = trendData.posted_at;
       
