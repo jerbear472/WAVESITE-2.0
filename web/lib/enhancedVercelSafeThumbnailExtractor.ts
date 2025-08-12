@@ -1,6 +1,8 @@
 // Enhanced Vercel-safe metadata extractor with improved thumbnail extraction
 // Fixes issues with TikTok thumbnails not working properly
 
+import { TikTokOembedExtractor } from './tiktokOembedExtractor';
+
 interface PostMetadata {
   creator_handle?: string;
   creator_name?: string;
@@ -41,16 +43,6 @@ export class EnhancedVercelSafeThumbnailExtractor {
         metadata = { platform: 'other' };
     }
 
-    // Try API endpoint for TikTok if direct extraction failed
-    if (platform === 'tiktok' && !metadata.thumbnail_url) {
-      try {
-        const apiMetadata = await this.fetchTikTokMetadataViaAPI(url);
-        metadata = { ...metadata, ...apiMetadata };
-      } catch (error) {
-        console.log('API extraction failed, using fallback');
-      }
-    }
-
     console.log('✅ Final metadata:', {
       platform: metadata.platform,
       thumbnail_url: metadata.thumbnail_url,
@@ -70,8 +62,10 @@ export class EnhancedVercelSafeThumbnailExtractor {
     return 'other';
   }
 
-  // Enhanced TikTok metadata extraction with multiple fallback patterns
+  // Enhanced TikTok metadata extraction
   private static async extractTikTokMetadata(url: string): Promise<PostMetadata> {
+    console.log('🎬 [ENHANCED] Extracting TikTok metadata for:', url);
+    
     const metadata: PostMetadata = { platform: 'tiktok' };
 
     // Extract username
@@ -81,98 +75,32 @@ export class EnhancedVercelSafeThumbnailExtractor {
       metadata.creator_name = usernameMatch[1];
     }
 
-    // Extract video ID and generate thumbnail
+    // Extract video ID
     const videoIdMatch = url.match(/video\/(\d+)/);
     if (videoIdMatch) {
       const videoId = videoIdMatch[1];
       
-      // Try to generate a working thumbnail URL
-      // Use a more reliable pattern that doesn't depend on CDN specifics
-      const thumbnailPatterns = [
-        // Direct video frame extraction (most reliable)
-        `https://www.tiktok.com/api/img/?vid=${videoId}&image=1`,
-        // Standard CDN patterns
-        `https://p16-sign-sg.tiktokcdn.com/tos-maliva-p-0068/${videoId}~tplv-dmt-logom:tos-maliva-p-0000/image.jpeg`,
-        `https://p16-sign.tiktokcdn-us.com/tos-useast5-p-0068-tx/${videoId}~tplv-photomode-image.jpeg`,
-        // Fallback patterns
-        `https://p77-sign-sg.tiktokcdn.com/${videoId}~tplv-obj.image`,
-        `https://p16.tiktokcdn.com/obj/${videoId}`,
-      ];
-      
-      // Try each pattern and use the first one that might work
-      // For now, we'll use the first pattern as default
-      metadata.thumbnail_url = thumbnailPatterns[0];
+      // Use our proxy endpoint to get the thumbnail
+      // This will attempt oEmbed first, then fall back to CDN patterns
+      metadata.thumbnail_url = `/api/tiktok-thumbnail?id=${videoId}`;
       
       console.log('📹 [ENHANCED] TikTok video ID:', videoId);
-      console.log('🖼️ [ENHANCED] TikTok thumbnail:', metadata.thumbnail_url);
-      
-      // Try to verify the thumbnail URL works (non-blocking)
-      this.verifyThumbnailUrl(metadata.thumbnail_url, thumbnailPatterns).then(workingUrl => {
-        if (workingUrl && workingUrl !== metadata.thumbnail_url) {
-          console.log('🔄 [ENHANCED] Found better thumbnail:', workingUrl);
-        }
-      });
+      console.log('🖼️ [ENHANCED] Using placeholder thumbnail (TikTok CDN restricted)');
+      console.log('💡 [ENHANCED] User can upload screenshot for actual thumbnail');
     } else {
       console.log('⚠️ [ENHANCED] No video ID found in TikTok URL:', url);
       
       // Try to extract from mobile share URLs or short URLs
       const shortIdMatch = url.match(/\/t\/([A-Za-z0-9]+)/);
       if (shortIdMatch) {
-        // For short URLs, we need to use a different approach
-        metadata.thumbnail_url = `https://www.tiktok.com/api/img/?itemId=${shortIdMatch[1]}`;
-        console.log('📱 [ENHANCED] Mobile/Short URL detected, using itemId:', shortIdMatch[1]);
+        metadata.thumbnail_url = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='400' height='400' fill='%23000'/%3E%3Ctext x='200' y='200' font-family='Arial' font-size='20' fill='%23ff0050' text-anchor='middle'%3ETikTok Short Link%3C/text%3E%3C/svg%3E`;
+        console.log('📱 [ENHANCED] Mobile/Short URL detected');
       }
     }
 
     return metadata;
   }
 
-  // Try to fetch TikTok metadata via API endpoint
-  private static async fetchTikTokMetadataViaAPI(url: string): Promise<Partial<PostMetadata>> {
-    try {
-      const response = await fetch('/api/tiktok-thumbnail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          thumbnail_url: data.thumbnail_url,
-          creator_handle: data.creator_handle,
-          post_caption: data.post_caption
-        };
-      }
-    } catch (error) {
-      console.log('API fetch failed:', error);
-    }
-    return {};
-  }
-
-  // Verify thumbnail URL (non-blocking background check)
-  private static async verifyThumbnailUrl(primaryUrl: string, alternativeUrls: string[]): Promise<string | null> {
-    // First try the primary URL
-    try {
-      const response = await fetch(primaryUrl, { method: 'HEAD' });
-      if (response.ok) return primaryUrl;
-    } catch (error) {
-      console.log('Primary thumbnail URL failed:', primaryUrl);
-    }
-    
-    // Try alternatives
-    for (const url of alternativeUrls) {
-      if (url === primaryUrl) continue;
-      try {
-        const response = await fetch(url, { method: 'HEAD' });
-        if (response.ok) return url;
-      } catch (error) {
-        continue;
-      }
-    }
-    
-    return null;
-  }
 
   // Extract YouTube metadata - very reliable
   private static extractYouTubeMetadata(url: string): PostMetadata {
