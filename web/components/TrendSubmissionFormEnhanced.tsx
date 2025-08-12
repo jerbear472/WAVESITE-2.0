@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { SimpleThumbnailExtractor } from '@/lib/simpleThumbnailExtractor';
+import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -202,47 +202,41 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     return 'other';
   };
 
-  // Extract metadata when URL changes - SIMPLE VERSION
-  const extractMetadata = async (url: string) => {
+  // Extract metadata when URL changes - ULTRA SIMPLE VERSION
+  const extractMetadata = (url: string) => {
     if (!url) return;
     
     setExtractingMetadata(true);
     setError('');
-    try {
-      // Use simple extractor that just works
-      console.log('Extracting thumbnail for:', url);
-      const metadata = await SimpleThumbnailExtractor.extractFromUrl(url);
-      console.log('Extracted:', metadata);
+    
+    // Use ultra simple synchronous extractor
+    console.log('Extracting thumbnail for:', url);
+    const metadata = getUltraSimpleThumbnail(url);
+    console.log('Extracted:', metadata);
+    
+    setFormData(prev => ({
+      ...prev,
+      platform: metadata.platform || detectPlatform(url),
+      thumbnail_url: metadata.thumbnail_url || '',
+      creator_handle: metadata.creator_handle || prev.creator_handle,
       
-      // Auto-detect platform
-      const detectedPlatform = detectPlatform(url);
-      
-      setFormData(prev => ({
-        ...prev,
-        platform: detectedPlatform,
-        thumbnail_url: metadata.thumbnail_url || '',
-        creator_handle: metadata.creator_handle || prev.creator_handle,
-        
-        // Auto-set some defaults based on platform
-        ageRanges: prev.ageRanges.length > 0 ? prev.ageRanges : detectAgeRange(detectedPlatform),
-        categories: prev.categories.length > 0 ? prev.categories : ['Lifestyle'],
-        moods: prev.moods.length > 0 ? prev.moods : [],
-        spreadSpeed: prev.spreadSpeed || 'emerging',
-        motivation: prev.motivation || 'Social connection and entertainment',
-        firstSeen: prev.firstSeen || 'today',
-        otherPlatforms: prev.otherPlatforms.length > 0 ? prev.otherPlatforms : suggestOtherPlatforms(detectedPlatform)
-      }));
-      
-      if (metadata.thumbnail_url) {
-        console.log('✅ Got thumbnail:', metadata.thumbnail_url);
-        setSuccess('✨ Thumbnail captured!');
-        setTimeout(() => setSuccess(''), 3000);
-      }
-    } catch (error) {
-      console.error('Extraction failed:', error);
-    } finally {
-      setExtractingMetadata(false);
+      // Auto-set some defaults based on platform
+      ageRanges: prev.ageRanges.length > 0 ? prev.ageRanges : detectAgeRange(metadata.platform || 'other'),
+      categories: prev.categories.length > 0 ? prev.categories : ['Lifestyle'],
+      moods: prev.moods.length > 0 ? prev.moods : [],
+      spreadSpeed: prev.spreadSpeed || 'emerging',
+      motivation: prev.motivation || 'Social connection and entertainment',
+      firstSeen: prev.firstSeen || 'today',
+      otherPlatforms: prev.otherPlatforms.length > 0 ? prev.otherPlatforms : suggestOtherPlatforms(metadata.platform || 'other')
+    }));
+    
+    if (metadata.thumbnail_url) {
+      console.log('✅ Got thumbnail:', metadata.thumbnail_url);
+      setSuccess('✨ Thumbnail captured!');
+      setTimeout(() => setSuccess(''), 3000);
     }
+    
+    setExtractingMetadata(false);
   };
 
   // Helper functions for smart auto-population
@@ -456,7 +450,17 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     
     try {
       console.log('📤 Calling onSubmit with form data');
-      await onSubmit(formData);
+      
+      // Add a timeout to prevent infinite hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Submission timed out after 10 seconds')), 10000)
+      );
+      
+      await Promise.race([
+        onSubmit(formData),
+        timeoutPromise
+      ]);
+      
       console.log('✅ onSubmit completed successfully');
       setSuccess('Trend submitted successfully! 🎉');
       setTimeout(() => onClose(), 3000);

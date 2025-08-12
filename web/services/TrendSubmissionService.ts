@@ -261,11 +261,17 @@ export class TrendSubmissionService {
     this.submissionState.startSubmission(userId, submissionId);
 
     try {
-      // Step 1: Parallel duplicate check and metadata extraction
-      const [duplicateResult, metadataResult] = await Promise.allSettled([
-        this.checkDuplicate(trendData.url, userId),
-        this.extractMetadata(trendData.url)
-      ]);
+      // Step 1: Skip metadata extraction if we already have it from the form
+      const skipMetadataExtraction = trendData.thumbnail_url || trendData.platform;
+      
+      const promises = [this.checkDuplicate(trendData.url, userId)];
+      if (!skipMetadataExtraction) {
+        promises.push(this.extractMetadata(trendData.url));
+      }
+      
+      const results = await Promise.allSettled(promises);
+      const duplicateResult = results[0];
+      const metadataResult = skipMetadataExtraction ? null : results[1];
 
       // Handle duplicate check result
       if (duplicateResult.status === 'fulfilled' && duplicateResult.value.isDuplicate) {
@@ -278,9 +284,16 @@ export class TrendSubmissionService {
 
       // Handle metadata (optional - don't fail if metadata extraction fails)
       let metadata = {};
-      if (metadataResult.status === 'fulfilled') {
+      if (metadataResult && metadataResult.status === 'fulfilled') {
         metadata = metadataResult.value;
         console.log('✅ Metadata extracted successfully');
+      } else if (skipMetadataExtraction) {
+        console.log('✅ Using metadata from form');
+        metadata = {
+          thumbnail_url: trendData.thumbnail_url,
+          platform: trendData.platform,
+          creator_handle: trendData.creator_handle
+        };
       } else {
         console.log('⚠️ Metadata extraction failed, continuing without it');
       }
@@ -329,33 +342,43 @@ export class TrendSubmissionService {
   }
 
   private async checkDuplicate(url: string, userId: string): Promise<{ isDuplicate: boolean; message?: string }> {
-    return this.duplicateBreaker.execute(async () => {
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Duplicate check timeout')), 5000)
-      );
+    try {
+      return await this.duplicateBreaker.execute(async () => {
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Duplicate check timeout')), 3000)
+        );
 
-      const result = await Promise.race([
-        TrendDuplicateChecker.checkDuplicateUrl(url, userId),
-        timeout
-      ]) as any;
+        const result = await Promise.race([
+          TrendDuplicateChecker.checkDuplicateUrl(url, userId),
+          timeout
+        ]) as any;
 
-      return result;
-    });
+        return result;
+      });
+    } catch (error) {
+      console.log('Duplicate check failed, continuing anyway:', error);
+      return { isDuplicate: false }; // Don't block submission on duplicate check failure
+    }
   }
 
   private async extractMetadata(url: string): Promise<any> {
-    return this.metadataBreaker.execute(async () => {
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Metadata extraction timeout')), 8000)
-      );
+    try {
+      return await this.metadataBreaker.execute(async () => {
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Metadata extraction timeout')), 3000)
+        );
 
-      const metadata = await Promise.race([
-        MetadataExtractor.extractFromUrl(url),
-        timeout
-      ]);
+        const metadata = await Promise.race([
+          MetadataExtractor.extractFromUrl(url),
+          timeout
+        ]);
 
-      return metadata;
-    });
+        return metadata;
+      });
+    } catch (error) {
+      console.log('Metadata extraction failed, returning empty:', error);
+      return {}; // Don't block submission on metadata extraction failure
+    }
   }
 
   private async uploadImage(file: File): Promise<{ success: boolean; url?: string }> {
