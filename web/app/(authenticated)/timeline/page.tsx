@@ -1221,7 +1221,7 @@ export default function Timeline() {
                                               {(trend.thumbnail_url || trend.screenshot_url) ? (
                                                 <div className="relative h-32 overflow-hidden">
                                                   <img 
-                                                    src={trend.thumbnail_url || trend.screenshot_url || ''}
+                                                    src={getProxiedImageUrl(trend.thumbnail_url || trend.screenshot_url || '')}
                                                     alt="Trend"
                                                     className="w-full h-full object-cover"
                                                   />
