@@ -2,19 +2,25 @@
 
 import { useState } from 'react';
 import { ImprovedMetadataExtractor } from '@/lib/improvedMetadataExtractor';
+import { VercelSafeMetadataExtractor } from '@/lib/vercelSafeMetadataExtractor';
 
 export default function TestExtractionPage() {
   const [url, setUrl] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const testExtraction = async () => {
+  const testExtraction = async (useVercelSafe = true) => {
     if (!url) return;
     
     setLoading(true);
     try {
       console.log('Testing extraction for:', url);
-      const metadata = await ImprovedMetadataExtractor.extractFromUrl(url);
+      console.log('Using:', useVercelSafe ? 'VercelSafeMetadataExtractor' : 'ImprovedMetadataExtractor');
+      
+      const metadata = useVercelSafe 
+        ? await VercelSafeMetadataExtractor.extractFromUrl(url)
+        : await ImprovedMetadataExtractor.extractFromUrl(url);
+        
       console.log('Extraction result:', metadata);
       setResult(metadata);
     } catch (error) {
@@ -50,11 +56,19 @@ export default function TestExtractionPage() {
           
           <div className="flex gap-2 mb-4">
             <button
-              onClick={testExtraction}
+              onClick={() => testExtraction(true)}
               disabled={loading || !url}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
             >
-              {loading ? 'Testing...' : 'Test Extraction'}
+              {loading ? 'Testing...' : 'Test Vercel-Safe'}
+            </button>
+            
+            <button
+              onClick={() => testExtraction(false)}
+              disabled={loading || !url}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+            >
+              {loading ? 'Testing...' : 'Test Improved'}
             </button>
             
             {testUrls.map((testUrl, i) => (
