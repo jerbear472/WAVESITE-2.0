@@ -11,6 +11,7 @@ import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { formatEarnings, getEarningStatusDisplay } from '@/lib/EARNINGS_STANDARD';
+import { getProxiedImageUrl } from '@/lib/imageProxy';
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,
@@ -694,7 +695,7 @@ export default function Timeline() {
                           {(trend.thumbnail_url || trend.screenshot_url || trend.post_url) ? (
                             <>
                               <img 
-                                src={trend.thumbnail_url || trend.screenshot_url || ''}
+                                src={getProxiedImageUrl(trend.thumbnail_url || trend.screenshot_url)}
                                 alt="Trend"
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 onError={(e) => {
