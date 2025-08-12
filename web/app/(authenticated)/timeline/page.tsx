@@ -1115,22 +1115,17 @@ export default function Timeline() {
             {/* Timeline View - Horizontal scrolling */}
             {viewMode === 'timeline' && (
               <div className="relative">
-                {/* Timeline Container */}
-                <div className="relative overflow-hidden">
-                  {/* Scroll Indicators */}
-                  <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-gray-900 to-transparent z-20 pointer-events-none" />
-                  <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-gray-900 to-transparent z-20 pointer-events-none" />
-                  
-                  {/* Timeline Header with Instructions */}
-                  <div className="mb-4 text-center">
-                    <p className="text-sm text-gray-400">← Scroll left to go back in time • Present is on the right →</p>
-                  </div>
+                {/* Timeline Header with Instructions */}
+                <div className="mb-6 text-center">
+                  <p className="text-sm text-gray-400">← Scroll horizontally to navigate through time →</p>
+                  <p className="text-xs text-gray-500 mt-1">Most recent on the right, older trends on the left</p>
+                </div>
 
-                  {/* Horizontal Scrollable Timeline */}
-                  <div className="overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-                    <div className="relative min-w-max px-8">
-                      {/* Timeline Line */}
-                      <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-purple-600/20 via-blue-600/40 to-blue-600 transform -translate-y-1/2" />
+                {/* Timeline Container */}
+                <div className="relative">
+                  {/* Horizontal Scrollable Area */}
+                  <div className="overflow-x-auto pb-4" style={{ scrollBehavior: 'smooth' }}>
+                    <div className="relative inline-flex items-start gap-8 px-8 py-12 min-w-full">
                       
                       {/* Group trends by date */}
                       {(() => {
@@ -1144,13 +1139,16 @@ export default function Timeline() {
                           return acc;
                         }, {} as Record<string, typeof filteredTrends>);
 
-                        // Sort dates (newest first for right-to-left time flow)
+                        // Sort dates (oldest first for left-to-right chronological order)
                         const sortedDates = Object.keys(groupedByDate).sort((a, b) => 
-                          new Date(b).getTime() - new Date(a).getTime()
+                          new Date(a).getTime() - new Date(b).getTime()
                         );
 
                         return (
-                          <div className="flex items-center gap-12 py-8">
+                          <>
+                            {/* Timeline Line - positioned behind cards */}
+                            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-600/30 via-blue-600/50 to-blue-600 transform -translate-y-1/2" />
+                            
                             {sortedDates.map((dateKey, dateIndex) => {
                               const dateTrends = groupedByDate[dateKey];
                               const date = new Date(dateKey);
@@ -1159,225 +1157,182 @@ export default function Timeline() {
                                 new Date(Date.now() - 86400000).toDateString();
                               
                               return (
-                                <div key={dateKey} className="relative">
-                                  {/* Date Marker */}
-                                  <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                                    <div className="text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1 rounded-full">
-                                      {isToday ? 'Today' : 
-                                       isYesterday ? 'Yesterday' :
-                                       date.toLocaleDateString('en-US', { 
-                                         month: 'short', 
-                                         day: 'numeric',
-                                         year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-                                       })}
+                                <div key={dateKey} className="relative flex-shrink-0">
+                                  {/* Date Column */}
+                                  <div className="relative">
+                                    {/* Date Label */}
+                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                                      <div className="text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1 rounded-full whitespace-nowrap">
+                                        {isToday ? 'Today' : 
+                                         isYesterday ? 'Yesterday' :
+                                         date.toLocaleDateString('en-US', { 
+                                           month: 'short', 
+                                           day: 'numeric',
+                                           year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                                         })}
+                                      </div>
                                     </div>
-                                  </div>
 
-                                  {/* Date Node on Timeline */}
-                                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                                    <div className="w-4 h-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full ring-4 ring-gray-900" />
-                                  </div>
+                                    {/* Date Node on Timeline */}
+                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                                      <div className="w-3 h-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full ring-2 ring-gray-900" />
+                                    </div>
 
-                                  {/* Trends for this date (stacked if multiple) */}
-                                  <div className={`flex ${dateTrends.length > 1 ? 'flex-col gap-4' : ''} items-center`}>
-                                    {dateTrends.map((trend, trendIndex) => (
-                                      <motion.div
-                                        key={trend.id}
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ 
-                                          delay: dateIndex * 0.1 + trendIndex * 0.05,
-                                          type: "spring",
-                                          stiffness: 200
-                                        }}
-                                        className={`relative ${
-                                          trendIndex % 2 === 0 ? 'mt-20' : '-mt-20'
-                                        } ${dateTrends.length === 1 ? '' : trendIndex === 0 ? 'mb-2' : 'mt-2'}`}
-                                      >
-                                        {/* Connection Line to Timeline */}
-                                        <div className={`absolute left-1/2 transform -translate-x-1/2 w-0.5 bg-gradient-to-b ${
-                                          trendIndex % 2 === 0 
-                                            ? 'top-full h-20 from-transparent to-gray-600' 
-                                            : 'bottom-full h-20 from-gray-600 to-transparent'
-                                        }`} />
+                                    {/* Trends Stack for this date */}
+                                    <div className="flex flex-col gap-4 pt-4">
+                                      {dateTrends.map((trend, trendIndex) => (
+                                        <motion.div
+                                          key={trend.id}
+                                          initial={{ opacity: 0, y: 20 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ 
+                                            delay: dateIndex * 0.05 + trendIndex * 0.03,
+                                            duration: 0.3
+                                          }}
+                                          className="relative"
+                                        >
+                                          {/* Connection Line to Timeline */}
+                                          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 w-px h-8 bg-gray-600/50" 
+                                               style={{ 
+                                                 height: `${Math.abs((trendIndex - (dateTrends.length - 1) / 2) * 120 + 40)}px`,
+                                                 top: trendIndex < dateTrends.length / 2 ? '50%' : 'auto',
+                                                 bottom: trendIndex >= dateTrends.length / 2 ? '50%' : 'auto'
+                                               }} />
 
-                                        {/* Trend Card */}
-                                        <div className="group cursor-pointer">
-                                          <motion.div
-                                            whileHover={{ scale: 1.05, y: -5 }}
-                                            className="relative w-80 bg-gray-900/90 backdrop-blur-md rounded-xl border border-gray-800 overflow-hidden hover:border-gray-600 transition-all duration-300 shadow-xl hover:shadow-2xl"
-                                          >
-                                            {/* Status Badge */}
-                                            <div className="absolute top-3 right-3 z-10">
-                                              <div className={`flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold shadow-lg`}>
-                                                {getStatusIcon(trend.status)}
-                                                <span className="capitalize">{trend.status}</span>
+                                          {/* Trend Card */}
+                                          <div className="group cursor-pointer"
+                                               style={{ 
+                                                 marginTop: trendIndex === 0 ? '60px' : '0',
+                                                 transform: `translateY(${(trendIndex - (dateTrends.length - 1) / 2) * 120}px)`
+                                               }}>
+                                            <motion.div
+                                              whileHover={{ scale: 1.02 }}
+                                              className="relative w-72 bg-gray-900/95 backdrop-blur-sm rounded-xl border border-gray-700 overflow-hidden hover:border-gray-500 transition-all duration-200 shadow-lg"
+                                            >
+                                              {/* Status Badge */}
+                                              <div className="absolute top-2 right-2 z-10">
+                                                <div className={`flex items-center gap-1 px-2 py-1 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold`}>
+                                                  {getStatusIcon(trend.status)}
+                                                  <span className="capitalize">{trend.status}</span>
+                                                </div>
                                               </div>
-                                            </div>
 
-                                            {/* Thumbnail */}
-                                            {(trend.thumbnail_url || trend.screenshot_url) ? (
-                                              <div className="relative h-40 overflow-hidden">
-                                                <img 
-                                                  src={trend.thumbnail_url || trend.screenshot_url || ''}
-                                                  alt="Trend"
-                                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
-                                                
-                                                {/* Category Badge on Image */}
-                                                <div className="absolute bottom-3 left-3">
-                                                  <div className="flex items-center gap-1 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full text-white text-xs">
-                                                    <span className="text-base">{getCategoryEmoji(trend.category)}</span>
-                                                    <span>{trend.category.replace(/_/g, ' ')}</span>
+                                              {/* Thumbnail */}
+                                              {(trend.thumbnail_url || trend.screenshot_url) ? (
+                                                <div className="relative h-32 overflow-hidden">
+                                                  <img 
+                                                    src={trend.thumbnail_url || trend.screenshot_url || ''}
+                                                    alt="Trend"
+                                                    className="w-full h-full object-cover"
+                                                  />
+                                                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
+                                                  
+                                                  {/* Category Badge */}
+                                                  <div className="absolute bottom-2 left-2">
+                                                    <div className="flex items-center gap-1 px-2 py-1 bg-black/50 backdrop-blur-sm rounded-full text-white text-xs">
+                                                      <span>{getCategoryEmoji(trend.category)}</span>
+                                                      <span>{trend.category.replace(/_/g, ' ')}</span>
+                                                    </div>
                                                   </div>
-                                                </div>
 
-                                                {/* External Link */}
-                                                {trend.post_url && (
-                                                  <a 
-                                                    href={trend.post_url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="absolute top-3 left-3 p-2 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-black/70 transition-all"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
-                                                    <ExternalLinkIcon className="w-4 h-4" />
-                                                  </a>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <div className="h-40 bg-gradient-to-br from-blue-900/30 to-purple-900/30 flex items-center justify-center">
-                                                <div className="text-center">
-                                                  <span className="text-4xl">{getCategoryEmoji(trend.category)}</span>
-                                                  <p className="text-xs text-gray-400 mt-2">{trend.category.replace(/_/g, ' ')}</p>
-                                                </div>
-                                              </div>
-                                            )}
-
-                                            {/* Content */}
-                                            <div className="p-4">
-                                              {/* Title */}
-                                              <h3 className="text-sm font-semibold text-white mb-2 line-clamp-2">
-                                                {trend.evidence?.title || trend.description.split('\n')[0]}
-                                              </h3>
-
-                                              {/* Creator */}
-                                              {(trend.creator_handle || trend.creator_name) && (
-                                                <div className="flex items-center gap-2 mb-3">
-                                                  <UserIcon className="w-3 h-3 text-gray-400" />
-                                                  {trend.creator_handle && trend.evidence?.platform ? (
+                                                  {/* External Link */}
+                                                  {trend.post_url && (
                                                     <a 
-                                                      href={getCreatorProfileUrl(trend.evidence.platform, trend.creator_handle)}
+                                                      href={trend.post_url}
                                                       target="_blank"
                                                       rel="noopener noreferrer"
-                                                      className="text-xs text-gray-400 hover:text-blue-400 transition-colors"
+                                                      className="absolute top-2 left-2 p-1.5 bg-black/50 backdrop-blur-sm rounded-full text-white hover:bg-black/70 transition-all"
                                                       onClick={(e) => e.stopPropagation()}
                                                     >
-                                                      {trend.creator_handle}
+                                                      <ExternalLinkIcon className="w-3 h-3" />
                                                     </a>
-                                                  ) : (
-                                                    <span className="text-xs text-gray-400">
-                                                      {trend.creator_handle || trend.creator_name}
-                                                    </span>
                                                   )}
                                                 </div>
-                                              )}
-
-                                              {/* Time */}
-                                              <div className="flex items-center gap-1 mb-3">
-                                                <ClockIcon className="w-3 h-3 text-gray-500" />
-                                                <span className="text-xs text-gray-500">
-                                                  {new Date(trend.created_at).toLocaleTimeString('en-US', { 
-                                                    hour: 'numeric', 
-                                                    minute: '2-digit',
-                                                    hour12: true 
-                                                  })}
-                                                </span>
-                                              </div>
-
-                                              {/* Engagement Stats (compact) */}
-                                              {(trend.likes_count > 0 || trend.views_count > 0) && (
-                                                <div className="flex items-center gap-3 mb-3">
-                                                  {trend.likes_count > 0 && (
-                                                    <div className="flex items-center gap-1">
-                                                      <HeartIcon className="w-3 h-3 text-red-400" />
-                                                      <span className="text-xs text-gray-400">{formatEngagement(trend.likes_count)}</span>
-                                                    </div>
-                                                  )}
-                                                  {trend.views_count > 0 && (
-                                                    <div className="flex items-center gap-1">
-                                                      <EyeIcon className="w-3 h-3 text-purple-400" />
-                                                      <span className="text-xs text-gray-400">{formatEngagement(trend.views_count)}</span>
-                                                    </div>
-                                                  )}
-                                                  {trend.comments_count > 0 && (
-                                                    <div className="flex items-center gap-1">
-                                                      <MessageCircleIcon className="w-3 h-3 text-blue-400" />
-                                                      <span className="text-xs text-gray-400">{formatEngagement(trend.comments_count)}</span>
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              )}
-
-                                              {/* Wave Score & Velocity */}
-                                              <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-1">
-                                                  <BarChartIcon className="w-3 h-3 text-yellow-400" />
-                                                  <span className="text-xs text-gray-400">Score: {trend.wave_score || 50}</span>
-                                                </div>
-                                                <div className={`text-xs font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
-                                                  {getVelocityDisplay(getTrendVelocity(trend)).text}
-                                                </div>
-                                              </div>
-
-                                              {/* Earnings if applicable */}
-                                              {trend.bounty_amount > 0 && (
-                                                <div className="mt-3 pt-3 border-t border-gray-800">
-                                                  <div className={`flex items-center justify-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                                    trend.bounty_paid 
-                                                      ? 'bg-green-500/20 text-green-400' 
-                                                      : 'bg-yellow-500/20 text-yellow-400'
-                                                  }`}>
-                                                    <DollarSignIcon className="w-3 h-3" />
-                                                    <span>{formatEarnings(trend.bounty_amount)}</span>
-                                                    {trend.bounty_paid && <span>• Paid</span>}
+                                              ) : (
+                                                <div className="h-32 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                                                  <div className="text-center">
+                                                    <span className="text-3xl">{getCategoryEmoji(trend.category)}</span>
+                                                    <p className="text-xs text-gray-400 mt-1">{trend.category.replace(/_/g, ' ')}</p>
                                                   </div>
                                                 </div>
                                               )}
-                                            </div>
-                                          </motion.div>
-                                        </div>
-                                      </motion.div>
-                                    ))}
+
+                                              {/* Content */}
+                                              <div className="p-3">
+                                                {/* Title */}
+                                                <h3 className="text-sm font-semibold text-white mb-2 line-clamp-1">
+                                                  {trend.evidence?.title || trend.description.split('\n')[0]}
+                                                </h3>
+
+                                                {/* Creator & Time */}
+                                                <div className="flex items-center justify-between mb-2 text-xs text-gray-400">
+                                                  {(trend.creator_handle || trend.creator_name) && (
+                                                    <div className="flex items-center gap-1">
+                                                      <UserIcon className="w-3 h-3" />
+                                                      <span className="truncate max-w-[120px]">
+                                                        {trend.creator_handle || trend.creator_name}
+                                                      </span>
+                                                    </div>
+                                                  )}
+                                                  <div className="flex items-center gap-1">
+                                                    <ClockIcon className="w-3 h-3" />
+                                                    <span>
+                                                      {new Date(trend.created_at).toLocaleTimeString('en-US', { 
+                                                        hour: 'numeric', 
+                                                        minute: '2-digit',
+                                                        hour12: true 
+                                                      })}
+                                                    </span>
+                                                  </div>
+                                                </div>
+
+                                                {/* Engagement Stats */}
+                                                {(trend.likes_count > 0 || trend.views_count > 0) && (
+                                                  <div className="flex items-center gap-2 mb-2 text-xs text-gray-400">
+                                                    {trend.likes_count > 0 && (
+                                                      <div className="flex items-center gap-0.5">
+                                                        <HeartIcon className="w-3 h-3 text-red-400" />
+                                                        <span>{formatEngagement(trend.likes_count)}</span>
+                                                      </div>
+                                                    )}
+                                                    {trend.views_count > 0 && (
+                                                      <div className="flex items-center gap-0.5">
+                                                        <EyeIcon className="w-3 h-3 text-purple-400" />
+                                                        <span>{formatEngagement(trend.views_count)}</span>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+
+                                                {/* Wave Score */}
+                                                <div className="flex items-center justify-between text-xs">
+                                                  <div className="flex items-center gap-1 text-gray-400">
+                                                    <BarChartIcon className="w-3 h-3 text-yellow-400" />
+                                                    <span>Score: {trend.wave_score || 50}</span>
+                                                  </div>
+                                                  {trend.bounty_amount > 0 && (
+                                                    <div className={`px-2 py-0.5 rounded-full ${
+                                                      trend.bounty_paid 
+                                                        ? 'bg-green-500/20 text-green-400' 
+                                                        : 'bg-yellow-500/20 text-yellow-400'
+                                                    }`}>
+                                                      {formatEarnings(trend.bounty_amount)}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </motion.div>
+                                          </div>
+                                        </motion.div>
+                                      ))}
+                                    </div>
                                   </div>
                                 </div>
                               );
                             })}
-
-                            {/* Timeline End Markers */}
-                            <div className="relative">
-                              <div className="absolute top-1/2 left-0 transform -translate-y-1/2">
-                                <div className="px-4 py-2 bg-gradient-to-r from-purple-600/20 to-purple-600/10 rounded-full">
-                                  <span className="text-sm text-purple-400 font-medium">← Past</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                          </>
                         );
                       })()}
-                    </div>
-                  </div>
-
-                  {/* Legend */}
-                  <div className="mt-6 flex items-center justify-center gap-6 text-xs text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full" />
-                      <span>Date Marker</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-12 h-0.5 bg-gradient-to-r from-purple-600/20 to-blue-600" />
-                      <span>Time Flow</span>
                     </div>
                   </div>
                 </div>
