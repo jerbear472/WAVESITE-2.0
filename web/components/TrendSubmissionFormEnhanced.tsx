@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { SimpleThumbnailExtractor } from '@/lib/simpleThumbnailExtractor';
+import { getProxiedImageUrl } from '@/lib/imageProxy';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
