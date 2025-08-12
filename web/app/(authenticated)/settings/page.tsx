@@ -316,7 +316,13 @@ export default function SettingsPage() {
           upsert: true
         });
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        // Check if it's a bucket not found error
+        if (uploadError.message?.includes('bucket') || uploadError.message?.includes('not found')) {
+          throw new Error('Avatar storage not configured. Please contact support.');
+        }
+        throw uploadError;
+      }
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
