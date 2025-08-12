@@ -878,26 +878,6 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                 />
               </div>
 
-              {/* Thumbnail Preview (auto-extracted) */}
-              {formData.thumbnail_url && !imagePreview && (
-                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-                  <div className="flex items-start gap-3">
-                    <CheckIcon className="w-5 h-5 text-green-400 mt-1" />
-                    <div className="flex-1">
-                      <p className="text-green-400 font-medium mb-2">✅ Thumbnail captured automatically</p>
-                      <img 
-                        src={formData.thumbnail_url} 
-                        alt="Captured thumbnail" 
-                        className="w-full max-w-xs h-48 object-cover rounded-lg border border-green-500/30"
-                        onError={(e) => {
-                          console.log('Thumbnail failed to load:', formData.thumbnail_url);
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Screenshot Preview (manual upload) */}
               {imagePreview && (
