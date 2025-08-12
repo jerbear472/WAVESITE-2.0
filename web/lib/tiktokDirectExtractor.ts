@@ -1,5 +1,7 @@
 // Direct TikTok metadata extractor that doesn't rely on oEmbed API
-// Uses pattern matching and known TikTok CDN patterns
+// Uses pattern matching and fallback thumbnails
+
+import { generateFallbackThumbnailServer } from './thumbnailFallback';
 
 interface TikTokMetadata {
   creator_handle?: string;
@@ -19,6 +21,8 @@ export class TikTokDirectExtractor {
     if (usernameMatch) {
       metadata.creator_handle = `@${usernameMatch[1]}`;
       metadata.creator_name = usernameMatch[1];
+      // Store for thumbnail generation
+      this.lastExtractedUsername = usernameMatch[1];
     }
     
     // Extract video ID
@@ -26,8 +30,7 @@ export class TikTokDirectExtractor {
     if (videoIdMatch) {
       metadata.video_id = videoIdMatch[1];
       
-      // Generate thumbnail URL using known CDN patterns
-      // These patterns work without authentication
+      // Generate fallback thumbnail with username
       metadata.thumbnail_url = this.generateThumbnailUrl(videoIdMatch[1]);
       
       // Estimate post date from video ID (first 10 digits are often timestamp)
@@ -38,21 +41,13 @@ export class TikTokDirectExtractor {
   }
   
   private static generateThumbnailUrl(videoId: string): string {
-    // TikTok thumbnail patterns that often work
-    // We'll use a pattern that's most likely to work
-    const patterns = [
-      // Pattern 1: Direct object storage (often works)
-      `https://p16-sign.tiktokcdn.com/obj/tos-maliva-p-0068/${videoId}~noop.image`,
-      // Pattern 2: Alternative CDN
-      `https://p77-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/${videoId}~noop.image`,
-      // Pattern 3: Thumbnail service
-      `https://p16-sign-sg.tiktokcdn.com/aweme/100x100/tos-alisg-p-0037/${videoId}.jpeg`,
-    ];
-    
-    // Return the first pattern as default
-    // In production, you might want to test which one works
-    return patterns[0];
+    // Since direct CDN access is blocked, generate a fallback thumbnail
+    // This will show a nice placeholder with TikTok branding
+    const username = this.lastExtractedUsername || 'TikTok';
+    return generateFallbackThumbnailServer('tiktok', username, videoId);
   }
+  
+  private static lastExtractedUsername?: string;
   
   private static estimatePostDate(videoId: string): string {
     try {

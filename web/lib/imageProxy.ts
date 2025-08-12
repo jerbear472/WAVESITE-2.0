@@ -9,13 +9,19 @@ export function getProxiedImageUrl(imageUrl: string | undefined | null): string 
     return imageUrl;
   }
   
+  // Handle special TikTok video URLs
+  if (imageUrl.startsWith('tiktok-video://')) {
+    const videoId = imageUrl.replace('tiktok-video://', '');
+    return `/api/tiktok-thumbnail?id=${videoId}`;
+  }
+  
   // Don't proxy YouTube images (they work fine with CORS)
   if (imageUrl.includes('ytimg.com') || imageUrl.includes('youtube.com/vi/')) {
     return imageUrl;
   }
   
   // Don't proxy if it's already proxied or a local URL
-  if (imageUrl.startsWith('/api/image-proxy') || imageUrl.startsWith('/')) {
+  if (imageUrl.startsWith('/api/image-proxy') || imageUrl.startsWith('/api/tiktok-thumbnail') || imageUrl.startsWith('/')) {
     return imageUrl;
   }
   
