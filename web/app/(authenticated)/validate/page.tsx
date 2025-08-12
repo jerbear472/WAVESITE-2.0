@@ -160,18 +160,37 @@ export default function ValidatePageFixed() {
       console.log('User email:', user.email);
 
       // Get already validated trends by this user
-      // Try trend_submission_id first, fall back to trend_id if it doesn't exist
-      const { data: validatedTrends, error: validationError } = await supabase
-        .from('trend_validations')
-        .select('trend_submission_id, trend_id')
-        .eq('validator_id', user.id);
+      // First, try to get the column structure to see what's available
+      let validatedIds: string[] = [];
+      
+      try {
+        // Try with trend_id first (most common in the schemas)
+        const { data: validatedTrends, error: validationError } = await supabase
+          .from('trend_validations')
+          .select('trend_id')
+          .eq('validator_id', user.id);
 
-      if (validationError) {
-        console.error('Error loading validated trends:', validationError);
+        if (validationError) {
+          // If trend_id doesn't exist, try trend_submission_id
+          console.log('Trying trend_submission_id column instead...');
+          const { data: altValidatedTrends, error: altError } = await supabase
+            .from('trend_validations')
+            .select('trend_submission_id')
+            .eq('validator_id', user.id);
+          
+          if (altError) {
+            console.error('Error loading validated trends:', altError);
+            setLastError('Unable to load your validation history. Some trends may appear that you\'ve already voted on.');
+          } else {
+            validatedIds = altValidatedTrends?.map(v => v.trend_submission_id).filter(id => id != null) || [];
+          }
+        } else {
+          validatedIds = validatedTrends?.map(v => v.trend_id).filter(id => id != null) || [];
+        }
+      } catch (error) {
+        console.error('Error querying validation history:', error);
         setLastError('Unable to load your validation history. Some trends may appear that you\'ve already voted on.');
       }
-
-      const validatedIds = validatedTrends?.map(v => v.trend_submission_id || v.trend_id).filter(id => id != null) || [];
       console.log('Already validated trend IDs:', validatedIds.length);
       console.log('Validated IDs:', validatedIds);
       

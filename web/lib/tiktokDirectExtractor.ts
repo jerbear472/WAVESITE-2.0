@@ -41,8 +41,7 @@ export class TikTokDirectExtractor {
   }
   
   private static generateThumbnailUrl(videoId: string): string {
-    // Use the exact pattern that worked in our test
-    // This CDN URL successfully returned thumbnails in testing
+    // Use the EXACT pattern that worked in our test
     return `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-obj.jpg`;
   }
   
@@ -65,7 +64,7 @@ export class TikTokDirectExtractor {
   static getDisplayThumbnail(url: string): string | undefined {
     const metadata = this.extract(url);
     if (metadata.video_id) {
-      // Use the same pattern that worked in our test
+      // Use the EXACT pattern that worked in our test
       return `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${metadata.video_id}~tplv-obj.jpg`;
     }
     return metadata.thumbnail_url;
