@@ -695,7 +695,7 @@ export default function Timeline() {
                           {(trend.thumbnail_url || trend.screenshot_url || trend.post_url) ? (
                             <>
                               <img 
-                                src={getProxiedImageUrl(trend.thumbnail_url || trend.screenshot_url)}
+                                src={trend.thumbnail_url || trend.screenshot_url || ''}
                                 alt="Trend"
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 onError={(e) => {
@@ -863,7 +863,7 @@ export default function Timeline() {
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-1">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span className="text-xs text-gray-400">Wave Score: {((trend.wave_score || trend.virality_prediction || 5) * 10)}/100</span>
+                                  <span className="text-xs text-gray-400">Wave Score: {trend.wave_score || 50}/100</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <span className={`text-xs font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
@@ -1048,7 +1048,7 @@ export default function Timeline() {
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-1 text-sm text-gray-400">
                                   <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                  <span>Wave Score: {((trend.wave_score || trend.virality_prediction || 5) * 10)}/100</span>
+                                  <span>Wave Score: {trend.wave_score || 50}/100</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
@@ -1249,7 +1249,7 @@ export default function Timeline() {
                                 <div className="flex items-center gap-3 mb-3 text-sm">
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                    <span>Wave Score: {((trend.wave_score || trend.virality_prediction || 5) * 10)}/100</span>
+                                    <span>Wave Score: {trend.wave_score || 50}/100</span>
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>

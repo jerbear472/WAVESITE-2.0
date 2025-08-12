@@ -192,9 +192,9 @@ export default function WorkingSubmitPage() {
       
       if (trendData.posted_at) submission.posted_at = trendData.posted_at;
       
-      // Add wave_score if available - convert percentage to 0-10 scale
+      // Add wave_score if available - keep as 0-100 scale
       if (trendData.wave_score !== undefined) {
-        submission.wave_score = Math.round(trendData.wave_score / 10); // Convert 0-100 to 0-10
+        submission.wave_score = trendData.wave_score; // Keep as 0-100
       }
 
       console.log('Final submission object:', submission);

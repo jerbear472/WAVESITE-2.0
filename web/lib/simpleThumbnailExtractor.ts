@@ -23,13 +23,14 @@ export class SimpleThumbnailExtractor {
         metadata.creator_handle = `@${usernameMatch[1]}`;
       }
       
-      // Extract video ID and use simple CDN pattern
+      // Extract video ID
       const videoIdMatch = url.match(/video\/(\d+)/);
       if (videoIdMatch) {
         const videoId = videoIdMatch[1];
-        // Use a working TikTok CDN pattern
-        metadata.thumbnail_url = `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-obj.jpg`;
-        console.log('✅ TikTok thumbnail:', metadata.thumbnail_url);
+        // For TikTok, we'll use our API endpoint which handles the thumbnail extraction
+        // This avoids CORS issues with direct CDN access
+        metadata.thumbnail_url = `/api/tiktok-thumbnail?id=${videoId}`;
+        console.log('✅ TikTok thumbnail via API:', metadata.thumbnail_url);
       }
     }
     
