@@ -41,10 +41,9 @@ export class TikTokDirectExtractor {
   }
   
   private static generateThumbnailUrl(videoId: string): string {
-    // Since direct CDN access is blocked, generate a fallback thumbnail
-    // This will show a nice placeholder with TikTok branding
-    const username = this.lastExtractedUsername || 'TikTok';
-    return generateFallbackThumbnailServer('tiktok', username, videoId);
+    // Use the exact pattern that worked in our test
+    // This CDN URL successfully returned thumbnails in testing
+    return `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-obj.jpg`;
   }
   
   private static lastExtractedUsername?: string;
@@ -66,9 +65,8 @@ export class TikTokDirectExtractor {
   static getDisplayThumbnail(url: string): string | undefined {
     const metadata = this.extract(url);
     if (metadata.video_id) {
-      // Use a simpler pattern that's more likely to work for display
-      // This will be proxied through our image proxy to avoid CORS
-      return `https://www.tiktok.com/api/img/?itemId=${metadata.video_id}&location=0&aid=1988`;
+      // Use the same pattern that worked in our test
+      return `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${metadata.video_id}~tplv-obj.jpg`;
     }
     return metadata.thumbnail_url;
   }

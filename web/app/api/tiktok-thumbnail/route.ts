@@ -27,9 +27,11 @@ export async function POST(request: NextRequest) {
     const videoId = videoIdMatch[1];
     const username = usernameMatch ? usernameMatch[1] : null;
     
-    // List of thumbnail URL patterns to try
+    // List of thumbnail URL patterns to try (using the pattern that worked in our test)
     const thumbnailPatterns = [
-      // Most reliable patterns first
+      // This pattern worked in our test
+      `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-obj.jpg`,
+      // Other reliable patterns
       `https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/${videoId}~tplv-dmt-logom:tos-maliva-p-0000/image.jpeg`,
       `https://p16-sign.tiktokcdn-us.com/tos-useast5-p-0068-tx/${videoId}~tplv-photomode-image.jpeg`,
       `https://p77-sign-sg.tiktokcdn.com/${videoId}~tplv-obj.image`,
