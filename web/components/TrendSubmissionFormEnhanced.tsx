@@ -7,6 +7,7 @@ import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { SimpleMetadataExtractor } from '@/lib/metadataExtractorSimple';
 import { EnhancedThumbnailExtractor } from '@/lib/enhancedThumbnailExtractor';
 import { DirectThumbnailExtractor } from '@/lib/directThumbnailExtractor';
+import { ImprovedMetadataExtractor } from '@/lib/improvedMetadataExtractor';
 import { getProxiedImageUrl } from '@/lib/imageProxy';
 import { 
   Link as LinkIcon,
@@ -228,29 +229,16 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     setExtractingMetadata(true);
     setError('');
     try {
-      // Try the main extractor first
-      let metadata = await MetadataExtractor.extractFromUrl(url);
+      // Use the improved extractor which handles thumbnails better
+      console.log('Extracting metadata for URL:', url);
+      const metadata = await ImprovedMetadataExtractor.extractFromUrl(url);
+      console.log('Extracted metadata:', metadata);
       
-      // Try direct extraction first (most reliable for known patterns)
-      if (!metadata.thumbnail_url) {
-        console.log('No thumbnail from oEmbed, trying direct extraction');
-        const directThumbnail = DirectThumbnailExtractor.extractThumbnail(url);
-        if (directThumbnail) {
-          console.log('Got thumbnail via direct extraction:', directThumbnail);
-          metadata.thumbnail_url = directThumbnail;
-        } else {
-          // Try enhanced extraction with proxy
-          console.log('Direct extraction failed, trying enhanced extraction');
-          const thumbnailResult = await EnhancedThumbnailExtractor.getThumbnail(url);
-          if (thumbnailResult.thumbnail_url) {
-            console.log(`Got thumbnail via ${thumbnailResult.source} with ${thumbnailResult.confidence} confidence`);
-            metadata.thumbnail_url = thumbnailResult.thumbnail_url;
-          } else {
-            // Last resort: try simple extractor
-            const simpleMetadata = SimpleMetadataExtractor.extractFromUrl(url);
-            metadata = { ...metadata, ...simpleMetadata };
-          }
-        }
+      // Log thumbnail URL specifically
+      if (metadata.thumbnail_url) {
+        console.log('✅ Thumbnail URL extracted:', metadata.thumbnail_url);
+      } else {
+        console.log('⚠️ No thumbnail URL extracted');
       }
       
       // Auto-detect platform immediately
@@ -877,9 +865,31 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                 />
               </div>
 
-              {/* Screenshot Preview */}
+              {/* Thumbnail Preview (auto-extracted) */}
+              {formData.thumbnail_url && !imagePreview && (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                  <div className="flex items-start gap-3">
+                    <CheckIcon className="w-5 h-5 text-green-400 mt-1" />
+                    <div className="flex-1">
+                      <p className="text-green-400 font-medium mb-2">✅ Thumbnail captured automatically</p>
+                      <img 
+                        src={formData.thumbnail_url} 
+                        alt="Captured thumbnail" 
+                        className="w-full max-w-xs h-48 object-cover rounded-lg border border-green-500/30"
+                        onError={(e) => {
+                          console.log('Thumbnail failed to load:', formData.thumbnail_url);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Screenshot Preview (manual upload) */}
               {imagePreview && (
                 <div className="relative">
+                  <p className="text-blue-400 font-medium mb-2">📸 Manual screenshot uploaded</p>
                   <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
                   <button
                     type="button"
