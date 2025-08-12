@@ -1,6 +1,8 @@
 // Enhanced thumbnail extractor with multiple fallback strategies
 // Ensures we always get a thumbnail when possible
 
+import { TikTokThumbnailExtractor } from './tiktokThumbnailExtractor';
+
 interface ThumbnailResult {
   thumbnail_url?: string;
   source: 'oembed' | 'direct' | 'api' | 'pattern' | 'fallback' | 'none';
@@ -37,63 +39,29 @@ export class EnhancedThumbnailExtractor {
   }
   
   private static async getTikTokThumbnail(url: string): Promise<ThumbnailResult> {
-    // Strategy 1: Try oEmbed API first (most reliable when it works)
+    // Use the specialized TikTok extractor
     try {
-      const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
-      const response = await fetch(`/api/proxy?url=${encodeURIComponent(oembedUrl)}`);
+      const thumbnail = await TikTokThumbnailExtractor.extract(url);
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.thumbnail_url) {
-          console.log('TikTok thumbnail from oEmbed:', data.thumbnail_url);
-          return {
-            thumbnail_url: data.thumbnail_url,
-            source: 'oembed',
-            confidence: 'high'
-          };
-        }
+      if (thumbnail) {
+        // Determine confidence based on whether it came from oEmbed or pattern matching
+        const isOembed = thumbnail.includes('tiktokcdn-us') || thumbnail.includes('image_url');
+        
+        return {
+          thumbnail_url: thumbnail,
+          source: isOembed ? 'oembed' : 'pattern',
+          confidence: isOembed ? 'high' : 'medium'
+        };
       }
     } catch (error) {
-      console.log('TikTok oEmbed failed, trying fallback methods');
+      console.log('TikTok extraction failed:', error);
     }
     
-    // Strategy 2: Extract video ID and construct thumbnail URL
-    const videoIdMatch = url.match(/video\/(\d+)/);
-    if (videoIdMatch) {
-      const videoId = videoIdMatch[1];
-      
-      // Try multiple TikTok CDN patterns
-      const patterns = [
-        `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-noop.image`,
-        `https://p16-sign.tiktokcdn.com/obj/${videoId}~c5_720x720.jpeg`,
-        `https://p77-sign-sg.tiktokcdn.com/${videoId}~tplv-obj.image`,
-        `https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/${videoId}~tplv-dmt-logom:tos-maliva-i-0000.image`
-      ];
-      
-      // Test each pattern
-      for (const pattern of patterns) {
-        try {
-          const testResponse = await fetch(`/api/proxy?url=${encodeURIComponent(pattern)}`, {
-            method: 'HEAD'
-          }).catch(() => null);
-          
-          if (testResponse && testResponse.ok) {
-            console.log('TikTok thumbnail from pattern:', pattern);
-            return {
-              thumbnail_url: pattern,
-              source: 'pattern',
-              confidence: 'medium'
-            };
-          }
-        } catch {
-          // Continue to next pattern
-        }
-      }
-      
-      // Return the most likely pattern even if we can't verify it
-      console.log('TikTok thumbnail using unverified pattern');
+    // Fallback: Try quick extraction without verification
+    const quickThumbnail = TikTokThumbnailExtractor.extractQuick(url);
+    if (quickThumbnail) {
       return {
-        thumbnail_url: patterns[0],
+        thumbnail_url: quickThumbnail,
         source: 'pattern',
         confidence: 'low'
       };

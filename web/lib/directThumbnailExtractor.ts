@@ -1,6 +1,8 @@
 // Direct thumbnail extractor that uses known URL patterns
 // Works without proxy for better reliability
 
+import { TikTokThumbnailExtractor } from './tiktokThumbnailExtractor';
+
 export class DirectThumbnailExtractor {
   static extractThumbnail(url: string): string | null {
     if (!url) return null;
@@ -27,14 +29,12 @@ export class DirectThumbnailExtractor {
       }
     }
     
-    // TikTok - try to extract video ID
+    // TikTok - use specialized extractor
     if (url.includes('tiktok.com')) {
-      const videoIdMatch = url.match(/video\/(\d+)/);
-      if (videoIdMatch && videoIdMatch[1]) {
-        const videoId = videoIdMatch[1];
-        // Use a pattern that often works
-        const thumbnail = `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-noop.image`;
-        console.log('DirectExtractor: TikTok thumbnail (unverified):', thumbnail);
+      // Use quick extraction for immediate response
+      const thumbnail = TikTokThumbnailExtractor.extractQuick(url);
+      if (thumbnail) {
+        console.log('DirectExtractor: TikTok thumbnail (quick):', thumbnail);
         return thumbnail;
       }
     }
