@@ -544,7 +544,7 @@ export default function EnhancedVerify() {
                         <div
                           key={i}
                           className={`w-2 h-2 rounded-full ${
-                            i < Math.ceil(currentTrend.validation_difficulty * 5)
+                            i < Math.ceil((currentTrend.validation_difficulty || 0.5) * 5)
                               ? 'bg-yellow-400'
                               : 'bg-gray-600'
                           }`}

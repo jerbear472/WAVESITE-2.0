@@ -511,7 +511,7 @@ export default function VerifyWithTiers() {
                 <p className="text-responsive-xs text-gray-400 mt-1">Verified Today</p>
                 {stats.validation_streak > 0 && (
                   <div className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xs rounded-full px-2 py-1 flex items-center gap-1">
-                    <Zap className="w-3 h-3" />
+                    <ZapIcon className="w-3 h-3" />
                     {stats.validation_streak}
                   </div>
                 )}
@@ -585,7 +585,7 @@ export default function VerifyWithTiers() {
                           <div
                             key={i}
                             className={`w-2 h-2 rounded-full ${
-                              i < Math.ceil(currentTrend.validation_difficulty * 5)
+                              i < Math.ceil((currentTrend.validation_difficulty || 0.5) * 5)
                                 ? 'bg-yellow-400'
                                 : 'bg-gray-600'
                             }`}

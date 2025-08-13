@@ -108,7 +108,7 @@ export default function QualityControlVerifyPage() {
         id: 'accurate_description',
         label: 'Accurate Description',
         description: 'Description accurately represents the content',
-        met: trend.description && trend.description.length > 10
+        met: !!(trend.description && trend.description.length > 10)
       },
       {
         id: 'proper_category',
@@ -229,9 +229,9 @@ export default function QualityControlVerifyPage() {
 
       setStats({
         verified_today: validations?.length || 0,
-        earnings_today: parseFloat(((validations?.length || 0) * EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION).toFixed(2)),
+        earnings_today: parseFloat(((validations?.length || 0) * SUSTAINABLE_EARNINGS.base.validationVote).toFixed(2)),
         verified_total: allValidations?.length || 0,
-        earnings_total: parseFloat(((allValidations?.length || 0) * EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION).toFixed(2)),
+        earnings_total: parseFloat(((allValidations?.length || 0) * SUSTAINABLE_EARNINGS.base.validationVote).toFixed(2)),
         remaining_today: 100 - (validations?.length || 0),
         remaining_hour: Math.max(0, 20 - (validations?.length || 0)),
         quality_accuracy: accuracy
@@ -310,7 +310,7 @@ export default function QualityControlVerifyPage() {
         setConsecutiveApprovals(0);
       }
       
-      setSessionEarnings(prev => prev + EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION);
+      setSessionEarnings(prev => prev + SUSTAINABLE_EARNINGS.base.validationVote);
       setShowEarningsAnimation(true);
       setTimeout(() => setShowEarningsAnimation(false), 3000);
       
@@ -781,7 +781,7 @@ export default function QualityControlVerifyPage() {
           >
             <div className="bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2">
               <Sparkles className="w-5 h-5" />
-              <span className="font-medium">+${EARNINGS_CONFIG.VALIDATION_REWARDS.CORRECT_VALIDATION.toFixed(2)} Quality Review Complete!</span>
+              <span className="font-medium">+${SUSTAINABLE_EARNINGS.base.validationVote.toFixed(2)} Quality Review Complete!</span>
             </div>
           </motion.div>
         )}
