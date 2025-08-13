@@ -105,7 +105,7 @@ export default function TrendScreenshotUpload({ onClose, onSubmit }: TrendScreen
       
       setFormData(prev => ({
         ...prev,
-        platform: platform !== 'unknown' ? platform : prev.platform,
+        platform: platform || prev.platform,
         parsedData: {
           handle: extractedData.handle,
           likes: extractedData.likes,
