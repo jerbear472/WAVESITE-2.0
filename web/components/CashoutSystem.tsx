@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { UNIFIED_EARNINGS, formatEarnings } from '@/lib/UNIFIED_EARNINGS_CONFIG';
+import { SUSTAINABLE_EARNINGS, formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
 import { CheckCircle, AlertCircle, DollarSign, Clock, CreditCard, Send } from 'lucide-react';
 
 interface PaymentMethod {
@@ -135,7 +135,7 @@ export default function CashoutSystem() {
     }
 
     if (amount < method.minAmount) {
-      setError(`Minimum cashout for ${method.name} is ${formatEarnings(method.minAmount)}`);
+      setError(`Minimum cashout for ${method.name} is ${formatCurrency(method.minAmount)}`);
       return;
     }
 
@@ -146,7 +146,7 @@ export default function CashoutSystem() {
 
     const totalWithFee = amount + method.fee;
     if (totalWithFee > balance) {
-      setError(`Insufficient balance to cover fee of ${formatEarnings(method.fee)}`);
+      setError(`Insufficient balance to cover fee of ${formatCurrency(method.fee)}`);
       return;
     }
 
@@ -180,7 +180,7 @@ export default function CashoutSystem() {
 
       if (cashoutError) throw cashoutError;
 
-      setSuccess(`Cashout request for ${formatEarnings(amount)} submitted successfully!`);
+      setSuccess(`Cashout request for ${formatCurrency(amount)} submitted successfully!`);
       setCashoutAmount('');
       setPaymentDetails(prev => ({ ...prev, [detailsKey]: '' }));
       
@@ -227,21 +227,21 @@ export default function CashoutSystem() {
           <div className="bg-green-50 rounded-lg p-4">
             <p className="text-sm text-green-600 font-medium">Available Balance</p>
             <p className="text-2xl font-bold text-green-700">
-              {formatEarnings(availableBalance)}
+              {formatCurrency(availableBalance)}
             </p>
           </div>
           
           <div className="bg-yellow-50 rounded-lg p-4">
             <p className="text-sm text-yellow-600 font-medium">Pending Cashouts</p>
             <p className="text-2xl font-bold text-yellow-700">
-              {formatEarnings(pendingAmount)}
+              {formatCurrency(pendingAmount)}
             </p>
           </div>
           
           <div className="bg-blue-50 rounded-lg p-4">
             <p className="text-sm text-blue-600 font-medium">Total Balance</p>
             <p className="text-2xl font-bold text-blue-700">
-              {formatEarnings(balance)}
+              {formatCurrency(balance)}
             </p>
           </div>
         </div>
@@ -273,11 +273,11 @@ export default function CashoutSystem() {
                   {method.icon}
                   <span className="text-sm font-medium">{method.name}</span>
                   <span className="text-xs text-gray-500">
-                    Min: {formatEarnings(method.minAmount)}
+                    Min: {formatCurrency(method.minAmount)}
                   </span>
                   {method.fee > 0 && (
                     <span className="text-xs text-gray-500">
-                      Fee: {formatEarnings(method.fee)}
+                      Fee: {formatCurrency(method.fee)}
                     </span>
                   )}
                 </div>
@@ -332,9 +332,9 @@ export default function CashoutSystem() {
             />
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            Available: {formatEarnings(availableBalance)} | 
-            Min: {formatEarnings(selectedMethodDetails?.minAmount || 0)}
-            {selectedMethodDetails?.fee ? ` | Fee: ${formatEarnings(selectedMethodDetails.fee)}` : ''}
+            Available: {formatCurrency(availableBalance)} | 
+            Min: {formatCurrency(selectedMethodDetails?.minAmount || 0)}
+            {selectedMethodDetails?.fee ? ` | Fee: ${formatCurrency(selectedMethodDetails.fee)}` : ''}
           </p>
         </div>
 
@@ -387,7 +387,7 @@ export default function CashoutSystem() {
                     {getStatusIcon(request.status)}
                   </div>
                   <div>
-                    <p className="font-medium">{formatEarnings(request.amount)}</p>
+                    <p className="font-medium">{formatCurrency(request.amount)}</p>
                     <p className="text-sm text-gray-500">
                       {request.payment_method} • {new Date(request.created_at).toLocaleDateString()}
                     </p>
