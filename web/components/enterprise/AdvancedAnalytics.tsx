@@ -69,7 +69,7 @@ export function AdvancedAnalytics() {
 
   const generateTrendVelocityData = () => {
     const categories = ['Technology', 'Finance', 'Fashion', 'Entertainment', 'Health'];
-    const data = [];
+    const data: Array<{ date: string; velocity: number; category: string }> = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -85,7 +85,7 @@ export function AdvancedAnalytics() {
   };
 
   const generateSentimentData = () => {
-    const data = [];
+    const data: Array<{ date: string; positive: number; negative: number; neutral: number }> = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
