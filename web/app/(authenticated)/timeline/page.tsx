@@ -509,7 +509,7 @@ export default function Timeline() {
                   <DollarSignIcon className="w-4 h-4 text-green-400" />
                 </div>
                 <p className="text-2xl font-bold text-white">
-                  {formatEarnings(totalEarnings)}
+                  {formatCurrency(totalEarnings)}
                 </p>
               </motion.div>
 
@@ -896,7 +896,7 @@ export default function Timeline() {
                                     : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
                                   <DollarSignIcon className="w-3 h-3" />
-                                  <span>{formatEarnings(trend.bounty_amount || 0)}</span>
+                                  <span>{formatCurrency(trend.bounty_amount || 0)}</span>
                                 </div>
                               )}
                             </div>
@@ -1079,7 +1079,7 @@ export default function Timeline() {
                                     : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
                                   <DollarSignIcon className="w-4 h-4" />
-                                  <span>{formatEarnings(trend.bounty_amount || 0)}</span>
+                                  <span>{formatCurrency(trend.bounty_amount || 0)}</span>
                                 </div>
                               )}
                             </div>
@@ -1315,7 +1315,7 @@ export default function Timeline() {
                                                         ? 'bg-green-500/20 text-green-400' 
                                                         : 'bg-yellow-500/20 text-yellow-400'
                                                     }`}>
-                                                      {formatEarnings(trend.bounty_amount)}
+                                                      {formatCurrency(trend.bounty_amount)}
                                                     </div>
                                                   )}
                                                 </div>
