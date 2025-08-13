@@ -49,6 +49,29 @@ export default function AnalyticsDashboard() {
   const [earningsChart, setEarningsChart] = useState<ChartData>({ labels: [], values: [] });
   const [categoryChart, setCategoryChart] = useState<ChartData>({ labels: [], values: [] });
 
+  // Helper functions for tier display
+  const getTierColor = (tier: string): string => {
+    switch (tier?.toLowerCase()) {
+      case 'bronze': return '#CD7F32';
+      case 'silver': return '#C0C0C0';
+      case 'gold': return '#FFD700';
+      case 'platinum': return '#E5E4E2';
+      case 'diamond': return '#B9F2FF';
+      default: return '#6B7280';
+    }
+  };
+
+  const getTierEmoji = (tier: string): string => {
+    switch (tier?.toLowerCase()) {
+      case 'bronze': return '🥉';
+      case 'silver': return '🥈';
+      case 'gold': return '🥇';
+      case 'platinum': return '💎';
+      case 'diamond': return '💠';
+      default: return '⭐';
+    }
+  };
+
   useEffect(() => {
     loadDashboardData();
   }, [timeRange]);
