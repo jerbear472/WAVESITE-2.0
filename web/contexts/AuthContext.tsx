@@ -322,8 +322,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('Auth signup successful:', authData);
 
       // Check if email confirmation is required
-      const needsEmailConfirmation = !!(authData.user && !authData.session) || 
-                                      (authData.user && !authData.user.email_confirmed_at);
+      const needsEmailConfirmation: boolean = !!(authData.user && !authData.session) || 
+                                               !!(authData.user && !authData.user.email_confirmed_at);
 
       // If a session was created but email not confirmed, sign out to show confirmation message
       if (authData.session && !authData.user?.email_confirmed_at) {
