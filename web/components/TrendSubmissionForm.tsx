@@ -1056,12 +1056,12 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
                       {formData.post_caption && (
                         <p className="text-wave-300 text-sm mt-1">Caption: {formData.post_caption}</p>
                       )}
-                      {(formData.likes_count > 0 || formData.comments_count > 0 || formData.shares_count > 0 || formData.views_count > 0) && (
+                      {((formData.likes_count || 0) > 0 || (formData.comments_count || 0) > 0 || (formData.shares_count || 0) > 0 || (formData.views_count || 0) > 0) && (
                         <div className="flex gap-4 mt-2 text-sm text-wave-400">
-                          {formData.likes_count > 0 && <span>❤️ {formData.likes_count.toLocaleString()}</span>}
-                          {formData.comments_count > 0 && <span>💬 {formData.comments_count.toLocaleString()}</span>}
-                          {formData.shares_count > 0 && <span>🔄 {formData.shares_count.toLocaleString()}</span>}
-                          {formData.views_count > 0 && <span>👁️ {formData.views_count.toLocaleString()}</span>}
+                          {(formData.likes_count || 0) > 0 && <span>❤️ {formData.likes_count?.toLocaleString()}</span>}
+                          {(formData.comments_count || 0) > 0 && <span>💬 {formData.comments_count?.toLocaleString()}</span>}
+                          {(formData.shares_count || 0) > 0 && <span>🔄 {formData.shares_count?.toLocaleString()}</span>}
+                          {(formData.views_count || 0) > 0 && <span>👁️ {formData.views_count?.toLocaleString()}</span>}
                         </div>
                       )}
                       {formData.hashtags && formData.hashtags.length > 0 && (
