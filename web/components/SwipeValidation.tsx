@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { UnifiedValidationService } from '@/services/UnifiedValidationService';
-import { formatEarnings } from '@/lib/UNIFIED_EARNINGS_CONFIG';
+import { formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
 import { 
   Check, X, ChevronLeft, ChevronRight, TrendingUp, 
   Eye, Heart, MessageCircle, Share2, DollarSign,
@@ -121,7 +121,7 @@ export default function SwipeValidation() {
           validated: prev.validated + 1,
           approved: vote === 'approve' ? prev.approved + 1 : prev.approved,
           rejected: vote === 'reject' ? prev.rejected + 1 : prev.rejected,
-          earnings: prev.earnings + 0.10,
+          earnings: prev.earnings + 0.02,
           streak: prev.streak + 1,
         }));
 
@@ -150,7 +150,7 @@ export default function SwipeValidation() {
             validated: prev.validated + 1,
             approved: vote === 'approve' ? prev.approved + 1 : prev.approved,
             rejected: vote === 'reject' ? prev.rejected + 1 : prev.rejected,
-            earnings: prev.earnings + (result.earnings || 0.10),
+            earnings: prev.earnings + (result.earnings || 0.02),
             streak: prev.streak + 1,
           }));
 
@@ -186,7 +186,7 @@ export default function SwipeValidation() {
       if (results.successful > 0) {
         setStats(prev => ({
           ...prev,
-          earnings: prev.earnings + results.totalEarnings - (batch.length * 0.10), // Adjust for optimistic update
+          earnings: prev.earnings + results.totalEarnings - (batch.length * 0.02), // Adjust for optimistic update
         }));
       }
     } catch (error) {
@@ -268,7 +268,7 @@ export default function SwipeValidation() {
                 <DollarSign className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="font-medium">Earn $0.10 per validation</p>
+                <p className="font-medium">Earn $0.02 per validation</p>
                 <p className="text-sm text-gray-600">Accuracy affects your tier</p>
               </div>
             </div>
@@ -319,7 +319,7 @@ export default function SwipeValidation() {
             </div>
             <div className="pt-2 border-t">
               <p className="text-lg font-bold text-blue-600">
-                {formatEarnings(stats.earnings)} earned
+                {formatCurrency(stats.earnings)} earned
               </p>
             </div>
           </div>
@@ -378,7 +378,7 @@ export default function SwipeValidation() {
             <p className="text-xs text-gray-600">Rejected</p>
           </div>
           <div className="bg-blue-50 rounded-lg p-2">
-            <p className="text-lg font-bold text-blue-600">{formatEarnings(stats.earnings)}</p>
+            <p className="text-lg font-bold text-blue-600">{formatCurrency(stats.earnings)}</p>
             <p className="text-xs text-gray-600">Earned</p>
           </div>
           <div className="bg-yellow-50 rounded-lg p-2">

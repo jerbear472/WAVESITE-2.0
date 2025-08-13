@@ -4,12 +4,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X as XIcon, DollarSign as DollarSignIcon, AlertCircle as AlertCircleIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatCurrency } from '@/lib/formatters';
 import { 
-  EARNINGS_STANDARD,
-  formatEarnings,
-  canCashOut
-} from '@/lib/EARNINGS_STANDARD';
+  SUSTAINABLE_EARNINGS,
+  canCashOut,
+  formatCurrency
+} from '@/lib/SUSTAINABLE_EARNINGS';
 import SimpleLoader from '@/components/SimpleLoader';
 
 interface CashOutModalProps {
@@ -33,7 +32,7 @@ export default function CashOutModal({ isOpen, onClose, availableBalance, onSucc
     try {
       // Validate minimum cashout amount
       if (!canCashOut(availableBalance)) {
-        throw new Error(`Minimum cashout amount is ${formatEarnings(EARNINGS_STANDARD.LIMITS.MIN_CASHOUT_AMOUNT)}. You currently have ${formatEarnings(availableBalance)}.`);
+        throw new Error(`Minimum cashout amount is ${formatCurrency(SUSTAINABLE_EARNINGS.payment.minCashout)}. You currently have ${formatCurrency(availableBalance)}.`);
       }
 
       // Validate Venmo username

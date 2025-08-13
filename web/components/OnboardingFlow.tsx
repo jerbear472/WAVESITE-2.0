@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { UNIFIED_EARNINGS, formatEarnings } from '@/lib/UNIFIED_EARNINGS_CONFIG';
+import { SUSTAINABLE_EARNINGS, formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
 import {
   ChevronRight, ChevronLeft, Check, Star, TrendingUp,
   DollarSign, Users, Award, Zap, Smartphone, Globe,
@@ -44,7 +44,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-2xl">
             <h1 className="text-4xl font-bold mb-4">Get Paid to Spot Trends!</h1>
             <p className="text-xl opacity-90">
-              Join thousands earning ${UNIFIED_EARNINGS.base.trendSubmission}-${UNIFIED_EARNINGS.caps.maxPerSubmission} per trend
+              Join thousands earning ${SUSTAINABLE_EARNINGS.base.trendSubmission}-${SUSTAINABLE_EARNINGS.caps.maxPerSubmission} per trend
             </p>
           </div>
           
@@ -53,7 +53,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
               <DollarSign className="w-10 h-10 text-green-600 mb-3" />
               <h3 className="font-bold mb-2">Earn Real Money</h3>
               <p className="text-sm text-gray-600">
-                ${UNIFIED_EARNINGS.base.trendSubmission} base + bonuses up to ${UNIFIED_EARNINGS.caps.maxPerSubmission} per trend
+                ${SUSTAINABLE_EARNINGS.base.trendSubmission} base + bonuses up to ${SUSTAINABLE_EARNINGS.caps.maxPerSubmission} per trend
               </p>
             </div>
             <div className="bg-white p-6 rounded-xl border">
@@ -67,7 +67,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
               <Award className="w-10 h-10 text-purple-600 mb-3" />
               <h3 className="font-bold mb-2">Level Up</h3>
               <p className="text-sm text-gray-600">
-                Progress through tiers and earn up to 1.5x multipliers
+                Progress through tiers and earn up to 3x multipliers
               </p>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
                 </p>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-sm font-medium text-gray-700">You earn:</p>
-                  <p className="text-lg font-bold text-green-600">{formatEarnings(UNIFIED_EARNINGS.base.trendSubmission)} base</p>
+                  <p className="text-lg font-bold text-green-600">{formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission)} base</p>
                 </div>
               </div>
             </motion.div>
@@ -127,7 +127,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
                 </p>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-sm font-medium text-gray-700">Quality bonuses:</p>
-                  <p className="text-lg font-bold text-green-600">+{formatEarnings(0.70)} possible</p>
+                  <p className="text-lg font-bold text-green-600">+{formatCurrency(0.70)} possible</p>
                 </div>
               </div>
             </motion.div>
@@ -149,7 +149,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
                 </p>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-sm font-medium text-gray-700">Approval bonus:</p>
-                  <p className="text-lg font-bold text-green-600">+{formatEarnings(UNIFIED_EARNINGS.base.approvalBonus)}</p>
+                  <p className="text-lg font-bold text-green-600">+{formatCurrency(SUSTAINABLE_EARNINGS.base.approvalBonus)}</p>
                 </div>
               </div>
             </motion.div>
@@ -157,7 +157,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
 
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-800">
-              <strong>💡 Pro Tip:</strong> You can also earn {formatEarnings(UNIFIED_EARNINGS.base.validationVote)} for each trend you validate!
+              <strong>💡 Pro Tip:</strong> You can also earn {formatCurrency(SUSTAINABLE_EARNINGS.base.validationVote)} for each trend you validate!
             </p>
           </div>
         </div>
@@ -268,7 +268,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
           
           <div className="bg-green-50 p-4 rounded-lg">
             <p className="text-sm text-green-800">
-              <strong>💰 Multi-Platform Bonus:</strong> Submit trends from multiple platforms to earn +{formatEarnings(UNIFIED_EARNINGS.qualityBonuses.multiplePlatforms)} per trend!
+              <strong>💰 Multi-Platform Bonus:</strong> Submit trends from multiple platforms to earn +{formatCurrency(SUSTAINABLE_EARNINGS.qualityBonuses.multiplePlatforms)} per trend!
             </p>
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
           </p>
           
           <div className="space-y-3">
-            {UNIFIED_EARNINGS.paymentMethods.map(method => (
+            {SUSTAINABLE_EARNINGS.paymentMethods.map(method => (
               <button
                 key={method.id}
                 onClick={() => {
@@ -305,8 +305,8 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
                   <div>
                     <p className="font-medium text-lg">{method.name}</p>
                     <p className="text-sm text-gray-600">
-                      Min: {formatEarnings(method.minAmount)}
-                      {method.fee > 0 && ` • Fee: ${formatEarnings(method.fee)}`}
+                      Min: {formatCurrency(method.minAmount)}
+                      {method.fee > 0 && ` • Fee: ${formatCurrency(method.fee)}`}
                     </p>
                   </div>
                   {userPreferences.paymentMethod === method.id && (
@@ -345,13 +345,13 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
                 <div className="bg-blue-100 p-2 rounded-lg">
                   <span className="text-lg">1️⃣</span>
                 </div>
-                <p className="text-sm">Submit your first trend to earn ${UNIFIED_EARNINGS.base.trendSubmission}+</p>
+                <p className="text-sm">Submit your first trend to earn ${SUSTAINABLE_EARNINGS.base.trendSubmission}+</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="bg-blue-100 p-2 rounded-lg">
                   <span className="text-lg">2️⃣</span>
                 </div>
-                <p className="text-sm">Validate 10 trends to earn an extra ${(UNIFIED_EARNINGS.base.validationVote * 10).toFixed(2)}</p>
+                <p className="text-sm">Validate 10 trends to earn an extra ${(SUSTAINABLE_EARNINGS.base.validationVote * 10).toFixed(2)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="bg-blue-100 p-2 rounded-lg">

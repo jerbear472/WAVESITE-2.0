@@ -327,7 +327,7 @@ export default function WorkingSubmitPage() {
               <div>
                 <p className="text-white font-semibold">Trend submitted successfully!</p>
                 <p className="text-green-200 text-sm">
-                  Your submission is now in the verification queue. You earned {recentSubmission.formattedEarnings || '$1.00'}!
+                  Your submission is now in the verification queue. You earned {recentSubmission.formattedEarnings || '$0.25'}!
                 </p>
               </div>
             </div>
@@ -418,7 +418,7 @@ export default function WorkingSubmitPage() {
           <ol className="space-y-2 text-sm text-gray-300">
             <li>1. Submit trends you spot on social media</li>
             <li>2. Other users verify your submissions</li>
-            <li>3. Approved trends earn you $1.00 + bonuses (up to $3.00)</li>
+            <li>3. Approved trends earn you $0.25 + bonuses (up to $2.25 for masters)</li>
             <li>4. Verified trends feed into enterprise dashboard</li>
             <li>5. Track your performance in Timeline</li>
           </ol>

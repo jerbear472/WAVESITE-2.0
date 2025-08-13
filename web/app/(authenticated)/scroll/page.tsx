@@ -31,18 +31,18 @@ import TrendSubmissionFormMerged from '@/components/TrendSubmissionFormMerged';
 // import TrendSubmissionFormSimple from '@/components/TrendSubmissionFormSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import WaveLogo from '@/components/WaveLogo';
-import { formatCurrency } from '@/lib/formatters';
+// formatCurrency now comes from SUSTAINABLE_EARNINGS
 import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EarningsAnimation, useEarningsAnimation } from '@/components/EarningsAnimation';
 import { 
-  calculateTrendSubmissionEarnings,
-  getStreakMultiplier,
-  EARNINGS_STANDARD,
-  formatEarnings,
-  SpotterTier
-} from '@/lib/EARNINGS_STANDARD';
+  SUSTAINABLE_EARNINGS,
+  calculateTrendEarnings,
+  formatCurrency,
+  calculateUserTier,
+  type Tier
+} from '@/lib/SUSTAINABLE_EARNINGS';
 import { calculateQualityScore } from '@/lib/calculateQualityScore';
 
 // Primary platforms with better colors
@@ -118,7 +118,7 @@ export default function LegibleScrollPage() {
     if (currentStreak > 0 && lastSubmissionTime) {
       const updateStreakTimer = () => {
         const elapsed = Date.now() - lastSubmissionTime.getTime();
-        const remaining = Math.max(0, EARNINGS_STANDARD.LIMITS.STREAK_WINDOW_MINUTES * 60 * 1000 - elapsed);
+        const remaining = Math.max(0, 30 * 60 * 1000 - elapsed); // 30 minute window for streak
         
         if (remaining === 0) {
           // Streak expired
@@ -315,8 +315,12 @@ export default function LegibleScrollPage() {
           c.toLowerCase().includes('crypto')
         );
       
-      // Calculate payment using EARNINGS_STANDARD
-      const spotterTier = (user.spotter_tier || 'learning') as SpotterTier;
+      // Calculate payment using SUSTAINABLE_EARNINGS
+      const spotterTier = calculateUserTier({
+        trends_submitted: user.trends_submitted || 0,
+        approval_rate: user.approval_rate || 0.5,
+        quality_score: user.quality_score || 0.5
+      });
       const streakCount = isSessionActive ? currentStreak + 1 : 0;
       
       const earningsResult = calculateTrendSubmissionEarnings(
@@ -857,10 +861,10 @@ export default function LegibleScrollPage() {
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-3">
               <span className="text-gray-500">
-                Base: {formatCurrency(EARNINGS_STANDARD.BASE_RATES.TREND_SUBMISSION)} per trend
+                Base: {formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission)} per trend
               </span>
               <span className="text-blue-600">
-                Finance bonus: +{formatCurrency(EARNINGS_STANDARD.PERFORMANCE_BONUSES.FINANCE_TREND)}
+                Finance bonus: +{formatCurrency(SUSTAINABLE_EARNINGS.performanceBonuses.financeCategory)}
               </span>
               {streakMultiplier > 1.0 && (
                 <span className="text-orange-600">
@@ -885,7 +889,7 @@ export default function LegibleScrollPage() {
               </div>
             </div>
             <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-semibold">
-              +{formatCurrency(EARNINGS_STANDARD.PERFORMANCE_BONUSES.FINANCE_TREND)} bonus
+              +{formatCurrency(SUSTAINABLE_EARNINGS.performanceBonuses.financeCategory)} bonus
             </span>
           </div>
           

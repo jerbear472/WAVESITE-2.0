@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
+import { extractThumbnailWithFallbacks } from '@/lib/robustThumbnailExtractor';
 import { getProxiedImageUrl } from '@/lib/imageProxy';
 import { 
   Link as LinkIcon,
@@ -203,75 +203,55 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
     return 'other';
   };
 
-  // Extract metadata when URL changes - ENHANCED VERSION WITH API FALLBACK
+  // Extract metadata when URL changes - ROBUST VERSION WITH MULTIPLE FALLBACKS
   const extractMetadata = async (url: string) => {
     if (!url) return;
     
     setExtractingMetadata(true);
     setError('');
     
-    // Use ultra simple synchronous extractor (now returns proxied URLs for TikTok)
-    console.log('Extracting thumbnail for:', url);
-    const metadata = getUltraSimpleThumbnail(url);
-    console.log('Initial extraction:', metadata);
+    console.log('🔍 Extracting thumbnail for:', url);
     
-    // For TikTok, if we didn't get a thumbnail, try the API route
-    if (url.includes('tiktok.com') && !metadata.thumbnail_url) {
-      console.log('TikTok URL without thumbnail, trying API route...');
-      try {
-        const response = await fetch('/api/tiktok-thumbnail', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        
-        if (response.ok) {
-          const apiData = await response.json();
-          console.log('API response:', apiData);
-          
-          // Update metadata with API results
-          if (apiData.thumbnail_url) {
-            // Use proxied URL to avoid CORS issues
-            metadata.thumbnail_url = `/api/proxy-image?url=${encodeURIComponent(apiData.thumbnail_url)}`;
-            console.log('Using API thumbnail (proxied):', metadata.thumbnail_url);
-          }
-          if (apiData.creator_handle) {
-            metadata.creator_handle = apiData.creator_handle;
-          }
-          if (apiData.creator_name) {
-            metadata.creator_name = apiData.creator_name;
-          }
-        }
-      } catch (error) {
-        console.log('API fallback failed:', error);
-      }
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      platform: metadata.platform || detectPlatform(url),
-      thumbnail_url: metadata.thumbnail_url || '',
-      creator_handle: metadata.creator_handle || prev.creator_handle,
+    try {
+      // Use robust extractor with multiple fallback methods
+      const metadata = await extractThumbnailWithFallbacks(url);
+      console.log('📸 Extraction result:', metadata);
       
-      // Auto-set some defaults based on platform
-      ageRanges: prev.ageRanges.length > 0 ? prev.ageRanges : detectAgeRange(metadata.platform || 'other'),
-      categories: prev.categories.length > 0 ? prev.categories : ['Lifestyle'],
-      moods: prev.moods.length > 0 ? prev.moods : [],
-      spreadSpeed: prev.spreadSpeed || 'emerging',
-      motivation: prev.motivation || 'Social connection and entertainment',
-      firstSeen: prev.firstSeen || 'today',
-      otherPlatforms: prev.otherPlatforms.length > 0 ? prev.otherPlatforms : suggestOtherPlatforms(metadata.platform || 'other')
-    }));
-    
-    if (metadata.thumbnail_url) {
-      console.log('✅ Got thumbnail:', metadata.thumbnail_url);
-      setSuccess('✨ Thumbnail captured!');
-      setTimeout(() => setSuccess(''), 3000);
-    } else {
-      console.log('⚠️ No thumbnail extracted for URL:', url);
+      if (!metadata.success) {
+        console.log('⚠️ Thumbnail extraction failed');
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        platform: metadata.platform || detectPlatform(url),
+        thumbnail_url: metadata.thumbnail_url || '',
+        creator_handle: metadata.creator_handle || prev.creator_handle,
+        creator_name: metadata.creator_name || prev.creator_name,
+      
+        // Auto-set some defaults based on platform
+        ageRanges: prev.ageRanges.length > 0 ? prev.ageRanges : detectAgeRange(metadata.platform || 'other'),
+        categories: prev.categories.length > 0 ? prev.categories : ['Lifestyle'],
+        moods: prev.moods.length > 0 ? prev.moods : [],
+        spreadSpeed: prev.spreadSpeed || 'emerging',
+        motivation: prev.motivation || 'Social connection and entertainment',
+        firstSeen: prev.firstSeen || 'today',
+        otherPlatforms: prev.otherPlatforms.length > 0 ? prev.otherPlatforms : suggestOtherPlatforms(metadata.platform || 'other')
+      }));
+      
+      if (metadata.thumbnail_url) {
+        console.log('✅ Got thumbnail:', metadata.thumbnail_url);
+        console.log('📌 Method used:', metadata.method);
+        setSuccess('✨ Thumbnail captured!');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        console.log('⚠️ No thumbnail extracted for URL:', url);
+      }
+    } catch (error) {
+      console.error('❌ Error extracting metadata:', error);
+      setError('Failed to extract metadata from URL');
+    } finally {
+      setExtractingMetadata(false);
     }
-    
-    setExtractingMetadata(false);
   };
 
   // Helper functions for smart auto-population

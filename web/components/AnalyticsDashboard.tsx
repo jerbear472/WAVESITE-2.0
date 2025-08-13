@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { formatEarnings, getTierColor, getTierEmoji } from '@/lib/UNIFIED_EARNINGS_CONFIG';
+import { formatCurrency, calculateUserTier } from '@/lib/SUSTAINABLE_EARNINGS';
 import {
   TrendingUp, TrendingDown, DollarSign, Award, Target,
   Clock, Calendar, BarChart3, PieChart, Activity,
@@ -290,7 +290,7 @@ export default function AnalyticsDashboard() {
               {formatGrowth(stats.daily_earnings_growth)}
             </span>
           </div>
-          <p className="text-2xl font-bold">{formatEarnings(stats.current_balance)}</p>
+          <p className="text-2xl font-bold">{formatCurrency(stats.current_balance)}</p>
           <p className="text-sm text-gray-600">Current Balance</p>
         </div>
 
@@ -304,7 +304,7 @@ export default function AnalyticsDashboard() {
               {formatGrowth(stats.weekly_earnings_growth)}
             </span>
           </div>
-          <p className="text-2xl font-bold">{formatEarnings(stats.total_earned)}</p>
+          <p className="text-2xl font-bold">{formatCurrency(stats.total_earned)}</p>
           <p className="text-sm text-gray-600">Total Earned</p>
         </div>
 
@@ -372,13 +372,13 @@ export default function AnalyticsDashboard() {
             <div>
               <p className="text-sm text-gray-600">Period Total</p>
               <p className="text-xl font-bold">
-                {formatEarnings(earningsChart.values.reduce((a, b) => a + b, 0))}
+                {formatCurrency(earningsChart.values.reduce((a, b) => a + b, 0))}
               </p>
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-600">Daily Average</p>
               <p className="text-xl font-bold">
-                {formatEarnings(
+                {formatCurrency(
                   earningsChart.values.reduce((a, b) => a + b, 0) / earningsChart.values.length
                 )}
               </p>
@@ -458,7 +458,7 @@ export default function AnalyticsDashboard() {
             <div className="flex justify-between">
               <span className="text-gray-600">Earnings</span>
               <span className="font-bold text-green-600">
-                {formatEarnings(stats.validations_completed * 0.10)}
+                {formatCurrency(stats.validations_completed * 0.10)}
               </span>
             </div>
             <div className="flex justify-between">
@@ -483,7 +483,7 @@ export default function AnalyticsDashboard() {
               </p>
               <div className="flex items-center gap-2">
                 <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
-                  {formatEarnings(stats.best_performing_trend.earnings || 0)}
+                  {formatCurrency(stats.best_performing_trend.earnings || 0)}
                 </span>
                 <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
                   {stats.best_performing_trend.category}
@@ -540,7 +540,7 @@ export default function AnalyticsDashboard() {
                   </td>
                   <td className="py-2 px-3">
                     <span className="text-sm font-medium">
-                      {formatEarnings(trend.earnings || 0)}
+                      {formatCurrency(trend.earnings || 0)}
                     </span>
                   </td>
                   <td className="py-2 px-3 text-sm text-gray-600">

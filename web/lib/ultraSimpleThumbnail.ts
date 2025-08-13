@@ -15,7 +15,7 @@ export function getUltraSimpleThumbnail(url: string): { thumbnail_url?: string; 
       const videoId = videoIdMatch[1];
       // Generate the CDN URL and proxy it to avoid CORS issues
       const cdnUrl = `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-obj.jpg`;
-      thumbnailUrl = `/api/image-proxy?url=${encodeURIComponent(cdnUrl)}`;
+      thumbnailUrl = `/api/image-proxy/proxy-image?url=${encodeURIComponent(cdnUrl)}`;
     }
     
     return {

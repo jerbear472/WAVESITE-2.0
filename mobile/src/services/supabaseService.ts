@@ -402,7 +402,7 @@ class SupabaseService {
     notes?: string
   ) {
     try {
-      const rewardAmount = 0.01; // $0.01 per validation regardless of approve/reject per constants.ts
+      const rewardAmount = 0.02; // $0.02 per validation (sustainable model)
 
       const { data, error } = await supabase
         .from('trend_validations')

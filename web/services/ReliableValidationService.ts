@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { EARNINGS_STANDARD } from '@/lib/EARNINGS_STANDARD';
+import { SUSTAINABLE_EARNINGS } from '@/lib/SUSTAINABLE_EARNINGS';
 
 interface ValidationVote {
   trendId: string;
@@ -328,15 +328,15 @@ export class ReliableValidationService {
 
   private getSuccessMessage(vote: boolean, status: string): string {
     if (status === 'approved') {
-      return 'Trend approved! You earned $0.10 for your validation.';
+      return 'Trend approved! You earned $0.02 for your validation.';
     }
     if (status === 'rejected') {
-      return 'Trend rejected. You earned $0.10 for your validation.';
+      return 'Trend rejected. You earned $0.02 for your validation.';
     }
     
     return vote 
-      ? 'Vote recorded! You approved this trend and earned $0.10.'
-      : 'Vote recorded! You rejected this trend and earned $0.10.';
+      ? 'Vote recorded! You approved this trend and earned $0.02.'
+      : 'Vote recorded! You rejected this trend and earned $0.02.';
   }
 
   private clearOldCache(): void {

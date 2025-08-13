@@ -4,13 +4,16 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
-import { formatCurrency } from '@/lib/formatters';
+// formatCurrency now comes from SUSTAINABLE_EARNINGS
 import { 
-  EARNINGS_STANDARD,
-  formatEarnings,
+  SUSTAINABLE_EARNINGS,
+  calculateTrendEarnings,
+  calculateValidationEarnings,
   canCashOut,
-  getEarningStatusDisplay
-} from '@/lib/EARNINGS_STANDARD';
+  formatCurrency,
+  calculateUserTier,
+  getTierProgress
+} from '@/lib/SUSTAINABLE_EARNINGS';
 import CashOutModal from '@/components/CashOutModal';
 import PaymentHistory from '@/components/PaymentHistory';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -122,6 +125,15 @@ export default function Earnings() {
   const verificationRate = earningsData.total_submissions > 0 
     ? (earningsData.verified_submissions / earningsData.total_submissions * 100).toFixed(1)
     : '0';
+  
+  // Calculate user tier
+  const userTier = calculateUserTier({
+    trends_submitted: earningsData.total_submissions,
+    approval_rate: earningsData.total_submissions > 0 ? earningsData.verified_submissions / earningsData.total_submissions : 0,
+    quality_score: 0.60 // Default, should come from profile
+  });
+  
+  const tierInfo = SUSTAINABLE_EARNINGS.tiers[userTier];
 
   const filteredTransactions = transactions.filter(t => {
     if (filter === 'all') return true;
@@ -205,7 +217,7 @@ export default function Earnings() {
               disabled={!canCashOut(totalAvailable)}
               className="mt-4 w-full bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg py-2 text-sm font-medium transition-colors"
             >
-              {canCashOut(totalAvailable) ? 'Cash Out' : `Need ${formatCurrency(EARNINGS_STANDARD.LIMITS.MIN_CASHOUT_AMOUNT - totalAvailable)} more`}
+              {canCashOut(totalAvailable) ? 'Cash Out' : `Need ${formatCurrency(SUSTAINABLE_EARNINGS.payment.minCashout - totalAvailable)} more`}
             </button>
           </motion.div>
 
@@ -341,13 +353,13 @@ export default function Earnings() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">How Earnings Work</h3>
               <ul className="space-y-2 text-gray-300 text-sm">
-                <li>• Submit a trend to earn {formatCurrency(EARNINGS_STANDARD.BASE_RATES.TREND_SUBMISSION)} (awaiting verification)</li>
-                <li>• {EARNINGS_STANDARD.VALIDATION.VOTES_TO_APPROVE} "verify" votes = trend approved, earnings become available</li>
-                <li>• {EARNINGS_STANDARD.VALIDATION.VOTES_TO_REJECT} "reject" votes = trend rejected, no earnings</li>
-                <li>• Participate in verifications to earn {formatCurrency(EARNINGS_STANDARD.BASE_RATES.VALIDATION_VOTE)} per vote</li>
-                <li>• You CAN vote on your own trends</li>
-                <li>• Scroll sessions maintain streak multipliers (up to 3x earnings on trends)</li>
-                <li>• Cash out when you reach {formatCurrency(EARNINGS_STANDARD.LIMITS.MIN_CASHOUT_AMOUNT)} in approved earnings</li>
+                <li>• Submit a trend to earn {formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission)} base + bonuses</li>
+                <li>• Quality bonuses: Screenshot (+{formatCurrency(SUSTAINABLE_EARNINGS.qualityBonuses.withScreenshot)}), Complete info (+{formatCurrency(SUSTAINABLE_EARNINGS.qualityBonuses.completeData)})</li>
+                <li>• {SUSTAINABLE_EARNINGS.validation.votesToApprove} "verify" votes = trend approved, earn +{formatCurrency(SUSTAINABLE_EARNINGS.base.approvalBonus)} bonus</li>
+                <li>• {SUSTAINABLE_EARNINGS.validation.votesToReject} "reject" votes = trend rejected, no earnings</li>
+                <li>• Participate in verifications to earn {formatCurrency(SUSTAINABLE_EARNINGS.base.validationVote)} per vote</li>
+                <li>• Your tier: <span className="font-semibold" style={{color: tierInfo.color}}>{tierInfo.emoji} {tierInfo.name}</span> ({tierInfo.multiplier}x multiplier, ${tierInfo.dailyCap}/day cap)</li>
+                <li>• Cash out when you reach {formatCurrency(SUSTAINABLE_EARNINGS.payment.minCashout)} in approved earnings</li>
               </ul>
             </div>
           </div>

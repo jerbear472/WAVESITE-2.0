@@ -319,10 +319,10 @@ export default function EnhancedEarnings() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">How Earnings Work</h3>
               <ul className="space-y-2 text-gray-300 text-sm">
-                <li>• Submit a trend to earn $0.10 (pending verification)</li>
+                <li>• Submit a trend to earn $0.25 (pending verification)</li>
                 <li>• When 3+ people vote and majority verify your trend, earnings become approved</li>
                 <li>• Participate in verifications to earn $0.02 per vote</li>
-                <li>• Cash out when you reach $5.00 in approved earnings</li>
+                <li>• Cash out when you reach $10.00 in approved earnings</li>
                 <li>• Tie votes go in favor of the trend submitter</li>
               </ul>
             </div>

@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, TrendingUp, Clock, DollarSign } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatCurrency } from '@/lib/formatters';
-import { EARNINGS } from '@/lib/constants';
+import { SUSTAINABLE_EARNINGS, formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
 
 interface ScrollSessionProps {
   onSessionStateChange?: (isActive: boolean) => void;
@@ -28,8 +27,8 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
 
     // Calculate earnings
     const calculateEarnings = useCallback(() => {
-      const baseRate = 0.10; // $0.10 per minute
-      const trendBonus = 0.10; // $0.10 per trend (corrected from 0.25)
+      const baseRate = 0.02; // Sustainable rate per minute
+      const trendBonus = SUSTAINABLE_EARNINGS.base.trendSubmission; // $0.25 base per trend
       const minutes = sessionTime / 60;
       const baseEarnings = minutes * baseRate;
       const bonusEarnings = trendsLogged * trendBonus * streakMultiplier; // Apply multiplier to trend bonus

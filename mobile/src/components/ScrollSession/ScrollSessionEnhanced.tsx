@@ -194,7 +194,7 @@ export const ScrollSessionEnhanced: React.FC<{
                 <Text style={styles.startButtonText}>Start Scroll Session</Text>
                 <Icon name="chevron-right" size={24} color="#FFFFFF" />
               </View>
-              <Text style={styles.startButtonSubtext}>Earn $0.10/min + $0.25/trend</Text>
+              <Text style={styles.startButtonSubtext}>Earn $0.02/min + $0.25/trend</Text>
             </LinearGradient>
           </Animated.View>
         </Pressable>

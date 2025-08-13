@@ -1,5 +1,5 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { UNIFIED_EARNINGS, formatEarnings } from '@/lib/UNIFIED_EARNINGS_CONFIG';
+import { SUSTAINABLE_EARNINGS, formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
 
 interface ValidationResult {
   success: boolean;
@@ -19,7 +19,7 @@ interface ValidationVote {
 export class UnifiedValidationService {
   private supabase;
   private voteCache: Map<string, Set<string>> = new Map(); // userId -> trendIds voted
-  private APPROVAL_THRESHOLD = 2; // Number of votes needed to approve/reject
+  private APPROVAL_THRESHOLD = SUSTAINABLE_EARNINGS.validation.votesToApprove; // Number of votes needed to approve/reject
   
   constructor() {
     this.supabase = createClientComponentClient();

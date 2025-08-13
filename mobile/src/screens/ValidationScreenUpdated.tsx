@@ -145,9 +145,9 @@ export const ValidationScreenUpdated: React.FC = () => {
       // For now, we'll use simplified stats since the RPC functions might not exist
       setStats({
         validated_today: sessionValidations,
-        earnings_today: sessionValidations * 0.01,  // $0.01 per validation per constants.ts
+        earnings_today: sessionValidations * 0.02,  // $0.02 per validation (sustainable)
         validated_total: sessionValidations,
-        earnings_total: sessionValidations * 0.01
+        earnings_total: sessionValidations * 0.02
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -196,7 +196,7 @@ export const ValidationScreenUpdated: React.FC = () => {
 
       Alert.alert(
         'Validation Submitted!',
-        `You earned $0.01 for validating this trend!`,
+        `You earned $0.02 for validating this trend!`,
         [{ text: 'Continue' }]
       );
       
@@ -301,7 +301,7 @@ export const ValidationScreenUpdated: React.FC = () => {
             {currentIndex + 1} of {trends.length}
           </Text>
           <View style={styles.earningsBadge}>
-            <Text style={styles.earningsText}>+${(sessionValidations * 0.01).toFixed(2)}</Text>
+            <Text style={styles.earningsText}>+${(sessionValidations * 0.02).toFixed(2)}</Text>
           </View>
         </View>
       </View>

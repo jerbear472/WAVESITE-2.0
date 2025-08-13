@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { EARNINGS_STANDARD, calculateTrendEarnings } from '@/lib/EARNINGS_STANDARD';
+import { SUSTAINABLE_EARNINGS, calculateTrendEarnings } from '@/lib/SUSTAINABLE_EARNINGS';
 
 interface SubmitTrendData {
   category: string;

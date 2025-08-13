@@ -680,7 +680,7 @@ export default function TrendSubmissionFormFixed({ onClose, onSubmit, initialUrl
                 <div className="mt-6 p-4 bg-green-900/20 border border-green-800 rounded-lg">
                   <p className="text-green-400 text-sm flex items-center gap-2">
                     <CheckIcon className="w-4 h-4" />
-                    You'll earn $0.10 for this submission!
+                    You'll earn $0.25 for this submission!
                   </p>
                 </div>
               </div>

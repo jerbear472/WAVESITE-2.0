@@ -38,7 +38,7 @@ export function getProxiedImageUrl(imageUrl: string | undefined | null): string 
   
   if (needsProxy) {
     // Encode the URL and proxy it
-    return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+    return `/api/image-proxy/proxy-image?url=${encodeURIComponent(imageUrl)}`;
   }
   
   // Return original URL if no proxy needed
