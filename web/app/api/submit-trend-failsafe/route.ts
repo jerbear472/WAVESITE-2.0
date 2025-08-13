@@ -98,8 +98,7 @@ export async function POST(request: NextRequest) {
         success: true,
         trend_id: submissionId,
         message: 'Trend queued for processing',
-        method: 'queued',
-        queued: true
+        method: 'queued'
       };
     }
 
