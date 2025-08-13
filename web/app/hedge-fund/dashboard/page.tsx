@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, BarChart3, Activity, DollarSign, AlertCircle,
@@ -91,10 +92,16 @@ export default function HedgeFundDashboard() {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
+      // Get session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No session found');
+      }
+      
       // Get API key for the user
       const apiKeyResponse = await fetch('/api/v1/hedge-fund/get-api-key', {
         headers: {
-          'Authorization': `Bearer ${user?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
       
