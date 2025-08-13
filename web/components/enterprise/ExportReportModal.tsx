@@ -346,7 +346,7 @@ export default function ExportReportModal({ onClose, trends, stats, timeframe }:
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat}>
-                      {cat === 'all' ? 'All Categories' : cat.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {cat === 'all' ? 'All Categories' : cat.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                     </option>
                   ))}
                 </select>
