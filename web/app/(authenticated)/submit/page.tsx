@@ -217,7 +217,7 @@ export default function WorkingSubmitPage() {
       console.log('Submission successful:', data);
 
       // Calculate earnings using EARNINGS_STANDARD
-      const { calculateTrendSubmissionEarnings, formatEarnings } = await import('@/lib/EARNINGS_STANDARD');
+      const { calculateTrendEarnings, formatCurrency } = await import('@/lib/SUSTAINABLE_EARNINGS');
       
       // Build earnings data matching TrendSubmissionData interface
       const earningsData = {

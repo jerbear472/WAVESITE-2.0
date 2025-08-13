@@ -6,11 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency as formatCurrencyLib } from '@/lib/formatters';
 import { 
-  EARNINGS_STANDARD,
-  formatEarnings,
+  SUSTAINABLE_EARNINGS,
+  formatCurrency,
   canCashOut,
-  getEarningStatusDisplay
-} from '@/lib/EARNINGS_STANDARD';
+} from '@/lib/SUSTAINABLE_EARNINGS';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 

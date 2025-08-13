@@ -10,7 +10,7 @@ import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
-import { formatEarnings, getEarningStatusDisplay } from '@/lib/EARNINGS_STANDARD';
+import { formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,

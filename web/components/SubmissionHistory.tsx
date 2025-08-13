@@ -6,9 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/formatters';
 import { 
-  EARNINGS_STANDARD,
-  formatEarnings
-} from '@/lib/EARNINGS_STANDARD';
+  SUSTAINABLE_EARNINGS,
+  formatCurrency as formatEarnings
+} from '@/lib/SUSTAINABLE_EARNINGS';
 import SimpleLoader from '@/components/SimpleLoader';
 import {
   Clock as ClockIcon,
@@ -80,7 +80,7 @@ export default function SubmissionHistory() {
       // Calculate stats
       const approved = (data || []).filter(s => s.status === 'approved');
       const total = (data || []).length;
-      const earnings = approved.reduce((sum, s) => sum + (s.earnings || EARNINGS_STANDARD.BASE_RATES.TREND_SUBMISSION), 0);
+      const earnings = approved.reduce((sum, s) => sum + (s.earnings || SUSTAINABLE_EARNINGS.base.trendSubmission), 0);
       
       setTotalEarnings(earnings);
       setApprovalRate(total > 0 ? (approved.length / total) * 100 : 0);
@@ -141,7 +141,7 @@ export default function SubmissionHistory() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-wave-400 text-sm">Total Earnings</p>
-              <p className="text-2xl font-bold text-white">{formatEarnings(totalEarnings)}</p>
+              <p className="text-2xl font-bold text-white">{formatCurrency(totalEarnings)}</p>
             </div>
             <DollarSignIcon className="w-8 h-8 text-green-400" />
           </div>
@@ -283,7 +283,7 @@ export default function SubmissionHistory() {
                       </span>
                       {submission.status === 'approved' && (
                         <span className="text-green-400 font-medium">
-                          +{formatEarnings(submission.earnings || EARNINGS_STANDARD.BASE_RATES.TREND_SUBMISSION)}
+                          +{formatCurrency(submission.earnings || SUSTAINABLE_EARNINGS.base.trendSubmission)}
                         </span>
                       )}
                     </div>

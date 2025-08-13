@@ -16,11 +16,12 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/formatters';
 import { 
-  EARNINGS_STANDARD,
-  formatEarnings,
-  calculateValidationEarnings,
-  SpotterTier
-} from '@/lib/EARNINGS_STANDARD';
+  SUSTAINABLE_EARNINGS,
+  formatCurrency as formatEarnings,
+  calculateValidationEarnings
+} from '@/lib/SUSTAINABLE_EARNINGS';
+
+type SpotterTier = 'learning' | 'verified' | 'elite' | 'master' | 'restricted';
 
 interface Session {
   id: string;
@@ -95,7 +96,7 @@ export const EarningsDashboard: React.FC = () => {
 
       // Calculate total earnings
       const sessionEarnings = sessions.reduce((sum, s) => sum + s.total_earnings, 0);
-      // Calculate verification earnings using EARNINGS_STANDARD
+      // Calculate verification earnings using SUSTAINABLE_EARNINGS
       const spotterTier = (user?.spotter_tier || 'learning') as SpotterTier;
       const verificationEarnings = (verificationsCount || 0) * calculateValidationEarnings(true, spotterTier);
       setTotalEarnings(sessionEarnings + verificationEarnings);

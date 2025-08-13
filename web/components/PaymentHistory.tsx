@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import { formatCurrency } from '@/lib/formatters';
-import { formatEarnings } from '@/lib/EARNINGS_STANDARD';
+import { formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
 import { format } from 'date-fns';
 import { 
   DollarSign as DollarSignIcon,
