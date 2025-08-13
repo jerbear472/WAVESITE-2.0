@@ -672,18 +672,7 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                   ))}
                 </div>
 
-                {/* Test thumbnail extraction button */}
-                {formData.url && !formData.thumbnail_url && (
-                  <div className="mt-3">
-                    <button
-                      type="button"
-                      onClick={() => testThumbnailExtraction(formData.url)}
-                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded"
-                    >
-                      🔄 Try Extract Thumbnail
-                    </button>
-                  </div>
-                )}
+                {/* Test thumbnail extraction button removed - function was undefined */}
 
                 {/* Thumbnail Preview if auto-captured */}
                 {formData.thumbnail_url && (
