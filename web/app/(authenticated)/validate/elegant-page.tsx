@@ -459,28 +459,28 @@ export default function ValidateTrendsPage() {
                   {(currentTrend.likes_count || currentTrend.views_count || currentTrend.comments_count || currentTrend.shares_count) && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
                       <div className="flex gap-6 text-white">
-                        {currentTrend.views_count > 0 && (
+                        {currentTrend.views_count && currentTrend.views_count > 0 && (
                           <div className="flex items-center gap-2">
                             <Eye className="w-5 h-5" />
-                            <span className="font-medium">{formatCount(currentTrend.views_count)}</span>
+                            <span className="font-medium">{formatCount(currentTrend.views_count || 0)}</span>
                           </div>
                         )}
-                        {currentTrend.likes_count > 0 && (
+                        {currentTrend.likes_count && currentTrend.likes_count > 0 && (
                           <div className="flex items-center gap-2">
                             <Heart className="w-5 h-5" />
-                            <span className="font-medium">{formatCount(currentTrend.likes_count)}</span>
+                            <span className="font-medium">{formatCount(currentTrend.likes_count || 0)}</span>
                           </div>
                         )}
-                        {currentTrend.comments_count > 0 && (
+                        {currentTrend.comments_count && currentTrend.comments_count > 0 && (
                           <div className="flex items-center gap-2">
                             <MessageCircle className="w-5 h-5" />
-                            <span className="font-medium">{formatCount(currentTrend.comments_count)}</span>
+                            <span className="font-medium">{formatCount(currentTrend.comments_count || 0)}</span>
                           </div>
                         )}
-                        {currentTrend.shares_count > 0 && (
+                        {currentTrend.shares_count && currentTrend.shares_count > 0 && (
                           <div className="flex items-center gap-2">
                             <Share2 className="w-5 h-5" />
-                            <span className="font-medium">{formatCount(currentTrend.shares_count)}</span>
+                            <span className="font-medium">{formatCount(currentTrend.shares_count || 0)}</span>
                           </div>
                         )}
                       </div>
