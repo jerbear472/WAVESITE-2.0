@@ -321,20 +321,47 @@ export default function LegibleScrollPage() {
         approval_rate: user.approval_rate || 0.5,
         quality_score: user.quality_score || 0.5
       });
-      const streakCount = isSessionActive ? currentStreak + 1 : 0;
       
-      const earningsResult = calculateTrendSubmissionEarnings(
-        {
-          ...formData,
-          isFinanceTrend,
-          tickers
+      // Build trend data for earnings calculation
+      const trendDataForEarnings = {
+        screenshot_url: formData.screenshot_url,
+        title: formData.trendName,
+        description: formData.explanation,
+        quality_score: formData.wave_score || 70,
+        category: isFinanceTrend ? 'finance' : 'general',
+        demographics_data: formData.ageRanges?.length > 0 ? {
+          ageRanges: formData.ageRanges
+        } : null,
+        platform: formData.otherPlatforms || [],
+        creator_info: formData.creator_handle ? { handle: formData.creator_handle } : null,
+        hashtags: formData.hashtags || [],
+        metadata: {
+          view_count: formData.views_count || 0,
+          engagement_rate: (formData.likes_count && formData.views_count) 
+            ? (formData.likes_count / formData.views_count) 
+            : 0
         },
-        spotterTier,
-        streakCount
+        wave_score: formData.wave_score || 70
+      };
+      
+      // Build user profile for earnings calculation
+      const userProfileForEarnings = {
+        user_id: user?.id || '',
+        performance_tier: spotterTier,
+        current_balance: user?.total_earnings || 0,
+        total_earned: user?.total_earnings || 0,
+        trends_submitted: user?.trends_submitted || 0,
+        approval_rate: user?.approval_rate || 0.5,
+        quality_score: user?.quality_score || 0.5
+      };
+      
+      const earningsResult = calculateTrendEarnings(
+        trendDataForEarnings,
+        userProfileForEarnings
       );
       
-      const basePayment = earningsResult.baseAmount;
-      const finalPayment = earningsResult.finalAmount;
+      const basePayment = earningsResult.base;
+      const finalPayment = earningsResult.capped;
       
       // Prepare submission - use basic fields that exist in database
       const submissionData: any = {

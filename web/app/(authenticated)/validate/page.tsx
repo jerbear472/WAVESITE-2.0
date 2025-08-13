@@ -383,6 +383,23 @@ export default function ValidatePageFixed() {
         validationError = altResult.error;
       }
       
+      // If still getting user_id error, try the RPC function
+      if (validationError && validationError.message?.includes("user_id")) {
+        console.log('user_id error detected, trying RPC function insert_validation...');
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('insert_validation', {
+            p_trend_id: trendId,
+            p_vote: voteType
+          });
+        
+        if (!rpcError && rpcResult?.success) {
+          validationError = null;
+          validationData = { id: 'rpc-success', vote: voteType };
+        } else {
+          validationError = rpcError || { message: rpcResult?.error || 'RPC function failed' };
+        }
+      }
+      
       if (validationError) {
         console.error('Validation insert error:', validationError);
         

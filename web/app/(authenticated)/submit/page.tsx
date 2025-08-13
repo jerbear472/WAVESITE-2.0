@@ -219,51 +219,62 @@ export default function WorkingSubmitPage() {
       // Calculate earnings using EARNINGS_STANDARD
       const { calculateTrendEarnings, formatCurrency } = await import('@/lib/SUSTAINABLE_EARNINGS');
       
-      // Build earnings data matching TrendSubmissionData interface
-      const earningsData = {
-        trendName: trendData.trendName || submission.evidence?.title || 'Untitled',
-        description: trendData.explanation || submission.description,
+      // Build trend data for earnings calculation
+      const trendDataForEarnings = {
         screenshot_url: screenshotUrl || trendData.screenshot_url,
-        ageRanges: trendData.ageRanges || [],
-        subcultures: trendData.subcultures || [],
-        otherPlatforms: trendData.otherPlatforms || [],
-        creator_handle: trendData.creator_handle,
-        hashtags: trendData.hashtags || [],
-        post_caption: trendData.post_caption,
-        views_count: trendData.views_count,
-        likes_count: trendData.likes_count,
-        comments_count: trendData.comments_count,
-        wave_score: trendData.wave_score,
+        title: trendData.trendName || submission.evidence?.title,
+        description: trendData.explanation || submission.description,
+        quality_score: trendData.wave_score || 70,
         category: displayCategory,
-        platform: trendData.platform,
-        isFinanceTrend: displayCategory === 'Finance' || trendData.tickers?.length > 0
+        demographics_data: (trendData.ageRanges?.length > 0 || trendData.subcultures?.length > 0) ? {
+          ageRanges: trendData.ageRanges,
+          subcultures: trendData.subcultures
+        } : null,
+        platform: trendData.otherPlatforms || [trendData.platform],
+        creator_info: trendData.creator_handle ? { handle: trendData.creator_handle } : null,
+        hashtags: trendData.hashtags || [],
+        metadata: {
+          view_count: trendData.views_count || 0,
+          engagement_rate: (trendData.likes_count && trendData.views_count) 
+            ? (trendData.likes_count / trendData.views_count) 
+            : 0
+        },
+        wave_score: trendData.wave_score || 70
       };
       
-      // Get current streak from user profile
-      const currentStreak = user?.current_streak || 0;
-      const spotterTier = user?.spotter_tier || 'learning';
+      // Build user profile for earnings calculation
+      const userProfileForEarnings = {
+        user_id: user?.id || '',
+        performance_tier: (user?.spotter_tier || 'learning') as any,
+        current_balance: user?.total_earnings || 0,
+        total_earned: user?.total_earnings || 0,
+        trends_submitted: user?.trends_spotted || 0,
+        approval_rate: user?.accuracy_score || 0.5,
+        quality_score: user?.validation_score || 0.5
+      };
       
-      const earningResult = calculateTrendSubmissionEarnings(
-        earningsData,
-        spotterTier as any,
-        currentStreak
+      const earningResult = calculateTrendEarnings(
+        trendDataForEarnings,
+        userProfileForEarnings
       );
       
       console.log('Earning calculation:', {
-        base: earningResult.baseAmount,
-        bonus: earningResult.bonusAmount,
-        final: earningResult.finalAmount,
-        bonuses: earningResult.appliedBonuses
+        base: earningResult.base,
+        qualityBonuses: earningResult.qualityBonuses,
+        performanceBonuses: earningResult.performanceBonuses,
+        total: earningResult.total,
+        capped: earningResult.capped,
+        breakdown: earningResult.breakdown
       });
       
       // Update user earnings with the calculated amount
-      updateUserEarnings(earningResult.finalAmount);
+      updateUserEarnings(earningResult.capped);
       
       // Store submission with earnings info for display
       setRecentSubmission({
         ...data,
-        calculatedEarnings: earningResult.finalAmount,
-        formattedEarnings: formatEarnings(earningResult.finalAmount)
+        calculatedEarnings: earningResult.capped,
+        formattedEarnings: formatCurrency(earningResult.capped)
       });
 
       // Show success state
