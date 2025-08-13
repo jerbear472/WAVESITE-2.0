@@ -310,7 +310,7 @@ export class TrendSubmissionService {
       }
 
       // Step 3: Prepare and submit to database
-      const insertData = this.prepareInsertData(trendData, userId, metadata, imageUrl);
+      const insertData = this.prepareInsertData(trendData, userId, metadata, imageUrl || null);
       
       const { client, release } = await this.supabasePool.getClient();
       try {

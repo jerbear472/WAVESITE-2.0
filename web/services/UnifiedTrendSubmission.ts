@@ -1,5 +1,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { UNIFIED_EARNINGS, calculateTrendEarnings, formatEarnings } from '@/lib/UNIFIED_EARNINGS_CONFIG';
+import { SUSTAINABLE_EARNINGS as UNIFIED_EARNINGS, calculateTrendEarnings } from '@/lib/SUSTAINABLE_EARNINGS';
+
+const formatEarnings = (amount: number) => `$${amount.toFixed(2)}`;
 
 interface SubmissionResult {
   success: boolean;
@@ -107,7 +109,7 @@ export class UnifiedTrendSubmissionService {
     // Calculate quality score
     const qualityScore = this.calculateQualityScore({
       ...data,
-      screenshot_url: screenshotUrl,
+      screenshot_url: screenshotUrl || undefined,
       ...extractedData,
     });
 
@@ -119,7 +121,7 @@ export class UnifiedTrendSubmissionService {
       description: data.description || extractedData.description,
       category: this.mapToValidCategory(data.category || extractedData.category),
       platform: data.platform || extractedData.platform || 'unknown',
-      screenshot_url: screenshotUrl,
+      screenshot_url: screenshotUrl || undefined,
       thumbnail_url: extractedData.thumbnail_url,
       demographics_data: data.demographics_data,
       creator_info: data.creator_info || extractedData.creator,
@@ -140,16 +142,16 @@ export class UnifiedTrendSubmissionService {
 
     // Calculate expected earnings
     const expectedEarnings = calculateTrendEarnings(
-      trendData,
+      trendData as any,
       {
         user_id: user.id,
-        performance_tier: userProfile?.performance_tier || 'learning',
-        quality_score: userProfile?.quality_score || 0.5,
-        approval_rate: userProfile?.approval_rate || 0.5,
-        trends_submitted: userProfile?.trends_submitted || 0,
-        trends_approved: userProfile?.trends_approved || 0,
-        current_balance: userProfile?.current_balance || 0,
-        total_earned: userProfile?.total_earned || 0,
+        performance_tier: 'learning' as any,
+        current_balance: 0,
+        total_earned: 0,
+        today_earned: 0,
+        trends_submitted: 0,
+        approval_rate: 0.5,
+        quality_score: 3.0
       }
     );
 

@@ -1,4 +1,6 @@
-import { createClient } from '@/utils/supabase/client';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+const createClient = () => createClientComponentClient();
 
 export interface RetryOptions {
   maxRetries?: number;
@@ -112,7 +114,7 @@ export const supabaseHelpers = {
       }
       
       return q;
-    });
+    }) as Promise<T[]>;
   },
 
   // Insert with retry

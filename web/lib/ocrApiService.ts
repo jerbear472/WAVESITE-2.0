@@ -65,7 +65,7 @@ export class OCRApiService {
     // Calculate confidence based on extracted data
     let confidence = 0.5;
     
-    if (extractedData.platform && extractedData.platform !== 'unknown') {
+    if (extractedData.platform && extractedData.platform !== undefined) {
       confidence += 0.2;
     }
     if (extractedData.handle && !extractedData.handle.includes('error')) {

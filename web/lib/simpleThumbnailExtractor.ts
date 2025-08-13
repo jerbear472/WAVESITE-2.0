@@ -15,7 +15,7 @@ export class SimpleThumbnailExtractor {
     
     const metadata: SimpleMetadata = {
       platform: getPlatformFromUrl(url),
-      creator_handle: getCreatorFromUrl(url),
+      creator_handle: getCreatorFromUrl(url) || undefined,
       thumbnail_url: getSimpleThumbnail(url) || undefined
     };
     

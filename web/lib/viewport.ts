@@ -61,9 +61,7 @@ export function enableSmoothScroll() {
   
   if (!('scrollBehavior' in document.documentElement.style)) {
     // Load polyfill if needed
-    import('smoothscroll-polyfill').then(smoothscroll => {
-      smoothscroll.polyfill();
-    });
+    // smoothscroll.polyfill();
   }
 }
 

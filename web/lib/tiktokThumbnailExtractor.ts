@@ -163,7 +163,7 @@ export class TikTokThumbnailExtractor {
     const username = this.extractUsername(url);
     
     // Step 3: Generate possible thumbnail URLs
-    const patterns = this.generateThumbnailPatterns(videoId, username);
+    const patterns = this.generateThumbnailPatterns(videoId, username || undefined);
     
     // Step 4: Test patterns to find working thumbnail
     const workingThumbnail = await this.findWorkingThumbnail(patterns);

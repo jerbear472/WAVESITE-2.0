@@ -89,11 +89,11 @@ export class UnifiedValidationService {
       const trendStatus = await this.checkTrendStatus(vote.trendId);
 
       // Get earnings amount
-      const earnings = UNIFIED_EARNINGS.base.validationVote;
+      const earnings = SUSTAINABLE_EARNINGS.base.validationVote;
 
       return {
         success: true,
-        message: `Validation submitted! You earned ${formatEarnings(earnings)}`,
+        message: `Validation submitted! You earned ${formatCurrency(earnings)}`,
         earnings,
         trendStatus,
       };
@@ -322,7 +322,7 @@ export class UnifiedValidationService {
     const totalValidations = validations.length;
     const approvals = validations.filter(v => v.vote === 'approve').length;
     const rejections = validations.filter(v => v.vote === 'reject').length;
-    const earningsFromValidation = totalValidations * UNIFIED_EARNINGS.base.validationVote;
+    const earningsFromValidation = totalValidations * SUSTAINABLE_EARNINGS.base.validationVote;
 
     // Calculate accuracy (votes that matched final decision)
     const accurateVotes = validations.filter(v => {

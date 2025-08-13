@@ -88,20 +88,31 @@ export class ReliableTrendSubmissionV2 {
       }
 
       // Calculate earnings
-      const earnings = calculateTrendEarnings({
-        hasScreenshot: !!data.screenshot,
-        hasCompleteInfo: !!(data.description && data.description.length > 20),
-        hasDemographics: false, // Will be added from form later
-        hasCreatorInfo: !!data.creator_handle,
-        hasRichHashtags: (data.hashtags?.length || 0) >= 3,
-        hasCaption: !!data.post_caption,
-        hasMultiplePlatforms: false,
-        viewCount: data.views_count || 0,
-        engagementRate: this.calculateEngagementRate(data),
-        waveScore: 50, // Default, will be calculated server-side
-        isFinanceTrend: this.isFinanceTrend(data.description),
-        spotterTier: profile?.spotter_tier || 'learning',
-        streakDays: profile?.current_streak || 0
+      const trendData = {
+        screenshot_url: data.screenshot ? 'pending' : undefined,
+        description: data.description,
+        quality_score: 0.5,
+        category: data.category,
+        demographics_data: null,
+        platform: data.platform ? [data.platform] : [],
+        creator_info: data.creator_handle ? { handle: data.creator_handle, name: data.creator_name } : undefined,
+        hashtags: data.hashtags || [],
+        metadata: {
+          view_count: data.views_count || 0,
+          engagement_rate: this.calculateEngagementRate(data)
+        },
+        wave_score: 50
+      };
+
+      const earnings = calculateTrendEarnings(trendData, {
+        user_id: userId,
+        performance_tier: (profile?.spotter_tier || 'learning') as any,
+        current_balance: 0,
+        total_earned: 0,
+        today_earned: 0,
+        trends_submitted: 0,
+        approval_rate: 0.5,
+        quality_score: 3.0
       });
 
       // Handle image upload if needed
@@ -138,9 +149,9 @@ export class ReliableTrendSubmissionV2 {
         shares_count: data.shares_count || 0,
         views_count: data.views_count || 0,
         // Earnings data
-        base_amount: earnings.baseAmount,
-        bonus_amount: earnings.bonusAmount,
-        total_earned: earnings.totalAmount,
+        base_amount: earnings.base,
+        bonus_amount: earnings.qualityBonuses,
+        total_earned: earnings.total,
         tier_multiplier: earnings.tierMultiplier,
         // Status
         status: 'submitted',
@@ -156,7 +167,7 @@ export class ReliableTrendSubmissionV2 {
       
       if (result.success) {
         // Update local user earnings optimistically
-        await this.updateLocalEarnings(userId, earnings.totalAmount);
+        await this.updateLocalEarnings(userId, earnings.total);
       }
 
       return result;

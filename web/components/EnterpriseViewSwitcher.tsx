@@ -45,7 +45,7 @@ export default function EnterpriseViewSwitcher({ className = '', mobile = false 
   }
 
   const pathname = usePathname();
-  const isEnterpriseView = pathname.startsWith('/enterprise');
+  const isEnterpriseView = pathname?.startsWith('/enterprise');
 
   const handleViewSwitch = (toEnterprise: boolean) => {
     setIsOpen(false);

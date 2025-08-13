@@ -37,7 +37,7 @@ export class OCRService {
         }
       );
       
-      const text = ocrResult.data.text;
+      const text = result.data.text;
       console.log('OCR completed, text length:', text.length);
       
       // Parse the extracted text to find relevant information
@@ -134,17 +134,17 @@ export class OCRService {
       
       // Include raw text in debug mode
       if (debug) {
-        (result as any).rawText = text;
+        (ocrResult as any).rawText = text;
       }
       
       // Log extraction results for debugging
       console.log('OCR Extraction Results:', {
         textLength: text.length,
         linesFound: lines.length,
-        ...result
+        ...ocrResult
       });
       
-      return result;
+      return ocrResult;
       
     } catch (error) {
       console.error('OCR processing error:', error);
@@ -164,7 +164,7 @@ export class OCRService {
     // Calculate confidence based on how much data was extracted
     let confidence = 0.5; // Base confidence
     
-    if (extractedData.platform && extractedData.platform !== 'unknown') {
+    if (extractedData.platform && extractedData.platform !== undefined) {
       confidence += 0.2;
     }
     if (extractedData.handle) {
@@ -197,21 +197,21 @@ export class OCRService {
     // Extract handle (starts with @)
     const handleMatch = text.match(/@[\w.]+/);
     if (handleMatch) {
-      ocrResult.handle = handleMatch[0];
+      result.handle = handleMatch[0];
     }
     
     // Extract numbers (likes, comments, shares)
     const numbers = text.match(/(\d+(?:\.\d+)?[KMB]?)/g);
     if (numbers && numbers.length > 0) {
-      ocrResult.likes = this.parseNumber(numbers[0]);
-      if (numbers.length > 1) ocrResult.comments = this.parseNumber(numbers[1]);
-      if (numbers.length > 2) ocrResult.shares = this.parseNumber(numbers[2]);
+      result.likes = this.parseNumber(numbers[0]);
+      if (numbers.length > 1) result.comments = this.parseNumber(numbers[1]);
+      if (numbers.length > 2) result.shares = this.parseNumber(numbers[2]);
     }
     
     // Extract hashtags
     const hashtags = text.match(/#\w+/g);
     if (hashtags) {
-      ocrResult.hashtags = hashtags.map(tag => tag.substring(1));
+      result.hashtags = hashtags.map(tag => tag.substring(1));
     }
     
     return result;
@@ -223,19 +223,19 @@ export class OCRService {
     // Similar parsing logic for Instagram format
     const handleMatch = text.match(/@[\w.]+/);
     if (handleMatch) {
-      ocrResult.handle = handleMatch[0];
+      result.handle = handleMatch[0];
     }
     
     // Instagram shows likes differently
     const likesMatch = text.match(/(\d+(?:,\d+)*)\s*likes?/i);
     if (likesMatch) {
-      ocrResult.likes = parseInt(likesMatch[1].replace(/,/g, ''));
+      result.likes = parseInt(likesMatch[1].replace(/,/g, ''));
     }
     
     // Extract views for reels
     const viewsMatch = text.match(/(\d+(?:,\d+)*)\s*views?/i);
     if (viewsMatch) {
-      ocrResult.views = parseInt(viewsMatch[1].replace(/,/g, ''));
+      result.views = parseInt(viewsMatch[1].replace(/,/g, ''));
     }
     
     return result;

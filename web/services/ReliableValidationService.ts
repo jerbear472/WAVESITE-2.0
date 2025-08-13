@@ -222,7 +222,7 @@ export class ReliableValidationService {
           validationCount: voteResult.validation_count,
           approveCount: voteResult.approve_count,
           rejectCount: voteResult.reject_count,
-          earned: voteResult.validator_earned || EARNINGS_STANDARD.VALIDATION_REWARD,
+          earned: voteResult.validator_earned || SUSTAINABLE_EARNINGS.base.validationVote,
           message: this.getSuccessMessage(vote.vote, voteResult.trend_status)
         }
       };
@@ -284,7 +284,7 @@ export class ReliableValidationService {
           totalValidations: totalValidations || 0,
           todayValidations: todayValidations || 0,
           accuracyRate: Math.round(accuracyRate),
-          earningsToday: (todayValidations || 0) * EARNINGS_STANDARD.VALIDATION_REWARD,
+          earningsToday: (todayValidations || 0) * SUSTAINABLE_EARNINGS.base.validationVote,
           earningsTotal: profile?.total_earnings || 0
         }
       };

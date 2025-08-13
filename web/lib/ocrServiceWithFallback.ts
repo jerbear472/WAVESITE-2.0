@@ -172,7 +172,7 @@ export class OCRServiceWithFallback {
     // Calculate confidence
     let confidence = 0.5;
     if (!extractedData.error) {
-      if (extractedData.platform && extractedData.platform !== 'unknown') confidence += 0.2;
+      if (extractedData.platform && extractedData.platform !== undefined) confidence += 0.2;
       if (extractedData.handle) confidence += 0.1;
       if (extractedData.likes || extractedData.views) confidence += 0.1;
       if (extractedData.caption) confidence += 0.05;

@@ -22,16 +22,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Check for confirmation success
-    if (searchParams.get('confirmed') === 'true') {
+    if (searchParams?.get('confirmed') === 'true') {
       setSuccessMessage('Email confirmed successfully! You can now log in.');
     }
     // Check for custom message
-    const message = searchParams.get('message');
+    const message = searchParams?.get('message');
     if (message) {
       setSuccessMessage(message);
     }
     // Check for errors
-    const error = searchParams.get('error');
+    const error = searchParams?.get('error');
     if (error === 'callback_failed') {
       setError('Authentication failed. Please try again.');
     } else if (error === 'confirmation_failed') {
@@ -57,7 +57,7 @@ export default function LoginPage() {
     try {
       await login(formData.email, formData.password);
       const searchParams = new URLSearchParams(window.location.search);
-      const from = searchParams.get('from') || '/dashboard';
+      const from = searchParams?.get('from') || '/dashboard';
       router.push(from);
     } catch (err: any) {
       console.error('Login error:', err); // Debug log

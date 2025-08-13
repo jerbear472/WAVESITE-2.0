@@ -4,7 +4,10 @@
  */
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { EARNINGS, previewTrendEarnings, formatMoney, type Tier } from '@/lib/earnings';
+import { SUSTAINABLE_EARNINGS as EARNINGS, calculateTrendEarnings as previewTrendEarnings } from '@/lib/SUSTAINABLE_EARNINGS';
+
+type Tier = 'learning' | 'bronze' | 'silver' | 'gold';
+const formatMoney = (amount: number) => `$${amount.toFixed(2)}`;
 
 interface SubmissionResult {
   success: boolean;
@@ -246,8 +249,8 @@ export class ValidationService {
 
     return {
       success: true,
-      message: `Vote submitted! You earned ${formatMoney(EARNINGS.base.validation)}`,
-      earnings: EARNINGS.base.validation,
+      message: `Vote submitted! You earned ${formatMoney(EARNINGS.base.validationVote)}`,
+      earnings: EARNINGS.base.validationVote,
     };
   }
 
