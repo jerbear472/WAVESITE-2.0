@@ -155,7 +155,7 @@ export default function CoreDashboard() {
     }
   };
 
-  const handleExport = async (format: 'csv' | 'pdf') => {
+  const handleExport = async (exportFormat: 'csv' | 'pdf') => {
     if (!user) return;
 
     if (exportCount >= MONTHLY_EXPORT_LIMIT) {
@@ -165,12 +165,12 @@ export default function CoreDashboard() {
 
     try {
       await subscriptionService.logFeatureAccess(user.id, 'export_report', 'export', {
-        format,
+        format: exportFormat,
         trend_count: trends.length
       });
 
       // Simple CSV export
-      if (format === 'csv') {
+      if (exportFormat === 'csv') {
         const csvContent = [
           ['Trend', 'Category', 'Confidence', 'Validations', 'Date'],
           ...trends.map(t => [
