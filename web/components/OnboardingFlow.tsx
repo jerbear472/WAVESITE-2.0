@@ -44,7 +44,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-2xl">
             <h1 className="text-4xl font-bold mb-4">Get Paid to Spot Trends!</h1>
             <p className="text-xl opacity-90">
-              Join thousands earning ${SUSTAINABLE_EARNINGS.base.trendSubmission}-${SUSTAINABLE_EARNINGS.caps.maxPerSubmission} per trend
+              Join thousands earning ${SUSTAINABLE_EARNINGS.base.trendSubmission}-${SUSTAINABLE_EARNINGS.tiers.master.perTrendCap} per trend
             </p>
           </div>
           
