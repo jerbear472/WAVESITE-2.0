@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, Users, Globe, Heart, Sparkles, Palette,
@@ -75,13 +76,19 @@ export default function MarketingDashboard() {
   const loadMarketingInsights = async () => {
     setLoading(true);
     try {
+      // Get session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No session found');
+      }
+      
       const params = new URLSearchParams();
       if (selectedCategory !== 'all') params.append('category', selectedCategory);
       if (selectedStatus !== 'all') params.append('status', selectedStatus);
 
       const response = await fetch(`/api/v1/marketing/trends?${params}`, {
         headers: {
-          'Authorization': `Bearer ${user?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
 

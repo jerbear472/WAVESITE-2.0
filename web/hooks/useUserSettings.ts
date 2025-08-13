@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export interface UserSettings {
   // Notification preferences
@@ -65,7 +66,7 @@ export function useUserSettings() {
         // Fetch from API with authentication
         const response = await fetch('/api/v1/settings', {
           headers: {
-            'Authorization': `Bearer ${user.access_token}`,
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -155,7 +156,7 @@ export function useUserSettings() {
       const response = await fetch('/api/v1/settings', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user.access_token}`,
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(cleanApiData)
@@ -219,7 +220,7 @@ export function useUserSettings() {
       const response = await fetch('/api/v1/settings', {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${user.access_token}`,
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json',
         },
       });
