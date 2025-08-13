@@ -474,7 +474,7 @@ export default function ImprovedSettingsPage() {
                       <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 shadow-xl">
                         {avatarPreview || profile.avatar_url ? (
                           <Image
-                            src={avatarPreview || profile.avatar_url}
+                            src={avatarPreview || profile.avatar_url || ''}
                             alt="Profile"
                             fill
                             className="object-cover"

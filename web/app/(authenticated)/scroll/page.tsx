@@ -265,9 +265,9 @@ export default function LegibleScrollPage() {
       
       // Calculate payment using SUSTAINABLE_EARNINGS
       const spotterTier = calculateUserTier({
-        trends_submitted: user.trends_submitted || 0,
-        approval_rate: user.approval_rate || 0.5,
-        quality_score: user.quality_score || 0.5
+        trends_submitted: (user as any).trends_submitted || 0,
+        approval_rate: (user as any).approval_rate || 0.5,
+        quality_score: (user as any).quality_score || 0.5
       });
       
       // Build trend data for earnings calculation
@@ -298,9 +298,9 @@ export default function LegibleScrollPage() {
         performance_tier: spotterTier,
         current_balance: user?.total_earnings || 0,
         total_earned: user?.total_earnings || 0,
-        trends_submitted: user?.trends_submitted || 0,
-        approval_rate: user?.approval_rate || 0.5,
-        quality_score: user?.quality_score || 0.5
+        trends_submitted: (user as any)?.trends_submitted || 0,
+        approval_rate: (user as any)?.approval_rate || 0.5,
+        quality_score: (user as any)?.quality_score || 0.5
       };
       
       const earningsResult = calculateTrendEarnings(
@@ -369,9 +369,9 @@ export default function LegibleScrollPage() {
             timeoutPromise
           ]);
           
-          if ('data' in result) {
-            data = result.data;
-            error = result.error;
+          if (result && typeof result === 'object' && 'data' in result) {
+            data = (result as any).data;
+            error = (result as any).error;
           }
           
           if (error) {
@@ -426,7 +426,7 @@ export default function LegibleScrollPage() {
         .from('earnings_ledger')
         .insert({
           user_id: user.id,
-          trend_id: data.id,
+          trend_id: (data as any).id,
           amount: finalPayment,
           type: 'trend_submission',
           status: 'pending',
@@ -461,7 +461,7 @@ export default function LegibleScrollPage() {
       // Show earnings animation with calculated bonuses
       showEarningsAnimation(
         finalPayment, 
-        earningsResult.appliedBonuses, 
+        (earningsResult as any).appliedBonuses || [], 
         session.isActive ? getStreakMultiplier(session.currentStreak + 1) : 1
       );
       
@@ -748,7 +748,7 @@ export default function LegibleScrollPage() {
               <Flame className="w-5 h-5 text-purple-600" />
               <span className="text-xs text-gray-500">Multiplier</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{streakMultiplier}x</p>
+            <p className="text-2xl font-bold text-gray-900">{getStreakMultiplier(session.currentStreak)}x</p>
             <p className="text-xs text-gray-500">Active</p>
           </div>
           
@@ -833,9 +833,9 @@ export default function LegibleScrollPage() {
               <span className="text-blue-600">
                 Finance bonus: +{formatCurrency(SUSTAINABLE_EARNINGS.performanceBonuses.financeCategory)}
               </span>
-              {streakMultiplier > 1.0 && (
+              {getStreakMultiplier(session.currentStreak) > 1.0 && (
                 <span className="text-orange-600">
-                  Streak: {streakMultiplier}x multiplier
+                  Streak: {getStreakMultiplier(session.currentStreak)}x multiplier
                 </span>
               )}
             </div>

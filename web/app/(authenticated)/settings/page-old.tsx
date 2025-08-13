@@ -506,7 +506,7 @@ export default function SettingsPage() {
                   <div className="relative w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-wave-500 to-wave-600 shadow-xl">
                     {avatarPreview || profile.avatar_url ? (
                       <Image
-                        src={avatarPreview || profile.avatar_url}
+                        src={avatarPreview || profile.avatar_url || ''}
                         alt="Profile avatar"
                         fill
                         className="object-cover"
