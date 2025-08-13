@@ -30,7 +30,7 @@ import {
   ArrowRight,
   RefreshCw
 } from 'lucide-react';
-import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
+import { SUSTAINABLE_EARNINGS } from '@/lib/SUSTAINABLE_EARNINGS';
 
 interface TrendToValidate {
   id: string;

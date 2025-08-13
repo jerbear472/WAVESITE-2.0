@@ -33,7 +33,7 @@ import {
   Target,
   TrendingUp
 } from 'lucide-react';
-import { EARNINGS_CONFIG } from '@/lib/earningsConfig';
+import { SUSTAINABLE_EARNINGS } from '@/lib/SUSTAINABLE_EARNINGS';
 
 interface TrendToVerify {
   id: string;
