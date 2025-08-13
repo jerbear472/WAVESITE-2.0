@@ -54,6 +54,8 @@ interface TrendToValidate {
   post_url?: string;
   trending_position?: number;
   confidence_score?: number;
+  approve_count?: number;
+  reject_count?: number;
 }
 
 interface QualityCriteria {
@@ -738,7 +740,7 @@ export default function ValidatePage() {
                   )}
 
                   {/* Validation Status - Show vote progress */}
-                  {(currentTrend.approve_count > 0 || currentTrend.reject_count > 0) && (
+                  {((currentTrend.approve_count && currentTrend.approve_count > 0) || (currentTrend.reject_count && currentTrend.reject_count > 0)) && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
                       <h4 className="text-sm font-semibold text-gray-900 mb-2">Validation Progress</h4>
                       <div className="flex gap-4 mb-2">
