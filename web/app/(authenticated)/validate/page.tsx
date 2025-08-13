@@ -346,16 +346,42 @@ export default function ValidatePageFixed() {
       console.log('Submitting validation:', { trend_id: trendId, vote: voteType });
       
       // Direct insert approach to avoid RPC function issues
-      const { data: validationData, error: validationError } = await supabase
+      // Try with trend_id first (most common), fall back to trend_submission_id if that fails
+      let validationData = null;
+      let validationError = null;
+      
+      // First attempt with trend_id
+      const insertResult = await supabase
         .from('trend_validations')
         .insert({
-          trend_submission_id: trendId,
+          trend_id: trendId,  // Try trend_id first
           validator_id: user.id,
           vote: voteType,
           created_at: new Date().toISOString()
         })
         .select()
         .single();
+      
+      validationData = insertResult.data;
+      validationError = insertResult.error;
+      
+      // If it failed due to missing column, try trend_submission_id
+      if (validationError && validationError.message?.includes("trend_id")) {
+        console.log('trend_id column not found, trying trend_submission_id...');
+        const altResult = await supabase
+          .from('trend_validations')
+          .insert({
+            trend_submission_id: trendId,  // Fallback to trend_submission_id
+            validator_id: user.id,
+            vote: voteType,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        validationData = altResult.data;
+        validationError = altResult.error;
+      }
       
       if (validationError) {
         console.error('Validation insert error:', validationError);

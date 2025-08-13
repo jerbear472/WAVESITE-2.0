@@ -100,11 +100,25 @@ export default function ImprovedSettingsPage() {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('users')
+      // First try user_profiles table
+      let { data, error } = await supabase
+        .from('user_profiles')
         .select('role')
         .eq('id', user.id)
         .single();
+        
+      // If user_profiles doesn't exist, try profiles table
+      if (error?.code === '42P01') {
+        const profilesResult = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
+        if (!profilesResult.error && profilesResult.data) {
+          setIsAdmin(profilesResult.data.is_admin === true);
+          return;
+        }
+      }
         
       if (!error && data) {
         setIsAdmin(data.role === 'admin' || data.role === 'manager');
@@ -120,19 +134,34 @@ export default function ImprovedSettingsPage() {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('users')
+      // First try user_profiles table
+      let { data, error } = await supabase
+        .from('user_profiles')
         .select('*')
         .eq('id', user.id)
         .single();
       
+      // If user_profiles doesn't exist, try profiles table
+      if (error?.code === '42P01') {
+        const profilesResult = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        data = profilesResult.data;
+        error = profilesResult.error;
+      }
+      
       if (error) throw error;
       
       if (data) {
+        // Get the email from auth.user if not in profile
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        
         setProfile({
           id: data.id,
-          username: data.username || data.email?.split('@')[0] || '',
-          email: data.email || '',
+          username: data.username || authUser?.user_metadata?.username || authUser?.email?.split('@')[0] || '',
+          email: data.email || authUser?.email || '',
           avatar_url: data.avatar_url || '',
           bio: data.bio || '',
           website: data.website || '',
@@ -185,8 +214,9 @@ export default function ImprovedSettingsPage() {
       setSaving(true);
       setErrors({});
       
-      const { error } = await supabase
-        .from('users')
+      // Update profile data - try user_profiles first, then profiles
+      let { error } = await supabase
+        .from('user_profiles')
         .update({
           username: profile.username,
           email: profile.email,
@@ -201,7 +231,35 @@ export default function ImprovedSettingsPage() {
         })
         .eq('id', user?.id);
       
+      // If user_profiles doesn't exist, try profiles table
+      if (error?.code === '42P01') {
+        const profilesResult = await supabase
+          .from('profiles')
+          .update({
+            username: profile.username,
+            email: profile.email,
+            bio: profile.bio,
+            website: profile.website,
+            avatar_url: profile.avatar_url,
+            notification_preferences: profile.notifications,
+            privacy_settings: profile.privacy,
+            theme: profile.theme,
+            language: profile.language,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user?.id);
+        error = profilesResult.error;
+      }
+      
       if (error) throw error;
+      
+      // Also update auth metadata if email changed
+      if (profile.email !== user?.email) {
+        const { error: authError } = await supabase.auth.updateUser({
+          email: profile.email
+        });
+        if (authError) throw authError;
+      }
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -264,11 +322,18 @@ export default function ImprovedSettingsPage() {
       // Update profile
       setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
       
-      // Save to database
-      await supabase
-        .from('users')
+      // Save to database - try user_profiles first, then profiles
+      let { error: updateError } = await supabase
+        .from('user_profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', user?.id);
+      
+      if (updateError?.code === '42P01') {
+        await supabase
+          .from('profiles')
+          .update({ avatar_url: publicUrl })
+          .eq('id', user?.id);
+      }
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -286,10 +351,18 @@ export default function ImprovedSettingsPage() {
     try {
       setUploadingAvatar(true);
       
-      await supabase
-        .from('users')
+      // Try user_profiles first, then profiles
+      let { error } = await supabase
+        .from('user_profiles')
         .update({ avatar_url: null })
         .eq('id', user?.id);
+      
+      if (error?.code === '42P01') {
+        await supabase
+          .from('profiles')
+          .update({ avatar_url: null })
+          .eq('id', user?.id);
+      }
       
       setProfile(prev => ({ ...prev, avatar_url: '' }));
       setAvatarPreview(null);
