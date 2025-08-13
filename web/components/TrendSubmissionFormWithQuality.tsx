@@ -151,7 +151,7 @@ export default function TrendSubmissionFormWithQuality({
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [qualityMetrics, setQualityMetrics] = useState<TrendQualityMetrics | null>(initialQualityMetrics);
+  const [qualityMetrics, setQualityMetrics] = useState<TrendQualityMetrics | null>(initialQualityMetrics || null);
   const [estimatedPayment, setEstimatedPayment] = useState<any>(initialEstimatedPayment);
   const performanceService = TrendSpotterPerformanceService.getInstance();
   
