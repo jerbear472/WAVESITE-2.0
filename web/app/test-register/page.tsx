@@ -48,7 +48,7 @@ function TestRegisterComponent() {
       
       if (authError) {
         console.error('Auth error:', authError);
-        setResult(prev => ({ 
+        setResult((prev: any) => ({ 
           ...prev, 
           authError: authError.message,
           authErrorDetails: authError
@@ -57,7 +57,7 @@ function TestRegisterComponent() {
       }
       
       console.log('Auth success:', authData);
-      setResult(prev => ({ 
+      setResult((prev: any) => ({ 
         ...prev, 
         authSuccess: true,
         userId: authData.user?.id,
@@ -78,14 +78,14 @@ function TestRegisterComponent() {
         
       if (profileError) {
         console.error('Profile error:', profileError);
-        setResult(prev => ({ 
+        setResult((prev: any) => ({ 
           ...prev, 
           profileError: profileError.message,
           profileErrorDetails: profileError
         }));
       } else {
         console.log('Profile found:', profile);
-        setResult(prev => ({ 
+        setResult((prev: any) => ({ 
           ...prev, 
           profileFound: true,
           profile: profile
@@ -102,14 +102,14 @@ function TestRegisterComponent() {
         
       if (viewError) {
         console.error('View error:', viewError);
-        setResult(prev => ({ 
+        setResult((prev: any) => ({ 
           ...prev, 
           viewError: viewError.message,
           viewErrorDetails: viewError
         }));
       } else {
         console.log('Profile view found:', profileView);
-        setResult(prev => ({ 
+        setResult((prev: any) => ({ 
           ...prev, 
           viewFound: true,
           profileView: profileView
@@ -132,14 +132,14 @@ function TestRegisterComponent() {
           
         if (manualError) {
           console.error('Manual insert error:', manualError);
-          setResult(prev => ({ 
+          setResult((prev: any) => ({ 
             ...prev, 
             manualError: manualError.message,
             manualErrorDetails: manualError
           }));
         } else {
           console.log('Manual insert success:', manualProfile);
-          setResult(prev => ({ 
+          setResult((prev: any) => ({ 
             ...prev, 
             manualSuccess: true,
             manualProfile: manualProfile
@@ -149,7 +149,7 @@ function TestRegisterComponent() {
       
     } catch (error: any) {
       console.error('Unexpected error:', error);
-      setResult(prev => ({ 
+      setResult((prev: any) => ({ 
         ...prev, 
         unexpectedError: error.message,
         errorStack: error.stack
