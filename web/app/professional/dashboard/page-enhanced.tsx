@@ -216,16 +216,16 @@ export default function ProfessionalDashboard() {
     }
   };
 
-  const handleExport = async (format: 'csv' | 'pdf' | 'xlsx' | 'json') => {
+  const handleExport = async (exportFormat: 'csv' | 'pdf' | 'xlsx' | 'json') => {
     if (!user) return;
 
     try {
       await subscriptionService.logFeatureAccess(user.id, 'export_report', 'export', {
-        format,
+        format: exportFormat,
         trend_count: trends.length
       });
 
-      if (format === 'json') {
+      if (exportFormat === 'json') {
         const jsonData = JSON.stringify(trends, null, 2);
         const blob = new Blob([jsonData], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -233,7 +233,7 @@ export default function ProfessionalDashboard() {
         a.href = url;
         a.download = `wavesight-pro-trends-${format(new Date(), 'yyyy-MM-dd')}.json`;
         a.click();
-      } else if (format === 'csv') {
+      } else if (exportFormat === 'csv') {
         const csvContent = [
           ['Trend', 'Category', 'Confidence', 'Validations', 'Velocity', 'Predicted Mainstream', 'Date'],
           ...trends.map(t => [
