@@ -109,11 +109,20 @@ export class BackgroundJobs {
             const matchedTrendId = similarTrends[0].id;
             
             // Update trend statistics
+            // First get the current submission count
+            const { data: currentTrend } = await supabase
+              .from('trends')
+              .select('submission_count')
+              .eq('id', matchedTrendId)
+              .single();
+            
+            const currentCount = currentTrend?.submission_count || 0;
+            
             await supabase
               .from('trends')
               .update({
                 last_seen: submission.created_at,
-                submission_count: supabase.raw('submission_count + 1'),
+                submission_count: currentCount + 1,
                 updated_at: new Date().toISOString()
               })
               .eq('id', matchedTrendId);
