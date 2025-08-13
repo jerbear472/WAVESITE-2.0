@@ -98,7 +98,7 @@ export const EarningsDashboard: React.FC = () => {
       const sessionEarnings = sessions.reduce((sum, s) => sum + s.total_earnings, 0);
       // Calculate verification earnings using SUSTAINABLE_EARNINGS
       const spotterTier = (user?.spotter_tier || 'learning') as SpotterTier;
-      const verificationEarnings = (verificationsCount || 0) * calculateValidationEarnings(true, spotterTier);
+      const verificationEarnings = calculateValidationEarnings(verificationsCount || 0, spotterTier);
       setTotalEarnings(sessionEarnings + verificationEarnings);
 
       // Calculate stats
