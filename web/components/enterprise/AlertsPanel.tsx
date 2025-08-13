@@ -354,7 +354,7 @@ export function AlertsPanel() {
                         <div className="mt-2 text-sm">
                           {Object.entries(notification.data).map(([key, value]) => (
                             <span key={key} className="inline-block bg-gray-800 px-2 py-1 rounded mr-2 mb-1">
-                              {key}: {value}
+                              {key}: {String(value)}
                             </span>
                           ))}
                         </div>
