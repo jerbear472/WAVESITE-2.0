@@ -59,7 +59,7 @@ const FINANCE_COMMUNITIES = [
 
 export default function EnhancedScrollPage() {
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollSessionRef = useRef<any>();
   
@@ -202,7 +202,7 @@ export default function EnhancedScrollPage() {
   };
 
   const handleTrendSubmit = async (formData: any) => {
-    if (!user || !profile) {
+    if (!user) {
       setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
       return;
     }
@@ -238,12 +238,7 @@ export default function EnhancedScrollPage() {
         status: getSafeStatus('submitted'),
         evidence: {
           ...formData,
-          user_profile: {
-            age: profile?.age,
-            gender: profile?.gender,
-            location: profile?.location,
-            interests: profile?.interests
-          }
+          user_profile: {}
         },
         
         // Structured fields for queries

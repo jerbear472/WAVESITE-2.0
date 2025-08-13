@@ -3,6 +3,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { AppError, handleApiError, ErrorCodes } from '@/lib/errorHandler';
+import { errorMonitor } from '@/lib/errorMonitoring';
 
 // Initialize Supabase client lazily to avoid build-time errors
 function getSupabaseClient() {
@@ -19,11 +21,38 @@ function getSupabaseClient() {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('📥 Failsafe trend submission endpoint called');
+  const requestId = generateUUID();
+  console.log('📥 Failsafe trend submission endpoint called', { requestId });
 
   try {
     // Get Supabase client
     const supabase = getSupabaseClient();
+    
+    // SECURITY: Check authentication first
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new AppError(
+        'Authentication required',
+        401,
+        ErrorCodes.AUTHENTICATION_FAILED
+      );
+    }
+    
+    // Verify the user token
+    const token = authHeader.substring(7);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      errorMonitor.logError(authError || new Error('User not found'), {
+        requestId,
+        context: 'authentication'
+      });
+      throw new AppError(
+        'Invalid authentication',
+        401,
+        ErrorCodes.AUTHENTICATION_FAILED
+      );
+    }
     
     // Parse the request body
     const body = await request.json();
@@ -36,7 +65,7 @@ export async function POST(request: NextRequest) {
       category: normalizeCategory(body.category),
       image_url: body.image_url || body.image || null,
       metadata: body.metadata || {},
-      user_id: body.user_id || body.spotter_id || null,
+      user_id: user.id, // Always use authenticated user's ID
     };
 
     // Generate a unique ID for this submission
@@ -179,7 +208,7 @@ async function tryRPCSubmission(supabase: any, data: any, id: string) {
       method: 'rpc'
     };
   } catch (error) {
-    console.error('RPC submission failed:', error);
+    errorMonitor.logWarning('RPC submission failed', { error, id });
     return { success: false };
   }
 }

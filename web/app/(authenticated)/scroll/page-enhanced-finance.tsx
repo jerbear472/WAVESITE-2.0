@@ -50,7 +50,7 @@ import { ScrollSession } from '@/components/ScrollSession';
 import { FloatingTrendLogger } from '@/components/FloatingTrendLogger';
 import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePersona } from '@/contexts/PersonaContext';
+// import { usePersona } from '@/contexts/PersonaContext';
 import WaveLogo from '@/components/WaveLogo';
 import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
@@ -158,8 +158,10 @@ interface TrendData {
 
 export default function EnhancedScrollDashboard() {
   const router = useRouter();
-  const { user, profile } = useAuth();
-  const { persona } = usePersona();
+  const { user } = useAuth();
+  const profile: any = null;
+  // const { persona } = usePersona();
+  const persona: any = null;
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollSessionRef = useRef<any>();
   
@@ -313,10 +315,10 @@ export default function EnhancedScrollDashboard() {
       const enrichedData = {
         ...trendData,
         ...formData,
-        user_age: persona?.age || profile.age,
-        user_gender: persona?.gender || profile.gender,
-        user_location: persona?.location || profile.location,
-        user_interests: persona?.interests || profile.interests,
+        user_age: persona?.age || profile?.age,
+        user_gender: persona?.gender || profile?.gender,
+        user_location: persona?.location || profile?.location,
+        user_interests: persona?.interests || profile?.interests,
         user_investment_experience: persona?.investment_experience,
         user_risk_tolerance: persona?.risk_tolerance
       };
@@ -622,7 +624,7 @@ export default function EnhancedScrollDashboard() {
                 <div className="flex items-center gap-2 text-sm text-gray-300">
                   <span>Platform:</span>
                   <span className="px-3 py-1 bg-purple-600/20 rounded-lg">
-                    {PLATFORM_ICONS[selectedPlatform]} {selectedPlatform}
+                    {PLATFORM_ICONS[selectedPlatform as keyof typeof PLATFORM_ICONS]} {selectedPlatform}
                   </span>
                 </div>
               )}

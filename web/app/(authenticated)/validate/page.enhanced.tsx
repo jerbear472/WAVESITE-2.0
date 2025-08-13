@@ -271,7 +271,7 @@ export default function EnhancedVerify() {
         toast.error('Failed to submit validation');
       }
     } finally {
-      setVerifying(false;
+      setVerifying(false);
       setTimeSpent(0);
     }
   };

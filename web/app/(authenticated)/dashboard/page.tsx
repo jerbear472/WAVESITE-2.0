@@ -320,7 +320,7 @@ export default function Dashboard() {
       }
 
       // Combine user trends and recent platform trends, prioritizing user trends
-      const combinedTrends = [];
+      const combinedTrends: any[] = [];
       
       if (userTrends && !userTrendsError) {
         // Add user's trends first
@@ -362,7 +362,7 @@ export default function Dashboard() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      const activities = [];
+      const activities: any[] = [];
 
       if (earnings) {
         earnings.forEach(earning => {
@@ -681,7 +681,7 @@ export default function Dashboard() {
                                   Your trend
                                 </span>
                               )}
-                              {trend.earnings_amount > 0 && (
+                              {trend.earnings_amount && trend.earnings_amount > 0 && (
                                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">
                                   +{formatCurrency(trend.earnings_amount)}
                                 </span>
@@ -706,10 +706,10 @@ export default function Dashboard() {
                             
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                               <span>{formatTimeAgo(trend.created_at)}</span>
-                              {trend.likes_count > 0 && (
+                              {trend.likes_count && trend.likes_count > 0 && (
                                 <span>❤️ {formatNumber(trend.likes_count)}</span>
                               )}
-                              {trend.views_count > 0 && (
+                              {trend.views_count && trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
                               <span className={`

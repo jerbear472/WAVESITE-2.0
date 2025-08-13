@@ -3,11 +3,21 @@ import type { NextRequest } from 'next/server';
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
 // Add routes that require authentication
-const protectedRoutes = ['/dashboard', '/profile', '/persona', '/settings'];
+const protectedRoutes = [
+  '/dashboard',
+  '/profile', 
+  '/persona',
+  '/settings',
+  '/validate',
+  '/submit',
+  '/timeline',
+  '/scroll',
+  '/earnings',
+  '/admin'
+];
 
 export async function middleware(request: NextRequest) {
-  // Temporarily disabled - will be re-enabled once login is working consistently
-  return NextResponse.next();
+  // Authentication middleware is now enabled
   
   const { pathname } = request.nextUrl;
   const res = NextResponse.next();

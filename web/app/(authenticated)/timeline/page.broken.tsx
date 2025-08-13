@@ -209,7 +209,6 @@ export default function Timeline() {
               </div>
             ))
           )}
-          </div>
         </div>
       </div>
     </div>

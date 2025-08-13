@@ -17,7 +17,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "value": "https://wavesight.com"
         },
         {
           "key": "Access-Control-Allow-Methods",

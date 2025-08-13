@@ -10,8 +10,8 @@ const nextConfig = {
     domains: ['aicahushpcslwjwrlqbo.supabase.co'], // NEW Supabase instance
   },
   typescript: {
-    // Temporarily ignore build errors to deploy
-    ignoreBuildErrors: true,
+    // Enable TypeScript checking during build
+    ignoreBuildErrors: false,
   },
   eslint: {
     // Enable ESLint during production build
