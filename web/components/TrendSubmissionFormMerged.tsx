@@ -784,7 +784,7 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
                 <div className="flex items-center gap-2">
                   <SparklesIcon className="w-4 h-4 text-purple-400" />
                   <span className="text-sm font-medium text-white">
-                    Quality: {Math.round(qualityMetrics.totalScore * 100)}%
+                    Quality: {Math.round(qualityMetrics.overallQuality * 100)}%
                   </span>
                 </div>
                 {estimatedPayment && (
