@@ -93,6 +93,10 @@ class AIProcessingService {
     }
 
     try {
+      if (!openai) {
+        throw new Error('OpenAI client not initialized');
+      }
+      
       const response = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
         messages: [
@@ -147,6 +151,10 @@ Return a JSON object with: category, subcategory, confidence (0-1), reasoning (b
     }
 
     try {
+      if (!openai) {
+        throw new Error('OpenAI client not initialized');
+      }
+      
       const response = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
         messages: [
@@ -225,6 +233,10 @@ Each array should contain unique string values. If none found, return empty arra
     submissionCount: number
   ): Promise<string> {
     try {
+      if (!openai) {
+        return 'AI summary generation is currently unavailable.';
+      }
+      
       const response = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
         messages: [
