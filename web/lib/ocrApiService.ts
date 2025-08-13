@@ -49,14 +49,14 @@ export class OCRApiService {
       return {
         handle: '@error_ocr',
         caption: `OCR Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        platform: 'unknown' as const,
+        platform: undefined,
         rawText: debug ? `Error: ${error}` : undefined
       };
     }
   }
   
   static async analyzeScreenshot(imageFile: File): Promise<{
-    platform: 'tiktok' | 'instagram' | 'unknown';
+    platform: 'tiktok' | 'instagram' | undefined;
     extractedData: OCRResult;
     confidence: number;
   }> {
@@ -82,7 +82,7 @@ export class OCRApiService {
     }
     
     return {
-      platform: extractedData.platform || 'unknown',
+      platform: extractedData.platform || undefined,
       extractedData,
       confidence: Math.min(confidence, 0.95)
     };
