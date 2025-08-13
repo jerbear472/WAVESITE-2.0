@@ -947,7 +947,7 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
                   </div>
 
                   {/* Auto-captured Data Display */}
-                  {(formData.creator_handle || formData.creator_name || formData.post_caption || formData.likes_count > 0) && (
+                  {(formData.creator_handle || formData.creator_name || formData.post_caption || (formData.likes_count || 0) > 0) && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -975,22 +975,22 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
                           </div>
                         )}
                         <div className="flex flex-wrap items-center gap-4 mt-3">
-                          {formData.likes_count > 0 && (
+                          {(formData.likes_count || 0) > 0 && (
                             <span className="flex items-center gap-1 bg-red-500/20 px-2 py-1 rounded">
                               <HeartIcon className="w-4 h-4 text-red-400" />
-                              <span className="text-white font-medium">{formatNumber(formData.likes_count)}</span>
+                              <span className="text-white font-medium">{formatNumber(formData.likes_count || 0)}</span>
                             </span>
                           )}
-                          {formData.comments_count > 0 && (
+                          {(formData.comments_count || 0) > 0 && (
                             <span className="flex items-center gap-1 bg-blue-500/20 px-2 py-1 rounded">
                               <CommentIcon className="w-4 h-4 text-blue-400" />
-                              <span className="text-white font-medium">{formatNumber(formData.comments_count)}</span>
+                              <span className="text-white font-medium">{formatNumber(formData.comments_count || 0)}</span>
                             </span>
                           )}
-                          {formData.views_count > 0 && (
+                          {(formData.views_count || 0) > 0 && (
                             <span className="flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded">
                               <EyeIcon className="w-4 h-4 text-green-400" />
-                              <span className="text-white font-medium">{formatNumber(formData.views_count)}</span>
+                              <span className="text-white font-medium">{formatNumber(formData.views_count || 0)}</span>
                             </span>
                           )}
                         </div>
