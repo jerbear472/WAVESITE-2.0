@@ -27,7 +27,8 @@ import {
   User,
   Hash,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import { SUSTAINABLE_EARNINGS } from '@/lib/SUSTAINABLE_EARNINGS';
 
