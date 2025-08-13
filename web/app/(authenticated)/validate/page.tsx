@@ -294,9 +294,9 @@ export default function ValidatePageFixed() {
         .eq('validator_id', user?.id);
 
       // Calculate earnings using EARNINGS_STANDARD
-      const spotterTier = (user?.spotter_tier || 'learning') as SpotterTier;
-      const todayEarnings = (todayValidations?.length || 0) * calculateValidationEarnings(true, spotterTier);
-      const totalEarnings = (allValidations?.length || 0) * calculateValidationEarnings(true, spotterTier);
+      const spotterTier = (user?.spotter_tier || 'learning') as Tier;
+      const todayEarnings = calculateValidationEarnings(todayValidations?.length || 0, spotterTier);
+      const totalEarnings = calculateValidationEarnings(allValidations?.length || 0, spotterTier);
       
       setStats({
         validated_today: todayValidations?.length || 0,
@@ -940,7 +940,7 @@ export default function ValidatePageFixed() {
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Session Earnings</p>
-                <p className="text-xl font-bold text-green-600">+{formatEarnings(sessionValidations * calculateValidationEarnings(true, (user?.spotter_tier || 'learning') as SpotterTier))}</p>
+                <p className="text-xl font-bold text-green-600">+{formatCurrency(calculateValidationEarnings(sessionValidations, (user?.spotter_tier || 'learning') as Tier))}</p>
               </div>
             </div>
           </motion.div>
