@@ -277,8 +277,8 @@ export class ImprovedMetadataExtractor {
     }
 
     // Twitter doesn't provide predictable thumbnail URLs
-    // Return a placeholder or null
-    metadata.thumbnail_url = null;
+    // Return a placeholder or undefined
+    metadata.thumbnail_url = undefined;
 
     return metadata;
   }
