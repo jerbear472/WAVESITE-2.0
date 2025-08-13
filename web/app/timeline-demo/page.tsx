@@ -155,7 +155,7 @@ export default function TimelineDemoPage() {
     const statuses = ['submitted', 'validating', 'approved', 'viral', 'rejected'] as const;
     setData(data.map(item => ({
       ...item,
-      status: statuses[Math.floor(Math.random() * statuses.length)]
+      status: statuses[Math.floor(Math.random() * statuses.length)] as typeof item.status
     })));
   };
 
