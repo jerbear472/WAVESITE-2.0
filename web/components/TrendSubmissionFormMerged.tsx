@@ -345,14 +345,14 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
       // First get basic metadata
       const metadata = await MetadataExtractor.extractFromUrl(url);
       
-      // Extract thumbnail using our enhanced extractor
-      const thumbnailData = getUltraSimpleThumbnail(url);
-      console.log('Extracted thumbnail data:', thumbnailData);
+      let finalThumbnailUrl = undefined;
+      let creatorHandle = undefined;
+      let creatorName = undefined;
       
-      // For TikTok, if we didn't get a thumbnail, try the API route
-      let finalThumbnailUrl = thumbnailData.thumbnail_url;
-      if (url.includes('tiktok.com') && !finalThumbnailUrl) {
+      // For TikTok, always use the API route that works
+      if (url.includes('tiktok.com')) {
         try {
+          console.log('Extracting TikTok thumbnail via API...');
           const response = await fetch('/api/tiktok-thumbnail', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -361,15 +361,29 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
           
           if (response.ok) {
             const apiData = await response.json();
+            console.log('TikTok API response:', apiData);
+            
             if (apiData.thumbnail_url) {
-              // Use proxied URL for TikTok thumbnails
-              finalThumbnailUrl = getProxiedImageUrl(apiData.thumbnail_url);
-              console.log('Got thumbnail from API:', finalThumbnailUrl);
+              // Use the thumbnail URL directly from API
+              finalThumbnailUrl = apiData.thumbnail_url;
+              console.log('Got TikTok thumbnail:', finalThumbnailUrl);
+            }
+            if (apiData.creator_handle) {
+              creatorHandle = apiData.creator_handle;
+            }
+            if (apiData.creator_name) {
+              creatorName = apiData.creator_name;
             }
           }
         } catch (error) {
-          console.log('API thumbnail extraction failed:', error);
+          console.error('TikTok API thumbnail extraction failed:', error);
         }
+      } else {
+        // For other platforms, use the simple extractor
+        const thumbnailData = getUltraSimpleThumbnail(url);
+        console.log('Extracted thumbnail data for non-TikTok:', thumbnailData);
+        finalThumbnailUrl = thumbnailData.thumbnail_url;
+        creatorHandle = thumbnailData.creator_handle;
       }
       
       // Auto-detect platform immediately
@@ -380,8 +394,8 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
           ...prev,
           platform: detectedPlatform,
           thumbnail_url: finalThumbnailUrl || prev.thumbnail_url,
-          creator_handle: metadata.creator_handle || thumbnailData.creator_handle || prev.creator_handle,
-          creator_name: metadata.creator_name || prev.creator_name,
+          creator_handle: creatorHandle || metadata.creator_handle || prev.creator_handle,
+          creator_name: creatorName || metadata.creator_name || prev.creator_name,
           post_caption: metadata.post_caption || prev.post_caption,
           likes_count: metadata.likes_count !== undefined ? metadata.likes_count : prev.likes_count,
           comments_count: metadata.comments_count !== undefined ? metadata.comments_count : prev.comments_count,

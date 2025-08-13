@@ -45,11 +45,13 @@ interface TrendToValidate {
   thumbnail_url?: string;
   platform?: string;
   creator_handle?: string;
+  creator_name?: string;
   post_caption?: string;
   likes_count?: number | string;
   comments_count?: number | string;
   shares_count?: number | string;
   views_count?: number | string;
+  follower_count?: number | string;
   validation_count: number | string;
   spotter_id: string;
   hours_since_post?: number;
@@ -60,6 +62,10 @@ interface TrendToValidate {
   confidence_score?: number;
   approve_count?: number | string;
   reject_count?: number | string;
+  virality_prediction?: number;
+  evidence?: any;
+  wave_score?: number;
+  quality_score?: number;
 }
 
 interface QualityCriteria {

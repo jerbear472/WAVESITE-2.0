@@ -47,10 +47,13 @@ export async function POST(request: NextRequest) {
       if (response.ok) {
         const data = await response.json();
         
-        // If we got a thumbnail from oEmbed, use it
+        // If we got a thumbnail from oEmbed, proxy it to avoid CORS
         if (data.thumbnail_url) {
+          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(data.thumbnail_url)}`;
+          
           return NextResponse.json({
-            thumbnail_url: data.thumbnail_url,
+            thumbnail_url: proxyUrl,
+            original_url: data.thumbnail_url,
             title: data.title,
             creator_handle: data.author_name ? `@${data.author_name}` : (username ? `@${username}` : null),
             creator_name: data.author_name || username,
@@ -62,9 +65,12 @@ export async function POST(request: NextRequest) {
       console.log('oEmbed fetch failed (expected), using fallback patterns');
     }
 
-    // Return with fallback thumbnail patterns
+    // Return with proxied thumbnail URL to avoid CORS issues
+    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(thumbnailPatterns[0])}`;
+    
     return NextResponse.json({
-      thumbnail_url: thumbnailPatterns[0], // Use the most reliable pattern
+      thumbnail_url: proxyUrl, // Use proxied URL
+      original_url: thumbnailPatterns[0], // Original CDN URL
       fallback_thumbnails: thumbnailPatterns, // Provide alternatives
       video_id: videoId,
       creator_handle: username ? `@${username}` : null,
