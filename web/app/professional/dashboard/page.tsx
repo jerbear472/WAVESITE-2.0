@@ -66,7 +66,7 @@ export default function ProfessionalDashboard() {
       setTrends(trendsData || []);
 
       // Fetch client data if admin
-      if (user.role === 'admin' || user.permissions?.can_access_all_data) {
+      if (user && (user.role === 'admin' || user.permissions?.can_access_all_data)) {
         const { data: clientsData, error: clientsError } = await supabase
           .from('user_profiles')
           .select('*')
