@@ -107,18 +107,25 @@ export default function MobileTrendSubmission({ onClose, onSubmit }: MobileTrend
     try {
       const extractedData = await MetadataExtractor.extractFromUrl(url);
       
+      // Detect platform from URL
+      let platform = 'other';
+      if (url.includes('tiktok.com')) platform = 'tiktok';
+      else if (url.includes('instagram.com')) platform = 'instagram';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) platform = 'youtube';
+      else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'twitter';
+      
       setFormData(prev => ({
         ...prev,
-        platform: extractedData.platform,
+        platform: platform,
         title: prev.title || extractedData.title || '',
-        creator_handle: extractedData.metadata.creator_handle || '',
-        creator_name: extractedData.metadata.creator_name || '',
-        post_caption: extractedData.metadata.post_caption || '',
-        likes_count: extractedData.metadata.likes_count || 0,
-        comments_count: extractedData.metadata.comments_count || 0,
-        shares_count: extractedData.metadata.shares_count || 0,
-        views_count: extractedData.metadata.views_count || 0,
-        hashtags: extractedData.metadata.hashtags || []
+        creator_handle: extractedData.creator_handle || '',
+        creator_name: extractedData.creator_name || '',
+        post_caption: extractedData.post_caption || '',
+        likes_count: extractedData.likes_count || 0,
+        comments_count: extractedData.comments_count || 0,
+        shares_count: extractedData.shares_count || 0,
+        views_count: extractedData.views_count || 0,
+        hashtags: extractedData.hashtags || []
       }));
     } catch (error) {
       console.error('Error extracting metadata:', error);
