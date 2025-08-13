@@ -404,7 +404,7 @@ export function DataExportPanel() {
                   <div className="text-sm text-gray-500 mb-3">
                     {Object.entries(integration.config).map(([key, value]) => (
                       <div key={key}>
-                        {key}: <span className="text-gray-400">{value}</span>
+                        {key}: <span className="text-gray-400">{String(value)}</span>
                       </div>
                     ))}
                   </div>
