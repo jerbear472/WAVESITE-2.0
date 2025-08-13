@@ -279,7 +279,7 @@ export default function TrendSubmissionFormFixed({ onClose, onSubmit, initialUrl
               </div>
 
               {/* Auto-captured Data Display */}
-              {(formData.creator_handle || formData.post_caption || formData.likes_count > 0) && (
+              {(formData.creator_handle || formData.post_caption || (formData.likes_count || 0) > 0) && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -309,24 +309,24 @@ export default function TrendSubmissionFormFixed({ onClose, onSubmit, initialUrl
                         </span>
                       </div>
                     )}
-                    {(formData.likes_count > 0 || formData.views_count > 0) && (
+                    {((formData.likes_count || 0) > 0 || (formData.views_count || 0) > 0) && (
                       <div className="flex items-center gap-4 mt-2">
-                        {formData.likes_count > 0 && (
+                        {(formData.likes_count || 0) > 0 && (
                           <span className="text-sm text-slate-300 flex items-center gap-1">
                             <HeartIcon className="w-4 h-4 text-red-400" />
-                            {formatNumber(formData.likes_count)}
+                            {formatNumber(formData.likes_count || 0)}
                           </span>
                         )}
-                        {formData.comments_count > 0 && (
+                        {(formData.comments_count || 0) > 0 && (
                           <span className="text-sm text-slate-300 flex items-center gap-1">
                             <CommentIcon className="w-4 h-4 text-blue-400" />
-                            {formatNumber(formData.comments_count)}
+                            {formatNumber(formData.comments_count || 0)}
                           </span>
                         )}
-                        {formData.views_count > 0 && (
+                        {(formData.views_count || 0) > 0 && (
                           <span className="text-sm text-slate-300 flex items-center gap-1">
                             <EyeIcon className="w-4 h-4 text-green-400" />
-                            {formatNumber(formData.views_count)}
+                            {formatNumber(formData.views_count || 0)}
                           </span>
                         )}
                       </div>
@@ -647,22 +647,22 @@ export default function TrendSubmissionFormFixed({ onClose, onSubmit, initialUrl
                     <div>
                       <span className="text-slate-400 text-sm">Engagement</span>
                       <div className="flex items-center gap-4 mt-1">
-                        {formData.likes_count > 0 && (
+                        {(formData.likes_count || 0) > 0 && (
                           <span className="text-white flex items-center gap-1">
                             <HeartIcon className="w-4 h-4" />
-                            {formatNumber(formData.likes_count)}
+                            {formatNumber(formData.likes_count || 0)}
                           </span>
                         )}
-                        {formData.comments_count > 0 && (
+                        {(formData.comments_count || 0) > 0 && (
                           <span className="text-white flex items-center gap-1">
                             <CommentIcon className="w-4 h-4" />
-                            {formatNumber(formData.comments_count)}
+                            {formatNumber(formData.comments_count || 0)}
                           </span>
                         )}
-                        {formData.views_count > 0 && (
+                        {(formData.views_count || 0) > 0 && (
                           <span className="text-white flex items-center gap-1">
                             <EyeIcon className="w-4 h-4" />
-                            {formatNumber(formData.views_count)}
+                            {formatNumber(formData.views_count || 0)}
                           </span>
                         )}
                       </div>
