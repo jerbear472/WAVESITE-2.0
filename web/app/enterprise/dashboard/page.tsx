@@ -262,7 +262,7 @@ export default function EnterpriseDashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <motion.div className="text-center">
-          <WaveSightLogo size="lg" showText={true} />
+          <WaveSightLogo size="lg"  />
           <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -284,7 +284,7 @@ export default function EnterpriseDashboard() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-              <WaveSightLogo size="md" showText={true} />
+              <WaveSightLogo size="md"  />
               <div className="hidden lg:block">
                 <h1 className="text-2xl font-bold text-gray-900">Enterprise Intelligence</h1>
                 <p className="text-sm text-gray-600">Real-time trend analytics & market insights</p>

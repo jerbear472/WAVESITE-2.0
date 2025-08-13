@@ -372,7 +372,7 @@ export default function ApexDashboard() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <motion.div className="text-center">
-          <WaveSightLogo size="lg" showText={true} />
+          <WaveSightLogo size="lg"  />
           <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -393,7 +393,7 @@ export default function ApexDashboard() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-              <WaveSightLogo size="md" showText={true} />
+              <WaveSightLogo size="md"  />
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent">
                   WaveSight Apex

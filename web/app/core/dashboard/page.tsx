@@ -228,7 +228,7 @@ export default function CoreDashboard() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-              <WaveSightLogo size="md" showText={true} />
+              <WaveSightLogo size="md" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">WaveSight Core</h1>
                 <p className="text-sm text-gray-600">Essential trend intelligence</p>
