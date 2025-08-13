@@ -226,6 +226,16 @@ export default function LegibleScrollPage() {
     // Don't reset streak immediately - give them time to start a new session
   };
 
+  // Streak multipliers - NOT part of base earnings, just for display/gamification
+  const getStreakMultiplier = (streakCount: number): number => {
+    // These are display-only multipliers for gamification
+    // Actual earnings are based on SUSTAINABLE_EARNINGS tiers
+    if (streakCount >= 15) return 3.0;
+    if (streakCount >= 5) return 2.0;
+    if (streakCount >= 2) return 1.2;
+    return 1.0;
+  };
+
   const calculateMultiplier = (streakCount: number): number => {
     return getStreakMultiplier(streakCount);
   };
@@ -707,7 +717,7 @@ export default function LegibleScrollPage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Scroll Session</h2>
                 <p className="text-sm text-gray-500">
-                  {isSessionActive ? 'Earn streak multipliers!' : 'Optional: Up to 3x earnings!'}
+                  {isSessionActive ? 'Track your submission streak' : 'Optional: Track progress & streaks'}
                 </p>
               </div>
               
@@ -770,11 +780,11 @@ export default function LegibleScrollPage() {
                     <Zap className="w-5 h-5 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 mb-1">Streak Bonuses</h3>
+                    <h3 className="font-medium text-gray-900 mb-1">Session Benefits</h3>
                     <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• 5-minute windows between trends</li>
-                      <li>• 2 = 1.2x, 5 = 2x, 15+ = 3x</li>
-                      <li>• Submit anytime, no session required</li>
+                      <li>• Track your submission streak</li>
+                      <li>• 30-minute windows between trends</li>
+                      <li>• Gamification multipliers shown (visual only)</li>
                     </ul>
                   </div>
                 </div>
@@ -899,7 +909,7 @@ export default function LegibleScrollPage() {
                 </span>
               )}
             </div>
-            <span className="text-gray-500">Paid after 1 validation ✓</span>
+            <span className="text-gray-500">Paid after 2 validations ✓</span>
           </div>
         </div>
 
