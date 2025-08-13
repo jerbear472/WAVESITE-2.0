@@ -211,7 +211,7 @@ export default function CoreDashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
         <div className="text-center">
-          <WaveSightLogo size="lg" showText={true} />
+          <WaveSightLogo size="lg" />
           <div className="mt-6">
             <SimpleLoader size="large" />
           </div>
