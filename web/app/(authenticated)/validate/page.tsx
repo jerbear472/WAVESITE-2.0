@@ -164,26 +164,15 @@ export default function ValidatePageFixed() {
       let validatedIds: string[] = [];
       
       try {
-        // Try with trend_id first (most common in the schemas)
+        // Get validated trends using trend_id column
         const { data: validatedTrends, error: validationError } = await supabase
           .from('trend_validations')
           .select('trend_id')
           .eq('validator_id', user.id);
 
         if (validationError) {
-          // If trend_id doesn't exist, try trend_submission_id
-          console.log('Trying trend_submission_id column instead...');
-          const { data: altValidatedTrends, error: altError } = await supabase
-            .from('trend_validations')
-            .select('trend_submission_id')
-            .eq('validator_id', user.id);
-          
-          if (altError) {
-            console.error('Error loading validated trends:', altError);
-            setLastError('Unable to load your validation history. Some trends may appear that you\'ve already voted on.');
-          } else {
-            validatedIds = altValidatedTrends?.map(v => v.trend_submission_id).filter(id => id != null) || [];
-          }
+          console.error('Error loading validated trends:', validationError);
+          setLastError('Unable to load your validation history. Some trends may appear that you\'ve already voted on.');
         } else {
           validatedIds = validatedTrends?.map(v => v.trend_id).filter(id => id != null) || [];
         }

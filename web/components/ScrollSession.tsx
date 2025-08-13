@@ -25,15 +25,28 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
     const intervalRef = useRef<NodeJS.Timeout>();
     const sessionStartRef = useRef<Date>();
 
-    // Calculate earnings
+    // Calculate earnings with proper tier multiplier
     const calculateEarnings = useCallback(() => {
+      // Get user's tier - default to 'learning' if not set
+      const userTier = (user as any)?.spotter_tier || 'learning';
+      const tierConfig = SUSTAINABLE_EARNINGS.tiers[userTier];
+      const tierMultiplier = tierConfig?.multiplier || 1.0;
+      
       const baseRate = 0.02; // Sustainable rate per minute
       const trendBonus = SUSTAINABLE_EARNINGS.base.trendSubmission; // $0.25 base per trend
       const minutes = sessionTime / 60;
-      const baseEarnings = minutes * baseRate;
-      const bonusEarnings = trendsLogged * trendBonus * streakMultiplier; // Apply multiplier to trend bonus
-      return baseEarnings + bonusEarnings;
-    }, [sessionTime, trendsLogged, streakMultiplier]);
+      
+      // Apply tier multiplier to all earnings
+      const baseEarnings = (minutes * baseRate) * tierMultiplier;
+      const bonusEarnings = (trendsLogged * trendBonus) * tierMultiplier * streakMultiplier; // Both tier and streak multipliers
+      
+      const total = baseEarnings + bonusEarnings;
+      
+      // Apply daily cap based on tier
+      const dailyCap = tierConfig?.dailyCap || SUSTAINABLE_EARNINGS.tiers.learning.dailyCap;
+      
+      return Math.min(total, dailyCap);
+    }, [sessionTime, trendsLogged, streakMultiplier, user]);
 
     // Update earnings when time or trends change
     useEffect(() => {
@@ -81,8 +94,21 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
 
       if (!user || !sessionStartRef.current) return;
 
-      // Save session to database
+      // Save session to database with correct earnings calculation
       try {
+        // Get user's tier for accurate calculation
+        const userTier = (user as any)?.spotter_tier || 'learning';
+        const tierConfig = SUSTAINABLE_EARNINGS.tiers[userTier];
+        const tierMultiplier = tierConfig?.multiplier || 1.0;
+        
+        const baseRate = 0.02; // Sustainable rate per minute
+        const trendBonus = SUSTAINABLE_EARNINGS.base.trendSubmission; // $0.25 base per trend
+        const minutes = sessionTime / 60;
+        
+        // Calculate components with tier multiplier
+        const baseEarnings = (minutes * baseRate) * tierMultiplier;
+        const bonusEarnings = (trendsLogged * trendBonus) * tierMultiplier * streakMultiplier;
+        
         const { error } = await supabase
           .from('scroll_sessions')
           .insert({
@@ -91,9 +117,11 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
             ended_at: new Date().toISOString(),
             duration_seconds: sessionTime,
             trends_logged: trendsLogged,
-            base_earnings: (sessionTime / 60) * 0.10,
-            bonus_earnings: trendsLogged * 0.10,
-            total_earnings: earnings
+            base_earnings: baseEarnings,
+            bonus_earnings: bonusEarnings,
+            total_earnings: earnings,
+            tier_multiplier: tierMultiplier,
+            streak_multiplier: streakMultiplier
           });
 
         if (error) throw error;
@@ -186,6 +214,55 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
             </div>
           </div>
 
+          {/* User Tier and Multipliers Display */}
+          {user && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">
+                    {SUSTAINABLE_EARNINGS.tiers[(user as any)?.spotter_tier || 'learning'].emoji}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-yellow-400">
+                      {SUSTAINABLE_EARNINGS.tiers[(user as any)?.spotter_tier || 'learning'].name} Tier
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Base Multiplier: {SUSTAINABLE_EARNINGS.tiers[(user as any)?.spotter_tier || 'learning'].multiplier}x
+                    </p>
+                  </div>
+                </div>
+                {streakMultiplier > 1 && (
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-orange-400">
+                      Streak Bonus: {streakMultiplier}x
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Total: {(SUSTAINABLE_EARNINGS.tiers[(user as any)?.spotter_tier || 'learning'].multiplier * streakMultiplier).toFixed(1)}x
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Live Earnings Display */}
+          {isActive && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-green-400" />
+                  <p className="text-sm font-semibold text-green-400">Session Earnings</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-white">{formatCurrency(earnings)}</p>
+                  <p className="text-xs text-gray-400">
+                    Daily Cap: {formatCurrency(SUSTAINABLE_EARNINGS.tiers[(user as any)?.spotter_tier || 'learning'].dailyCap)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {/* Start/Stop Button */}
           <motion.button
@@ -225,7 +302,13 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-orange-400">{formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission * streakMultiplier)}</p>
+                  <p className="text-lg font-bold text-orange-400">
+                    {formatCurrency(
+                      SUSTAINABLE_EARNINGS.base.trendSubmission * 
+                      SUSTAINABLE_EARNINGS.tiers[(user as any)?.spotter_tier || 'learning'].multiplier * 
+                      streakMultiplier
+                    )}
+                  </p>
                   <p className="text-xs text-orange-200">per trend</p>
                 </div>
               </div>
