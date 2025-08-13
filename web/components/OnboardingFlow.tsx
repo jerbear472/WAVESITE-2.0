@@ -286,7 +286,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
           </p>
           
           <div className="space-y-3">
-            {SUSTAINABLE_EARNINGS.paymentMethods.map(method => (
+            {SUSTAINABLE_EARNINGS.payment.methods.map(method => (
               <button
                 key={method.id}
                 onClick={() => {
