@@ -601,31 +601,31 @@ export default function ValidatePage() {
                       }}
                     />
                     {/* Engagement Overlay - Only show if there are meaningful values */}
-                    {(currentTrend.likes_count > 0 || currentTrend.views_count > 0 || currentTrend.comments_count > 0 || currentTrend.shares_count > 0) && (
+                    {((currentTrend.likes_count && currentTrend.likes_count > 0) || (currentTrend.views_count && currentTrend.views_count > 0) || (currentTrend.comments_count && currentTrend.comments_count > 0) || (currentTrend.shares_count && currentTrend.shares_count > 0)) && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
                         <div className="flex gap-3 text-white">
-                          {currentTrend.views_count > 0 && (
+                          {currentTrend.views_count && currentTrend.views_count > 0 && (
                             <div className="flex items-center gap-1.5">
                               <Eye className="w-4 h-4" />
-                              <span className="text-sm font-medium">{formatCount(currentTrend.views_count)}</span>
+                              <span className="text-sm font-medium">{formatCount(currentTrend.views_count || 0)}</span>
                             </div>
                           )}
-                          {currentTrend.likes_count > 0 && (
+                          {currentTrend.likes_count && currentTrend.likes_count > 0 && (
                             <div className="flex items-center gap-1.5">
                               <Heart className="w-4 h-4" />
-                              <span className="text-sm font-medium">{formatCount(currentTrend.likes_count)}</span>
+                              <span className="text-sm font-medium">{formatCount(currentTrend.likes_count || 0)}</span>
                             </div>
                           )}
-                          {currentTrend.comments_count > 0 && (
+                          {currentTrend.comments_count && currentTrend.comments_count > 0 && (
                             <div className="flex items-center gap-1.5">
                               <MessageCircle className="w-4 h-4" />
-                              <span className="text-sm font-medium">{formatCount(currentTrend.comments_count)}</span>
+                              <span className="text-sm font-medium">{formatCount(currentTrend.comments_count || 0)}</span>
                             </div>
                           )}
-                          {currentTrend.shares_count > 0 && (
+                          {currentTrend.shares_count && currentTrend.shares_count > 0 && (
                             <div className="flex items-center gap-1.5">
                               <Share2 className="w-4 h-4" />
-                              <span className="text-sm font-medium">{formatCount(currentTrend.shares_count)}</span>
+                              <span className="text-sm font-medium">{formatCount(currentTrend.shares_count || 0)}</span>
                             </div>
                           )}
                         </div>
