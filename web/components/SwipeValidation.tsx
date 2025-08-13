@@ -409,7 +409,7 @@ export default function SwipeValidation() {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentTrend.id}
-            className="absolute w-full max-w-md"
+            className="absolute w-full max-w-md cursor-grab active:cursor-grabbing"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ 
               scale: 1, 
@@ -432,7 +432,6 @@ export default function SwipeValidation() {
                 handleSwipe('left', info);
               }
             }}
-            className="cursor-grab active:cursor-grabbing"
           >
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               {/* Trend Image/Screenshot */}
