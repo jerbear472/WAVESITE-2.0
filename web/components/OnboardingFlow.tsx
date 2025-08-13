@@ -53,7 +53,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
               <DollarSign className="w-10 h-10 text-green-600 mb-3" />
               <h3 className="font-bold mb-2">Earn Real Money</h3>
               <p className="text-sm text-gray-600">
-                ${SUSTAINABLE_EARNINGS.base.trendSubmission} base + bonuses up to ${SUSTAINABLE_EARNINGS.caps.maxPerSubmission} per trend
+                ${SUSTAINABLE_EARNINGS.base.trendSubmission} base + bonuses up to ${SUSTAINABLE_EARNINGS.tiers.master.perTrendCap} per trend
               </p>
             </div>
             <div className="bg-white p-6 rounded-xl border">
