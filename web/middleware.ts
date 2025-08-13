@@ -1,57 +1,58 @@
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 
-// Add routes that require authentication
-const protectedRoutes = [
-  '/dashboard',
-  '/profile', 
-  '/persona',
-  '/settings',
-  '/validate',
-  '/submit',
-  '/timeline',
-  '/scroll',
-  '/earnings',
-  '/admin'
-];
-
-export async function middleware(request: NextRequest) {
-  // Authentication middleware is now enabled
-  
-  const { pathname } = request.nextUrl;
+export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   
-  // Skip middleware for API routes and auth-related paths
-  if (pathname.startsWith('/api/') || pathname.startsWith('/_next/') || pathname.includes('.')) {
+  // Skip middleware for static files and API routes
+  const { pathname } = req.nextUrl;
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.') ||
+    pathname === '/favicon.ico'
+  ) {
     return res;
   }
-  
-  try {
-    // Create a Supabase client configured to use cookies
-    const supabase = createMiddlewareClient({ req: request, res });
-    
-    // Refresh session if expired - required for Server Components
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // Check if the route requires authentication
-    const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-    
-    // Don't redirect if we're already on the login page
-    if (isProtectedRoute && !session && pathname !== '/login') {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('from', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-    
-    // Only redirect away from login/register if we have a confirmed session
-    if (session?.user && (pathname === '/login' || pathname === '/register')) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-  } catch (error) {
-    console.error('Middleware error:', error);
+
+  // Create a Supabase client configured to use cookies
+  const supabase = createMiddlewareClient({ req, res });
+
+  // Refresh session if expired - required for Server Components
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // Protected routes that require authentication
+  const protectedRoutes = [
+    '/dashboard',
+    '/profile',
+    '/settings',
+    '/validate',
+    '/submit',
+    '/timeline',
+    '/scroll',
+    '/earnings',
+    '/admin',
+    '/persona'
+  ];
+
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+
+  // If accessing protected route without session, redirect to login
+  if (isProtectedRoute && !session) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/login';
+    redirectUrl.searchParams.set('from', pathname);
+    return NextResponse.redirect(redirectUrl);
   }
-  
+
+  // If logged in and trying to access login/register, redirect to dashboard
+  if (session && (pathname === '/login' || pathname === '/register')) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/dashboard';
+    return NextResponse.redirect(redirectUrl);
+  }
+
   return res;
 }
 
@@ -59,11 +60,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public folder
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
   ],
 };

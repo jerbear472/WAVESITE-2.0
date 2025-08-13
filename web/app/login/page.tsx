@@ -58,7 +58,8 @@ export default function LoginPage() {
       await login(formData.email, formData.password);
       const searchParams = new URLSearchParams(window.location.search);
       const from = searchParams?.get('from') || '/dashboard';
-      router.push(from);
+      // Use hard navigation to ensure cookies are properly set
+      window.location.href = from;
     } catch (err: any) {
       console.error('Login error:', err); // Debug log
       setError(err.message || 'Invalid email or password');
