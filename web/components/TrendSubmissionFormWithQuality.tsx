@@ -213,10 +213,17 @@ export default function TrendSubmissionFormWithQuality({
     try {
       const metadata = await MetadataExtractor.extractFromUrl(formData.url);
       
+      // Detect platform from URL
+      let platform = 'other';
+      if (formData.url.includes('tiktok.com')) platform = 'tiktok';
+      else if (formData.url.includes('instagram.com')) platform = 'instagram';
+      else if (formData.url.includes('youtube.com') || formData.url.includes('youtu.be')) platform = 'youtube';
+      else if (formData.url.includes('twitter.com') || formData.url.includes('x.com')) platform = 'twitter';
+      
       if (metadata) {
         setFormData(prev => ({
           ...prev,
-          platform: metadata.platform || prev.platform,
+          platform: platform,
           creator_handle: metadata.creator_handle || prev.creator_handle,
           creator_name: metadata.creator_name || prev.creator_name,
           post_caption: metadata.post_caption || prev.post_caption,
