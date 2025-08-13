@@ -29,7 +29,7 @@ import {
   BarChart3 as BarChartIcon,
   Star as StarIcon
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+// Toast notifications removed - library not installed
 
 interface TrendToVerify {
   id: string;
@@ -169,7 +169,7 @@ export default function EnhancedVerify() {
       setTrends(data || []);
     } catch (error) {
       console.error('Error fetching trends:', error);
-      toast.error('Failed to load trends');
+      console.error('Failed to load trends');
     } finally {
       setLoading(false);
     }
@@ -186,7 +186,7 @@ export default function EnhancedVerify() {
       setStats(data?.[0] || null);
     } catch (error) {
       console.error('Error fetching stats:', error);
-      toast.error('Failed to load stats');
+      console.error('Failed to load stats');
     } finally {
       setStatsLoading(false);
     }
@@ -230,18 +230,8 @@ export default function EnhancedVerify() {
       if (error) throw error;
 
       // Show success feedback
-      toast.success(
-        <div className="flex items-center gap-2">
-          {isValid ? <CheckIcon className="w-4 h-4" /> : <XIcon className="w-4 h-4" />}
-          <span>Validation submitted! +${earningsData?.toFixed(2) || '0.10'}</span>
-        </div>,
-        {
-          style: {
-            background: isValid ? '#10b981' : '#ef4444',
-            color: 'white',
-          },
-        }
-      );
+      // Success notification removed - toast library not installed
+      console.log(`Validation submitted! +${earningsData?.toFixed(2) || '0.10'}`);
 
       // Refresh stats
       await fetchUserStats();
@@ -259,7 +249,7 @@ export default function EnhancedVerify() {
       
       // Check for duplicate validation
       if (error.code === '23505') {
-        toast.error('You have already validated this trend');
+        console.error('You have already validated this trend');
         // Skip to next
         if (currentIndex < trends.length - 1) {
           setCurrentIndex(prev => prev + 1);
@@ -268,7 +258,7 @@ export default function EnhancedVerify() {
           setCurrentIndex(0);
         }
       } else {
-        toast.error('Failed to submit validation');
+        console.error('Failed to submit validation');
       }
     } finally {
       setVerifying(false);
