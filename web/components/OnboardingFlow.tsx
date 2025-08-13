@@ -305,7 +305,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
                   <div>
                     <p className="font-medium text-lg">{method.name}</p>
                     <p className="text-sm text-gray-600">
-                      Min: {formatCurrency(method.minAmount)}
+                      Min: {formatCurrency(method.min)}
                       {method.fee > 0 && ` • Fee: ${formatCurrency(method.fee)}`}
                     </p>
                   </div>
