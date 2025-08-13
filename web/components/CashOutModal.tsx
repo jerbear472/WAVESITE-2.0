@@ -186,8 +186,8 @@ export default function CashOutModal({ isOpen, onClose, availableBalance, onSucc
                     <div className="text-sm text-blue-700 dark:text-blue-300">
                       <p className="font-semibold mb-1">Important Information:</p>
                       <ul className="list-disc list-inside space-y-1 text-xs">
-                        <li>Minimum cashout amount is {formatCurrency(EARNINGS.MINIMUM_CASHOUT)}</li>
-                        <li>Cash out requests are processed within {EARNINGS.CASHOUT_PROCESSING_HOURS} hours</li>
+                        <li>Minimum cashout amount is {formatCurrency(SUSTAINABLE_EARNINGS.payment.minCashout)}</li>
+                        <li>Cash out requests are processed within 24-48 hours</li>
                         <li>Only approved earnings can be cashed out</li>
                         <li>Make sure your Venmo username is correct</li>
                         <li>You can only have one pending request at a time</li>
