@@ -143,18 +143,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkUser = async () => {
     try {
+      console.log('Checking user session...');
       // Check Supabase auth session
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Session found:', !!session);
       
       if (session?.user) {
+        console.log('User ID from session:', session.user.id);
         // Get user profile from database
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, spotter_tier, created_at, updated_at')
           .eq('id', session.user.id)
           .single();
 
+        if (profileError) {
+          console.error('Profile fetch error:', profileError);
+        }
+        
         if (profile) {
+          console.log('Profile found:', profile.username);
           // Fetch user stats including earnings - handle missing RPC
           let userStats: any = {};
           try {
@@ -177,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .single();
 
           // Map profile to user format
-          setUser({
+          const userData = {
             ...profile,
             role: 'participant',
             total_earnings: userStats.total_earnings || profile.total_earnings || 0,
@@ -185,18 +200,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             trends_spotted: userStats.trends_spotted || 0,
             accuracy_score: userStats.accuracy_score || 0,
             validation_score: userStats.validation_score || 0,
-            view_mode: 'user',
-            subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
+            view_mode: 'user' as const,
+            subscription_tier: isAdmin ? 'enterprise' as const : (profile.subscription_tier || 'starter') as any,
             spotter_tier: profile.spotter_tier || 'learning',
             is_admin: isAdmin,
-            account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
+            account_type: isAdmin ? 'enterprise' as const : (accountSettings?.account_type || 'user') as any,
             permissions: isAdmin ? {
               can_manage_users: true,
               can_switch_views: true,
               can_access_all_data: true,
               can_manage_permissions: true
             } : {}
-          });
+          };
+          
+          console.log('Setting user data:', userData.username);
+          setUser(userData);
+        } else {
+          console.log('No profile found for user');
         }
       }
     } catch (error) {

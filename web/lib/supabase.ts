@@ -5,6 +5,9 @@ export const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBL
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'supabase.auth.token',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
   },
   db: {
     schema: 'public',

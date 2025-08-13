@@ -56,14 +56,20 @@ export default function LoginPage() {
 
     try {
       await login(formData.email, formData.password);
+      console.log('Login successful, redirecting...'); // Debug log
+      
+      // Small delay to ensure session is set
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const searchParams = new URLSearchParams(window.location.search);
       const from = searchParams?.get('from') || '/dashboard';
+      console.log('Redirecting to:', from); // Debug log
+      
       // Use hard navigation to ensure cookies are properly set
       window.location.href = from;
     } catch (err: any) {
       console.error('Login error:', err); // Debug log
       setError(err.message || 'Invalid email or password');
-    } finally {
       setLoading(false);
     }
   };
