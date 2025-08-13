@@ -6,24 +6,24 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import TrendSpotterScreen from '../screens/TrendSpotterScreen';
+import ScrollScreen from '../screens/ScrollScreen';
 import PerformanceEarningsScreen from '../screens/PerformanceEarningsScreen';
 import { ValidationScreen } from '../screens/ValidationScreen';
 import { TrendRadar } from '../screens/TrendRadar';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import AchievementsScreen from '../components/QualityGamification/AchievementsScreen';
 
-type TabType = 'spot' | 'earnings' | 'validate' | 'radar' | 'profile';
+type TabType = 'scroll' | 'earnings' | 'validate' | 'radar' | 'profile';
 type ScreenType = TabType;
 
 const MainNavigator: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('spot');
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>('spot');
+  const [activeTab, setActiveTab] = useState<TabType>('scroll');
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>('scroll');
 
   const renderScreen = () => {
     switch (activeTab) {
-      case 'spot':
-        return <TrendSpotterScreen />;
+      case 'scroll':
+        return <ScrollScreen />;
       case 'earnings':
         return <PerformanceEarningsScreen />;
       case 'validate':
@@ -33,7 +33,7 @@ const MainNavigator: React.FC = () => {
       case 'profile':
         return <ProfileScreen />;
       default:
-        return <TrendSpotterScreen />;
+        return <ScrollScreen />;
     }
   };
 
@@ -46,14 +46,14 @@ const MainNavigator: React.FC = () => {
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {
-            setActiveTab('spot');
-            setCurrentScreen('spot');
+            setActiveTab('scroll');
+            setCurrentScreen('scroll');
           }}>
-          <View style={[styles.navIcon, activeTab === 'spot' && styles.activeNavIcon]}>
-            <Text style={styles.navIconText}>🎯</Text>
+          <View style={[styles.navIcon, activeTab === 'scroll' && styles.activeNavIcon]}>
+            <Text style={styles.navIconText}>📱</Text>
           </View>
-          <Text style={[styles.navLabel, activeTab === 'spot' && styles.activeNavLabel]}>
-            Spot
+          <Text style={[styles.navLabel, activeTab === 'scroll' && styles.activeNavLabel]}>
+            Scroll
           </Text>
         </TouchableOpacity>
 

@@ -19,6 +19,11 @@ export default function FloatingSessionTimer() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
 
+  // Safety check for session
+  if (!session) {
+    return null;
+  }
+
   // Don't render if no session and no streak
   if (!session.isActive && session.currentStreak === 0) {
     return null;
