@@ -98,12 +98,19 @@ export async function POST(request: NextRequest) {
         // Immediate cluster assignment for very similar trends
         const matchedTrendId = similarTrends[0].id;
         
+        // Get current submission count
+        const { data: trendData } = await supabase
+          .from('trends')
+          .select('submission_count')
+          .eq('id', matchedTrendId)
+          .single();
+        
         // Update trend statistics
         await supabase
           .from('trends')
           .update({
             last_seen: submission.created_at,
-            submission_count: supabase.raw('submission_count + 1'),
+            submission_count: (trendData?.submission_count || 0) + 1,
             updated_at: new Date().toISOString()
           })
           .eq('id', matchedTrendId);
