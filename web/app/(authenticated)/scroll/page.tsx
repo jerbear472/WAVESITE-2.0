@@ -30,6 +30,7 @@ import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
 import TrendSubmissionFormMerged from '@/components/TrendSubmissionFormMerged';
 // import TrendSubmissionFormSimple from '@/components/TrendSubmissionFormSimple';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from '@/contexts/SessionContext';
 import WaveLogo from '@/components/WaveLogo';
 // formatCurrency now comes from SUSTAINABLE_EARNINGS
 import { supabase } from '@/lib/supabase';
@@ -58,6 +59,7 @@ const PLATFORMS = [
 export default function LegibleScrollPage() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
+  const { session, startSession, endSession, logTrendSubmission } = useSession();
   const scrollSessionRef = useRef<any>();
   const { showEarnings, earningsData, showEarningsAnimation, hideEarningsAnimation } = useEarningsAnimation();
   
@@ -67,17 +69,6 @@ export default function LegibleScrollPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
-  
-  // Session & Streak states
-  const [isSessionActive, setIsSessionActive] = useState(false);
-  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
-  const [sessionDuration, setSessionDuration] = useState(0);
-  const [currentStreak, setCurrentStreak] = useState(0);
-  const [streakMultiplier, setStreakMultiplier] = useState(1.0);
-  const [lastSubmissionTime, setLastSubmissionTime] = useState<Date | null>(null);
-  const [streakTimeRemaining, setStreakTimeRemaining] = useState(0);
-  const streakTimerRef = useRef<NodeJS.Timeout>();
-  const sessionTimerRef = useRef<NodeJS.Timeout>();
   
   // Stats
   const [todaysEarnings, setTodaysEarnings] = useState(0);
@@ -92,58 +83,6 @@ export default function LegibleScrollPage() {
       loadRecentTickers();
     }
   }, [user]);
-
-  // Session timer
-  useEffect(() => {
-    if (isSessionActive && sessionStartTime) {
-      sessionTimerRef.current = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
-        setSessionDuration(elapsed);
-      }, 1000);
-    } else {
-      if (sessionTimerRef.current) {
-        clearInterval(sessionTimerRef.current);
-      }
-    }
-    
-    return () => {
-      if (sessionTimerRef.current) {
-        clearInterval(sessionTimerRef.current);
-      }
-    };
-  }, [isSessionActive, sessionStartTime]);
-
-  // Streak timer
-  useEffect(() => {
-    if (currentStreak > 0 && lastSubmissionTime) {
-      const updateStreakTimer = () => {
-        const elapsed = Date.now() - lastSubmissionTime.getTime();
-        const remaining = Math.max(0, 30 * 60 * 1000 - elapsed); // 30 minute window for streak
-        
-        if (remaining === 0) {
-          // Streak expired
-          setCurrentStreak(0);
-          setStreakMultiplier(1.0);
-          setLastSubmissionTime(null);
-          setStreakTimeRemaining(0);
-          if (streakTimerRef.current) {
-            clearInterval(streakTimerRef.current);
-          }
-        } else {
-          setStreakTimeRemaining(Math.ceil(remaining / 1000));
-        }
-      };
-      
-      updateStreakTimer();
-      streakTimerRef.current = setInterval(updateStreakTimer, 1000);
-      
-      return () => {
-        if (streakTimerRef.current) {
-          clearInterval(streakTimerRef.current);
-        }
-      };
-    }
-  }, [currentStreak, lastSubmissionTime]);
 
   const loadTodaysStats = async () => {
     if (!user) return;
@@ -213,17 +152,16 @@ export default function LegibleScrollPage() {
     }
   };
 
-  const startSession = () => {
-    setIsSessionActive(true);
-    setSessionStartTime(new Date());
-    setSessionDuration(0);
-  };
-
-  const endSession = () => {
-    setIsSessionActive(false);
-    setSessionStartTime(null);
-    setSessionDuration(0);
-    // Don't reset streak immediately - give them time to start a new session
+  // Helper function to format time
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Streak multipliers - NOT part of base earnings, just for display/gamification
@@ -381,9 +319,9 @@ export default function LegibleScrollPage() {
         status: getSafeStatus('submitted'),
         evidence: {
           ...formData,
-          session_duration: sessionDuration,
-          streak_count: isSessionActive ? currentStreak + 1 : 0,
-          streak_multiplier: isSessionActive ? streakMultiplier : 1,
+          session_duration: session.duration,
+          streak_count: session.isActive ? session.currentStreak + 1 : 0,
+          streak_multiplier: session.isActive ? session.streakMultiplier : 1,
           // Profile data can be added later when available
           user_profile: {},
           payment_amount: finalPayment // Store payment in evidence instead
@@ -497,7 +435,7 @@ export default function LegibleScrollPage() {
             is_finance: isFinanceTrend,
             tickers,
             wave_score: formData.wave_score,
-            streak_multiplier: isSessionActive ? streakMultiplier : 1,
+            streak_multiplier: session.isActive ? session.streakMultiplier : 1,
             base_payment: basePayment
           }
         })
@@ -509,11 +447,9 @@ export default function LegibleScrollPage() {
         });
       
       // Update streak only if session is active
-      if (isSessionActive) {
-        const newStreak = currentStreak + 1;
-        setCurrentStreak(newStreak);
-        setStreakMultiplier(calculateMultiplier(newStreak));
-        setLastSubmissionTime(new Date());
+      if (session.isActive) {
+        // Update global session context
+        logTrendSubmission();
       }
       
       // Update stats
@@ -526,7 +462,7 @@ export default function LegibleScrollPage() {
       showEarningsAnimation(
         finalPayment, 
         earningsResult.appliedBonuses, 
-        isSessionActive ? getStreakMultiplier(currentStreak + 1) : 1
+        session.isActive ? getStreakMultiplier(session.currentStreak + 1) : 1
       );
       
       // Reset form and close modal FIRST
@@ -597,12 +533,6 @@ export default function LegibleScrollPage() {
     if (lower.includes('fomo')) return 'fomo';
     if (lower.includes('diamond') || lower.includes('hold')) return 'diamond_hands';
     return 'neutral';
-  };
-
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -717,19 +647,19 @@ export default function LegibleScrollPage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Scroll Session</h2>
                 <p className="text-sm text-gray-500">
-                  {isSessionActive ? 'Track your submission streak' : 'Optional: Track progress & streaks'}
+                  {session.isActive ? 'Track your submission streak' : 'Optional: Track progress & streaks'}
                 </p>
               </div>
               
               <button
-                onClick={isSessionActive ? endSession : startSession}
+                onClick={session.isActive ? endSession : startSession}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm ${
-                  isSessionActive 
+                  session.isActive 
                     ? 'bg-red-500 hover:bg-red-600 text-white' 
                     : 'bg-blue-500 hover:bg-blue-600 text-white'
                 }`}
               >
-                {isSessionActive ? (
+                {session.isActive ? (
                   <>
                     <Pause className="w-4 h-4" />
                     End
@@ -743,14 +673,14 @@ export default function LegibleScrollPage() {
               </button>
             </div>
 
-            {isSessionActive ? (
+            {session.isActive ? (
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-gray-50 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Clock className="w-4 h-4 text-gray-500" />
                     <span className="text-xs text-gray-500">Duration</span>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">{formatTime(sessionDuration)}</p>
+                  <p className="text-xl font-bold text-gray-900">{formatTime(session.duration)}</p>
                 </div>
                 
                 <div className="bg-purple-50 rounded-xl p-3">
@@ -759,17 +689,17 @@ export default function LegibleScrollPage() {
                     <span className="text-xs text-purple-600">Streak</span>
                   </div>
                   <p className="text-xl font-bold text-purple-700">
-                    {currentStreak} {currentStreak > 0 && `(${streakMultiplier}x)`}
+                    {session.currentStreak} {session.currentStreak > 0 && `(${session.streakMultiplier}x)`}
                   </p>
                 </div>
                 
-                {currentStreak > 0 && (
+                {session.currentStreak > 0 && (
                   <div className="bg-orange-50 rounded-xl p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <Timer className="w-4 h-4 text-orange-500" />
                       <span className="text-xs text-orange-600">Time Left</span>
                     </div>
-                    <p className="text-xl font-bold text-orange-700">{formatTime(streakTimeRemaining)}</p>
+                    <p className="text-xl font-bold text-orange-700">{formatTime(session.streakTimeRemaining)}</p>
                   </div>
                 )}
               </div>

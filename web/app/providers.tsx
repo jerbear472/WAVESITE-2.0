@@ -5,7 +5,15 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { SessionProvider } from '@/contexts/SessionContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import dynamic from 'next/dynamic';
+
+// Dynamically import FloatingSessionTimer to avoid SSR issues
+const FloatingSessionTimer = dynamic(
+  () => import('@/components/FloatingSessionTimer'),
+  { ssr: false }
+);
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -24,9 +32,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          <SessionProvider>
+            <ToastProvider>
+              {children}
+              <FloatingSessionTimer />
+            </ToastProvider>
+          </SessionProvider>
         </AuthProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>

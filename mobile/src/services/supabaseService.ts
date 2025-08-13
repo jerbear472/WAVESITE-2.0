@@ -104,9 +104,31 @@ class SupabaseService {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows
 
       if (error) throw error;
+      
+      // If no profile exists, create one
+      if (!data) {
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            onboarding_completed: false,
+            persona_completed: false,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          return null;
+        }
+        
+        return newProfile;
+      }
+      
       return data;
     } catch (error) {
       console.error('GetUserProfile error:', error);
@@ -116,12 +138,35 @@ class SupabaseService {
 
   async updateUserProfile(userId: string, updates: Partial<UserProfile>) {
     try {
-      const { data, error } = await supabase
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update(updates)
+        .select('id')
         .eq('id', userId)
-        .select()
-        .single();
+        .maybeSingle();
+
+      let data, error;
+      
+      if (existingProfile) {
+        // Update existing profile
+        ({ data, error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', userId)
+          .select()
+          .single());
+      } else {
+        // Create new profile with updates
+        ({ data, error } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            ...updates,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single());
+      }
 
       if (error) throw error;
       return { data, error: null };
