@@ -267,11 +267,13 @@ export default function ApexDashboard() {
       fetchScoutCommissions();
 
       // Log feature access
-      await subscriptionService.logFeatureAccess(user.id, 'apex_dashboard', 'view', {
-        category: selectedCategory,
-        timeframe,
-        historical: historicalView
-      });
+      if (user) {
+        await subscriptionService.logFeatureAccess(user.id, 'apex_dashboard', 'view', {
+          category: selectedCategory,
+          timeframe,
+          historical: historicalView
+        });
+      }
 
     } catch (error) {
       console.error('Error fetching apex data:', error);
