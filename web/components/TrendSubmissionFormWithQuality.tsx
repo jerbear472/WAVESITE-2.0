@@ -505,7 +505,7 @@ export default function TrendSubmissionFormWithQuality({
                         {formData.creator_handle && (
                           <div className="flex items-center gap-2">
                             <UserIcon className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-300">@{formData.creator_handle}</span>
+                            <span className="text-gray-300">{formData.creator_handle || '@unknown'}</span>
                           </div>
                         )}
                         {formData.views_count !== undefined && (

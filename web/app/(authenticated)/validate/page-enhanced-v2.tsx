@@ -517,7 +517,7 @@ export default function Verify() {
                     
                     {currentTrend.creator_handle && (
                       <p className="text-sm text-gray-400">
-                        By @{currentTrend.creator_handle} • {currentTrend.platform || 'Social Media'}
+                        By {currentTrend.creator_handle} • {currentTrend.platform || 'Social Media'}
                       </p>
                     )}
                   </div>

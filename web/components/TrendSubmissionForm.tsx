@@ -203,7 +203,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
         // For TikTok, use handle as creator name if no name is provided
         creator_name: extractedData.creator_name || 
                      (platform === 'tiktok' && extractedData.creator_handle ? 
-                      `@${extractedData.creator_handle}` : prev.creator_name || ''),
+                      extractedData.creator_handle : prev.creator_name || ''),
         post_caption: extractedData.post_caption || prev.post_caption || '',
         likes_count: extractedData.likes_count || prev.likes_count || 0,
         comments_count: extractedData.comments_count || prev.comments_count || 0,

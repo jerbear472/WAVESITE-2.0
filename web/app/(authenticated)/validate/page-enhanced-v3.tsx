@@ -428,7 +428,7 @@ export default function EnhancedVerifyV3() {
                   
                   {currentTrend.creator_handle && (
                     <p className="text-sm text-gray-400 mb-4">
-                      @{currentTrend.creator_handle} • {currentTrend.platform || 'Social'}
+                      {currentTrend.creator_handle} • {currentTrend.platform || 'Social'}
                     </p>
                   )}
 

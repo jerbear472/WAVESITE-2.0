@@ -694,7 +694,7 @@ export default function Dashboard() {
                             
                             {trend.creator_handle && (
                               <p className="text-sm text-gray-600 dark:text-gray-400">
-                                @{trend.creator_handle}
+                                {trend.creator_handle}
                               </p>
                             )}
                             

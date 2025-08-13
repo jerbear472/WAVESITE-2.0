@@ -26,7 +26,10 @@ import {
   Sparkles,
   ArrowRight,
   RefreshCw,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Link,
+  Users,
+  BarChart3
 } from 'lucide-react';
 import { 
   SUSTAINABLE_EARNINGS,
@@ -145,6 +148,24 @@ export default function ValidatePageFixed() {
         label: 'Engagement Data',
         description: 'Shows social metrics',
         met: Number(trend.likes_count || 0) > 0 || Number(trend.views_count || 0) > 0 || Number(trend.comments_count || 0) > 0
+      },
+      {
+        id: 'has_source',
+        label: 'Source Link',
+        description: 'Original post link provided',
+        met: !!(trend.post_url || trend.source_url)
+      },
+      {
+        id: 'creator_info',
+        label: 'Creator Info',
+        description: 'Creator details provided',
+        met: !!(trend.creator_handle || trend.creator_name)
+      },
+      {
+        id: 'viral_potential',
+        label: 'Viral Potential',
+        description: 'Shows growth indicators',
+        met: (trend.virality_prediction && trend.virality_prediction >= 5) || Number(trend.views_count || 0) > 1000
       }
     ];
   };
@@ -691,7 +712,7 @@ export default function ValidatePageFixed() {
                     {currentTrend.creator_handle && (
                       <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
                         <User className="w-3 h-3" />
-                        @{currentTrend.creator_handle}
+                        {currentTrend.creator_handle}
                       </span>
                     )}
                   </div>
@@ -732,6 +753,60 @@ export default function ValidatePageFixed() {
                     </div>
                   )}
 
+                  {/* Submission Details */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-2">
+                    <h3 className="font-semibold text-gray-900 text-xs mb-2">Submission Details</h3>
+                    <div className="space-y-1 text-xs">
+                      {currentTrend.post_url && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Source URL:</span>
+                          <a href={currentTrend.post_url} target="_blank" rel="noopener noreferrer" 
+                             className="text-blue-600 hover:underline truncate max-w-[150px]">
+                            View Post
+                          </a>
+                        </div>
+                      )}
+                      {currentTrend.virality_prediction && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Virality Prediction:</span>
+                          <span className="font-medium">{currentTrend.virality_prediction}/10</span>
+                        </div>
+                      )}
+                      {currentTrend.wave_score !== undefined && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Wave Score:</span>
+                          <span className="font-medium">{currentTrend.wave_score}/100</span>
+                        </div>
+                      )}
+                      {currentTrend.creator_name && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Creator Name:</span>
+                          <span className="font-medium truncate max-w-[150px]">{currentTrend.creator_name}</span>
+                        </div>
+                      )}
+                      {currentTrend.follower_count && Number(currentTrend.follower_count) > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Creator Followers:</span>
+                          <span className="font-medium">{formatCount(currentTrend.follower_count)}</span>
+                        </div>
+                      )}
+                      {currentTrend.trending_position && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Trending Position:</span>
+                          <span className="font-medium">#{currentTrend.trending_position}</span>
+                        </div>
+                      )}
+                      {currentTrend.evidence && Object.keys(currentTrend.evidence).length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-blue-200">
+                          <span className="text-gray-600 block mb-1">Additional Evidence:</span>
+                          <div className="bg-white rounded p-1 text-[10px] text-gray-700 max-h-20 overflow-y-auto">
+                            {JSON.stringify(currentTrend.evidence, null, 2)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Quality Assessment */}
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-2">
                     <div className="flex items-center justify-between mb-1">
@@ -745,8 +820,8 @@ export default function ValidatePageFixed() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-1">
-                      {qualityCriteria.map(criterion => (
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                      {qualityCriteria.slice(0, 6).map(criterion => (
                         <div key={criterion.id} className="flex items-center gap-1">
                           <div className={`w-3 h-3 rounded-full flex items-center justify-center ${
                             criterion.met ? 'bg-green-100' : 'bg-gray-200'
@@ -757,7 +832,7 @@ export default function ValidatePageFixed() {
                               <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
                             )}
                           </div>
-                          <p className={`text-xs ${
+                          <p className={`text-[11px] ${
                             criterion.met ? 'text-gray-700 font-medium' : 'text-gray-400'
                           }`}>
                             {criterion.label}
@@ -765,6 +840,28 @@ export default function ValidatePageFixed() {
                         </div>
                       ))}
                     </div>
+                    {qualityCriteria.length > 6 && (
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1 pt-1 border-t border-gray-200">
+                        {qualityCriteria.slice(6).map(criterion => (
+                          <div key={criterion.id} className="flex items-center gap-1">
+                            <div className={`w-3 h-3 rounded-full flex items-center justify-center ${
+                              criterion.met ? 'bg-green-100' : 'bg-gray-200'
+                            }`}>
+                              {criterion.met ? (
+                                <CheckCircle className="w-2 h-2 text-green-600" />
+                              ) : (
+                                <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                              )}
+                            </div>
+                            <p className={`text-[11px] ${
+                              criterion.met ? 'text-gray-700 font-medium' : 'text-gray-400'
+                            }`}>
+                              {criterion.label}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

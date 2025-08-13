@@ -462,7 +462,7 @@ export default function ValidateTrendsPage() {
                 )}
                 {currentTrend.creator_handle && (
                   <span className="bg-purple-100 text-purple-600 px-2 py-1 rounded text-xs">
-                    @{currentTrend.creator_handle}
+                    {currentTrend.creator_handle}
                   </span>
                 )}
               </div>

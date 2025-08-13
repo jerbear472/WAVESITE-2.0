@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
 import { getProxiedImageUrl } from '@/lib/imageProxy';
+import { calculateWaveScore, getWaveScoreLabel, getWaveScoreImprovements } from '@/lib/calculateWaveScore';
 // import { TrendQualityIndicator } from '@/components/TrendQualityIndicator';
 
 // Define TrendQualityMetrics type locally to avoid import issues
@@ -206,7 +207,7 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     comments_count: 0,
     views_count: 0,
     hashtags: [],
-    wave_score: 50
+    wave_score: 0
   });
 
   // Set mounted state and load saved form data
@@ -288,16 +289,25 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
     }
   }, [mounted, initialUrl]);
 
-  // Update quality metrics in real-time
+  // Update quality metrics and wave score in real-time
   useEffect(() => {
     if (!mounted) return;
     
     try {
       updateQualityMetrics();
+      
+      // Calculate and update wave score
+      const newWaveScore = calculateWaveScore(formData);
+      if (newWaveScore !== formData.wave_score) {
+        setFormData(prev => ({ ...prev, wave_score: newWaveScore }));
+      }
     } catch (error) {
       console.error('Error updating quality metrics:', error);
     }
-  }, [mounted, formData]);
+  }, [mounted, formData.trendName, formData.explanation, formData.categories, 
+      formData.views_count, formData.likes_count, formData.comments_count,
+      formData.thumbnail_url, formData.hashtags, formData.creator_handle,
+      formData.otherPlatforms, formData.spreadSpeed, formData.ageRanges]);
 
   const updateQualityMetrics = async () => {
     try {
@@ -1173,34 +1183,32 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
                   {/* Wave Score Slider */}
                   <div>
                     <label className="block text-slate-200 mb-3 font-medium">
-                      🌊 Wave Score - How cool is this trend?
+                      🌊 Wave Score - Auto-calculated quality rating
                     </label>
                     <div className="bg-slate-700/50 rounded-xl p-6 space-y-4">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <p className="text-slate-300 text-sm mb-1">Rate the coolness factor</p>
-                          <p className="text-slate-500 text-xs">0 = Not cool at all | 100 = Extremely cool</p>
+                          <p className="text-slate-300 text-sm mb-1">{getWaveScoreLabel(formData.wave_score || 0).label}</p>
+                          <p className="text-slate-500 text-xs">Based on content completeness and engagement</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                            {formData.wave_score || 50}
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{getWaveScoreLabel(formData.wave_score || 0).emoji}</span>
+                            <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+                              {formData.wave_score || 0}
+                            </div>
                           </div>
                           <p className="text-slate-400 text-xs">Wave Score</p>
                         </div>
                       </div>
                       
                       <div className="relative">
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={formData.wave_score || 50}
-                          onChange={(e) => setFormData(prev => ({ ...prev, wave_score: parseInt(e.target.value) }))}
-                          className="w-full h-2 bg-slate-600/50 rounded-lg appearance-none cursor-pointer slider-thumb"
-                          style={{
-                            background: `linear-gradient(to right, #3b82f6 0%, #8b5cf6 ${formData.wave_score || 50}%, #475569 ${formData.wave_score || 50}%, #475569 100%)`
-                          }}
-                        />
+                        <div className="w-full h-3 bg-slate-600/50 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-500"
+                            style={{ width: `${formData.wave_score || 0}%` }}
+                          />
+                        </div>
                         <div className="flex justify-between text-xs text-slate-500 mt-2">
                           <span>0</span>
                           <span>25</span>
@@ -1209,6 +1217,18 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
                           <span>100</span>
                         </div>
                       </div>
+                      
+                      {/* Show improvement tips if score is below 70 */}
+                      {formData.wave_score && formData.wave_score < 70 && getWaveScoreImprovements(formData).length > 0 && (
+                        <div className="mt-3 p-3 bg-slate-800/50 rounded-lg">
+                          <p className="text-xs font-semibold text-slate-300 mb-2">💡 Tips to improve your Wave Score:</p>
+                          {getWaveScoreImprovements(formData).map((tip, idx) => (
+                            <p key={idx} className="text-xs text-slate-400 flex items-start gap-1 mb-1">
+                              <span className="text-yellow-500">•</span> {tip}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                       
                       <div className="flex justify-between text-xs">
                         <span className="text-slate-600">🥱 Meh</span>
@@ -1444,14 +1464,19 @@ export default function TrendSubmissionFormMerged({ onClose, onSubmit, initialUr
                           <div className="flex-1 bg-slate-600/30 rounded-full h-2 overflow-hidden">
                             <div 
                               className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all"
-                              style={{ width: `${formData.wave_score || 50}%` }}
+                              style={{ width: `${formData.wave_score || 0}%` }}
                             />
                           </div>
-                          <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                            {formData.wave_score || 50}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{getWaveScoreLabel(formData.wave_score || 0).emoji}</span>
+                            <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+                              {formData.wave_score || 0}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-slate-500 text-xs mt-1">Coolness rating: 0 = Meh, 100 = Wave! 🌊</p>
+                        <p className={`text-xs mt-1 ${getWaveScoreLabel(formData.wave_score || 0).color}`}>
+                          {getWaveScoreLabel(formData.wave_score || 0).label}
+                        </p>
                       </div>
                     </div>
 

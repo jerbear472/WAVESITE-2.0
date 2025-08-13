@@ -606,7 +606,7 @@ export default function QualityControlVerifyPage() {
                     )}
                     {currentTrend.creator_handle && (
                       <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                        @{currentTrend.creator_handle}
+                        {currentTrend.creator_handle}
                       </span>
                     )}
                     {currentTrend.hours_since_post && (

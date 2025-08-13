@@ -679,7 +679,7 @@ export default function ValidatePage() {
                     {currentTrend.creator_handle && (
                       <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
                         <User className="w-3 h-3" />
-                        @{currentTrend.creator_handle}
+                        {currentTrend.creator_handle}
                       </span>
                     )}
                     {currentTrend.hours_since_post && (
