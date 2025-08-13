@@ -347,135 +347,39 @@ export default function ValidatePageFixed() {
       
       // Direct insert approach to avoid RPC function issues
       // Try with trend_id first (most common), fall back to trend_submission_id if that fails
-      let validationData = null;
-      let validationError = null;
+      // Use the RPC function like other pages do
+      console.log('Calling cast_trend_vote with:', { p_trend_id: trendId, p_vote: voteType });
       
-      // First attempt with trend_id
-      const insertResult = await supabase
-        .from('trend_validations')
-        .insert({
-          trend_id: trendId,  // Try trend_id first
-          validator_id: user.id,
-          vote: voteType,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-      
-      validationData = insertResult.data;
-      validationError = insertResult.error;
-      
-      // If it failed due to missing column, try trend_submission_id
-      if (validationError && validationError.message?.includes("trend_id")) {
-        console.log('trend_id column not found, trying trend_submission_id...');
-        const altResult = await supabase
-          .from('trend_validations')
-          .insert({
-            trend_submission_id: trendId,  // Fallback to trend_submission_id
-            validator_id: user.id,
-            vote: voteType,
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-        
-        validationData = altResult.data;
-        validationError = altResult.error;
-      }
-      
-      // If still getting user_id error, it's likely an RLS policy issue
-      // Skip the validation and move to next trend
-      if (validationError && validationError.message?.includes("user_id")) {
-        console.error('Database configuration error: RLS policy or trigger references user_id instead of validator_id');
-        console.log('This needs to be fixed in the database. Skipping this validation.');
-        setLastError('Database configuration issue detected. Please contact support.');
-        
-        // Still try to update counts directly as a workaround
-        try {
-          const countField = voteType === 'verify' ? 'approve_count' : 'reject_count';
-          await supabase
-            .from('trend_submissions')
-            .update({
-              validation_count: supabase.sql`COALESCE(validation_count, 0) + 1`,
-              [countField]: supabase.sql`COALESCE(${countField}, 0) + 1`,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', trendId);
-          
-          // Consider it successful for UI purposes
-          validationError = null;
-          validationData = { id: 'workaround-success', vote: voteType };
-        } catch (updateError) {
-          console.error('Count update workaround also failed:', updateError);
-        }
-      }
+      const { data: validationData, error: validationError } = await supabase
+        .rpc('cast_trend_vote', {
+          p_trend_id: trendId,
+          p_vote: voteType
+        });
+
+      console.log('RPC Response:', { validationData, validationError });
       
       if (validationError) {
-        console.error('Validation insert error:', validationError);
-        
-        // Check for duplicate vote error
-        if (validationError.message?.includes('duplicate') || 
-            validationError.message?.includes('unique') ||
-            validationError.code === '23505') {
-          setLastError('You have already validated this trend.');
-          nextTrend();
-          setTimeout(() => {
-            setLoading(true);
-            loadTrends().finally(() => setLoading(false));
-          }, 2000);
-          return;
-        }
-        
+        console.error('Validation error:', validationError);
         setLastError(validationError.message || 'Unable to submit validation. Please try again.');
         return;
       }
-      
-      // Update trend counts manually
-      const countField = voteType === 'verify' ? 'approve_count' : 'reject_count';
-      const { data: currentTrend } = await supabase
-        .from('trend_submissions')
-        .select('approve_count, reject_count, validation_count')
-        .eq('id', trendId)
-        .single();
-      
-      if (currentTrend) {
-        const updates: any = {
-          validation_count: (currentTrend.validation_count || 0) + 1,
-          updated_at: new Date().toISOString()
-        };
-        updates[countField] = (currentTrend[countField] || 0) + 1;
-        
-        // Check if we should update status
-        const newApproveCount = voteType === 'verify' ? updates.approve_count || 1 : currentTrend.approve_count || 0;
-        const newRejectCount = voteType === 'reject' ? updates.reject_count || 1 : currentTrend.reject_count || 0;
-        
-        if (newApproveCount >= 3 && newApproveCount > newRejectCount) {
-          updates.status = 'approved';
-        } else if (newRejectCount >= 3 && newRejectCount > newApproveCount) {
-          updates.status = 'rejected';
-        } else if (newApproveCount > 0 || newRejectCount > 0) {
-          // Only update to validating if currently submitted
-          const { data: statusCheck } = await supabase
-            .from('trend_submissions')
-            .select('status')
-            .eq('id', trendId)
-            .single();
-          
-          if (statusCheck?.status === 'submitted') {
-            updates.status = 'validating';
-          }
-        }
-        
-        await supabase
-          .from('trend_submissions')
-          .update(updates)
-          .eq('id', trendId);
-      }
-      
-      console.log('Validation successful');
-      const result = { success: true };
 
-      // Validation was successful if we got here
+      if (validationData && typeof validationData === 'object') {
+        if (validationData.success === false) {
+          console.error('Validation failed:', validationData.error);
+          
+          if (validationData.error?.includes('already voted')) {
+            setLastError('You have already validated this trend.');
+            nextTrend();
+          } else if (validationData.error?.includes('not found')) {
+            setLastError('This trend no longer exists.');
+            nextTrend();
+          } else {
+            setLastError(validationData.error || 'Validation failed. Please try again.');
+          }
+          return;
+        }
+      }
 
       // Success!
       setSessionValidations(prev => prev + 1);
