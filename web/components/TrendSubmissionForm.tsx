@@ -188,23 +188,30 @@ export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = ''
     try {
       const extractedData = await MetadataExtractor.extractFromUrl(url);
       
+      // Detect platform from URL
+      let platform = 'other';
+      if (url.includes('tiktok.com')) platform = 'tiktok';
+      else if (url.includes('instagram.com')) platform = 'instagram';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) platform = 'youtube';
+      else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'twitter';
+      
       setFormData(prev => ({
         ...prev,
-        platform: extractedData.platform,
+        platform: platform,
         title: prev.title || '', // Keep title empty for manual input
-        creator_handle: extractedData.metadata.creator_handle || prev.creator_handle || '',
+        creator_handle: extractedData.creator_handle || prev.creator_handle || '',
         // For TikTok, use handle as creator name if no name is provided
-        creator_name: extractedData.metadata.creator_name || 
-                     (extractedData.platform === 'tiktok' && extractedData.metadata.creator_handle ? 
-                      `@${extractedData.metadata.creator_handle}` : prev.creator_name || ''),
-        post_caption: extractedData.metadata.post_caption || prev.post_caption || '',
-        likes_count: extractedData.metadata.likes_count || prev.likes_count || 0,
-        comments_count: extractedData.metadata.comments_count || prev.comments_count || 0,
-        shares_count: extractedData.metadata.shares_count || prev.shares_count || 0,
-        views_count: extractedData.metadata.views_count || prev.views_count || 0,
-        hashtags: extractedData.metadata.hashtags || prev.hashtags || [],
-        thumbnail_url: extractedData.metadata.thumbnail_url || prev.thumbnail_url,
-        posted_at: extractedData.metadata.posted_at || prev.posted_at || ''
+        creator_name: extractedData.creator_name || 
+                     (platform === 'tiktok' && extractedData.creator_handle ? 
+                      `@${extractedData.creator_handle}` : prev.creator_name || ''),
+        post_caption: extractedData.post_caption || prev.post_caption || '',
+        likes_count: extractedData.likes_count || prev.likes_count || 0,
+        comments_count: extractedData.comments_count || prev.comments_count || 0,
+        shares_count: extractedData.shares_count || prev.shares_count || 0,
+        views_count: extractedData.views_count || prev.views_count || 0,
+        hashtags: extractedData.hashtags || prev.hashtags || [],
+        thumbnail_url: extractedData.thumbnail_url || prev.thumbnail_url,
+        posted_at: extractedData.posted_at || prev.posted_at || ''
       }));
     } catch (error) {
       showError('Failed to extract metadata', 'Please fill in the details manually');
