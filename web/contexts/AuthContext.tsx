@@ -242,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (authData.user) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, created_at, updated_at')
+          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, spotter_tier, created_at, updated_at')
           .eq('id', authData.user.id)
           .single();
 
@@ -267,13 +267,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser({
             ...profile,
             role: 'participant',
-            total_earnings: 0,
-            pending_earnings: 0,
+            total_earnings: profile.total_earnings || 0,
+            pending_earnings: profile.pending_earnings || 0,
             trends_spotted: 0,
             accuracy_score: 0,
             validation_score: 0,
             view_mode: 'user',
             subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
+            spotter_tier: profile.spotter_tier || 'learning',
             is_admin: isAdmin,
             account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
             permissions: isAdmin ? {
@@ -285,6 +286,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         }
       }
+      
+      // Return success - the caller will handle redirect
+      return;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
