@@ -303,7 +303,7 @@ export default function TrendSubmissionFormFixed({ onClose, onSubmit, initialUrl
                     )}
                     {formData.post_caption && (
                       <div className="flex items-start gap-2">
-                        <MessageCircleIcon className="w-4 h-4 text-slate-400 mt-0.5" />
+                        <CommentIcon className="w-4 h-4 text-slate-400 mt-0.5" />
                         <span className="text-sm text-slate-300">
                           Caption: <span className="text-white italic">"{formData.post_caption}"</span>
                         </span>
