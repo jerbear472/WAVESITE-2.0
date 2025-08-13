@@ -211,8 +211,7 @@ export default function TrendSubmissionFormWithQuality({
     setExtractError(null);
     
     try {
-      const extractor = new MetadataExtractor();
-      const metadata = await extractor.extractFromUrl(formData.url);
+      const metadata = await MetadataExtractor.extractFromUrl(formData.url);
       
       if (metadata) {
         setFormData(prev => ({
