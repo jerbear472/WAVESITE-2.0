@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Compass, Filter, TrendingUp, Sparkles, Target, 
   ArrowUpRight, ArrowDownRight, ArrowUpLeft, ArrowDownLeft,
-  Play, Pause, RotateCw, Download, Maximize2
+  Play, Pause, RotateCw, Download, Maximize2, X
 } from 'lucide-react';
 
 interface TrendPosition {
