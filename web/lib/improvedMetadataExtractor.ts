@@ -48,7 +48,8 @@ export class ImprovedMetadataExtractor {
     // Always ensure we have a thumbnail URL
     if (!metadata.thumbnail_url) {
       console.log('⚠️ No thumbnail from primary extraction, trying fallback');
-      metadata.thumbnail_url = this.getFallbackThumbnail(url, platform);
+      const fallbackThumbnail = this.getFallbackThumbnail(url, platform);
+      metadata.thumbnail_url = fallbackThumbnail || undefined;
     }
 
     console.log('✅ Final metadata with thumbnail:', {
