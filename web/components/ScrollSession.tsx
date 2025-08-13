@@ -225,7 +225,7 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-orange-400">{formatCurrency(EARNINGS.SUBMISSION_REWARD * streakMultiplier)}</p>
+                  <p className="text-lg font-bold text-orange-400">{formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission * streakMultiplier)}</p>
                   <p className="text-xs text-orange-200">per trend</p>
                 </div>
               </div>
