@@ -362,39 +362,56 @@ export default function ValidatePageFixed() {
       console.log('Submitting validation:', { trend_id: trendId, vote: voteType });
       
       // Direct insert approach to avoid RPC function issues
-      // Try with trend_id first (most common), fall back to trend_submission_id if that fails
-      // Use the RPC function like other pages do
-      console.log('Calling cast_trend_vote with:', { p_trend_id: trendId, p_vote: voteType });
+      // Direct insert to trend_validations table
+      console.log('Submitting validation directly:', { trend_id: trendId, vote: voteType });
       
-      const { data: validationData, error: validationError } = await supabase
-        .rpc('cast_trend_vote', {
-          p_trend_id: trendId,
-          p_vote: voteType
-        });
+      // First check if user already voted
+      const { data: existingVote } = await supabase
+        .from('trend_validations')
+        .select('id')
+        .eq('trend_id', trendId)
+        .eq('validator_id', user.id)
+        .single();
 
-      console.log('RPC Response:', { validationData, validationError });
-      
-      if (validationError) {
-        console.error('Validation error:', validationError);
-        setLastError(validationError.message || 'Unable to submit validation. Please try again.');
+      if (existingVote) {
+        setLastError('You have already validated this trend.');
+        nextTrend();
         return;
       }
 
-      if (validationData && typeof validationData === 'object') {
-        if (validationData.success === false) {
-          console.error('Validation failed:', validationData.error);
-          
-          if (validationData.error?.includes('already voted')) {
-            setLastError('You have already validated this trend.');
-            nextTrend();
-          } else if (validationData.error?.includes('not found')) {
-            setLastError('This trend no longer exists.');
-            nextTrend();
-          } else {
-            setLastError(validationData.error || 'Validation failed. Please try again.');
-          }
-          return;
+      // Calculate reward based on user tier ($0.02 base)
+      const rewardAmount = calculateValidationEarnings(1, userTier);
+      
+      // Insert the validation
+      const { data: validationData, error: validationError } = await supabase
+        .from('trend_validations')
+        .insert({
+          trend_id: trendId,
+          validator_id: user.id,
+          is_genuine: voteType === 'genuine' || voteType === 'yes',
+          vote: voteType,
+          reward_amount: rewardAmount,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      console.log('Insert Response:', { validationData, validationError });
+      
+      if (validationError) {
+        console.error('Validation error:', validationError);
+        
+        // Handle specific errors
+        if (validationError.message?.includes('duplicate') || validationError.code === '23505') {
+          setLastError('You have already validated this trend.');
+          nextTrend();
+        } else if (validationError.message?.includes('not found') || validationError.code === '23503') {
+          setLastError('This trend no longer exists.');
+          nextTrend();
+        } else {
+          setLastError('Unable to submit validation. Please try again.');
         }
+        return;
       }
 
       // Success!
