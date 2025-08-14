@@ -186,12 +186,12 @@ export default function EnhancedTrendIntelligenceForm({
           description: 'Critical for voter targeting',
           type: 'multiselect',
           options: [
-            { value: 'gen_z_voters', label: '🗳️ First-time voters (18-23)', value: 'CRITICAL' },
-            { value: 'swing_suburban', label: '🏘️ Suburban swing voters', value: 'CRITICAL' },
-            { value: 'minority_communities', label: '🌍 Minority communities', value: 'HIGH' },
-            { value: 'working_class', label: '👷 Working class', value: 'HIGH' },
-            { value: 'college_educated', label: '🎓 College educated', value: 'MEDIUM' },
-            { value: 'rural', label: '🌾 Rural voters', value: 'MEDIUM' }
+            { value: 'gen_z_voters', label: '🗳️ First-time voters (18-23)', importance: 'CRITICAL' },
+            { value: 'swing_suburban', label: '🏘️ Suburban swing voters', importance: 'CRITICAL' },
+            { value: 'minority_communities', label: '🌍 Minority communities', importance: 'HIGH' },
+            { value: 'working_class', label: '👷 Working class', importance: 'HIGH' },
+            { value: 'college_educated', label: '🎓 College educated', importance: 'MEDIUM' },
+            { value: 'rural', label: '🌾 Rural voters', importance: 'MEDIUM' }
           ]
         });
       }
