@@ -723,7 +723,7 @@ export default function SmartTrendSubmission({
                           {question.label}
                         </label>
                         <div className="grid grid-cols-2 gap-2">
-                          {question.options.map((option) => (
+                          {question.options.map((option: string) => (
                             <button
                               key={option}
                               type="button"
