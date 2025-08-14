@@ -74,9 +74,9 @@ class EarningsStandard:
     
     # Base earning rates (in USD)
     BASE_RATES = {
-        "TREND_SUBMISSION": Decimal("0.25"),  # FIXED: Correct base rate
-        "VALIDATION_VOTE": Decimal("0.10"),
-        "APPROVAL_BONUS": Decimal("0.50"),
+        "TREND_SUBMISSION": Decimal("0.25"),  # Base rate (PENDING until 2+ YES votes)
+        "VALIDATION_VOTE": Decimal("0.02"),   # FIXED: Changed from 0.10 to 0.02
+        "APPROVAL_BONUS": Decimal("0.50"),    # When trend gets 2+ YES votes
         "SCROLL_SESSION": Decimal("0.00"),
     }
     

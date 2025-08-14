@@ -456,7 +456,7 @@ export default function WorkingSubmitPage() {
           <ol className="space-y-2 text-sm text-gray-300">
             <li>1. Submit trends you spot on social media</li>
             <li>2. Other users verify your submissions</li>
-            <li>3. Approved trends earn you $0.25 + bonuses (up to $2.25 for masters)</li>
+            <li>3. Approved trends earn you $0.25 base (up to $4.69 with max multipliers)</li>
             <li>4. Verified trends feed into enterprise dashboard</li>
             <li>5. Track your performance in Timeline</li>
           </ol>

@@ -25,8 +25,9 @@ interface CashoutRequest {
 
 export default function CashoutSystem() {
   const supabase = createClientComponentClient();
-  const [balance, setBalance] = useState(0);
-  const [pendingAmount, setPendingAmount] = useState(0);
+  const [approvedBalance, setApprovedBalance] = useState(0);
+  const [pendingEarnings, setPendingEarnings] = useState(0);
+  const [pendingCashouts, setPendingCashouts] = useState(0);
   const [cashoutAmount, setCashoutAmount] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<string>('venmo');
   const [paymentDetails, setPaymentDetails] = useState({
@@ -82,15 +83,16 @@ export default function CashoutSystem() {
 
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('current_balance')
+      .select('approved_earnings, pending_earnings')
       .eq('user_id', user.id)
       .single();
 
     if (data) {
-      setBalance(data.current_balance || 0);
+      setApprovedBalance(data.approved_earnings || 0);
+      setPendingEarnings(data.pending_earnings || 0);
     }
 
-    // Get pending cashouts
+    // Get pending cashout requests
     const { data: pending } = await supabase
       .from('cashout_requests')
       .select('amount')
@@ -99,7 +101,7 @@ export default function CashoutSystem() {
 
     if (pending) {
       const total = pending.reduce((sum, req) => sum + req.amount, 0);
-      setPendingAmount(total);
+      setPendingCashouts(total);
     }
   };
 
@@ -139,14 +141,14 @@ export default function CashoutSystem() {
       return;
     }
 
-    if (amount > balance) {
-      setError('Insufficient balance');
+    if (amount > approvedBalance) {
+      setError('Insufficient approved balance. Only approved earnings can be cashed out.');
       return;
     }
 
     const totalWithFee = amount + method.fee;
-    if (totalWithFee > balance) {
-      setError(`Insufficient balance to cover fee of ${formatCurrency(method.fee)}`);
+    if (totalWithFee > approvedBalance) {
+      setError(`Insufficient approved balance to cover fee of ${formatCurrency(method.fee)}`);
       return;
     }
 
@@ -215,7 +217,7 @@ export default function CashoutSystem() {
   };
 
   const selectedMethodDetails = paymentMethods.find(m => m.id === selectedMethod);
-  const availableBalance = balance - pendingAmount;
+  const availableBalance = approvedBalance - pendingCashouts;
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -223,26 +225,37 @@ export default function CashoutSystem() {
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <h2 className="text-2xl font-bold mb-4">Cashout Center</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-green-50 rounded-lg p-4">
-            <p className="text-sm text-green-600 font-medium">Available Balance</p>
+            <p className="text-sm text-green-600 font-medium">Available to Cashout</p>
             <p className="text-2xl font-bold text-green-700">
               {formatCurrency(availableBalance)}
             </p>
+            <p className="text-xs text-green-600 mt-1">Can withdraw now</p>
+          </div>
+          
+          <div className="bg-blue-50 rounded-lg p-4">
+            <p className="text-sm text-blue-600 font-medium">Approved Earnings</p>
+            <p className="text-2xl font-bold text-blue-700">
+              {formatCurrency(approvedBalance)}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">From approved trends</p>
+          </div>
+          
+          <div className="bg-orange-50 rounded-lg p-4">
+            <p className="text-sm text-orange-600 font-medium">Pending Earnings</p>
+            <p className="text-2xl font-bold text-orange-700">
+              {formatCurrency(pendingEarnings)}
+            </p>
+            <p className="text-xs text-orange-600 mt-1">Awaiting approval</p>
           </div>
           
           <div className="bg-yellow-50 rounded-lg p-4">
             <p className="text-sm text-yellow-600 font-medium">Pending Cashouts</p>
             <p className="text-2xl font-bold text-yellow-700">
-              {formatCurrency(pendingAmount)}
+              {formatCurrency(pendingCashouts)}
             </p>
-          </div>
-          
-          <div className="bg-blue-50 rounded-lg p-4">
-            <p className="text-sm text-blue-600 font-medium">Total Balance</p>
-            <p className="text-2xl font-bold text-blue-700">
-              {formatCurrency(balance)}
-            </p>
+            <p className="text-xs text-yellow-600 mt-1">Processing</p>
           </div>
         </div>
       </div>

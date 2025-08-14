@@ -1,37 +1,60 @@
 /**
- * SUSTAINABLE EARNINGS - SIMPLIFIED DUAL-STREAK SYSTEM
+ * SUSTAINABLE EARNINGS CONFIGURATION - THE ONLY SOURCE OF TRUTH
  * 
- * Formula: $0.25 × tier_multiplier × session_streak × daily_streak
+ * Based on sustainable revenue model:
+ * - 40% of revenue goes to users maximum
+ * - $150k/mo revenue target = $60k/mo for users
+ * - 10,000 active users = $6/user average
  * 
- * This is the ONLY earnings configuration that should be used.
- * All complex bonuses have been removed for simplicity and consistency.
+ * This configuration ensures profitability while providing
+ * meaningful earnings for users as a side hustle.
  */
 
 export const SUSTAINABLE_EARNINGS = {
-  // Base rates - MUST match database
+  // Base rates - CONSISTENT ACROSS ENTIRE APP
   base: {
-    trendSubmission: 0.25,  // Base payment per trend (PENDING until approved)
-    validationVote: 0.02,   // Payment per validation (FIXED: was 0.10)
-    approvalBonus: 0.50,    // Bonus when trend gets approved (2+ YES votes)
+    trendSubmission: 0.25,  // Base payment per trend
+    validationVote: 0.10,   // Payment per validation (FIXED from 0.02)
+    approvalBonus: 0.50,    // Bonus when trend gets approved (FIXED from 0.10)
   },
 
-  // Tier system with multipliers
+  // Quality bonuses - small but achievable
+  qualityBonuses: {
+    withScreenshot: 0.05,      // Has screenshot
+    completeData: 0.05,        // Has title + description (30+ chars)
+    highQuality: 0.05,         // Quality score > 80
+    demographics: 0.03,        // Has demographic data
+    multiPlatform: 0.03,       // Multiple platforms
+    creatorInfo: 0.02,         // Has creator details
+    richHashtags: 0.02,        // 3+ hashtags
+  },
+
+  // Performance bonuses - rare but motivating
+  performanceBonuses: {
+    trending: 0.25,         // 100k+ views
+    viral: 0.50,           // 1M+ views (replaces trending)
+    firstSpotter: 0.50,    // First to spot a trend that goes viral
+    highEngagement: 0.10,  // >10% engagement rate
+    financeCategory: 0.10, // Finance/crypto trends (valuable to hedge funds)
+  },
+
+  // Tier system - clear progression path
   tiers: {
     master: {
       name: 'Master',
       multiplier: 3.0,
-      dailyCap: 50.00,
-      perTrendCap: 5.00,
+      dailyCap: 30.00,
+      perTrendCap: 2.25,
       percentage: '1%',
       monthlyRange: { min: 500, max: 900 },
       color: '#FFD700',  // Gold
       emoji: '👑',
     },
     elite: {
-      name: 'Elite', 
+      name: 'Elite',
       multiplier: 2.0,
-      dailyCap: 40.00,
-      perTrendCap: 4.00,
+      dailyCap: 20.00,
+      perTrendCap: 1.50,
       percentage: '5%',
       monthlyRange: { min: 300, max: 500 },
       color: '#C0C0C0',  // Silver
@@ -40,8 +63,8 @@ export const SUSTAINABLE_EARNINGS = {
     verified: {
       name: 'Verified',
       multiplier: 1.5,
-      dailyCap: 30.00,
-      perTrendCap: 3.00,
+      dailyCap: 15.00,
+      perTrendCap: 1.13,
       percentage: '15%',
       monthlyRange: { min: 150, max: 300 },
       color: '#CD7F32',  // Bronze
@@ -50,8 +73,8 @@ export const SUSTAINABLE_EARNINGS = {
     learning: {
       name: 'Learning',
       multiplier: 1.0,
-      dailyCap: 20.00,
-      perTrendCap: 2.00,
+      dailyCap: 10.00,
+      perTrendCap: 0.75,
       percentage: '60%',
       monthlyRange: { min: 50, max: 150 },
       color: '#4CAF50',  // Green
@@ -60,8 +83,8 @@ export const SUSTAINABLE_EARNINGS = {
     restricted: {
       name: 'Restricted',
       multiplier: 0.5,
-      dailyCap: 10.00,
-      perTrendCap: 1.00,
+      dailyCap: 5.00,
+      perTrendCap: 0.50,
       percentage: '19%',
       monthlyRange: { min: 20, max: 50 },
       color: '#F44336',  // Red
@@ -69,25 +92,7 @@ export const SUSTAINABLE_EARNINGS = {
     },
   },
 
-  // Session streak multipliers (rapid submissions within 5 minutes)
-  sessionStreakMultipliers: {
-    1: 1.0,   // First submission
-    2: 1.2,   // 2nd submission within 5 min
-    3: 1.5,   // 3rd submission within 5 min
-    4: 2.0,   // 4th submission within 5 min
-    5: 2.5,   // 5+ submissions within 5 min (max)
-  },
-
-  // Daily streak multipliers (consecutive days with submissions)
-  dailyStreakMultipliers: [
-    { minDays: 30, multiplier: 2.5 },  // 30+ days: 2.5x
-    { minDays: 14, multiplier: 2.0 },  // 14-29 days: 2x
-    { minDays: 7, multiplier: 1.5 },   // 7-13 days: 1.5x
-    { minDays: 2, multiplier: 1.2 },   // 2-6 days: 1.2x
-    { minDays: 0, multiplier: 1.0 },   // 0-1 days: 1x
-  ],
-
-  // Tier requirements
+  // Tier requirements - achievable progression
   tierRequirements: {
     master: {
       trendsSubmitted: 100,
@@ -114,15 +119,24 @@ export const SUSTAINABLE_EARNINGS = {
       description: 'New trend spotter',
     },
     restricted: {
+      // Applied when approval rate < 30% OR quality score < 30%
       maxApprovalRate: 0.30,
       maxQualityScore: 0.30,
       description: 'Low quality submissions',
     },
   },
 
+  // Validation settings
+  validation: {
+    votesToApprove: 3,      // Votes needed for approval
+    votesToReject: 3,       // Votes needed for rejection
+    maxVotingHours: 72,     // Max time for voting
+    selfVoteAllowed: true,  // Users can vote on own trends
+  },
+
   // Payment settings
   payment: {
-    minCashout: 5.00,
+    minCashout: 10.00,      // Minimum cashout amount
     methods: [
       { id: 'venmo', name: 'Venmo', min: 10, fee: 0 },
       { id: 'paypal', name: 'PayPal', min: 10, fee: 0.30 },
@@ -131,21 +145,14 @@ export const SUSTAINABLE_EARNINGS = {
     ],
   },
 
-  // REMOVED: Quality bonuses - no longer used
-  qualityBonuses: {},
-
-  // REMOVED: Performance bonuses - no longer used  
-  performanceBonuses: {},
-
-  // REMOVED: Achievements - no longer used
-  achievements: {},
-
-  // Validation settings
-  validation: {
-    votesToApprove: 3,
-    votesToReject: 3,
-    maxVotingHours: 72,
-    selfVoteAllowed: true,
+  // Achievement bonuses (one-time)
+  achievements: {
+    firstTrend: 1.00,         // First trend submitted
+    tenthTrend: 2.00,         // 10th trend submitted
+    hundredthTrend: 10.00,    // 100th trend submitted
+    firstViral: 5.00,         // First viral trend
+    streakWeek: 2.00,         // 7-day streak
+    streakMonth: 10.00,       // 30-day streak
   },
 } as const;
 
@@ -180,59 +187,19 @@ export interface UserProfile {
   trends_submitted: number;
   approval_rate: number;
   quality_score: number;
-  current_streak?: number;  // Daily streak
-  session_streak?: number;  // Current session position
-  last_submission_at?: string;
 }
 
 /**
- * Get session streak multiplier
- */
-export function getSessionStreakMultiplier(position: number): number {
-  if (position >= 5) return 2.5;
-  const multiplier = SUSTAINABLE_EARNINGS.sessionStreakMultipliers[position as keyof typeof SUSTAINABLE_EARNINGS.sessionStreakMultipliers];
-  return multiplier || 1.0;
-}
-
-/**
- * Get daily streak multiplier
- */
-export function getDailyStreakMultiplier(days: number): number {
-  for (const streak of SUSTAINABLE_EARNINGS.dailyStreakMultipliers) {
-    if (days >= streak.minDays) {
-      return streak.multiplier;
-    }
-  }
-  return 1.0;
-}
-
-/**
- * Calculate if submission is within session window
- */
-export function isWithinSessionWindow(lastSubmissionAt?: string): boolean {
-  if (!lastSubmissionAt) return false;
-  
-  const lastSubmission = new Date(lastSubmissionAt);
-  const now = new Date();
-  const minutesSinceLast = (now.getTime() - lastSubmission.getTime()) / (1000 * 60);
-  
-  return minutesSinceLast <= 5; // 5 minute window
-}
-
-/**
- * SIMPLIFIED: Calculate earnings for a trend submission
- * Formula: $0.25 × tier × session_streak × daily_streak
- * 
- * NOTE: The old complex bonus system has been removed.
- * We only use tier and streak multipliers now.
+ * Calculate earnings for a trend submission
+ * This matches the database calculation exactly
  */
 export function calculateTrendEarnings(
-  trend: TrendData | null,  // Trend data not used in calculation anymore
+  trend: TrendData,
   userProfile: UserProfile
 ): {
   base: number;
-  qualityBonuses: number;  // Always 0 now
-  performanceBonuses: number;  // Always 0 now
+  qualityBonuses: number;
+  performanceBonuses: number;
   tierMultiplier: number;
   total: number;
   capped: number;
@@ -245,31 +212,75 @@ export function calculateTrendEarnings(
   const base = SUSTAINABLE_EARNINGS.base.trendSubmission;
   breakdown.push(`Base submission: $${base.toFixed(2)}`);
   
-  // Tier multiplier
+  // Quality bonuses
+  let qualityBonuses = 0;
+  
+  if (trend.screenshot_url) {
+    qualityBonuses += SUSTAINABLE_EARNINGS.qualityBonuses.withScreenshot;
+    breakdown.push(`Screenshot bonus: $${SUSTAINABLE_EARNINGS.qualityBonuses.withScreenshot.toFixed(2)}`);
+  }
+  
+  if (trend.title && trend.description && trend.description.length >= 30) {
+    qualityBonuses += SUSTAINABLE_EARNINGS.qualityBonuses.completeData;
+    breakdown.push(`Complete data bonus: $${SUSTAINABLE_EARNINGS.qualityBonuses.completeData.toFixed(2)}`);
+  }
+  
+  if (trend.quality_score && trend.quality_score > 80) {
+    qualityBonuses += SUSTAINABLE_EARNINGS.qualityBonuses.highQuality;
+    breakdown.push(`High quality bonus: $${SUSTAINABLE_EARNINGS.qualityBonuses.highQuality.toFixed(2)}`);
+  }
+  
+  if (trend.demographics_data) {
+    qualityBonuses += SUSTAINABLE_EARNINGS.qualityBonuses.demographics;
+    breakdown.push(`Demographics bonus: $${SUSTAINABLE_EARNINGS.qualityBonuses.demographics.toFixed(2)}`);
+  }
+  
+  if (trend.platform && trend.platform.length > 1) {
+    qualityBonuses += SUSTAINABLE_EARNINGS.qualityBonuses.multiPlatform;
+    breakdown.push(`Multi-platform bonus: $${SUSTAINABLE_EARNINGS.qualityBonuses.multiPlatform.toFixed(2)}`);
+  }
+  
+  if (trend.creator_info) {
+    qualityBonuses += SUSTAINABLE_EARNINGS.qualityBonuses.creatorInfo;
+    breakdown.push(`Creator info bonus: $${SUSTAINABLE_EARNINGS.qualityBonuses.creatorInfo.toFixed(2)}`);
+  }
+  
+  if (trend.hashtags && trend.hashtags.length >= 3) {
+    qualityBonuses += SUSTAINABLE_EARNINGS.qualityBonuses.richHashtags;
+    breakdown.push(`Rich hashtags bonus: $${SUSTAINABLE_EARNINGS.qualityBonuses.richHashtags.toFixed(2)}`);
+  }
+  
+  // Performance bonuses
+  let performanceBonuses = 0;
+  const viewCount = trend.metadata?.view_count || 0;
+  
+  if (viewCount >= 1000000) {
+    performanceBonuses += SUSTAINABLE_EARNINGS.performanceBonuses.viral;
+    breakdown.push(`Viral content bonus: $${SUSTAINABLE_EARNINGS.performanceBonuses.viral.toFixed(2)}`);
+  } else if (viewCount >= 100000) {
+    performanceBonuses += SUSTAINABLE_EARNINGS.performanceBonuses.trending;
+    breakdown.push(`Trending bonus: $${SUSTAINABLE_EARNINGS.performanceBonuses.trending.toFixed(2)}`);
+  }
+  
+  const engagementRate = trend.metadata?.engagement_rate || 0;
+  if (engagementRate > 0.10) {
+    performanceBonuses += SUSTAINABLE_EARNINGS.performanceBonuses.highEngagement;
+    breakdown.push(`High engagement bonus: $${SUSTAINABLE_EARNINGS.performanceBonuses.highEngagement.toFixed(2)}`);
+  }
+  
+  if (trend.category && ['finance', 'crypto', 'stocks'].includes(trend.category.toLowerCase())) {
+    performanceBonuses += SUSTAINABLE_EARNINGS.performanceBonuses.financeCategory;
+    breakdown.push(`Finance category bonus: $${SUSTAINABLE_EARNINGS.performanceBonuses.financeCategory.toFixed(2)}`);
+  }
+  
+  // Apply tier multiplier
   const tierMultiplier = tier.multiplier;
   if (tierMultiplier !== 1.0) {
-    breakdown.push(`${tier.name} tier: ${tierMultiplier}x`);
+    breakdown.push(`${tier.name} tier multiplier: ${tierMultiplier}x`);
   }
   
-  // Session streak multiplier
-  let sessionPosition = 1;
-  if (isWithinSessionWindow(userProfile.last_submission_at)) {
-    sessionPosition = Math.min((userProfile.session_streak || 0) + 1, 5);
-  }
-  const sessionMultiplier = getSessionStreakMultiplier(sessionPosition);
-  if (sessionMultiplier > 1.0) {
-    breakdown.push(`Session #${sessionPosition}: ${sessionMultiplier}x`);
-  }
-  
-  // Daily streak multiplier
-  const dailyStreak = userProfile.current_streak || 0;
-  const dailyMultiplier = getDailyStreakMultiplier(dailyStreak);
-  if (dailyMultiplier > 1.0) {
-    breakdown.push(`${dailyStreak}-day streak: ${dailyMultiplier}x`);
-  }
-  
-  // Calculate total (no more quality/performance bonuses)
-  const total = base * tierMultiplier * sessionMultiplier * dailyMultiplier;
+  // Calculate total
+  const total = (base + qualityBonuses + performanceBonuses) * tierMultiplier;
   
   // Apply per-trend cap
   const capped = Math.min(total, tier.perTrendCap);
@@ -279,8 +290,8 @@ export function calculateTrendEarnings(
   
   return {
     base,
-    qualityBonuses: 0,  // No longer used
-    performanceBonuses: 0,  // No longer used
+    qualityBonuses,
+    performanceBonuses,
     tierMultiplier,
     total,
     capped,
@@ -290,24 +301,13 @@ export function calculateTrendEarnings(
 
 /**
  * Calculate validation earnings
- * Formula: $0.10 × tier_multiplier (no streak bonus for validations)
  */
 export function calculateValidationEarnings(
   validationCount: number,
   userTier: Tier
 ): number {
   const base = SUSTAINABLE_EARNINGS.base.validationVote * validationCount;
-  const multiplier = SUSTAINABLE_EARNINGS.tiers[userTier].multiplier;
-  return Math.round(base * multiplier * 100) / 100;
-}
-
-/**
- * Calculate approval bonus
- * Formula: $0.50 × tier_multiplier
- */
-export function calculateApprovalBonus(userTier: Tier): number {
-  const base = SUSTAINABLE_EARNINGS.base.approvalBonus;
-  const multiplier = SUSTAINABLE_EARNINGS.tiers[userTier].multiplier;
+  const multiplier = SUSTAINABLE_EARNINGS.tiers[userTier as keyof typeof SUSTAINABLE_EARNINGS.tiers].multiplier;
   return Math.round(base * multiplier * 100) / 100;
 }
 
@@ -456,5 +456,5 @@ export function getTierProgress(
   };
 }
 
-// Export as default for compatibility
+// Export as default for clean imports
 export default SUSTAINABLE_EARNINGS;

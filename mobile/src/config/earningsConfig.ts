@@ -12,9 +12,9 @@
 export const EARNINGS_CONFIG = {
   // Base earning rates (in USD)
   BASE_RATES: {
-    TREND_SUBMISSION: 0.25,  // Base payment per trend
-    VALIDATION_VOTE: 0.10,   // Payment per validation
-    APPROVAL_BONUS: 0.50,    // Bonus when trend gets approved
+    TREND_SUBMISSION: 0.25,  // Base payment per trend (PENDING until 2+ YES votes)
+    VALIDATION_VOTE: 0.02,   // Payment per validation (FIXED from 0.10)
+    APPROVAL_BONUS: 0.50,    // Bonus when trend gets approved (2+ YES votes)
   },
 
   // Tier multipliers
