@@ -97,8 +97,17 @@ class EarningsStandard:
         SpotterTier.RESTRICTED: Decimal("0.5"), # Restricted: 0.5x multiplier
     }
     
-    # Streak multipliers (days of consecutive submissions)
-    STREAK_MULTIPLIERS = {
+    # Session streak multipliers (rapid submissions within 5 minutes)
+    SESSION_STREAK_MULTIPLIERS = {
+        1: Decimal("1.0"),   # First submission
+        2: Decimal("1.2"),   # 2nd submission within 5 min
+        3: Decimal("1.5"),   # 3rd submission within 5 min
+        4: Decimal("2.0"),   # 4th submission within 5 min
+        5: Decimal("2.5"),   # 5+ submissions within 5 min (max)
+    }
+    
+    # Daily streak multipliers (consecutive days with submissions)
+    DAILY_STREAK_MULTIPLIERS = {
         0: Decimal("1.0"),   # 0-1 days: 1x
         2: Decimal("1.2"),   # 2-6 days: 1.2x
         7: Decimal("1.5"),   # 7-13 days: 1.5x
@@ -132,13 +141,20 @@ class EarningsStandard:
 # CALCULATION FUNCTIONS
 # ============================================
 
-def get_streak_multiplier(streak_count: int) -> Decimal:
-    """Get the multiplier for a given streak count"""
-    multipliers = EarningsStandard.STREAK_MULTIPLIERS
+def get_session_streak_multiplier(session_position: int) -> Decimal:
+    """Get the multiplier for session streak (rapid submissions)"""
+    if session_position >= 5:
+        return Decimal("2.5")
+    return EarningsStandard.SESSION_STREAK_MULTIPLIERS.get(session_position, Decimal("1.0"))
+
+
+def get_daily_streak_multiplier(streak_days: int) -> Decimal:
+    """Get the multiplier for daily streak (consecutive days)"""
+    multipliers = EarningsStandard.DAILY_STREAK_MULTIPLIERS
     
     # Find the highest applicable multiplier
     for streak_threshold in sorted(multipliers.keys(), reverse=True):
-        if streak_count >= streak_threshold:
+        if streak_days >= streak_threshold:
             return multipliers[streak_threshold]
     
     return Decimal("1.0")
@@ -147,16 +163,18 @@ def get_streak_multiplier(streak_count: int) -> Decimal:
 def calculate_trend_submission_earnings(
     trend_data: dict = None,
     spotter_tier: SpotterTier = SpotterTier.LEARNING,
-    streak_count: int = 0
+    session_position: int = 1,
+    daily_streak: int = 0
 ) -> EarningCalculation:
     """
     Calculate earnings for a trend submission
-    Simple formula: $0.25 × tier_multiplier × streak_multiplier
+    Formula: $0.25 × tier_multiplier × session_streak × daily_streak
     
     Args:
         trend_data: Dictionary containing trend submission data (not used in simple calculation)
         spotter_tier: The tier of the spotter
-        streak_count: Current submission streak
+        session_position: Position in current session (1-5+)
+        daily_streak: Consecutive days with submissions
     
     Returns:
         EarningCalculation with complete breakdown
@@ -167,10 +185,11 @@ def calculate_trend_submission_earnings(
     
     # Get multipliers
     tier_multiplier = EarningsStandard.TIER_MULTIPLIERS[spotter_tier]
-    streak_multiplier = get_streak_multiplier(streak_count)
+    session_multiplier = get_session_streak_multiplier(session_position)
+    daily_multiplier = get_daily_streak_multiplier(daily_streak)
     
     # Calculate final amount
-    final_amount = base_amount * tier_multiplier * streak_multiplier
+    final_amount = base_amount * tier_multiplier * session_multiplier * daily_multiplier
     
     # Build description
     applied_bonuses = []
@@ -185,9 +204,13 @@ def calculate_trend_submission_earnings(
     }
     applied_bonuses.append(tier_descriptions[spotter_tier])
     
-    # Add streak bonus if applicable
-    if streak_multiplier > Decimal("1"):
-        applied_bonuses.append(f"🔥 {streak_count} day streak ({streak_multiplier}x)")
+    # Add session streak bonus if applicable
+    if session_multiplier > Decimal("1"):
+        applied_bonuses.append(f"🔥 #{session_position} in session ({session_multiplier}x)")
+    
+    # Add daily streak bonus if applicable  
+    if daily_multiplier > Decimal("1"):
+        applied_bonuses.append(f"📅 {daily_streak} day streak ({daily_multiplier}x)")
     
     # Initialize breakdown (simplified)
     breakdown = EarningBreakdown(
@@ -195,7 +218,7 @@ def calculate_trend_submission_earnings(
         quality_bonuses={},  # No quality bonuses in simple model
         performance_bonuses={},  # No performance bonuses in simple model
         tier_multiplier=tier_multiplier,
-        streak_multiplier=streak_multiplier,
+        streak_multiplier=session_multiplier * daily_multiplier,  # Combined streak effect
         total=final_amount,
         capped=False
     )
@@ -204,7 +227,7 @@ def calculate_trend_submission_earnings(
         base_amount=base_amount,
         bonus_amount=Decimal("0"),  # No bonuses in simple model
         tier_multiplier=tier_multiplier,
-        streak_multiplier=streak_multiplier,
+        streak_multiplier=session_multiplier * daily_multiplier,  # Combined streak effect
         final_amount=final_amount,
         applied_bonuses=applied_bonuses,
         breakdown=breakdown

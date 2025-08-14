@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { ScrollSession } from '@/components/ScrollSession';
 import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
-import UnifiedTrendSubmission from '@/components/UnifiedTrendSubmission';
+import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 // import TrendSubmissionFormSimple from '@/components/TrendSubmissionFormSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
@@ -892,7 +892,7 @@ export default function LegibleScrollPage() {
             </div>
           }
         >
-          <UnifiedTrendSubmission
+          <SmartTrendSubmission
             onClose={() => {
               setShowSubmissionForm(false);
               setTrendUrl('');

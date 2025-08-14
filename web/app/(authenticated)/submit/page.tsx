@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import UnifiedTrendSubmission from '@/components/UnifiedTrendSubmission';
+import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 
 // Fixed category mapping
 const CATEGORY_MAP: Record<string, string> = {
@@ -463,9 +463,9 @@ export default function WorkingSubmitPage() {
         </motion.div>
       </div>
 
-      {/* Unified Trend Submission Form Modal */}
+      {/* Smart Trend Submission Form Modal */}
       {showForm && (
-        <UnifiedTrendSubmission
+        <SmartTrendSubmission
           onClose={() => {
             setShowForm(false);
             setTrendUrl('');
@@ -473,7 +473,6 @@ export default function WorkingSubmitPage() {
           }}
           onSubmit={handleTrendSubmit}
           initialUrl={trendUrl}
-          initialCategory={selectedCategory || ''}
         />
       )}
     </div>
