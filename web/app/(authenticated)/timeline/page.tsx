@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import TrendSubmissionForm from '@/components/TrendSubmissionFormEnhanced';
+import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
@@ -1343,7 +1343,7 @@ export default function Timeline() {
 
       {/* Trend Submission Form Modal */}
       {showSubmitForm && (
-        <TrendSubmissionForm
+        <SmartTrendSubmission
           onClose={() => setShowSubmitForm(false)}
           onSubmit={handleTrendSubmit}
         />

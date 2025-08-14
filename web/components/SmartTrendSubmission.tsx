@@ -240,7 +240,7 @@ export default function SmartTrendSubmission({
   const extractionTimeoutRef = useRef<NodeJS.Timeout>();
   
   // Form state
-  const [currentStep, setCurrentStep] = useState<'url' | 'category' | 'details' | 'review'>('url');
+  const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'category' | 'details' | 'review'>('url');
   const [formData, setFormData] = useState({
     // URL & Metadata
     url: initialUrl,
@@ -263,6 +263,11 @@ export default function SmartTrendSubmission({
     audienceAge: [] as string[],
     predictedPeak: '',
     brandSafe: null as boolean | null,
+    
+    // Velocity & Size (HIGH VALUE DATA)
+    trendVelocity: '' as 'just_starting' | 'accelerating' | 'peaking' | 'declining' | 'dead' | '',
+    trendSize: '' as 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '',
+    firstSeen: '' as 'today' | 'yesterday' | 'this_week' | 'last_week' | 'older' | '',
     
     // Calculated
     wave_score: 50
@@ -394,6 +399,20 @@ export default function SmartTrendSubmission({
           return false;
         }
         break;
+      case 'velocity':
+        if (!formData.trendVelocity) {
+          setError('Please select the trend velocity');
+          return false;
+        }
+        if (!formData.trendSize) {
+          setError('Please select the trend size');
+          return false;
+        }
+        if (!formData.firstSeen) {
+          setError('Please select when you first saw this');
+          return false;
+        }
+        break;
       case 'category':
         if (!formData.category) {
           setError('Please select a category');
@@ -430,6 +449,9 @@ export default function SmartTrendSubmission({
     
     switch (currentStep) {
       case 'url':
+        setCurrentStep('velocity');
+        break;
+      case 'velocity':
         setCurrentStep('category');
         break;
       case 'category':
@@ -443,8 +465,11 @@ export default function SmartTrendSubmission({
 
   const handleBack = () => {
     switch (currentStep) {
-      case 'category':
+      case 'velocity':
         setCurrentStep('url');
+        break;
+      case 'category':
+        setCurrentStep('velocity');
         break;
       case 'details':
         setCurrentStep('category');
@@ -478,7 +503,17 @@ export default function SmartTrendSubmission({
         moods: [],
         region: 'Global',
         audioOrCatchphrase: '',
-        otherPlatforms: []
+        otherPlatforms: [],
+        // HIGH VALUE INTELLIGENCE DATA
+        trendVelocity: formData.trendVelocity,
+        trendSize: formData.trendSize,
+        firstSeenTiming: formData.firstSeen,
+        velocityMetrics: {
+          velocity: formData.trendVelocity,
+          size: formData.trendSize,
+          timing: formData.firstSeen,
+          capturedAt: new Date().toISOString()
+        }
       };
 
       if (customSubmit) {
@@ -513,6 +548,7 @@ export default function SmartTrendSubmission({
                 <h2 className="text-lg font-bold text-white">Submit Trend</h2>
                 <p className="text-xs text-gray-400">
                   {currentStep === 'url' && 'Add URL & Title'}
+                  {currentStep === 'velocity' && 'Trend Velocity & Size'}
                   {currentStep === 'category' && 'Select Category'}
                   {currentStep === 'details' && `${getSelectedCategory()?.label} Details`}
                   {currentStep === 'review' && 'Review & Submit'}
@@ -660,7 +696,117 @@ export default function SmartTrendSubmission({
               </motion.div>
             )}
 
-            {/* Step 2: Category Selection */}
+            {/* Step 2: Velocity & Size (HIGH VALUE DATA) */}
+            {currentStep === 'velocity' && (
+              <motion.div
+                key="velocity"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-5"
+              >
+                {/* Trend Velocity */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">How fast is this trend moving?</h3>
+                  <p className="text-sm text-gray-400 mb-4">This helps us identify market opportunities</p>
+                  
+                  <div className="space-y-2">
+                    {[
+                      { value: 'just_starting', label: '🌱 Just Starting', desc: 'Seeing it for the first time, very few posts' },
+                      { value: 'accelerating', label: '🚀 Accelerating', desc: 'Growing rapidly, gaining momentum daily' },
+                      { value: 'peaking', label: '⚡ Peaking', desc: 'Everywhere right now, maximum visibility' },
+                      { value: 'declining', label: '📉 Declining', desc: 'Starting to slow down, fewer new posts' },
+                      { value: 'dead', label: '💀 Dead', desc: 'Pretty much over, only stragglers remain' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setFormData(prev => ({ ...prev, trendVelocity: option.value as any }))}
+                        className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                          formData.trendVelocity === option.value
+                            ? 'border-blue-500 bg-blue-500/10'
+                            : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">{option.label.split(' ')[0]}</span>
+                          <div className="flex-1">
+                            <div className="font-medium text-white">{option.label.substring(3)}</div>
+                            <div className="text-sm text-gray-400 mt-0.5">{option.desc}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Trend Size */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">How big is this trend?</h3>
+                  <p className="text-sm text-gray-400 mb-4">Based on engagement and reach</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {[
+                      { value: 'micro', label: '🔬 Micro', desc: '<10K views/likes' },
+                      { value: 'niche', label: '🎯 Niche', desc: '10K-100K engagement' },
+                      { value: 'viral', label: '🔥 Viral', desc: '100K-1M engagement' },
+                      { value: 'mega', label: '💥 Mega', desc: '1M-10M engagement' },
+                      { value: 'global', label: '🌍 Global', desc: '10M+ engagement' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setFormData(prev => ({ ...prev, trendSize: option.value as any }))}
+                        className={`p-3 rounded-lg border-2 transition-all text-left ${
+                          formData.trendSize === option.value
+                            ? 'border-green-500 bg-green-500/10'
+                            : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{option.label.split(' ')[0]}</span>
+                          <div className="flex-1">
+                            <div className="font-medium text-white text-sm">{option.label.substring(3)}</div>
+                            <div className="text-xs text-gray-400">{option.desc}</div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* When First Seen */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">When did you first see this?</h3>
+                  <p className="text-sm text-gray-400 mb-4">Timing is crucial for trend value</p>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {[
+                      { value: 'today', label: 'Today', icon: '🆕' },
+                      { value: 'yesterday', label: 'Yesterday', icon: '📅' },
+                      { value: 'this_week', label: 'This Week', icon: '📆' },
+                      { value: 'last_week', label: 'Last Week', icon: '📊' },
+                      { value: 'older', label: 'Older', icon: '📚' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setFormData(prev => ({ ...prev, firstSeen: option.value as any }))}
+                        className={`p-3 rounded-lg border-2 transition-all ${
+                          formData.firstSeen === option.value
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="text-2xl mb-1">{option.icon}</div>
+                          <div className="font-medium text-white text-sm">{option.label}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 3: Category Selection */}
             {currentStep === 'category' && (
               <motion.div
                 key="category"
@@ -692,7 +838,7 @@ export default function SmartTrendSubmission({
               </motion.div>
             )}
 
-            {/* Step 3: Category-Specific Details */}
+            {/* Step 4: Category-Specific Details */}
             {currentStep === 'details' && (
               <motion.div
                 key="details"
@@ -866,6 +1012,39 @@ export default function SmartTrendSubmission({
                       {formData.creator_handle && (
                         <p className="text-sm text-gray-400">by @{formData.creator_handle}</p>
                       )}
+                    </div>
+                  </div>
+
+                  {/* Velocity & Timing (HIGH VALUE DATA) */}
+                  <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 rounded-lg p-4 border border-green-800/30">
+                    <h4 className="text-sm font-medium text-green-400 mb-2">📊 Market Intelligence</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <p className="text-xs text-gray-400">Velocity</p>
+                        <p className="text-sm font-medium text-white capitalize">
+                          {formData.trendVelocity === 'just_starting' && '🌱 Starting'}
+                          {formData.trendVelocity === 'accelerating' && '🚀 Accelerating'}
+                          {formData.trendVelocity === 'peaking' && '⚡ Peaking'}
+                          {formData.trendVelocity === 'declining' && '📉 Declining'}
+                          {formData.trendVelocity === 'dead' && '💀 Dead'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Size</p>
+                        <p className="text-sm font-medium text-white capitalize">
+                          {formData.trendSize === 'micro' && '🔬 Micro'}
+                          {formData.trendSize === 'niche' && '🎯 Niche'}
+                          {formData.trendSize === 'viral' && '🔥 Viral'}
+                          {formData.trendSize === 'mega' && '💥 Mega'}
+                          {formData.trendSize === 'global' && '🌍 Global'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">First Seen</p>
+                        <p className="text-sm font-medium text-white capitalize">
+                          {formData.firstSeen.replace('_', ' ')}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
