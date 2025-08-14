@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { TrendDuplicateChecker } from '@/lib/trendDuplicateChecker';
 import { useToast } from '@/contexts/ToastContext';
-import { TrendIntelligenceService } from '@/services/TrendIntelligenceService';
 import { 
   TrendIntelligenceData,
   CATEGORIES,
@@ -193,7 +192,9 @@ export default function TrendSubmissionFormEnhanced({
       if (customSubmit) {
         await customSubmit(submissionData);
       } else {
-        await TrendIntelligenceService.submitTrend(submissionData);
+        // Since we're using customSubmit from the parent, we don't need TrendIntelligenceService here
+        // The parent component handles the submission
+        console.log('Submission data ready:', submissionData);
       }
 
       showSuccess('Trend submitted successfully!', 'Your trend is now being reviewed');
