@@ -60,29 +60,9 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
     }
     return {
       url: initialUrl,
-      title: '',
-      platform: undefined,
-      category: undefined,
-      trendDynamics: {
-        velocity: undefined,
-        platformSpread: undefined,
-        size: undefined
-      },
-      aiDetection: {
-        origin: undefined,
-        reasoning: ''
-      },
-      audienceIntelligence: {
-        sentiment: undefined,
-        demographics: [],
-        subcultures: [],
-        brandPresence: undefined
-      },
-      categorySpecific: {},
-      context: {
-        whyItMatters: '',
-        prediction: ''
-      }
+      title: ''
+      // Other fields will be set as user progresses through the form
+      // Using Partial<TrendIntelligenceData> allows undefined values
     };
   };
   
@@ -540,7 +520,10 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                         type="button"
                         onClick={() => setFormData(prev => ({
                           ...prev,
-                          trendDynamics: { ...prev.trendDynamics, velocity: option.value as any }
+                          trendDynamics: { 
+                            ...prev.trendDynamics,
+                            velocity: option.value
+                          } as TrendIntelligenceData['trendDynamics']
                         }))}
                         className={`
                           p-3 rounded-lg border transition-all text-left
@@ -569,7 +552,10 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                         type="button"
                         onClick={() => setFormData(prev => ({
                           ...prev,
-                          trendDynamics: { ...prev.trendDynamics, platformSpread: option.value as any }
+                          trendDynamics: { 
+                            ...prev.trendDynamics,
+                            platformSpread: option.value
+                          } as TrendIntelligenceData['trendDynamics']
                         }))}
                         className={`
                           p-3 rounded-lg border transition-all text-left
@@ -598,7 +584,10 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                         type="button"
                         onClick={() => setFormData(prev => ({
                           ...prev,
-                          trendDynamics: { ...prev.trendDynamics, size: option.value as any }
+                          trendDynamics: { 
+                            ...prev.trendDynamics,
+                            size: option.value
+                          } as TrendIntelligenceData['trendDynamics']
                         }))}
                         className={`
                           p-3 rounded-lg border transition-all text-left
@@ -634,7 +623,10 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                         type="button"
                         onClick={() => setFormData(prev => ({
                           ...prev,
-                          aiDetection: { ...prev.aiDetection, origin: option.value as any }
+                          aiDetection: { 
+                            ...prev.aiDetection,
+                            origin: option.value
+                          } as TrendIntelligenceData['aiDetection']
                         }))}
                         className={`
                           p-3 rounded-lg border transition-all text-left
@@ -659,7 +651,10 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                     value={formData.aiDetection?.reasoning || ''}
                     onChange={(e) => setFormData(prev => ({
                       ...prev,
-                      aiDetection: { ...prev.aiDetection, reasoning: e.target.value }
+                      aiDetection: { 
+                        ...prev.aiDetection,
+                        reasoning: e.target.value
+                      } as TrendIntelligenceData['aiDetection']
                     }))}
                     rows={2}
                     className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
@@ -689,8 +684,8 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                           ...prev,
                           audienceIntelligence: { 
                             ...prev.audienceIntelligence, 
-                            sentiment: option.value as any 
-                          }
+                            sentiment: option.value
+                          } as TrendIntelligenceData['audienceIntelligence']
                         }))}
                         className={`
                           p-3 rounded-lg border transition-all text-left
@@ -727,7 +722,7 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                             audienceIntelligence: { 
                               ...prev.audienceIntelligence, 
                               demographics: updated 
-                            }
+                            } as TrendIntelligenceData['audienceIntelligence']
                           }));
                         }}
                         className={`
@@ -765,7 +760,7 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                             audienceIntelligence: { 
                               ...prev.audienceIntelligence, 
                               subcultures: updated 
-                            }
+                            } as TrendIntelligenceData['audienceIntelligence']
                           }));
                         }}
                         className={`
@@ -797,8 +792,8 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                           ...prev,
                           audienceIntelligence: { 
                             ...prev.audienceIntelligence, 
-                            brandPresence: option.value as any 
-                          }
+                            brandPresence: option.value
+                          } as TrendIntelligenceData['audienceIntelligence']
                         }))}
                         className={`
                           p-3 rounded-lg border transition-all text-left
@@ -845,18 +840,18 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {question.options?.map((option) => (
                         <button
-                          key={option.value}
+                          key={String(option.value)}
                           type="button"
                           onClick={() => setFormData(prev => ({
                             ...prev,
                             categorySpecific: {
                               ...prev.categorySpecific,
                               [question.id]: option.value
-                            }
+                            } as TrendIntelligenceData['categorySpecific']
                           }))}
                           className={`
                             p-3 rounded-lg border transition-all text-left
-                            ${formData.categorySpecific?.[question.id] === option.value
+                            ${(formData.categorySpecific as any)?.[question.id] === option.value
                               ? 'border-wave-500 bg-wave-600/20'
                               : 'border-wave-700/30 hover:border-wave-600/50'
                             }
@@ -871,16 +866,16 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                   {question.type === 'text' && (
                     <input
                       type="text"
-                      value={formData.categorySpecific?.[question.id] || ''}
+                      value={(formData.categorySpecific as any)?.[question.id] || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
                         categorySpecific: {
                           ...prev.categorySpecific,
                           [question.id]: e.target.value
-                        }
+                        } as TrendIntelligenceData['categorySpecific']
                       }))}
                       className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
-                      placeholder={question.placeholder}
+                      placeholder={(question as any).placeholder || ''}
                     />
                   )}
                   
@@ -895,11 +890,11 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                             categorySpecific: {
                               ...prev.categorySpecific,
                               [question.id]: option.value
-                            }
+                            } as TrendIntelligenceData['categorySpecific']
                           }))}
                           className={`
                             p-3 rounded-lg border transition-all
-                            ${formData.categorySpecific?.[question.id] === option.value
+                            ${(formData.categorySpecific as any)?.[question.id] === option.value
                               ? 'border-wave-500 bg-wave-600/20'
                               : 'border-wave-700/30 hover:border-wave-600/50'
                             }
@@ -941,7 +936,10 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                   value={formData.context?.whyItMatters || ''}
                   onChange={(e) => setFormData(prev => ({
                     ...prev,
-                    context: { ...prev.context, whyItMatters: e.target.value }
+                    context: { 
+                      ...prev.context,
+                      whyItMatters: e.target.value
+                    } as TrendIntelligenceData['context']
                   }))}
                   rows={3}
                   className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
@@ -958,7 +956,10 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                   value={formData.context?.prediction || ''}
                   onChange={(e) => setFormData(prev => ({
                     ...prev,
-                    context: { ...prev.context, prediction: e.target.value }
+                    context: { 
+                      ...prev.context,
+                      prediction: e.target.value
+                    } as TrendIntelligenceData['context']
                   }))}
                   rows={3}
                   className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
