@@ -383,24 +383,31 @@ export default function ValidatePageFixed() {
       const userTier = (user?.spotter_tier || 'learning') as Tier;
       const rewardAmount = calculateValidationEarnings(1, userTier);
       
-      // Insert the validation
+      // Insert the validation - try minimal fields first
+      const validationPayload = {
+        trend_id: trendId,
+        validator_id: user.id,
+        is_genuine: voteType === 'verify',
+        vote: voteType
+      };
+
+      console.log('Attempting insert with payload:', validationPayload);
+
       const { data: validationData, error: validationError } = await supabase
         .from('trend_validations')
-        .insert({
-          trend_id: trendId,
-          validator_id: user.id,
-          is_genuine: voteType === 'verify',
-          vote: voteType,
-          reward_amount: rewardAmount,
-          created_at: new Date().toISOString()
-        })
+        .insert(validationPayload)
         .select()
         .single();
 
       console.log('Insert Response:', { validationData, validationError });
       
       if (validationError) {
-        console.error('Validation error:', validationError);
+        console.error('Validation error details:', {
+          message: validationError.message,
+          details: validationError.details,
+          hint: validationError.hint,
+          code: validationError.code
+        });
         
         // Handle specific errors
         if (validationError.message?.includes('duplicate') || validationError.code === '23505') {
@@ -410,7 +417,8 @@ export default function ValidatePageFixed() {
           setLastError('This trend no longer exists.');
           nextTrend();
         } else {
-          setLastError('Unable to submit validation. Please try again.');
+          // Show the actual error for debugging
+          setLastError(`Validation error: ${validationError.message || 'Unknown error'}`);
         }
         return;
       }
