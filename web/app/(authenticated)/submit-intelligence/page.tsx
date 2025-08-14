@@ -13,6 +13,7 @@ import {
   Award as AwardIcon,
   Target as TargetIcon,
   Users as UsersIcon,
+  Users,  // Add this for the direct usage
   Sparkles as SparklesIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
