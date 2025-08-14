@@ -389,7 +389,7 @@ export default function ValidatePageFixed() {
         .insert({
           trend_id: trendId,
           validator_id: user.id,
-          is_genuine: voteType === 'genuine' || voteType === 'yes',
+          is_genuine: voteType === 'verify',
           vote: voteType,
           reward_amount: rewardAmount,
           created_at: new Date().toISOString()
