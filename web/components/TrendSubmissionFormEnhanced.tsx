@@ -49,12 +49,14 @@ interface TrendSubmissionFormEnhancedProps {
   onClose: () => void;
   onSubmit?: (data: Partial<TrendIntelligenceData>) => Promise<void>;
   initialUrl?: string;
+  initialCategory?: string;
 }
 
 export default function TrendSubmissionFormEnhanced({ 
   onClose, 
   onSubmit: customSubmit, 
-  initialUrl = '' 
+  initialUrl = '',
+  initialCategory = ''
 }: TrendSubmissionFormEnhancedProps) {
   const { user } = useAuth();
   const { showError, showWarning, showSuccess } = useToast();
@@ -78,6 +80,7 @@ export default function TrendSubmissionFormEnhanced({
     return {
       url: initialUrl,
       title: '',
+      category: initialCategory as TrendIntelligenceData['category'] || undefined,
     };
   };
   
@@ -86,7 +89,8 @@ export default function TrendSubmissionFormEnhanced({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [step, setStep] = useState(1);
+  // If category is pre-selected, start at step 2 (Universal Intelligence)
+  const [step, setStep] = useState(initialCategory ? 2 : 1);
   const [extractingMetadata, setExtractingMetadata] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [duplicateWarning, setDuplicateWarning] = useState<string>('');
@@ -219,9 +223,16 @@ export default function TrendSubmissionFormEnhanced({
         if (!formData.url) errors.url = 'URL is required';
         if (!formData.title) errors.title = 'Title is required';
         if (!formData.platform) errors.platform = 'Platform is required';
-        if (!formData.category) errors.category = 'Category is required';
+        // Only validate category if not pre-selected
+        if (!initialCategory && !formData.category) errors.category = 'Category is required';
         break;
       case 2:
+        // When starting from step 2 with pre-selected category, also validate basic info
+        if (initialCategory && stepNumber === 2) {
+          if (!formData.url) errors.url = 'URL is required';
+          if (!formData.title) errors.title = 'Title is required';
+          if (!formData.platform) errors.platform = 'Platform is required';
+        }
         if (!formData.trendDynamics?.velocity) errors.velocity = 'Required';
         if (!formData.trendDynamics?.platformSpread) errors.platformSpread = 'Required';
         if (!formData.trendDynamics?.size) errors.size = 'Required';
@@ -267,7 +278,12 @@ export default function TrendSubmissionFormEnhanced({
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">WaveSight Intelligence Capture</h2>
-                <p className="text-sm text-wave-300">Step {step} of {totalSteps} - Enhanced 5-Step Flow</p>
+                <p className="text-sm text-wave-300">
+                  {initialCategory ? 
+                    `Category: ${CATEGORIES.find(c => c.id === initialCategory)?.label || initialCategory} - Step ${step} of ${totalSteps}` :
+                    `Step ${step} of ${totalSteps} - Enhanced 5-Step Flow`
+                  }
+                </p>
               </div>
             </div>
             <button
@@ -385,33 +401,50 @@ export default function TrendSubmissionFormEnhanced({
                     </div>
                   </div>
 
-                  {/* Category Selection */}
-                  <div>
-                    <label className="block text-wave-300 text-sm mb-2">
-                      Category * {validationErrors.category && <span className="text-red-400">Required</span>}
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {CATEGORIES.map((category) => (
-                        <button
-                          key={category.id}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ 
-                            ...prev, 
-                            category: category.id as TrendIntelligenceData['category'],
-                            categorySpecific: {} // Reset category-specific answers
-                          }))}
-                          className={`p-3 rounded-lg border transition-all text-left ${
-                            formData.category === category.id
-                              ? 'border-wave-500 bg-wave-600/20'
-                              : 'border-wave-700/30 hover:border-wave-600/50'
-                          }`}
-                        >
-                          <div className="font-medium text-wave-200 text-sm">{category.label}</div>
-                          <div className="text-xs text-wave-400 mt-1">{category.description}</div>
-                        </button>
-                      ))}
+                  {/* Category Selection - Only show if not pre-selected */}
+                  {!initialCategory && (
+                    <div>
+                      <label className="block text-wave-300 text-sm mb-2">
+                        Category * {validationErrors.category && <span className="text-red-400">Required</span>}
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {CATEGORIES.map((category) => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ 
+                              ...prev, 
+                              category: category.id as TrendIntelligenceData['category'],
+                              categorySpecific: {} // Reset category-specific answers
+                            }))}
+                            className={`p-3 rounded-lg border transition-all text-left ${
+                              formData.category === category.id
+                                ? 'border-wave-500 bg-wave-600/20'
+                                : 'border-wave-700/30 hover:border-wave-600/50'
+                            }`}
+                          >
+                            <div className="font-medium text-wave-200 text-sm">{category.label}</div>
+                            <div className="text-xs text-wave-400 mt-1">{category.description}</div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  
+                  {/* Show selected category if pre-selected */}
+                  {initialCategory && (
+                    <div className="bg-wave-800/30 rounded-lg p-3">
+                      <label className="block text-wave-300 text-sm mb-1">Selected Category</label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">
+                          {CATEGORIES.find(c => c.id === initialCategory)?.label}
+                        </span>
+                        <span className="text-sm text-wave-400">
+                          {CATEGORIES.find(c => c.id === initialCategory)?.description}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -425,6 +458,85 @@ export default function TrendSubmissionFormEnhanced({
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
+                {/* If category was pre-selected, show basic info fields first */}
+                {initialCategory && step === 2 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                      <LinkIcon className="w-5 h-5 text-wave-400" />
+                      Basic Trend Information
+                    </h3>
+                    
+                    {/* URL Input */}
+                    <div>
+                      <label className="block text-wave-300 text-sm mb-2">
+                        Trend URL * {validationErrors.url && <span className="text-red-400">({validationErrors.url})</span>}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="url"
+                          value={formData.url || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                          onBlur={(e) => extractMetadataFromUrl(e.target.value)}
+                          placeholder="https://www.tiktok.com/@user/video/..."
+                          className={`w-full px-4 py-3 rounded-xl bg-wave-800/50 border ${
+                            validationErrors.url ? 'border-red-500' : 'border-wave-700/30'
+                          } text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none`}
+                        />
+                        {extractingMetadata && (
+                          <div className="absolute right-3 top-3">
+                            <LoaderIcon className="w-5 h-5 text-wave-400 animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <div>
+                      <label className="block text-wave-300 text-sm mb-2">
+                        Title * {validationErrors.title && <span className="text-red-400">({validationErrors.title})</span>}
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.title || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Give this trend a catchy title"
+                        className={`w-full px-4 py-3 rounded-xl bg-wave-800/50 border ${
+                          validationErrors.title ? 'border-red-500' : 'border-wave-700/30'
+                        } text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none`}
+                      />
+                    </div>
+
+                    {/* Platform Selection */}
+                    <div>
+                      <label className="block text-wave-300 text-sm mb-2">
+                        Platform * {validationErrors.platform && <span className="text-red-400">Required</span>}
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {PLATFORMS.map((platform) => (
+                          <button
+                            key={platform.id}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ 
+                              ...prev, 
+                              platform: platform.id as TrendIntelligenceData['platform'] 
+                            }))}
+                            className={`p-3 rounded-lg border transition-all ${
+                              formData.platform === platform.id
+                                ? 'border-wave-500 bg-wave-600/20'
+                                : 'border-wave-700/30 hover:border-wave-600/50'
+                            }`}
+                          >
+                            <span className="text-xl mb-1">{platform.icon}</span>
+                            <p className="text-xs text-wave-300">{platform.label}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="border-t border-wave-700/30 pt-4 mt-4"></div>
+                  </div>
+                )}
+
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                   <BrainIcon className="w-5 h-5 text-wave-400" />
                   Universal Intelligence Gathering
