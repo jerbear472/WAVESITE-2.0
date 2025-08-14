@@ -60,6 +60,9 @@ export default function TrendSubmissionFormEnhanced({
   const { showError, showWarning, showSuccess } = useToast();
   const DRAFT_KEY = 'wavesight_trend_enhanced_draft';
   
+  // Debug log to verify enhanced form is loaded
+  console.log('🚀 TrendSubmissionFormEnhanced loaded - 5-step intelligence gathering active');
+  
   // Load draft from localStorage
   const loadDraft = (): TrendData => {
     if (typeof window !== 'undefined') {
@@ -264,7 +267,7 @@ export default function TrendSubmissionFormEnhanced({
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">WaveSight Intelligence Capture</h2>
-                <p className="text-sm text-wave-300">Step {step} of {totalSteps}</p>
+                <p className="text-sm text-wave-300">Step {step} of {totalSteps} - Enhanced 5-Step Flow</p>
               </div>
             </div>
             <button
