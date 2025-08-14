@@ -29,7 +29,7 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
     const calculateEarnings = useCallback(() => {
       // Get user's tier - default to 'learning' if not set
       const userTier = (user as any)?.spotter_tier || 'learning';
-      const tierConfig = SUSTAINABLE_EARNINGS.tiers[userTier];
+      const tierConfig = SUSTAINABLE_EARNINGS.tiers[userTier as keyof typeof SUSTAINABLE_EARNINGS.tiers];
       const tierMultiplier = tierConfig?.multiplier || 1.0;
       
       const baseRate = 0.02; // Sustainable rate per minute
