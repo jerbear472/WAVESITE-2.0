@@ -72,6 +72,7 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
   const [extractingMetadata, setExtractingMetadata] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [extractedThumbnail, setExtractedThumbnail] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const draftSaveTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -142,6 +143,11 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
         thumbnailUrl: extractedData.thumbnail_url || prev.thumbnailUrl,
         postedAt: extractedData.posted_at || prev.postedAt
       }));
+      
+      // Set extracted thumbnail for display
+      if (extractedData.thumbnail_url) {
+        setExtractedThumbnail(extractedData.thumbnail_url);
+      }
     } catch (error) {
       showError('Failed to extract metadata', 'Please fill in the details manually');
     } finally {
@@ -486,6 +492,30 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                   ))}
                 </div>
               </div>
+              
+              {/* Show extracted thumbnail immediately in Step 1 */}
+              {extractedThumbnail && (
+                <div>
+                  <label className="block text-wave-200 mb-2 font-medium">
+                    <ImageIcon className="w-4 h-4 inline mr-2" />
+                    Captured Thumbnail
+                  </label>
+                  <div className="relative w-32 h-32">
+                    <img
+                      src={extractedThumbnail}
+                      alt="Trend thumbnail"
+                      className="w-full h-full object-cover rounded-xl border border-wave-700/30"
+                      onError={(e) => {
+                        console.error('Thumbnail failed to load');
+                        setExtractedThumbnail(null);
+                      }}
+                    />
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                      <CheckIcon className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -967,11 +997,35 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                 />
               </div>
 
-              {/* Image Upload */}
+              {/* Thumbnail Display */}
+              {extractedThumbnail && (
+                <div className="mb-6">
+                  <label className="block text-wave-200 mb-3 font-medium">
+                    <ImageIcon className="w-4 h-4 inline mr-2" />
+                    Extracted Thumbnail
+                  </label>
+                  <div className="relative">
+                    <img
+                      src={extractedThumbnail}
+                      alt="Extracted thumbnail"
+                      className="w-full h-48 object-cover rounded-xl border-2 border-wave-600/50"
+                      onError={(e) => {
+                        console.error('Thumbnail failed to load:', extractedThumbnail);
+                        setExtractedThumbnail(null);
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 px-2 py-1 bg-green-500/80 rounded text-xs text-white">
+                      Auto-captured
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Manual Image Upload */}
               <div>
                 <label className="block text-wave-200 mb-3 font-medium">
                   <ImageIcon className="w-4 h-4 inline mr-2" />
-                  Add Screenshot (Optional)
+                  {extractedThumbnail ? 'Replace with Custom Screenshot' : 'Add Screenshot'} (Optional)
                 </label>
                 
                 {!imagePreview ? (
@@ -980,14 +1034,14 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                     className="border-2 border-dashed border-wave-600/50 rounded-xl p-6 text-center cursor-pointer hover:border-wave-500/70 transition-all"
                   >
                     <UploadIcon className="w-8 h-8 text-wave-400 mx-auto mb-2" />
-                    <p className="text-wave-300 mb-1">Click to upload image</p>
+                    <p className="text-wave-300 mb-1">Click to upload custom image</p>
                     <p className="text-xs text-wave-500">PNG, JPG up to 10MB</p>
                   </div>
                 ) : (
                   <div className="relative">
                     <img
                       src={imagePreview}
-                      alt="Preview"
+                      alt="Custom preview"
                       className="w-full h-48 object-cover rounded-xl"
                     />
                     <button
