@@ -137,7 +137,7 @@ export default function TrendIntelligenceFormEnhanced({
       const enhancedData: TrendIntelligenceData = {
         ...initialData as TrendIntelligenceData,
         
-        // Add enhanced category-specific data
+        // Add enhanced category-specific data (using type assertion for flexibility)
         categorySpecific: {
           ...initialData.categorySpecific,
           // Timing intelligence
@@ -163,7 +163,7 @@ export default function TrendIntelligenceFormEnhanced({
           value_score_hedge: valueScore.hedgeFund,
           value_score_brand: valueScore.brand,
           value_score_creator: valueScore.creator
-        }
+        } as any
       };
       
       // Use custom onSubmit if provided, otherwise use default service
