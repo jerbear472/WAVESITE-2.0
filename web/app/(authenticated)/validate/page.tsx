@@ -380,6 +380,7 @@ export default function ValidatePageFixed() {
       }
 
       // Calculate reward based on user tier ($0.02 base)
+      const userTier = (user?.spotter_tier || 'learning') as Tier;
       const rewardAmount = calculateValidationEarnings(1, userTier);
       
       // Insert the validation
