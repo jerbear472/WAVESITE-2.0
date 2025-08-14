@@ -6,16 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractor';
 import { TrendDuplicateChecker } from '@/lib/trendDuplicateChecker';
 import { useToast } from '@/contexts/ToastContext';
-import { TrendIntelligenceService } from '@/services/TrendIntelligenceService';
-import { 
-  TrendIntelligenceData,
-  CATEGORIES,
-  PLATFORMS,
-  CATEGORY_QUESTIONS,
-  UNIVERSAL_INTELLIGENCE,
-  DEMOGRAPHICS,
-  SUBCULTURES
-} from '@/lib/trendIntelligenceConfig';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
@@ -27,34 +17,54 @@ import {
   AlertCircle as AlertCircleIcon,
   Check as CheckIcon,
   Loader as LoaderIcon,
-  Trash2 as TrashIcon,
-  TrendingUp as TrendingUpIcon,
-  Brain as BrainIcon,
-  Users as UsersIcon,
-  Target as TargetIcon,
-  MessageSquare as MessageSquareIcon,
-  ChevronRight as ChevronRightIcon,
-  ChevronLeft as ChevronLeftIcon,
-  Info as InfoIcon,
-  Sparkles as SparklesIcon
+  Trash2 as TrashIcon
 } from 'lucide-react';
 
-// Using TrendIntelligenceData type from config
-type TrendData = Partial<TrendIntelligenceData> & {
+interface TrendData {
+  url: string;
+  title: string;
+  category: string;
   image?: File | string;
-};
+  platform: string;
+  creator_handle?: string;
+  creator_name?: string;
+  post_caption?: string;
+  likes_count?: number;
+  comments_count?: number;
+  shares_count?: number;
+  views_count?: number;
+  hashtags?: string[];
+  thumbnail_url?: string;
+  posted_at?: string;
+  wave_score?: number;
+}
 
-// Categories and platforms are now imported from trendIntelligenceConfig
+const categories = [
+  { id: 'visual_style', label: '🎨 Visual Style', description: 'Aesthetic trends, filters, visual effects' },
+  { id: 'audio_music', label: '🎵 Audio/Music', description: 'Songs, sounds, audio clips' },
+  { id: 'creator_technique', label: '🎬 Creator Technique', description: 'Filming, editing, storytelling methods' },
+  { id: 'meme_format', label: '😂 Meme Format', description: 'Templates, formats, viral concepts' },
+  { id: 'product_brand', label: '🛍️ Product/Brand', description: 'Products, brands, commercial trends' },
+  { id: 'behavior_pattern', label: '📊 Behavior Pattern', description: 'User behaviors, interaction patterns' }
+];
+
+const platforms = [
+  { id: 'tiktok', label: 'TikTok', color: 'bg-black' },
+  { id: 'instagram', label: 'Instagram', color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
+  { id: 'youtube', label: 'YouTube', color: 'bg-red-600' },
+  { id: 'twitter', label: 'Twitter/X', color: 'bg-black' },
+  { id: 'other', label: 'Other', color: 'bg-gray-600' }
+];
 
 interface TrendSubmissionFormProps {
   onClose: () => void;
-  onSubmit?: (data: TrendData) => Promise<void>;
+  onSubmit: (data: TrendData) => Promise<void>;
   initialUrl?: string;
 }
 
-export default function TrendSubmissionForm({ onClose, onSubmit: customSubmit, initialUrl = '' }: TrendSubmissionFormProps) {
+export default function TrendSubmissionForm({ onClose, onSubmit, initialUrl = '' }: TrendSubmissionFormProps) {
   const { user } = useAuth();
-  const { showError, showWarning, showSuccess } = useToast();
+  const { showError, showWarning } = useToast();
   const DRAFT_KEY = 'wavesight_trend_draft';
   
   // Load draft from localStorage
