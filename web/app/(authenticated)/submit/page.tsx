@@ -16,8 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import TrendSubmissionFormEnhanced from '@/components/TrendSubmissionFormEnhanced';
-import { CATEGORIES } from '@/lib/trendIntelligenceConfig';
+import UnifiedTrendSubmission from '@/components/UnifiedTrendSubmission';
 
 // Fixed category mapping
 const CATEGORY_MAP: Record<string, string> = {
@@ -306,11 +305,6 @@ export default function WorkingSubmitPage() {
     setShowForm(true);
   };
 
-  const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    setShowForm(true);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/20 to-black">
       <div className="container mx-auto px-4 py-6 max-w-5xl">
@@ -354,7 +348,7 @@ export default function WorkingSubmitPage() {
           </motion.div>
         )}
 
-        {/* Category Selection First */}
+        {/* Simplified Submit Form */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -366,38 +360,45 @@ export default function WorkingSubmitPage() {
             </div>
             <div>
               <h3 className="text-2xl font-bold text-white">Spot a Trend?</h3>
-              <p className="text-blue-200/80">Select a category to start your submission</p>
+              <p className="text-blue-200/80">Paste a link or click to start</p>
             </div>
           </div>
 
-          {/* Step 1: Category Selection */}
           <div className="space-y-4">
-            <div className="bg-gray-800/30 rounded-xl p-4">
-              <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-yellow-400" />
-                Step 1: What type of trend are you spotting?
-              </h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {CATEGORIES.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => handleCategorySelect(category.id)}
-                    className="p-3 rounded-lg border border-gray-700/50 hover:border-blue-500/50 bg-gray-800/50 hover:bg-gray-700/50 transition-all text-left group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-white text-sm">{category.label}</div>
-                        <div className="text-xs text-gray-400 mt-1">{category.description}</div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
-                    </div>
-                  </button>
-                ))}
+            {/* Quick URL Submit */}
+            <form onSubmit={(e) => { e.preventDefault(); handleQuickSubmit(); }} className="space-y-3">
+              <div className="relative">
+                <input
+                  type="url"
+                  value={trendUrl}
+                  onChange={(e) => setTrendUrl(e.target.value)}
+                  placeholder="Paste TikTok, Instagram, YouTube, X link..."
+                  className="w-full px-5 py-4 bg-gray-800/50 backdrop-blur-sm border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+                  disabled={submitting}
+                />
+                <Link className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
-            </div>
+              
+              <button
+                type="submit"
+                disabled={!trendUrl.trim() || submitting}
+                className="w-full flex items-center justify-center gap-3 px-5 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 rounded-xl font-bold text-lg transition-all text-white"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Submit Trend
+                  </>
+                )}
+              </button>
+            </form>
 
-            {/* Alternative: Quick URL Submit */}
+            {/* Or start without URL */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-700/50"></div>
@@ -407,40 +408,16 @@ export default function WorkingSubmitPage() {
               </div>
             </div>
 
-            <div className="bg-gray-800/30 rounded-xl p-4">
-              <h4 className="text-gray-300 text-sm mb-3">Have a URL ready?</h4>
-              <form onSubmit={(e) => { e.preventDefault(); handleQuickSubmit(); }} className="space-y-3">
-                <div className="relative">
-                  <input
-                    type="url"
-                    value={trendUrl}
-                    onChange={(e) => setTrendUrl(e.target.value)}
-                    placeholder="Paste trending link here..."
-                    className="w-full px-4 py-3 bg-gray-800/50 backdrop-blur-sm border border-gray-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/60 text-sm"
-                    disabled={submitting}
-                  />
-                  <Link className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-                </div>
-                
-                <button
-                  type="submit"
-                  disabled={!trendUrl.trim() || submitting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 rounded-lg font-medium text-sm transition-all text-white"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Continue with URL
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
+            <button
+              onClick={() => {
+                setTrendUrl('');
+                setShowForm(true);
+              }}
+              className="w-full px-5 py-3 bg-gray-800/40 hover:bg-gray-700/40 border border-gray-700/50 rounded-xl text-gray-300 font-medium transition-all"
+            >
+              <Sparkles className="inline w-4 h-4 mr-2" />
+              Start without URL
+            </button>
           </div>
         </motion.div>
 
@@ -486,9 +463,9 @@ export default function WorkingSubmitPage() {
         </motion.div>
       </div>
 
-      {/* Trend Submission Form Modal */}
+      {/* Unified Trend Submission Form Modal */}
       {showForm && (
-        <TrendSubmissionFormEnhanced
+        <UnifiedTrendSubmission
           onClose={() => {
             setShowForm(false);
             setTrendUrl('');

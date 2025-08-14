@@ -18,6 +18,7 @@ from dataclasses import dataclass
 # ============================================
 
 class SpotterTier(str, Enum):
+    MASTER = "master"
     ELITE = "elite"
     VERIFIED = "verified"
     LEARNING = "learning"
@@ -73,51 +74,36 @@ class EarningsStandard:
     
     # Base earning rates (in USD)
     BASE_RATES = {
-        "TREND_SUBMISSION": Decimal("1.00"),
+        "TREND_SUBMISSION": Decimal("0.25"),  # FIXED: Correct base rate
         "VALIDATION_VOTE": Decimal("0.10"),
         "APPROVAL_BONUS": Decimal("0.50"),
         "SCROLL_SESSION": Decimal("0.00"),
     }
     
-    # Quality bonuses
-    QUALITY_BONUSES = {
-        "SCREENSHOT": Decimal("0.15"),
-        "COMPLETE_INFO": Decimal("0.10"),
-        "DEMOGRAPHICS": Decimal("0.10"),
-        "SUBCULTURES": Decimal("0.10"),
-        "MULTI_PLATFORM": Decimal("0.10"),
-        "CREATOR_INFO": Decimal("0.05"),
-        "RICH_HASHTAGS": Decimal("0.05"),
-        "CAPTION_PROVIDED": Decimal("0.05"),
-    }
+    # Quality bonuses - REMOVED for simplicity
+    # Earnings are now just: base × tier_multiplier × streak_multiplier
+    QUALITY_BONUSES = {}
     
-    # Performance bonuses
-    PERFORMANCE_BONUSES = {
-        "VIRAL_CONTENT": Decimal("0.50"),  # 1M+ views
-        "HIGH_VIEWS": Decimal("0.25"),      # 100k-999k views
-        "HIGH_ENGAGEMENT": Decimal("0.20"),  # >10% engagement
-        "HIGH_WAVE_SCORE": Decimal("0.20"),  # Wave score > 70
-        "FINANCE_TREND": Decimal("0.10"),
-        "TRENDING_CATEGORY": Decimal("0.10"),
-    }
+    # Performance bonuses - REMOVED for simplicity  
+    # Earnings are now just: base × tier_multiplier × streak_multiplier
+    PERFORMANCE_BONUSES = {}
     
-    # Tier multipliers
+    # Tier multipliers (matching database)
     TIER_MULTIPLIERS = {
-        SpotterTier.ELITE: Decimal("1.5"),
-        SpotterTier.VERIFIED: Decimal("1.0"),
-        SpotterTier.LEARNING: Decimal("0.7"),
-        SpotterTier.RESTRICTED: Decimal("0.3"),
+        SpotterTier.MASTER: Decimal("3.0"),     # Master: 3x multiplier
+        SpotterTier.ELITE: Decimal("2.0"),      # Elite: 2x multiplier
+        SpotterTier.VERIFIED: Decimal("1.5"),   # Verified: 1.5x multiplier  
+        SpotterTier.LEARNING: Decimal("1.0"),   # Learning: 1x multiplier (base)
+        SpotterTier.RESTRICTED: Decimal("0.5"), # Restricted: 0.5x multiplier
     }
     
-    # Streak multipliers
+    # Streak multipliers (days of consecutive submissions)
     STREAK_MULTIPLIERS = {
-        0: Decimal("1.0"),
-        1: Decimal("1.0"),
-        2: Decimal("1.2"),
-        3: Decimal("1.5"),
-        5: Decimal("2.0"),
-        10: Decimal("2.5"),
-        15: Decimal("3.0"),
+        0: Decimal("1.0"),   # 0-1 days: 1x
+        2: Decimal("1.2"),   # 2-6 days: 1.2x
+        7: Decimal("1.5"),   # 7-13 days: 1.5x
+        14: Decimal("2.0"),  # 14-29 days: 2x
+        30: Decimal("2.5"),  # 30+ days: 2.5x
     }
     
     # System limits
@@ -159,15 +145,16 @@ def get_streak_multiplier(streak_count: int) -> Decimal:
 
 
 def calculate_trend_submission_earnings(
-    trend_data: dict,
+    trend_data: dict = None,
     spotter_tier: SpotterTier = SpotterTier.LEARNING,
     streak_count: int = 0
 ) -> EarningCalculation:
     """
     Calculate earnings for a trend submission
+    Simple formula: $0.25 × tier_multiplier × streak_multiplier
     
     Args:
-        trend_data: Dictionary containing trend submission data
+        trend_data: Dictionary containing trend submission data (not used in simple calculation)
         spotter_tier: The tier of the spotter
         streak_count: Current submission streak
     
@@ -175,120 +162,49 @@ def calculate_trend_submission_earnings(
         EarningCalculation with complete breakdown
     """
     
-    # Initialize breakdown
-    breakdown = EarningBreakdown(
-        base=EarningsStandard.BASE_RATES["TREND_SUBMISSION"],
-        quality_bonuses={},
-        performance_bonuses={},
-        tier_multiplier=EarningsStandard.TIER_MULTIPLIERS[spotter_tier],
-        streak_multiplier=get_streak_multiplier(streak_count),
-        total=Decimal("0"),
-        capped=False
-    )
+    # Get base amount
+    base_amount = EarningsStandard.BASE_RATES["TREND_SUBMISSION"]
     
+    # Get multipliers
+    tier_multiplier = EarningsStandard.TIER_MULTIPLIERS[spotter_tier]
+    streak_multiplier = get_streak_multiplier(streak_count)
+    
+    # Calculate final amount
+    final_amount = base_amount * tier_multiplier * streak_multiplier
+    
+    # Build description
     applied_bonuses = []
-    
-    # Apply quality bonuses
-    if trend_data.get("screenshot_url"):
-        breakdown.quality_bonuses["screenshot"] = EarningsStandard.QUALITY_BONUSES["SCREENSHOT"]
-        applied_bonuses.append("📸 Screenshot")
-    
-    if (trend_data.get("trend_name") and 
-        trend_data.get("description") and 
-        len(trend_data.get("description", "")) > 20):
-        breakdown.quality_bonuses["complete_info"] = EarningsStandard.QUALITY_BONUSES["COMPLETE_INFO"]
-        applied_bonuses.append("📝 Complete Info")
-    
-    if trend_data.get("age_ranges") and len(trend_data.get("age_ranges", [])) > 0:
-        breakdown.quality_bonuses["demographics"] = EarningsStandard.QUALITY_BONUSES["DEMOGRAPHICS"]
-        applied_bonuses.append("👥 Demographics")
-    
-    if trend_data.get("subcultures") and len(trend_data.get("subcultures", [])) > 0:
-        breakdown.quality_bonuses["subcultures"] = EarningsStandard.QUALITY_BONUSES["SUBCULTURES"]
-        applied_bonuses.append("🎭 Subcultures")
-    
-    if trend_data.get("other_platforms") and len(trend_data.get("other_platforms", [])) > 0:
-        breakdown.quality_bonuses["multi_platform"] = EarningsStandard.QUALITY_BONUSES["MULTI_PLATFORM"]
-        applied_bonuses.append("🌐 Multi-Platform")
-    
-    if trend_data.get("creator_handle"):
-        breakdown.quality_bonuses["creator_info"] = EarningsStandard.QUALITY_BONUSES["CREATOR_INFO"]
-        applied_bonuses.append("👤 Creator Info")
-    
-    if trend_data.get("hashtags") and len(trend_data.get("hashtags", [])) >= 3:
-        breakdown.quality_bonuses["rich_hashtags"] = EarningsStandard.QUALITY_BONUSES["RICH_HASHTAGS"]
-        applied_bonuses.append("#️⃣ Hashtags")
-    
-    if trend_data.get("post_caption") and len(trend_data.get("post_caption", "")) > 10:
-        breakdown.quality_bonuses["caption"] = EarningsStandard.QUALITY_BONUSES["CAPTION_PROVIDED"]
-        applied_bonuses.append("💬 Caption")
-    
-    # Apply performance bonuses
-    views_count = trend_data.get("views_count", 0)
-    if views_count >= 1000000:
-        breakdown.performance_bonuses["viral"] = EarningsStandard.PERFORMANCE_BONUSES["VIRAL_CONTENT"]
-        applied_bonuses.append("🔥 Viral (1M+ views)")
-    elif views_count >= 100000:
-        breakdown.performance_bonuses["high_views"] = EarningsStandard.PERFORMANCE_BONUSES["HIGH_VIEWS"]
-        applied_bonuses.append("👀 High Views (100k+)")
-    
-    # Engagement rate bonus
-    if views_count > 0 and trend_data.get("likes_count", 0) > 0:
-        engagement_rate = trend_data["likes_count"] / views_count
-        if engagement_rate > 0.1:
-            breakdown.performance_bonuses["high_engagement"] = EarningsStandard.PERFORMANCE_BONUSES["HIGH_ENGAGEMENT"]
-            applied_bonuses.append("💯 High Engagement")
-    
-    # Wave score bonus
-    if trend_data.get("wave_score", 0) > 70:
-        breakdown.performance_bonuses["high_wave"] = EarningsStandard.PERFORMANCE_BONUSES["HIGH_WAVE_SCORE"]
-        applied_bonuses.append("🌊 High Wave Score")
-    
-    # Finance trend bonus
-    if (trend_data.get("is_finance_trend") or 
-        (trend_data.get("tickers") and len(trend_data.get("tickers", [])) > 0) or
-        trend_data.get("category") in ["finance", "crypto", "stocks", "trading"]):
-        breakdown.performance_bonuses["finance"] = EarningsStandard.PERFORMANCE_BONUSES["FINANCE_TREND"]
-        applied_bonuses.append("📈 Finance Trend")
     
     # Add tier description
     tier_descriptions = {
-        SpotterTier.ELITE: "🏆 Elite Tier (1.5x)",
-        SpotterTier.VERIFIED: "✅ Verified Tier (1.0x)",
-        SpotterTier.LEARNING: "📚 Learning Tier (0.7x)",
-        SpotterTier.RESTRICTED: "⚠️ Restricted Tier (0.3x)",
+        SpotterTier.MASTER: f"👑 Master Tier ({tier_multiplier}x)",
+        SpotterTier.ELITE: f"🏆 Elite Tier ({tier_multiplier}x)",
+        SpotterTier.VERIFIED: f"✅ Verified Tier ({tier_multiplier}x)",
+        SpotterTier.LEARNING: f"📚 Learning Tier ({tier_multiplier}x)",
+        SpotterTier.RESTRICTED: f"⚠️ Restricted Tier ({tier_multiplier}x)",
     }
     applied_bonuses.append(tier_descriptions[spotter_tier])
     
     # Add streak bonus if applicable
-    if breakdown.streak_multiplier > Decimal("1"):
-        applied_bonuses.append(f"🔥 {breakdown.streak_multiplier}x Streak Bonus")
+    if streak_multiplier > Decimal("1"):
+        applied_bonuses.append(f"🔥 {streak_count} day streak ({streak_multiplier}x)")
     
-    # Calculate totals
-    quality_total = sum(breakdown.quality_bonuses.values())
-    performance_total = sum(breakdown.performance_bonuses.values())
-    
-    base_amount = breakdown.base
-    bonus_amount = quality_total + performance_total
-    subtotal = base_amount + bonus_amount
-    
-    # Apply multipliers
-    final_amount = subtotal * breakdown.tier_multiplier * breakdown.streak_multiplier
-    
-    # Apply cap
-    max_submission = EarningsStandard.LIMITS["MAX_SINGLE_SUBMISSION"]
-    if final_amount > max_submission:
-        final_amount = max_submission
-        breakdown.capped = True
-        applied_bonuses.append("🔒 Capped at $3.00")
-    
-    breakdown.total = final_amount
+    # Initialize breakdown (simplified)
+    breakdown = EarningBreakdown(
+        base=base_amount,
+        quality_bonuses={},  # No quality bonuses in simple model
+        performance_bonuses={},  # No performance bonuses in simple model
+        tier_multiplier=tier_multiplier,
+        streak_multiplier=streak_multiplier,
+        total=final_amount,
+        capped=False
+    )
     
     return EarningCalculation(
         base_amount=base_amount,
-        bonus_amount=bonus_amount,
-        tier_multiplier=breakdown.tier_multiplier,
-        streak_multiplier=breakdown.streak_multiplier,
+        bonus_amount=Decimal("0"),  # No bonuses in simple model
+        tier_multiplier=tier_multiplier,
+        streak_multiplier=streak_multiplier,
         final_amount=final_amount,
         applied_bonuses=applied_bonuses,
         breakdown=breakdown
