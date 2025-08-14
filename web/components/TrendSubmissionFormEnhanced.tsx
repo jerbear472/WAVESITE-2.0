@@ -3,1295 +3,978 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { extractThumbnailWithFallbacks } from '@/lib/robustThumbnailExtractor';
-import { getProxiedImageUrl } from '@/lib/imageProxy';
+import { MetadataExtractor } from '@/lib/metadataExtractor';
+import { TrendDuplicateChecker } from '@/lib/trendDuplicateChecker';
+import { useToast } from '@/contexts/ToastContext';
+import { TrendIntelligenceService } from '@/services/TrendIntelligenceService';
+import { 
+  TrendIntelligenceData,
+  CATEGORIES,
+  PLATFORMS,
+  CATEGORY_QUESTIONS,
+  UNIVERSAL_INTELLIGENCE,
+  DEMOGRAPHICS,
+  SUBCULTURES
+} from '@/lib/trendIntelligenceConfig';
 import { 
   Link as LinkIcon,
   Upload as UploadIcon,
+  Image as ImageIcon,
+  Tag as TagIcon,
   Send as SendIcon,
   X as XIcon,
+  Clipboard as ClipboardIcon,
+  AlertCircle as AlertCircleIcon,
   Check as CheckIcon,
   Loader as LoaderIcon,
-  ArrowLeft as ArrowLeftIcon,
-  ArrowRight as ArrowRightIcon,
-  Eye as EyeIcon,
-  Heart as HeartIcon,
-  MessageCircle as CommentIcon,
-  User as UserIcon,
-  Hash as HashIcon,
-  Music as MusicIcon,
+  Trash2 as TrashIcon,
   TrendingUp as TrendingUpIcon,
-  Calendar as CalendarIcon,
-  Target as TargetIcon,
+  Brain as BrainIcon,
   Users as UsersIcon,
-  Tag as TagIcon,
+  Target as TargetIcon,
+  MessageSquare as MessageSquareIcon,
+  ChevronRight as ChevronRightIcon,
+  ChevronLeft as ChevronLeftIcon,
+  Info as InfoIcon,
+  Sparkles as SparklesIcon,
   Zap as ZapIcon,
   Globe as GlobeIcon,
-  Sparkles as SparklesIcon
+  BarChart as BarChartIcon
 } from 'lucide-react';
 
-interface TrendData {
-  // Basic Info
-  url: string;
-  trendName: string;
-  platform: string;
-  screenshot?: File | string;
-  explanation: string;
-  
-  // Audience
-  ageRanges: string[];
-  subcultures: string[];
-  region?: string;
-  
-  // Categorization
-  categories: string[];
-  moods: string[];
-  
-  // Trend Status
-  spreadSpeed: string;
-  engagementRange?: string;
-  audioOrCatchphrase?: string;
-  motivation: string;
-  
-  // Timing & Spread
-  firstSeen: string;
-  otherPlatforms: string[];
-  brandAdoption: boolean;
-  
-  // Auto-captured metadata
-  creator_handle?: string;
-  creator_name?: string;
-  post_caption?: string;
-  likes_count?: number;
-  comments_count?: number;
-  views_count?: number;
-  hashtags?: string[];
-  thumbnail_url?: string;
-  
-  // Wave Score
-  wave_score?: number;
-}
+type TrendData = Partial<TrendIntelligenceData> & {
+  image?: File | string;
+};
 
-const platforms = [
-  { id: 'tiktok', label: 'TikTok', icon: '🎵' },
-  { id: 'instagram', label: 'Instagram', icon: '📸' },
-  { id: 'youtube', label: 'YouTube', icon: '▶️' },
-  { id: 'twitter', label: 'Twitter/X', icon: '🐦' },
-  { id: 'reddit', label: 'Reddit', icon: '🔺' },
-  { id: 'other', label: 'Other', icon: '🌐' }
-];
-
-const ageRangeOptions = [
-  'Gen Alpha (9-14)',
-  'Gen Z (15-24)', 
-  'Millennials (25-40)',
-  'Gen X (41-56)',
-  'Boomers (57+)',
-  'Cross-generational'
-];
-
-const categoryOptions = [
-  'Fashion & Beauty',
-  'Food & Drink',
-  'Humor & Memes',
-  'Lifestyle',
-  'Politics & Social Issues',
-  'Music & Dance',
-  'Sports & Fitness',
-  'Tech & Gaming',
-  'Art & Creativity',
-  'Education & Science',
-  'Luxury',
-  'Celebrity',
-  'Meme Coin',
-  'Meme Stock'
-];
-
-const moodOptions = [
-  'Funny 😂',
-  'Wholesome 🥰',
-  'Cringe 😬',
-  'Empowering 💪',
-  'Sad 😢',
-  'Sexy 🔥',
-  'Nostalgic 🌟',
-  'Rebellious 🤘',
-  'Cozy 🧸',
-  'Chaotic 🌪️',
-  'Corporate 💼',
-  'Calm 🧘',
-  'Fancy 🍸',
-  'Ironic 💀'
-];
-
-const spreadSpeedOptions = [
-  { id: 'just_starting', label: '🌱 Just Starting', description: 'First few posts appearing' },
-  { id: 'picking_up', label: '📈 Picking Up', description: 'Gaining momentum, more creators joining' },
-  { id: 'viral', label: '🚀 Viral', description: 'Everywhere on the platform' },
-  { id: 'saturated', label: '📊 Saturated', description: 'Peak reached, brands jumping in' },
-  { id: 'declining', label: '📉 Declining', description: 'Losing steam, old news' }
-];
-
-const engagementRanges = [
-  { id: 'micro', label: '🌱 Micro', range: '100-10K likes' },
-  { id: 'small', label: '📈 Small', range: '10K-50K likes' },
-  { id: 'medium', label: '🔥 Medium', range: '50K-200K likes' },
-  { id: 'large', label: '🚀 Large', range: '200K-1M likes' },
-  { id: 'mega', label: '💎 Mega', range: '1M+ likes' }
-];
-
-interface TrendSubmissionFormProps {
+interface TrendSubmissionFormEnhancedProps {
   onClose: () => void;
-  onSubmit: (data: TrendData) => Promise<void>;
+  onSubmit?: (data: Partial<TrendIntelligenceData>) => Promise<void>;
   initialUrl?: string;
 }
 
-export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initialUrl = '' }: TrendSubmissionFormProps) {
+export default function TrendSubmissionFormEnhanced({ 
+  onClose, 
+  onSubmit: customSubmit, 
+  initialUrl = '' 
+}: TrendSubmissionFormEnhancedProps) {
   const { user } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState(1);
+  const { showError, showWarning, showSuccess } = useToast();
+  const DRAFT_KEY = 'wavesight_trend_enhanced_draft';
+  
+  // Load draft from localStorage
+  const loadDraft = (): TrendData => {
+    if (typeof window !== 'undefined') {
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        try {
+          return JSON.parse(draft);
+        } catch (e) {
+          console.log('Could not load draft');
+        }
+      }
+    }
+    return {
+      url: initialUrl,
+      title: '',
+    };
+  };
+  
+  const [formData, setFormData] = useState<TrendData>(loadDraft());
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [step, setStep] = useState(1);
   const [extractingMetadata, setExtractingMetadata] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState<TrendData>({
-    url: initialUrl,
-    trendName: '', // Always starts empty - user must input this
-    platform: '',
-    explanation: '',
-    ageRanges: [],
-    subcultures: [],
-    region: '',
-    categories: [],
-    moods: [],
-    spreadSpeed: '',
-    engagementRange: '',
-    audioOrCatchphrase: '',
-    motivation: '',
-    firstSeen: 'today',
-    otherPlatforms: [],
-    brandAdoption: false,
-    creator_handle: '',
-    creator_name: '',
-    post_caption: '',
-    likes_count: 0,
-    comments_count: 0,
-    views_count: 0,
-    hashtags: [],
-    thumbnail_url: '', // CRITICAL: Must initialize this!
-    wave_score: 50
-  });
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [duplicateWarning, setDuplicateWarning] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const draftSaveTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Auto-extract metadata when component mounts with initialUrl
+  const totalSteps = 5; // Basic, Universal, Category-specific, Context, Review
+
+  // Save draft to localStorage
   useEffect(() => {
-    if (initialUrl && initialUrl.trim()) {
-      console.log('TrendForm: Auto-extracting metadata for initialUrl:', initialUrl);
-      extractMetadata(initialUrl.trim());
+    if (draftSaveTimeoutRef.current) {
+      clearTimeout(draftSaveTimeoutRef.current);
     }
-  }, [initialUrl]);
+    
+    draftSaveTimeoutRef.current = setTimeout(() => {
+      if (formData.url || formData.title) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+      }
+    }, 1000);
+    
+    return () => {
+      if (draftSaveTimeoutRef.current) {
+        clearTimeout(draftSaveTimeoutRef.current);
+      }
+    };
+  }, [formData]);
 
-
-  // Auto-detect platform from URL
-  const detectPlatform = (url: string): string => {
-    if (url.includes('tiktok.com')) return 'tiktok';
-    if (url.includes('instagram.com')) return 'instagram';
-    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-    if (url.includes('twitter.com') || url.includes('x.com')) return 'twitter';
-    if (url.includes('reddit.com')) return 'reddit';
-    return 'other';
+  const isValidUrl = (string: string): boolean => {
+    try {
+      new URL(string);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  // Extract metadata when URL changes - ROBUST VERSION WITH MULTIPLE FALLBACKS
-  const extractMetadata = async (url: string) => {
-    if (!url) return;
+  const extractMetadataFromUrl = async (url: string) => {
+    if (!url || !isValidUrl(url)) return;
     
     setExtractingMetadata(true);
-    setError('');
-    
-    console.log('🔍 Extracting thumbnail for:', url);
-    
     try {
-      // Use robust extractor with multiple fallback methods
-      const metadata = await extractThumbnailWithFallbacks(url);
-      console.log('📸 Extraction result:', metadata);
+      const extractedData = await MetadataExtractor.extractFromUrl(url);
       
-      if (!metadata.success) {
-        console.log('⚠️ Thumbnail extraction failed');
-      }
+      // Detect platform
+      let platform: TrendIntelligenceData['platform'] | undefined;
+      if (url.includes('tiktok.com')) platform = 'tiktok';
+      else if (url.includes('instagram.com')) platform = 'instagram';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) platform = 'youtube';
+      else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'twitter';
+      else if (url.includes('reddit.com')) platform = 'reddit';
+      else if (url.includes('linkedin.com')) platform = 'linkedin';
       
       setFormData(prev => ({
         ...prev,
-        platform: metadata.platform || detectPlatform(url),
-        thumbnail_url: metadata.thumbnail_url || '',
-        creator_handle: metadata.creator_handle || prev.creator_handle,
-        creator_name: metadata.creator_name || prev.creator_name,
-      
-        // Auto-set some defaults based on platform
-        ageRanges: prev.ageRanges.length > 0 ? prev.ageRanges : detectAgeRange(metadata.platform || 'other'),
-        categories: prev.categories.length > 0 ? prev.categories : ['Lifestyle'],
-        moods: prev.moods.length > 0 ? prev.moods : [],
-        spreadSpeed: prev.spreadSpeed || 'emerging',
-        motivation: prev.motivation || 'Social connection and entertainment',
-        firstSeen: prev.firstSeen || 'today',
-        otherPlatforms: prev.otherPlatforms.length > 0 ? prev.otherPlatforms : suggestOtherPlatforms(metadata.platform || 'other')
+        platform: platform,
+        title: prev.title || extractedData.title || '',
+        creatorHandle: extractedData.creator_handle || prev.creatorHandle,
+        creatorName: extractedData.creator_name || prev.creatorName,
+        postCaption: extractedData.post_caption || prev.postCaption,
+        likesCount: extractedData.likes_count || prev.likesCount,
+        commentsCount: extractedData.comments_count || prev.commentsCount,
+        sharesCount: extractedData.shares_count || prev.sharesCount,
+        viewsCount: extractedData.views_count || prev.viewsCount,
+        hashtags: extractedData.hashtags || prev.hashtags,
+        thumbnailUrl: extractedData.thumbnail_url || prev.thumbnailUrl,
+        postedAt: extractedData.posted_at || prev.postedAt
       }));
-      
-      if (metadata.thumbnail_url) {
-        console.log('✅ Got thumbnail:', metadata.thumbnail_url);
-        console.log('📌 Method used:', metadata.method);
-        setSuccess('✨ Thumbnail captured!');
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        console.log('⚠️ No thumbnail extracted for URL:', url);
-      }
     } catch (error) {
-      console.error('❌ Error extracting metadata:', error);
-      setError('Failed to extract metadata from URL');
+      console.error('Metadata extraction error:', error);
     } finally {
       setExtractingMetadata(false);
     }
   };
 
-  // Helper functions for smart auto-population
-  const detectCategories = (hashtags: string[], caption: string): string[] => {
-    const content = (hashtags.join(' ') + ' ' + caption).toLowerCase();
-    const detectedCategories: string[] = [];
-    
-    // Fashion & Beauty
-    if (content.match(/fashion|beauty|makeup|style|outfit|skincare|hair/)) {
-      detectedCategories.push('Fashion & Beauty');
-    }
-    
-    // Food & Drink
-    if (content.match(/food|recipe|cooking|drink|restaurant|meal|taste/)) {
-      detectedCategories.push('Food & Drink');
-    }
-    
-    // Humor & Memes
-    if (content.match(/funny|meme|lol|comedy|joke|humor|laugh/)) {
-      detectedCategories.push('Humor & Memes');
-    }
-    
-    // Music & Dance
-    if (content.match(/music|dance|song|beat|audio|sound|choreography/)) {
-      detectedCategories.push('Music & Dance');
-    }
-    
-    // Tech & Gaming
-    if (content.match(/tech|gaming|game|tech|ai|gadget|app|software/)) {
-      detectedCategories.push('Tech & Gaming');
-    }
-    
-    // Sports & Fitness
-    if (content.match(/sport|fitness|workout|gym|exercise|athlete|training/)) {
-      detectedCategories.push('Sports & Fitness');
-    }
-    
-    // Default to Lifestyle if nothing detected
-    if (detectedCategories.length === 0) {
-      detectedCategories.push('Lifestyle');
-    }
-    
-    return detectedCategories.slice(0, 2); // Max 2 categories
-  };
-
-  const detectAgeRange = (platform: string): string[] => {
-    switch (platform) {
-      case 'tiktok':
-        return ['Gen Z (15-24)', 'Gen Alpha (9-14)'];
-      case 'instagram':
-        return ['Gen Z (15-24)', 'Millennials (25-40)'];
-      case 'youtube':
-        return ['Millennials (25-40)', 'Gen Z (15-24)'];
-      case 'twitter':
-        return ['Millennials (25-40)', 'Gen X (41-56)'];
-      default:
-        return ['Gen Z (15-24)'];
-    }
-  };
-
-  const suggestOtherPlatforms = (currentPlatform: string): string[] => {
-    const allPlatforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'reddit'];
-    const suggested = allPlatforms.filter(p => p !== currentPlatform);
-    return suggested.slice(0, 2); // Suggest top 2 other platforms
-  };
-
-  const formatDateForFirstSeen = (isoDate: string): string => {
-    const date = new Date(isoDate);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'today';
-    if (diffDays === 1) return 'yesterday';
-    if (diffDays <= 7) return 'this_week';
-    if (diffDays <= 30) return 'this_month';
-    return 'older';
-  };
-
-  const detectSpreadSpeed = (likes: number, views: number, platform: string): string => {
-    // Platform-specific thresholds for viral content
-    const viralThresholds = {
-      tiktok: { likes: 100000, views: 1000000 },
-      instagram: { likes: 50000, views: 500000 },
-      youtube: { likes: 10000, views: 100000 },
-      twitter: { likes: 1000, views: 10000 },
-      other: { likes: 5000, views: 50000 }
-    };
-    
-    const threshold = viralThresholds[platform as keyof typeof viralThresholds] || viralThresholds.other;
-    
-    if (likes >= threshold.likes || views >= threshold.views) {
-      return 'viral';
-    } else if (likes >= threshold.likes * 0.1 || views >= threshold.views * 0.1) {
-      return 'picking_up';
-    } else {
-      return 'emerging';
-    }
-  };
-
-  const detectMoods = (hashtags: string[], caption: string): string[] => {
-    const content = (hashtags.join(' ') + ' ' + caption).toLowerCase();
-    const detectedMoods: string[] = [];
-    
-    // Joy & Celebration
-    if (content.match(/happy|joy|celebrate|fun|party|excited|amazing|love/)) {
-      detectedMoods.push('Joyful');
-    }
-    
-    // Nostalgia
-    if (content.match(/throwback|nostalgia|remember|childhood|back in the day|vintage|retro/)) {
-      detectedMoods.push('Nostalgic');
-    }
-    
-    // Rebellion & Edgy
-    if (content.match(/rebel|edgy|savage|bold|controversial|against/)) {
-      detectedMoods.push('Rebellious');
-    }
-    
-    // Calm & Chill
-    if (content.match(/chill|calm|peaceful|relax|zen|soft|gentle/)) {
-      detectedMoods.push('Chill');
-    }
-    
-    // Playful - commented out to prevent auto-detection
-    // if (content.match(/playful|silly|goofy|cute|adorable|funny/)) {
-    //   detectedMoods.push('Playful');
-    // }
-    
-    // Don't add default mood - let user choose
-    // if (detectedMoods.length === 0) {
-    //   detectedMoods.push('Playful');
-    // }
-    
-    return detectedMoods.slice(0, 2); // Max 2 moods
-  };
-
-  const detectMotivation = (platform: string, caption: string): string => {
-    const content = caption.toLowerCase();
-    
-    // Check for specific motivational keywords
-    if (content.match(/community|together|belong|share|connect/)) {
-      return 'Community and belonging - people want to be part of something bigger';
-    }
-    
-    if (content.match(/identity|express|who i am|represent|authentic/)) {
-      return 'Self-expression and identity - showing who they are';
-    }
-    
-    if (content.match(/funny|humor|laugh|joke|comedy|meme/)) {
-      return 'Humor and entertainment - making people laugh and feel good';
-    }
-    
-    if (content.match(/rebel|different|unique|against|break/)) {
-      return 'Rebellion and individuality - standing out from the crowd';
-    }
-    
-    if (content.match(/remember|nostalgia|throwback|childhood/)) {
-      return 'Nostalgia and shared memories - connecting through past experiences';
-    }
-    
-    // Platform-specific defaults
-    switch (platform) {
-      case 'tiktok':
-        return 'Creative self-expression and viral participation in trending formats';
-      case 'instagram':
-        return 'Aesthetic appeal and lifestyle aspiration sharing';
-      case 'youtube':
-        return 'Knowledge sharing and entertainment value';
-      case 'twitter':
-        return 'Social commentary and community discourse';
-      default:
-        return 'Social connection and entertainment through shared cultural moments';
-    }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, screenshot: file }));
-      const reader = new FileReader();
-      reader.onload = (e) => setImagePreview(e.target?.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const toggleArrayItem = (array: string[], item: string) => {
-    return array.includes(item) 
-      ? array.filter(i => i !== item)
-      : [...array, item];
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    console.log('🚀 FORM SUBMISSION STARTED');
-    console.log('=====================================');
-    console.log('Full form data:', formData);
-    console.log('Thumbnail URL:', formData.thumbnail_url);
-    console.log('Wave Score:', formData.wave_score);
-    console.log('Post URL:', formData.url);
-    console.log('=====================================');
-    
-    // Validate current step before submission
-    if (!validateStep(step)) {
-      console.log('❌ Validation failed for step:', step);
-      return;
-    }
-    
+  const handleSubmit = async () => {
     setLoading(true);
     setError('');
-    
+    setSuccess('');
+
     try {
-      console.log('📤 Calling onSubmit with form data');
-      
-      // Add a timeout to prevent infinite hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Submission timed out after 10 seconds')), 10000)
-      );
-      
-      await Promise.race([
-        onSubmit(formData),
-        timeoutPromise
-      ]);
-      
-      console.log('✅ onSubmit completed successfully');
-      setSuccess('Trend submitted successfully! 🎉');
-      setTimeout(() => onClose(), 3000);
-    } catch (err: any) {
-      console.error('❌ FORM SUBMISSION ERROR:');
-      console.error('Error:', err);
-      console.error('Message:', err.message);
-      console.error('Stack:', err.stack);
-      console.error('Details:', err.details);
-      setError(err.message || 'Failed to submit trend');
+      // Prepare submission data
+      const submissionData: Partial<TrendIntelligenceData> = {
+        ...formData,
+        // Ensure required fields are present
+        url: formData.url || '',
+        title: formData.title || '',
+        platform: formData.platform,
+        category: formData.category,
+        trendDynamics: formData.trendDynamics || {
+          velocity: 'just_starting',
+          platformSpread: 'single_platform',
+          size: 'under_10k'
+        },
+        aiDetection: formData.aiDetection || {
+          origin: 'likely_human',
+          reasoning: ''
+        },
+        audienceIntelligence: formData.audienceIntelligence || {
+          sentiment: 'mixed_fighting',
+          demographics: [],
+          subcultures: [],
+          brandPresence: 'no_brands'
+        }
+      };
+
+      if (customSubmit) {
+        await customSubmit(submissionData);
+      } else {
+        await TrendIntelligenceService.submitTrend(submissionData);
+      }
+
+      showSuccess('Trend submitted successfully!', 'Your trend is now being reviewed');
+      localStorage.removeItem(DRAFT_KEY);
+      setTimeout(onClose, 2000);
+    } catch (error: any) {
+      console.error('Submission error:', error);
+      setError(error.message || 'Failed to submit trend');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
-  };
-
-  const validateStep = (currentStep: number): boolean => {
-    switch (currentStep) {
+  const validateStep = (stepNumber: number): boolean => {
+    const errors: {[key: string]: string} = {};
+    
+    switch (stepNumber) {
       case 1:
-        if (!formData.trendName || !formData.url || !formData.explanation) {
-          setError('Please fill in trend name, URL/screenshot, and explanation');
-          return false;
-        }
+        if (!formData.url) errors.url = 'URL is required';
+        if (!formData.title) errors.title = 'Title is required';
+        if (!formData.platform) errors.platform = 'Platform is required';
+        if (!formData.category) errors.category = 'Category is required';
         break;
       case 2:
-        if (formData.ageRanges.length === 0 || formData.categories.length === 0 || formData.moods.length === 0) {
-          setError('Please select at least one age range, category, and mood');
-          return false;
-        }
-        break;
-      case 3:
-        if (!formData.spreadSpeed || !formData.motivation) {
-          setError('Please select spread speed and describe the motivation');
-          return false;
-        }
+        if (!formData.trendDynamics?.velocity) errors.velocity = 'Required';
+        if (!formData.trendDynamics?.platformSpread) errors.platformSpread = 'Required';
+        if (!formData.trendDynamics?.size) errors.size = 'Required';
+        if (!formData.aiDetection?.origin) errors.aiOrigin = 'Required';
+        if (!formData.audienceIntelligence?.sentiment) errors.sentiment = 'Required';
         break;
     }
-    setError('');
-    return true;
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const nextStep = () => {
+    if (validateStep(step)) {
+      setStep(prev => Math.min(prev + 1, totalSteps));
+      setValidationErrors({});
+    }
+  };
+
+  const prevStep = () => {
+    setStep(prev => Math.max(prev - 1, 1));
+    setValidationErrors({});
+  };
+
+  const getCategoryQuestions = () => {
+    if (!formData.category) return null;
+    return CATEGORY_QUESTIONS[formData.category as keyof typeof CATEGORY_QUESTIONS];
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <motion.div
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative bg-slate-800 rounded-2xl p-4 sm:p-6 w-full max-w-sm sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-700"
+        className="bg-wave-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-wave-700/50 shadow-2xl"
       >
-        {/* Fixed Close Button */}
-        <button
-          onClick={onClose}
-          className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 sm:p-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-600 shadow-lg"
-          aria-label="Close"
-        >
-          <XIcon className="w-5 h-5 text-slate-300" />
-        </button>
-        
-        {/* Header */}
-        <div className="mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Submit New Trend</h2>
-            <p className="text-slate-400 text-sm mt-1">Help us spot the next cultural wave</p>
-          </div>
-        </div>
-
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2 text-xs sm:text-sm">
-            <span className={`${step >= 1 ? 'text-blue-400' : 'text-slate-500'}`}>
-              <span className="hidden sm:inline">🏷 Basic Info</span>
-              <span className="sm:hidden">Basic</span>
-            </span>
-            <span className={`${step >= 2 ? 'text-blue-400' : 'text-slate-500'}`}>
-              <span className="hidden sm:inline">👥 Audience & Vibe</span>
-              <span className="sm:hidden">Audience</span>
-            </span>
-            <span className={`${step >= 3 ? 'text-blue-400' : 'text-slate-500'}`}>
-              <span className="hidden sm:inline">🚀 Spread & Context</span>
-              <span className="sm:hidden">Spread</span>
-            </span>
-            <span className={`${step >= 4 ? 'text-blue-400' : 'text-slate-500'}`}>
-              <span className="hidden sm:inline">✅ Review</span>
-              <span className="sm:hidden">Review</span>
-            </span>
-          </div>
-          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300"
-              style={{ width: `${(step / 4) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Error/Success Messages */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-lg text-red-400 text-sm"
-          >
-            {error}
-          </motion.div>
-        )}
-        
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-3 bg-green-900/20 border border-green-800 rounded-lg text-green-400 text-sm"
-          >
-            {success}
-          </motion.div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          {/* Step 1: Basic Info */}
-          {step === 1 && (
-            <div className="space-y-6">
-              {/* Trend Name */}
-              <div>
-                <label className="block text-slate-200 mb-2 font-medium">
-                  🏷 Trend Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.trendName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, trendName: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="Give this trend a catchy name (e.g., Mob Wife Aesthetic, Girl Dinner, Deinfluencing)"
-                  required
-                />
-                <p className="text-xs text-slate-500 mt-1">Create a memorable name that captures the essence of this trend</p>
+        {/* Header with Progress */}
+        <div className="bg-gradient-to-r from-wave-800 to-wave-700 p-6 border-b border-wave-600/50">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-wave-500 to-wave-600 flex items-center justify-center">
+                <SparklesIcon className="w-5 h-5 text-white" />
               </div>
-
-              {/* Platform & URL */}
               <div>
-                <label className="block text-slate-200 mb-2 font-medium">
-                  🔗 Platform + Link *
-                </label>
-                <div className="relative">
-                  <input
-                    type="url"
-                    value={formData.url}
-                    onChange={(e) => {
-                      const url = e.target.value.trim();
-                      setFormData(prev => ({ ...prev, url }));
-                      if (url && url.startsWith('http')) {
-                        console.log('TrendForm: URL changed, extracting metadata for:', url);
-                        extractMetadata(url);
-                      }
-                    }}
-                    className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none pr-32"
-                    placeholder="Paste TikTok, Instagram, YouTube link..."
-                    required
-                  />
-                  {extractingMetadata && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <LoaderIcon className="w-5 h-5 text-blue-400 animate-spin" />
-                    </div>
-                  )}
-                  {formData.platform && !extractingMetadata && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-slate-600 px-3 py-1 rounded">
-                      <span className="text-sm">
-                        {platforms.find(p => p.id === formData.platform)?.icon}
-                      </span>
-                      <span className="text-sm font-medium text-white capitalize">
-                        {formData.platform}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Platform Pills */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {platforms.map((platform) => (
-                    <button
-                      key={platform.id}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, platform: platform.id }))}
-                      className={`px-3 py-1.5 rounded-full text-sm flex items-center gap-1.5 transition-all ${
-                        formData.platform === platform.id
-                          ? 'bg-blue-500/20 text-blue-300 border-blue-500'
-                          : 'bg-slate-700 text-slate-300 border-slate-600 hover:border-slate-500'
-                      } border`}
-                    >
-                      <span>{platform.icon}</span>
-                      <span>{platform.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <h2 className="text-xl font-bold text-white">WaveSight Intelligence Capture</h2>
+                <p className="text-sm text-wave-300">Step {step} of {totalSteps}</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-wave-700/50 rounded-lg transition-colors"
+            >
+              <XIcon className="w-5 h-5 text-wave-400" />
+            </button>
+          </div>
 
-                {/* Test thumbnail extraction button removed - function was undefined */}
+          {/* Progress Bar */}
+          <div className="flex gap-2">
+            {Array.from({ length: totalSteps }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex-1 h-1.5 rounded-full transition-all ${
+                  i < step ? 'bg-wave-500' : 'bg-wave-700/50'
+                }`}
+              />
+            ))}
+          </div>
 
-                {/* Thumbnail Preview if auto-captured */}
-                {formData.thumbnail_url && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="mt-4 bg-slate-800/50 rounded-lg p-3"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-xs font-medium text-slate-400">Auto-captured Thumbnail</label>
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}
-                        className="text-xs text-red-400 hover:text-red-300"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <div className="relative w-full h-32 bg-slate-900 rounded overflow-hidden">
-                      <img 
-                        src={getProxiedImageUrl(formData.thumbnail_url)} 
-                        alt="Trend thumbnail"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.log('Thumbnail failed to load:', formData.thumbnail_url);
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
+          {/* Step Labels */}
+          <div className="flex justify-between mt-2 text-xs text-wave-400">
+            <span className={step >= 1 ? 'text-wave-200' : ''}>Basic Info</span>
+            <span className={step >= 2 ? 'text-wave-200' : ''}>Intelligence</span>
+            <span className={step >= 3 ? 'text-wave-200' : ''}>Category</span>
+            <span className={step >= 4 ? 'text-wave-200' : ''}>Context</span>
+            <span className={step >= 5 ? 'text-wave-200' : ''}>Review</span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <AnimatePresence mode="wait">
+            {/* Step 1: Basic Trend Info */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <LinkIcon className="w-5 h-5 text-wave-400" />
+                    Basic Trend Information
+                  </h3>
+                  
+                  {/* URL Input */}
+                  <div className="mb-4">
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Trend URL * {validationErrors.url && <span className="text-red-400">({validationErrors.url})</span>}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="url"
+                        value={formData.url || ''}
+                        onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                        onBlur={(e) => extractMetadataFromUrl(e.target.value)}
+                        placeholder="https://www.tiktok.com/@user/video/..."
+                        className={`w-full px-4 py-3 rounded-xl bg-wave-800/50 border ${
+                          validationErrors.url ? 'border-red-500' : 'border-wave-700/30'
+                        } text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none`}
                       />
+                      {extractingMetadata && (
+                        <div className="absolute right-3 top-3">
+                          <LoaderIcon className="w-5 h-5 text-wave-400 animate-spin" />
+                        </div>
+                      )}
                     </div>
-                  </motion.div>
-                )}
+                  </div>
 
-                {/* Screenshot Upload */}
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-sm text-slate-400 hover:text-slate-300 flex items-center gap-2"
-                  >
-                    <UploadIcon className="w-4 h-4" />
-                    {imagePreview ? 'Change screenshot' : 'Upload screenshot instead'}
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
+                  {/* Title */}
+                  <div className="mb-4">
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Title * {validationErrors.title && <span className="text-red-400">({validationErrors.title})</span>}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.title || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="Give this trend a catchy title"
+                      className={`w-full px-4 py-3 rounded-xl bg-wave-800/50 border ${
+                        validationErrors.title ? 'border-red-500' : 'border-wave-700/30'
+                      } text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none`}
+                    />
+                  </div>
+
+                  {/* Platform Selection */}
+                  <div className="mb-4">
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Platform * {validationErrors.platform && <span className="text-red-400">Required</span>}
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {PLATFORMS.map((platform) => (
+                        <button
+                          key={platform.id}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ 
+                            ...prev, 
+                            platform: platform.id as TrendIntelligenceData['platform'] 
+                          }))}
+                          className={`p-3 rounded-lg border transition-all ${
+                            formData.platform === platform.id
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <span className="text-xl mb-1">{platform.icon}</span>
+                          <p className="text-xs text-wave-300">{platform.label}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Category Selection */}
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Category * {validationErrors.category && <span className="text-red-400">Required</span>}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {CATEGORIES.map((category) => (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ 
+                            ...prev, 
+                            category: category.id as TrendIntelligenceData['category'],
+                            categorySpecific: {} // Reset category-specific answers
+                          }))}
+                          className={`p-3 rounded-lg border transition-all text-left ${
+                            formData.category === category.id
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <div className="font-medium text-wave-200 text-sm">{category.label}</div>
+                          <div className="text-xs text-wave-400 mt-1">{category.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
+            )}
 
-              {/* Auto-captured Data Display */}
-              {(formData.creator_handle || formData.creator_name || formData.post_caption || (formData.likes_count || 0) > 0) && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/30 rounded-lg p-4"
-                >
-                  <h4 className="text-sm font-medium text-blue-300 mb-3 flex items-center gap-2">
-                    <CheckIcon className="w-4 h-4" />
-                    Auto-Captured Post Data
+            {/* Step 2: Universal Intelligence */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <BrainIcon className="w-5 h-5 text-wave-400" />
+                  Universal Intelligence Gathering
+                </h3>
+
+                {/* Trend Dynamics */}
+                <div className="space-y-4">
+                  <h4 className="text-wave-200 font-medium flex items-center gap-2">
+                    <ZapIcon className="w-4 h-4" />
+                    Trend Dynamics
                   </h4>
-                  <div className="space-y-3 text-sm">
-                    {(formData.creator_handle || formData.creator_name) && (
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="w-4 h-4 text-slate-400" />
-                        <div>
-                          <span className="text-white font-medium">{formData.creator_handle || formData.creator_name}</span>
-                          {formData.creator_name && formData.creator_handle && (
-                            <span className="text-slate-400 ml-1">({formData.creator_name})</span>
+                  
+                  {/* Velocity */}
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Velocity * {validationErrors.velocity && <span className="text-red-400">Required</span>}
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {UNIVERSAL_INTELLIGENCE.velocity.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            trendDynamics: { 
+                              ...prev.trendDynamics,
+                              velocity: option.value
+                            } as TrendIntelligenceData['trendDynamics']
+                          }))}
+                          className={`p-3 rounded-lg border transition-all text-left ${
+                            formData.trendDynamics?.velocity === option.value
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <div className="font-medium text-wave-200 text-sm">{option.label}</div>
+                          <div className="text-xs text-wave-400 mt-1">{option.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Platform Spread */}
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Platform Spread * {validationErrors.platformSpread && <span className="text-red-400">Required</span>}
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      {UNIVERSAL_INTELLIGENCE.platformSpread.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            trendDynamics: { 
+                              ...prev.trendDynamics,
+                              platformSpread: option.value
+                            } as TrendIntelligenceData['trendDynamics']
+                          }))}
+                          className={`p-3 rounded-lg border transition-all text-left ${
+                            formData.trendDynamics?.platformSpread === option.value
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <div className="font-medium text-wave-200 text-sm">{option.label}</div>
+                          <div className="text-xs text-wave-400 mt-1">{option.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Size */}
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Estimated Size * {validationErrors.size && <span className="text-red-400">Required</span>}
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {UNIVERSAL_INTELLIGENCE.size.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            trendDynamics: { 
+                              ...prev.trendDynamics,
+                              size: option.value
+                            } as TrendIntelligenceData['trendDynamics']
+                          }))}
+                          className={`p-3 rounded-lg border transition-all text-left ${
+                            formData.trendDynamics?.size === option.value
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <div className="font-medium text-wave-200 text-sm">{option.label}</div>
+                          <div className="text-xs text-wave-400 mt-1">{option.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Detection */}
+                <div className="space-y-4">
+                  <h4 className="text-wave-200 font-medium flex items-center gap-2">
+                    <BrainIcon className="w-4 h-4" />
+                    AI Detection
+                  </h4>
+                  
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Origin Assessment * {validationErrors.aiOrigin && <span className="text-red-400">Required</span>}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {UNIVERSAL_INTELLIGENCE.aiOrigin.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            aiDetection: { 
+                              ...prev.aiDetection,
+                              origin: option.value
+                            } as TrendIntelligenceData['aiDetection']
+                          }))}
+                          className={`p-3 rounded-lg border transition-all text-left ${
+                            formData.aiDetection?.origin === option.value
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <div className="font-medium text-wave-200 text-sm">{option.label}</div>
+                          <div className="text-xs text-wave-400 mt-1">{option.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Why do you think this? (Optional)
+                    </label>
+                    <textarea
+                      value={formData.aiDetection?.reasoning || ''}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        aiDetection: { 
+                          ...prev.aiDetection,
+                          reasoning: e.target.value
+                        } as TrendIntelligenceData['aiDetection']
+                      }))}
+                      rows={2}
+                      className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
+                      placeholder="What signals tipped you off?"
+                    />
+                  </div>
+                </div>
+
+                {/* Audience Intelligence */}
+                <div className="space-y-4">
+                  <h4 className="text-wave-200 font-medium flex items-center gap-2">
+                    <UsersIcon className="w-4 h-4" />
+                    Audience Intelligence
+                  </h4>
+                  
+                  {/* Sentiment */}
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Overall Sentiment * {validationErrors.sentiment && <span className="text-red-400">Required</span>}
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {UNIVERSAL_INTELLIGENCE.sentiment.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            audienceIntelligence: { 
+                              ...prev.audienceIntelligence,
+                              sentiment: option.value
+                            } as TrendIntelligenceData['audienceIntelligence']
+                          }))}
+                          className={`p-3 rounded-lg border transition-all text-left ${
+                            formData.audienceIntelligence?.sentiment === option.value
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <div className="font-medium text-wave-200 text-sm">{option.label}</div>
+                          <div className="text-xs text-wave-400 mt-1">{option.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Demographics */}
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Who's Engaging? (Select all that apply)
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {DEMOGRAPHICS.map((demo) => (
+                        <button
+                          key={demo.id}
+                          type="button"
+                          onClick={() => {
+                            const current = formData.audienceIntelligence?.demographics || [];
+                            const updated = current.includes(demo.id as any)
+                              ? current.filter(d => d !== demo.id)
+                              : [...current, demo.id as any];
+                            setFormData(prev => ({
+                              ...prev,
+                              audienceIntelligence: { 
+                                ...prev.audienceIntelligence,
+                                demographics: updated
+                              } as TrendIntelligenceData['audienceIntelligence']
+                            }));
+                          }}
+                          className={`p-3 rounded-lg border transition-all text-left ${
+                            formData.audienceIntelligence?.demographics?.includes(demo.id as any)
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <div className="font-medium text-wave-200 text-sm">{demo.label}</div>
+                          <div className="text-xs text-wave-400 mt-1">{demo.age}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Brand Presence */}
+                  <div>
+                    <label className="block text-wave-300 text-sm mb-2">
+                      Brand Presence
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {UNIVERSAL_INTELLIGENCE.brandPresence.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            audienceIntelligence: { 
+                              ...prev.audienceIntelligence,
+                              brandPresence: option.value
+                            } as TrendIntelligenceData['audienceIntelligence']
+                          }))}
+                          className={`p-3 rounded-lg border transition-all text-left ${
+                            formData.audienceIntelligence?.brandPresence === option.value
+                              ? 'border-wave-500 bg-wave-600/20'
+                              : 'border-wave-700/30 hover:border-wave-600/50'
+                          }`}
+                        >
+                          <div className="font-medium text-wave-200 text-sm">{option.label}</div>
+                          <div className="text-xs text-wave-400 mt-1">{option.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 3: Category-Specific Questions */}
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                {getCategoryQuestions() ? (
+                  <>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                      <TargetIcon className="w-5 h-5 text-wave-400" />
+                      {getCategoryQuestions()?.title}
+                    </h3>
+
+                    <div className="space-y-4">
+                      {getCategoryQuestions()?.questions.map((question) => (
+                        <div key={question.id}>
+                          <label className="block text-wave-300 text-sm mb-2">
+                            {question.label}
+                          </label>
+                          
+                          {question.type === 'select' && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                              {question.options?.map((option) => (
+                                <button
+                                  key={String(option.value)}
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({
+                                    ...prev,
+                                    categorySpecific: {
+                                      ...prev.categorySpecific,
+                                      [question.id]: option.value
+                                    } as TrendIntelligenceData['categorySpecific']
+                                  }))}
+                                  className={`p-3 rounded-lg border transition-all text-left ${
+                                    (formData.categorySpecific as any)?.[question.id] === option.value
+                                      ? 'border-wave-500 bg-wave-600/20'
+                                      : 'border-wave-700/30 hover:border-wave-600/50'
+                                  }`}
+                                >
+                                  <div className="font-medium text-wave-200 text-sm">{option.label}</div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {question.type === 'text' && (
+                            <input
+                              type="text"
+                              value={(formData.categorySpecific as any)?.[question.id] || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                categorySpecific: {
+                                  ...prev.categorySpecific,
+                                  [question.id]: e.target.value
+                                } as TrendIntelligenceData['categorySpecific']
+                              }))}
+                              className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
+                              placeholder={(question as any).placeholder || ''}
+                            />
+                          )}
+                          
+                          {question.type === 'boolean' && (
+                            <div className="grid grid-cols-2 gap-2">
+                              {question.options?.map((option) => (
+                                <button
+                                  key={String(option.value)}
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({
+                                    ...prev,
+                                    categorySpecific: {
+                                      ...prev.categorySpecific,
+                                      [question.id]: option.value
+                                    } as TrendIntelligenceData['categorySpecific']
+                                  }))}
+                                  className={`p-3 rounded-lg border transition-all ${
+                                    (formData.categorySpecific as any)?.[question.id] === option.value
+                                      ? 'border-wave-500 bg-wave-600/20'
+                                      : 'border-wave-700/30 hover:border-wave-600/50'
+                                  }`}
+                                >
+                                  <div className="font-medium text-wave-200 text-sm">{option.label}</div>
+                                </button>
+                              ))}
+                            </div>
                           )}
                         </div>
-                      </div>
-                    )}
-                    {formData.post_caption && (
-                      <div className="bg-slate-800/50 rounded p-2">
-                        <p className="text-slate-300 italic line-clamp-2">"{formData.post_caption}"</p>
-                      </div>
-                    )}
-                    <div className="flex flex-wrap items-center gap-4 mt-3">
-                      {(formData.likes_count || 0) > 0 && (
-                        <span className="flex items-center gap-1 bg-red-500/20 px-2 py-1 rounded">
-                          <HeartIcon className="w-4 h-4 text-red-400" />
-                          <span className="text-white font-medium">{formatNumber(formData.likes_count || 0)}</span>
-                        </span>
-                      )}
-                      {(formData.comments_count || 0) > 0 && (
-                        <span className="flex items-center gap-1 bg-blue-500/20 px-2 py-1 rounded">
-                          <CommentIcon className="w-4 h-4 text-blue-400" />
-                          <span className="text-white font-medium">{formatNumber(formData.comments_count || 0)}</span>
-                        </span>
-                      )}
-                      {(formData.views_count || 0) > 0 && (
-                        <span className="flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded">
-                          <EyeIcon className="w-4 h-4 text-green-400" />
-                          <span className="text-white font-medium">{formatNumber(formData.views_count || 0)}</span>
-                        </span>
-                      )}
+                      ))}
                     </div>
-                    {formData.hashtags && formData.hashtags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {formData.hashtags.slice(0, 5).map((tag, idx) => (
-                          <span key={idx} className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">
-                            #{tag}
-                          </span>
-                        ))}
-                        {formData.hashtags.length > 5 && (
-                          <span className="text-xs text-slate-400">+{formData.hashtags.length - 5} more</span>
-                        )}
-                      </div>
-                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-wave-400">Please select a category first</p>
                   </div>
-                </motion.div>
-              )}
+                )}
+              </motion.div>
+            )}
 
-              {/* Trend Explanation */}
-              <div>
-                <label className="block text-slate-200 mb-2 font-medium">
-                  🧠 What's the Trend About? *
-                </label>
-                <textarea
-                  value={formData.explanation}
-                  onChange={(e) => setFormData(prev => ({ ...prev, explanation: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="Brief 2-3 sentence explanation. What are people doing and why is it catching on?"
-                  required
-                />
-              </div>
+            {/* Step 4: Context & Prediction */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <MessageSquareIcon className="w-5 h-5 text-wave-400" />
+                  Context & Predictions (Optional)
+                </h3>
 
-
-              {/* Screenshot Preview (manual upload) */}
-              {imagePreview && (
-                <div className="relative">
-                  <p className="text-blue-400 font-medium mb-2">📸 Manual screenshot uploaded</p>
-                  <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImagePreview(null);
-                      setFormData(prev => ({ ...prev, screenshot: undefined }));
-                    }}
-                    className="absolute top-2 right-2 p-1 bg-red-500 rounded-full hover:bg-red-600"
-                  >
-                    <XIcon className="w-4 h-4 text-white" />
-                  </button>
+                <div>
+                  <label className="block text-wave-300 text-sm mb-2">
+                    Why This Matters
+                    <span className="text-wave-500 ml-2">(1-2 sentences on significance)</span>
+                  </label>
+                  <textarea
+                    value={formData.context?.whyItMatters || ''}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      context: { 
+                        ...prev.context,
+                        whyItMatters: e.target.value
+                      } as TrendIntelligenceData['context']
+                    }))}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
+                    placeholder="Why should brands/creators/investors care about this trend?"
+                  />
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Step 2: Audience & Vibe */}
-          {step === 2 && (
-            <div className="space-y-6">
-              {/* Age Ranges */}
-              <div>
-                <label className="block text-slate-200 mb-3 font-medium">
-                  👥 Who's Participating? *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                  {ageRangeOptions.map((age) => (
-                    <button
-                      key={age}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ 
-                        ...prev, 
-                        ageRanges: toggleArrayItem(prev.ageRanges, age)
-                      }))}
-                      className={`px-4 py-2.5 rounded-lg text-sm transition-all ${
-                        formData.ageRanges.includes(age)
-                          ? 'bg-blue-500/20 text-blue-300 border-blue-500'
-                          : 'bg-slate-700 text-slate-300 border-slate-600 hover:border-slate-500'
-                      } border`}
-                    >
-                      {age}
-                    </button>
-                  ))}
+                <div>
+                  <label className="block text-wave-300 text-sm mb-2">
+                    30-Day Prediction
+                    <span className="text-wave-500 ml-2">(Where does this go?)</span>
+                  </label>
+                  <textarea
+                    value={formData.context?.prediction || ''}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      context: { 
+                        ...prev.context,
+                        prediction: e.target.value
+                      } as TrendIntelligenceData['context']
+                    }))}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg bg-wave-800/50 border border-wave-700/30 text-white placeholder-wave-500 focus:border-wave-500 focus:outline-none text-sm"
+                    placeholder="Will it go mainstream? Die out? Transform into something else?"
+                  />
                 </div>
-              </div>
 
-              {/* Subcultures */}
-              <div>
-                <label className="block text-slate-200 mb-2 font-medium">
-                  🎯 Subcultures (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.subcultures.join(', ')}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    subcultures: e.target.value.split(',').map(s => s.trim()).filter(s => s)
-                  }))}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="e.g., Skaters, Alt girls, Gym bros, Bookworms (comma-separated)"
-                />
-              </div>
-
-              {/* Region */}
-              <div>
-                <label className="block text-slate-200 mb-2 font-medium">
-                  🌍 Region (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.region}
-                  onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="e.g., US West Coast, UK, Brazil"
-                />
-              </div>
-
-              {/* Categories */}
-              <div>
-                <label className="block text-slate-200 mb-3 font-medium">
-                  🏷️ Category Tags *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {categoryOptions.map((category) => (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ 
-                        ...prev, 
-                        categories: toggleArrayItem(prev.categories, category)
-                      }))}
-                      className={`px-4 py-2.5 rounded-lg text-sm text-left transition-all ${
-                        formData.categories.includes(category)
-                          ? 'bg-purple-500/20 text-purple-300 border-purple-500'
-                          : 'bg-slate-700 text-slate-300 border-slate-600 hover:border-slate-500'
-                      } border`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Moods */}
-              <div>
-                <label className="block text-slate-200 mb-3 font-medium">
-                  💬 Mood / Emotional Tone *
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                  {moodOptions.map((mood) => (
-                    <button
-                      key={mood}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ 
-                        ...prev, 
-                        moods: toggleArrayItem(prev.moods, mood)
-                      }))}
-                      className={`px-4 py-2.5 rounded-lg text-sm transition-all ${
-                        formData.moods.includes(mood)
-                          ? 'bg-pink-500/20 text-pink-300 border-pink-500'
-                          : 'bg-slate-700 text-slate-300 border-slate-600 hover:border-slate-500'
-                      } border`}
-                    >
-                      {mood}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Wave Score Slider */}
-              <div>
-                <label className="block text-slate-200 mb-3 font-medium">
-                  🌊 Wave Score - How cool is this trend?
-                </label>
-                <div className="bg-slate-700/50 rounded-xl p-6 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <p className="text-slate-300 text-sm mb-1">Rate the coolness factor</p>
-                      <p className="text-slate-500 text-xs">0 = Not cool at all | 100 = Extremely cool</p>
+                <div>
+                  <label className="block text-wave-300 text-sm mb-2">
+                    Wave Score - How cool is this trend?
+                  </label>
+                  <div className="bg-wave-800/30 rounded-xl p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs text-wave-500">Not cool</span>
+                      <span className="text-2xl font-bold text-wave-300">{formData.waveScore || 50}</span>
+                      <span className="text-xs text-wave-500">Extremely cool</span>
                     </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                        {formData.wave_score || 50}
-                      </div>
-                      <p className="text-slate-400 text-xs">Wave Score</p>
-                    </div>
-                  </div>
-                  
-                  <div className="relative">
                     <input
                       type="range"
                       min="0"
                       max="100"
-                      value={formData.wave_score || 50}
-                      onChange={(e) => setFormData(prev => ({ ...prev, wave_score: parseInt(e.target.value) }))}
-                      className="w-full h-2 bg-slate-600/50 rounded-lg appearance-none cursor-pointer slider-thumb"
-                      style={{
-                        background: `linear-gradient(to right, #3b82f6 0%, #8b5cf6 ${formData.wave_score || 50}%, #475569 ${formData.wave_score || 50}%, #475569 100%)`
-                      }}
+                      value={formData.waveScore || 50}
+                      onChange={(e) => setFormData(prev => ({ ...prev, waveScore: parseInt(e.target.value) }))}
+                      className="w-full"
                     />
-                    <div className="flex justify-between text-xs text-slate-500 mt-2">
-                      <span>0</span>
-                      <span>25</span>
-                      <span>50</span>
-                      <span>75</span>
-                      <span>100</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-600">🥱 Meh</span>
-                    <span className="text-slate-500">😐 OK</span>
-                    <span className="text-slate-400">👍 Cool</span>
-                    <span className="text-slate-300">🔥 Fire</span>
-                    <span className="text-slate-200">🌊 Wave!</span>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
 
-          {/* Step 3: Spread & Context */}
-          {step === 3 && (
-            <div className="space-y-6">
-              {/* Spread Speed */}
-              <div>
-                <label className="block text-slate-200 mb-3 font-medium">
-                  🚀 Spread Speed *
-                </label>
-                <div className="space-y-2">
-                  {spreadSpeedOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, spreadSpeed: option.id }))}
-                      className={`w-full p-4 rounded-lg text-left transition-all ${
-                        formData.spreadSpeed === option.id
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-blue-500'
-                          : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'
-                      } border`}
-                    >
-                      <div className="font-medium text-white">{option.label}</div>
-                      <div className="text-sm text-slate-400 mt-1">{option.description}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Engagement Range */}
-              <div>
-                <label className="block text-slate-200 mb-3 font-medium">
-                  💬 Typical Engagement Range
-                </label>
-                <p className="text-xs text-slate-400 mb-3">Quick way to spot engagement levels</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {engagementRanges.map((range) => (
-                    <button
-                      key={range.id}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, engagementRange: range.id }))}
-                      className={`p-3 rounded-lg text-center transition-all ${
-                        formData.engagementRange === range.id
-                          ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500'
-                          : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'
-                      } border`}
-                    >
-                      <div className="font-medium text-white text-sm">{range.label}</div>
-                      <div className="text-xs text-slate-400 mt-1">{range.range}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Audio/Catchphrase */}
-              <div>
-                <label className="block text-slate-200 mb-2 font-medium">
-                  🎧 Audio or Catchphrase (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.audioOrCatchphrase}
-                  onChange={(e) => setFormData(prev => ({ ...prev, audioOrCatchphrase: e.target.value }))}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="Link to sound or describe the audio/phrase being used"
-                />
-              </div>
-
-              {/* Motivation */}
-              <div>
-                <label className="block text-slate-200 mb-2 font-medium">
-                  🎯 Why Are People Doing This? *
-                </label>
-                <textarea
-                  value={formData.motivation}
-                  onChange={(e) => setFormData(prev => ({ ...prev, motivation: e.target.value }))}
-                  rows={3}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                  placeholder="What's driving participation? Identity, humor, rebellion, nostalgia, community..."
-                  required
-                />
-              </div>
-
-              {/* Timing */}
-              <div>
-                <label className="block text-slate-200 mb-3 font-medium">
-                  📆 When Did You First See This?
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {['today', 'this_week', 'last_week', 'this_month'].map((time) => (
-                    <button
-                      key={time}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, firstSeen: time }))}
-                      className={`px-4 py-2 rounded-lg text-sm capitalize transition-all ${
-                        formData.firstSeen === time
-                          ? 'bg-green-500/20 text-green-300 border-green-500'
-                          : 'bg-slate-700 text-slate-300 border-slate-600 hover:border-slate-500'
-                      } border`}
-                    >
-                      {time.replace('_', ' ')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Cross-Platform Presence */}
-              <div>
-                <label className="block text-slate-200 mb-3 font-medium">
-                  🌐 Also Appearing On
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {platforms.filter(p => p.id !== formData.platform).map((platform) => (
-                    <button
-                      key={platform.id}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ 
-                        ...prev, 
-                        otherPlatforms: toggleArrayItem(prev.otherPlatforms, platform.id)
-                      }))}
-                      className={`px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 transition-all ${
-                        formData.otherPlatforms.includes(platform.id)
-                          ? 'bg-blue-500/20 text-blue-300 border-blue-500'
-                          : 'bg-slate-700 text-slate-300 border-slate-600 hover:border-slate-500'
-                      } border`}
-                    >
-                      <span>{platform.icon}</span>
-                      <span>{platform.label}</span>
-                    </button>
-                  ))}
-                </div>
-                
-                <div className="mt-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.brandAdoption}
-                      onChange={(e) => setFormData(prev => ({ ...prev, brandAdoption: e.target.checked }))}
-                      className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-slate-300">Brands are already jumping on this</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Review */}
-          {step === 4 && (
-            <div className="space-y-6">
-              <div className="bg-slate-700/50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Review Your Submission</h3>
+            {/* Step 5: Review & Submit */}
+            {step === 5 && (
+              <motion.div
+                key="step5"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <h3 className="text-lg font-semibold text-white mb-4">Review Your Intelligence Report</h3>
                 
                 <div className="space-y-4">
                   {/* Basic Info */}
-                  <div className="pb-4 border-b border-slate-600">
-                    <h4 className="text-sm font-medium text-slate-400 mb-2">Basic Info</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-slate-500 text-sm">Trend Name:</span>
-                        <p className="text-white font-medium">{formData.trendName}</p>
+                  <div className="bg-wave-800/30 rounded-lg p-4">
+                    <h4 className="text-wave-300 font-medium mb-2">Basic Information</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-wave-500">URL:</span>
+                        <span className="text-wave-200 truncate max-w-xs">{formData.url}</span>
                       </div>
-                      <div>
-                        <span className="text-slate-500 text-sm">Platform:</span>
-                        <p className="text-white">{platforms.find(p => p.id === formData.platform)?.label}</p>
+                      <div className="flex justify-between">
+                        <span className="text-wave-500">Title:</span>
+                        <span className="text-wave-200">{formData.title}</span>
                       </div>
-                      <div>
-                        <span className="text-slate-500 text-sm">Explanation:</span>
-                        <p className="text-white italic">"{formData.explanation}"</p>
+                      <div className="flex justify-between">
+                        <span className="text-wave-500">Platform:</span>
+                        <span className="text-wave-200">{formData.platform}</span>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Audience */}
-                  <div className="pb-4 border-b border-slate-600">
-                    <h4 className="text-sm font-medium text-slate-400 mb-2">Audience</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-slate-500 text-sm">Age Groups:</span>
-                        <p className="text-white">{formData.ageRanges.join(', ')}</p>
-                      </div>
-                      {formData.subcultures.length > 0 && (
-                        <div>
-                          <span className="text-slate-500 text-sm">Subcultures:</span>
-                          <p className="text-white">{formData.subcultures.join(', ')}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Categorization */}
-                  <div className="pb-4 border-b border-slate-600">
-                    <h4 className="text-sm font-medium text-slate-400 mb-2">Categorization</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-slate-500 text-sm">Categories:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {formData.categories.map((cat) => (
-                            <span key={cat} className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">
-                              {cat}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 text-sm">Moods:</span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {formData.moods.map((mood) => (
-                            <span key={mood} className="px-2 py-1 bg-pink-500/20 text-pink-300 rounded text-xs">
-                              {mood}
-                            </span>
-                          ))}
-                        </div>
+                      <div className="flex justify-between">
+                        <span className="text-wave-500">Category:</span>
+                        <span className="text-wave-200">
+                          {CATEGORIES.find(c => c.id === formData.category)?.label}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Spread Info */}
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-400 mb-2">Spread & Context</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-slate-500 text-sm">Speed:</span>
-                        <p className="text-white">{spreadSpeedOptions.find(s => s.id === formData.spreadSpeed)?.label}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 text-sm">Motivation:</span>
-                        <p className="text-white">"{formData.motivation}"</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 text-sm">First Seen:</span>
-                        <p className="text-white capitalize">{formData.firstSeen.replace('_', ' ')}</p>
-                      </div>
-                      {formData.otherPlatforms.length > 0 && (
-                        <div>
-                          <span className="text-slate-500 text-sm">Cross-Platform:</span>
-                          <p className="text-white">Also on {formData.otherPlatforms.join(', ')}</p>
+                  {/* Intelligence Summary */}
+                  {formData.trendDynamics && (
+                    <div className="bg-wave-800/30 rounded-lg p-4">
+                      <h4 className="text-wave-300 font-medium mb-2">Intelligence Summary</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-wave-500">Velocity:</span>
+                          <span className="text-wave-200">{formData.trendDynamics.velocity}</span>
                         </div>
-                      )}
+                        <div className="flex justify-between">
+                          <span className="text-wave-500">Size:</span>
+                          <span className="text-wave-200">{formData.trendDynamics.size}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-wave-500">AI Origin:</span>
+                          <span className="text-wave-200">{formData.aiDetection?.origin}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-wave-500">Sentiment:</span>
+                          <span className="text-wave-200">{formData.audienceIntelligence?.sentiment}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  
+                  )}
+
                   {/* Wave Score */}
-                  <div className="pb-4 border-b border-slate-600">
-                    <h4 className="text-sm font-medium text-slate-400 mb-2">Wave Score</h4>
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1 bg-slate-600/30 rounded-full h-2 overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-blue-500 to-purple-600 transition-all"
-                          style={{ width: `${formData.wave_score || 50}%` }}
-                        />
-                      </div>
-                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-                        {formData.wave_score || 50}
-                      </span>
-                    </div>
-                    <p className="text-slate-500 text-xs mt-1">Coolness rating: 0 = Meh, 100 = Wave! 🌊</p>
+                  <div className="bg-gradient-to-r from-wave-600/20 to-wave-500/20 rounded-lg p-4 text-center">
+                    <p className="text-wave-400 text-sm mb-1">Wave Score</p>
+                    <p className="text-4xl font-bold text-wave-200">{formData.waveScore || 50}</p>
                   </div>
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                <div className="mt-6 p-4 bg-green-900/20 border border-green-800 rounded-lg">
-                  <p className="text-green-400 text-sm flex items-center gap-2">
-                    <CheckIcon className="w-4 h-4" />
-                    You'll earn rewards for quality trend submissions!
-                  </p>
-                </div>
-              </div>
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              {error}
             </div>
           )}
+          
+          {success && (
+            <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+              {success}
+            </div>
+          )}
+        </div>
 
-          {/* Navigation */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+        {/* Footer with Navigation */}
+        <div className="p-6 border-t border-wave-700/50 bg-wave-800/50">
+          <div className="flex justify-between">
             <button
               type="button"
-              onClick={() => step > 1 && setStep(step - 1)}
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${
-                step === 1 
-                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed' 
-                  : 'bg-slate-700 text-white hover:bg-slate-600'
-              }`}
-              disabled={step === 1}
+              onClick={step === 1 ? onClose : prevStep}
+              className="px-6 py-2 rounded-xl bg-wave-700/50 hover:bg-wave-600/50 transition-all text-wave-200"
             >
-              <ArrowLeftIcon className="w-4 h-4" />
-              Back
+              {step === 1 ? 'Cancel' : 'Previous'}
             </button>
-
-            {step < 4 ? (
+            
+            {step < totalSteps ? (
               <button
                 type="button"
-                onClick={() => {
-                  if (validateStep(step)) {
-                    setStep(step + 1);
-                  }
-                }}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                onClick={nextStep}
+                className="px-6 py-2 rounded-xl bg-gradient-to-r from-wave-500 to-wave-600 hover:from-wave-600 hover:to-wave-700 transition-all text-white font-medium flex items-center gap-2"
               >
                 Next
-                <ArrowRightIcon className="w-4 h-4" />
+                <ChevronRightIcon className="w-4 h-4" />
               </button>
             ) : (
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all text-white font-medium flex items-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -1301,13 +984,13 @@ export default function TrendSubmissionFormEnhanced({ onClose, onSubmit, initial
                 ) : (
                   <>
                     <SendIcon className="w-4 h-4" />
-                    Submit Trend
+                    Submit Intelligence
                   </>
                 )}
               </button>
             )}
           </div>
-        </form>
+        </div>
       </motion.div>
     </div>
   );
