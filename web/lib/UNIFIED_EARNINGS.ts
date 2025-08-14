@@ -137,7 +137,7 @@ export function isWithinSessionWindow(lastSubmissionAt?: string): boolean {
   
   const lastSubmission = new Date(lastSubmissionAt);
   const now = new Date();
-  const minutesSinceLasthttps = (now.getTime() - lastSubmission.getTime()) / (1000 * 60);
+  const minutesSinceLast = (now.getTime() - lastSubmission.getTime()) / (1000 * 60);
   
   return minutesSinceLast <= UNIFIED_EARNINGS.limits.sessionWindowMinutes;
 }
