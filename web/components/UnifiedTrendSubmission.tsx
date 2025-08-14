@@ -89,7 +89,6 @@ export default function UnifiedTrendSubmission({
     likes_count: 0,
     comments_count: 0,
     views_count: 0,
-    shares_count: 0,
     hashtags: [] as string[],
     thumbnail_url: '',
     posted_at: '',
@@ -159,7 +158,6 @@ export default function UnifiedTrendSubmission({
         likes_count: extractedData.likes_count || 0,
         comments_count: extractedData.comments_count || 0,
         views_count: extractedData.views_count || 0,
-        shares_count: extractedData.shares_count || 0,
         hashtags: extractedData.hashtags || [],
         thumbnail_url: extractedData.thumbnail_url || '',
         posted_at: extractedData.posted_at || new Date().toISOString()
@@ -173,7 +171,6 @@ export default function UnifiedTrendSubmission({
         views_count: extractedData.views_count || 0,
         likes_count: extractedData.likes_count || 0,
         comments_count: extractedData.comments_count || 0,
-        shares_count: extractedData.shares_count || 0,
         velocity: 'emerging',
         platform
       });
