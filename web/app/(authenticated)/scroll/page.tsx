@@ -63,8 +63,8 @@ export default function LegibleScrollPage() {
   // Default tier info for display
   const tierInfo = user ? calculateUserTier({
     trends_submitted: user.trends_spotted || 0,
-    approval_rate: user.approval_rate || 0,
-    quality_score: user.quality_score || 50
+    approval_rate: user.accuracy_score || 0,  // Use accuracy_score instead
+    quality_score: user.validation_score || 50  // Use validation_score instead
   }) : SUSTAINABLE_EARNINGS.tiers.learning;
   const { session, startSession, endSession, logTrendSubmission } = useSession();
   const scrollSessionRef = useRef<any>();
@@ -838,7 +838,7 @@ export default function LegibleScrollPage() {
                 Base: {formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission)} per trend
               </span>
               <span className="text-blue-600">
-                Tier multiplier: {tierInfo.multiplier}x
+                Tier multiplier: {typeof tierInfo === 'object' ? tierInfo.multiplier : 1}x
               </span>
               {getStreakMultiplier(session.currentStreak) > 1.0 && (
                 <span className="text-orange-600">

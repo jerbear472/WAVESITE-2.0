@@ -268,7 +268,7 @@ export default function OnboardingFlow({ onComplete }: { onComplete: () => void 
           
           <div className="bg-green-50 p-4 rounded-lg">
             <p className="text-sm text-green-800">
-              <strong>💰 Multi-Platform Bonus:</strong> Submit trends from multiple platforms to earn +{formatCurrency(SUSTAINABLE_EARNINGS.qualityBonuses.multiPlatform)} per trend!
+              <strong>💰 Approval Bonus:</strong> When your trend gets approved, earn +{formatCurrency(SUSTAINABLE_EARNINGS.base.approvalBonus)} bonus!
             </p>
           </div>
         </div>
