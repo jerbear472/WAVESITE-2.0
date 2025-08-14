@@ -778,7 +778,7 @@ export default function ValidatePageFixed() {
                           <span className="font-medium">{currentTrend.wave_score}/100</span>
                         </div>
                       )}
-                      {currentTrend.creator_name && (
+                      {currentTrend.creator_name && currentTrend.creator_name !== currentTrend.creator_handle && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Creator Name:</span>
                           <span className="font-medium truncate max-w-[150px]">{currentTrend.creator_name}</span>
@@ -796,11 +796,48 @@ export default function ValidatePageFixed() {
                           <span className="font-medium">#{currentTrend.trending_position}</span>
                         </div>
                       )}
-                      {currentTrend.evidence && Object.keys(currentTrend.evidence).length > 0 && (
+                      {currentTrend.evidence && typeof currentTrend.evidence === 'object' && Object.keys(currentTrend.evidence).length > 0 && (
                         <div className="mt-2 pt-2 border-t border-blue-200">
                           <span className="text-gray-600 block mb-1">Additional Evidence:</span>
-                          <div className="bg-white rounded p-1 text-[10px] text-gray-700 max-h-20 overflow-y-auto">
-                            {JSON.stringify(currentTrend.evidence, null, 2)}
+                          <div className="bg-white rounded p-2 space-y-1">
+                            {(() => {
+                              const entries = Object.entries(currentTrend.evidence)
+                                .filter(([key, value]) => value && value !== '' && value !== null)
+                                .map(([key, value]) => {
+                                  // Format the key to be more readable
+                                  const formattedKey = key
+                                    .replace(/_/g, ' ')
+                                    .replace(/\b\w/g, l => l.toUpperCase());
+                                  
+                                  // Format the value based on type
+                                  let formattedValue = value;
+                                  if (typeof value === 'boolean') {
+                                    formattedValue = value ? 'Yes' : 'No';
+                                  } else if (typeof value === 'number') {
+                                    formattedValue = value.toLocaleString();
+                                  } else if (Array.isArray(value)) {
+                                    formattedValue = value.join(', ');
+                                  } else if (typeof value === 'object') {
+                                    return null; // Skip complex objects
+                                  }
+                                  
+                                  return (
+                                    <div key={key} className="flex justify-between text-[11px]">
+                                      <span className="text-gray-600">{formattedKey}:</span>
+                                      <span className="font-medium text-gray-800 truncate max-w-[120px]">
+                                        {String(formattedValue)}
+                                      </span>
+                                    </div>
+                                  );
+                                })
+                                .filter(Boolean);
+                              
+                              if (entries.length === 0) {
+                                return <span className="text-[11px] text-gray-500 italic">No additional data</span>;
+                              }
+                              
+                              return entries;
+                            })()}
                           </div>
                         </div>
                       )}
