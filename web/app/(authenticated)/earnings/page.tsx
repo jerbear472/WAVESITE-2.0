@@ -133,7 +133,7 @@ export default function Earnings() {
     quality_score: 0.60 // Default, should come from profile
   });
   
-  const tierInfo = SUSTAINABLE_EARNINGS.tiers[userTier];
+  const tierInfo = SUSTAINABLE_EARNINGS.tiers[userTier as keyof typeof SUSTAINABLE_EARNINGS.tiers];
 
   const filteredTransactions = transactions.filter(t => {
     if (filter === 'all') return true;

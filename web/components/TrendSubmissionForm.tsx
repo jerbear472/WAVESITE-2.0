@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 
 // Using TrendIntelligenceData type from config
+// We use Partial since not all fields are required initially
 type TrendData = Partial<TrendIntelligenceData> & {
   image?: File | string;
 };
@@ -48,7 +49,7 @@ type TrendData = Partial<TrendIntelligenceData> & {
 
 interface TrendSubmissionFormProps {
   onClose: () => void;
-  onSubmit?: (data: TrendData) => Promise<void>;
+  onSubmit?: (data: Partial<TrendIntelligenceData>) => Promise<void>;
   initialUrl?: string;
 }
 
@@ -72,19 +73,19 @@ export default function TrendSubmissionForm({ onClose, onSubmit: customSubmit, i
     return {
       url: initialUrl,
       title: '',
-      category: '',
-      platform: '',
-      creator_handle: '',
-      creator_name: '',
-      post_caption: '',
-      likes_count: 0,
-      comments_count: 0,
-      shares_count: 0,
-      views_count: 0,
+      category: undefined as any,  // Will be set when user selects
+      platform: undefined as any,  // Will be set when user selects
+      creatorHandle: '',
+      creatorName: '',
+      postCaption: '',
+      likesCount: 0,
+      commentsCount: 0,
+      sharesCount: 0,
+      viewsCount: 0,
       hashtags: [],
-      thumbnail_url: '',
-      posted_at: '',
-      wave_score: 50
+      thumbnailUrl: '',
+      postedAt: '',
+      waveScore: 50
     };
   };
   
@@ -187,21 +188,21 @@ export default function TrendSubmissionForm({ onClose, onSubmit: customSubmit, i
       
       setFormData(prev => ({
         ...prev,
-        platform: platform,
+        platform: platform as any,
         title: prev.title || '', // Keep title empty for manual input
-        creator_handle: extractedData.creator_handle || prev.creator_handle || '',
+        creatorHandle: extractedData.creator_handle || prev.creatorHandle || '',
         // For TikTok, use handle as creator name if no name is provided
-        creator_name: extractedData.creator_name || 
+        creatorName: extractedData.creator_name || 
                      (platform === 'tiktok' && extractedData.creator_handle ? 
-                      extractedData.creator_handle : prev.creator_name || ''),
-        post_caption: extractedData.post_caption || prev.post_caption || '',
-        likes_count: extractedData.likes_count || prev.likes_count || 0,
-        comments_count: extractedData.comments_count || prev.comments_count || 0,
-        shares_count: extractedData.shares_count || prev.shares_count || 0,
-        views_count: extractedData.views_count || prev.views_count || 0,
+                      extractedData.creator_handle : prev.creatorName || ''),
+        postCaption: extractedData.post_caption || prev.postCaption || '',
+        likesCount: extractedData.likes_count || prev.likesCount || 0,
+        commentsCount: extractedData.comments_count || prev.commentsCount || 0,
+        sharesCount: extractedData.shares_count || prev.sharesCount || 0,
+        viewsCount: extractedData.views_count || prev.viewsCount || 0,
         hashtags: extractedData.hashtags || prev.hashtags || [],
-        thumbnail_url: extractedData.thumbnail_url || prev.thumbnail_url,
-        posted_at: extractedData.posted_at || prev.posted_at || ''
+        thumbnailUrl: extractedData.thumbnail_url || prev.thumbnailUrl,
+        postedAt: extractedData.posted_at || prev.postedAt || ''
       }));
     } catch (error) {
       showError('Failed to extract metadata', 'Please fill in the details manually');
@@ -277,7 +278,7 @@ export default function TrendSubmissionForm({ onClose, onSubmit: customSubmit, i
       );
       
       const result = await Promise.race([
-        onSubmit(formData),
+        customSubmit ? customSubmit(formData) : Promise.resolve(),
         timeoutPromise
       ]);
       
@@ -356,19 +357,19 @@ export default function TrendSubmissionForm({ onClose, onSubmit: customSubmit, i
       setFormData({
         url: '',
         title: '',
-        category: '',
-        platform: '',
-        creator_handle: '',
-        creator_name: '',
-        post_caption: '',
-        likes_count: 0,
-        comments_count: 0,
-        shares_count: 0,
-        views_count: 0,
+        category: undefined as any,
+        platform: undefined as any,
+        creatorHandle: '',
+        creatorName: '',
+        postCaption: '',
+        likesCount: 0,
+        commentsCount: 0,
+        sharesCount: 0,
+        viewsCount: 0,
         hashtags: [],
-        thumbnail_url: '',
-        posted_at: '',
-        wave_score: 50
+        thumbnailUrl: '',
+        postedAt: '',
+        waveScore: 50
       });
       
       // Clear other states

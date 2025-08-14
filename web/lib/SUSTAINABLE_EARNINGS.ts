@@ -307,7 +307,7 @@ export function calculateValidationEarnings(
   userTier: Tier
 ): number {
   const base = SUSTAINABLE_EARNINGS.base.validationVote * validationCount;
-  const multiplier = SUSTAINABLE_EARNINGS.tiers[userTier].multiplier;
+  const multiplier = SUSTAINABLE_EARNINGS.tiers[userTier as keyof typeof SUSTAINABLE_EARNINGS.tiers].multiplier;
   return Math.round(base * multiplier * 100) / 100;
 }
 
