@@ -62,7 +62,7 @@ export default function LegibleScrollPage() {
   
   // Default tier info for display
   const tierInfo = user ? calculateUserTier({
-    trends_submitted: user.trends_submitted || 0,
+    trends_submitted: user.trends_spotted || 0,
     approval_rate: user.approval_rate || 0,
     quality_score: user.quality_score || 50
   }) : SUSTAINABLE_EARNINGS.tiers.learning;
