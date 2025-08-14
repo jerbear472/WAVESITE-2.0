@@ -168,11 +168,16 @@ export default function UnifiedTrendSubmission({
       
       // Calculate initial wave score
       const score = calculateWaveScore({
+        trendName: extractedData.title || '',
+        explanation: '',
+        categories: [],
         views_count: extractedData.views_count || 0,
         likes_count: extractedData.likes_count || 0,
         comments_count: extractedData.comments_count || 0,
-        velocity: 'emerging',
-        platform
+        thumbnail_url: extractedData.thumbnail_url || '',
+        hashtags: extractedData.hashtags || [],
+        creator_handle: extractedData.creator_handle || '',
+        creator_name: extractedData.creator_name || ''
       });
       
       setFormData(prev => ({ ...prev, wave_score: score }));
