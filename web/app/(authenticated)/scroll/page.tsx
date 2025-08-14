@@ -59,6 +59,9 @@ const PLATFORMS = [
 export default function LegibleScrollPage() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
+  
+  // Default tier info for display
+  const tierInfo = user ? calculateUserTier(user.totalEarnings || 0) : SUSTAINABLE_EARNINGS.tiers.learning;
   const { session, startSession, endSession, logTrendSubmission } = useSession();
   const scrollSessionRef = useRef<any>();
   const { showEarnings, earningsData, showEarningsAnimation, hideEarningsAnimation } = useEarningsAnimation();
@@ -831,7 +834,7 @@ export default function LegibleScrollPage() {
                 Base: {formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission)} per trend
               </span>
               <span className="text-blue-600">
-                Finance bonus: +{formatCurrency(SUSTAINABLE_EARNINGS.performanceBonuses.financeCategory)}
+                Tier multiplier: {tierInfo.multiplier}x
               </span>
               {getStreakMultiplier(session.currentStreak) > 1.0 && (
                 <span className="text-orange-600">
@@ -856,7 +859,7 @@ export default function LegibleScrollPage() {
               </div>
             </div>
             <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-semibold">
-              +{formatCurrency(SUSTAINABLE_EARNINGS.performanceBonuses.financeCategory)} bonus
+              +{formatCurrency(SUSTAINABLE_EARNINGS.base.approvalBonus)} approval bonus
             </span>
           </div>
           
