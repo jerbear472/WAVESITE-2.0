@@ -61,7 +61,7 @@ export default function LegibleScrollPage() {
   const { user, refreshUser } = useAuth();
   
   // Default tier info for display
-  const tierInfo = user ? calculateUserTier(user.totalEarnings || 0) : SUSTAINABLE_EARNINGS.tiers.learning;
+  const tierInfo = user ? calculateUserTier(user.total_earnings || 0) : SUSTAINABLE_EARNINGS.tiers.learning;
   const { session, startSession, endSession, logTrendSubmission } = useSession();
   const scrollSessionRef = useRef<any>();
   const { showEarnings, earningsData, showEarningsAnimation, hideEarningsAnimation } = useEarningsAnimation();
