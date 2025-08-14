@@ -353,8 +353,8 @@ export default function Earnings() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">How Earnings Work</h3>
               <ul className="space-y-2 text-gray-300 text-sm">
-                <li>• Submit a trend to earn {formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission)} base + bonuses</li>
-                <li>• Quality bonuses: Screenshot (+{formatCurrency(SUSTAINABLE_EARNINGS.qualityBonuses.withScreenshot)}), Complete info (+{formatCurrency(SUSTAINABLE_EARNINGS.qualityBonuses.completeData)})</li>
+                <li>• Submit a trend to earn {formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission)} base (pending approval)</li>
+                <li>• Build streaks: Session streak × Daily streak = Higher multipliers!</li>
                 <li>• {SUSTAINABLE_EARNINGS.validation.votesToApprove} "verify" votes = trend approved, earn +{formatCurrency(SUSTAINABLE_EARNINGS.base.approvalBonus)} bonus</li>
                 <li>• {SUSTAINABLE_EARNINGS.validation.votesToReject} "reject" votes = trend rejected, no earnings</li>
                 <li>• Participate in verifications to earn {formatCurrency(SUSTAINABLE_EARNINGS.base.validationVote)} per vote</li>
