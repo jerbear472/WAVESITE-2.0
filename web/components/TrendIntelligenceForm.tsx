@@ -235,15 +235,40 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
     }
     
     setLoading(true);
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Submission timed out')), 30000)
+    );
+    
     try {
-      await onSubmit(formData as TrendIntelligenceData);
+      // Race between submission and timeout
+      await Promise.race([
+        onSubmit(formData as TrendIntelligenceData),
+        timeoutPromise
+      ]);
+      
       showSuccess('Trend intelligence submitted successfully!');
       localStorage.removeItem(DRAFT_KEY);
+      
+      // Clear form and close
+      setFormData(loadDraft());
+      setExtractedThumbnail(null);
+      setImagePreview(null);
+      
       setTimeout(() => {
         onClose();
       }, 1500);
     } catch (err: any) {
-      showError('Failed to submit trend', err.message || 'Please try again later');
+      console.error('Submission error:', err);
+      
+      if (err.message === 'Submission timed out') {
+        showError('Submission timed out', 'The server is taking too long. Please try again.');
+      } else {
+        showError('Failed to submit trend', err.message || 'Please check your connection and try again');
+      }
+      
+      // Don't close the form on error so user can retry
     } finally {
       setLoading(false);
     }
@@ -701,36 +726,32 @@ export default function TrendIntelligenceForm({ onClose, onSubmit, initialUrl = 
                   Audience Intelligence
                 </h4>
                 
-                {/* Sentiment */}
+                {/* Sentiment Slider */}
                 <div>
-                  <label className="block text-wave-300 text-sm mb-2">
-                    Overall Sentiment * {validationErrors.sentiment && <span className="text-red-400">Required</span>}
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {UNIVERSAL_INTELLIGENCE.sentiment.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setFormData(prev => ({
-                          ...prev,
-                          audienceIntelligence: { 
-                            ...prev.audienceIntelligence, 
-                            sentiment: option.value
-                          } as TrendIntelligenceData['audienceIntelligence']
-                        }))}
-                        className={`
-                          p-3 rounded-lg border transition-all text-left
-                          ${formData.audienceIntelligence?.sentiment === option.value
-                            ? 'border-wave-500 bg-wave-600/20'
-                            : 'border-wave-700/30 hover:border-wave-600/50'
-                          }
-                        `}
-                      >
-                        <div className="font-medium text-wave-200 text-sm">{option.label}</div>
-                        <div className="text-xs text-wave-400 mt-1">{option.description}</div>
-                      </button>
-                    ))}
-                  </div>
+                  <SentimentSlider
+                    value={
+                      formData.audienceIntelligence?.sentiment === 'love_it' ? 80 :
+                      formData.audienceIntelligence?.sentiment === 'mixed_fighting' ? 50 :
+                      formData.audienceIntelligence?.sentiment === 'hate_it' ? 20 : 50
+                    }
+                    onChange={(value) => {
+                      let sentiment: 'love_it' | 'mixed_fighting' | 'hate_it';
+                      if (value >= 67) sentiment = 'love_it';
+                      else if (value >= 34) sentiment = 'mixed_fighting';
+                      else sentiment = 'hate_it';
+                      
+                      setFormData(prev => ({
+                        ...prev,
+                        audienceIntelligence: { 
+                          ...prev.audienceIntelligence, 
+                          sentiment,
+                          sentimentScore: value // Store numeric value too
+                        } as TrendIntelligenceData['audienceIntelligence'] & { sentimentScore: number }
+                      }));
+                    }}
+                    label="Overall Audience Sentiment"
+                    required={true}
+                  />
                 </div>
 
                 {/* Demographics */}
