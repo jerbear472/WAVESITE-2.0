@@ -65,17 +65,56 @@ export class MetadataExtractor {
   
   private static async extractTikTokMetadata(url: string, basicData: ExtractedData): Promise<ExtractedData> {
     try {
-      // Use direct extraction since oEmbed API is currently broken
+      // Try our dedicated TikTok extraction API first
+      try {
+        const response = await fetch('/api/extract-tiktok', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const data = result.data;
+            return {
+              platform: 'tiktok',
+              metadata: {
+                ...basicData.metadata,
+                creator_handle: data.creator_handle,
+                creator_name: data.creator_name || data.creator_handle,
+                thumbnail_url: data.thumbnail_url,
+                posted_at: data.posted_at || new Date().toISOString(),
+                // Add any additional metadata from the API response
+                post_caption: data.post_caption || basicData.metadata.post_caption,
+              },
+              title: data.post_caption || `TikTok Video by ${data.creator_handle}`,
+              description: basicData.description || `TikTok video from ${data.creator_handle}`
+            };
+          }
+        }
+      } catch (apiError) {
+        console.log('TikTok API extraction failed, falling back to direct extraction');
+      }
+      
+      // Fallback to direct extraction
       const directMetadata = TikTokDirectExtractor.extract(url);
       
       if (directMetadata.creator_handle) {
+        // Use proxy for thumbnail to avoid 403 errors
+        const thumbnailUrl = directMetadata.thumbnail_url 
+          ? `/api/proxy-image?url=${encodeURIComponent(directMetadata.thumbnail_url)}`
+          : undefined;
+          
         return {
           platform: 'tiktok',
           metadata: {
             ...basicData.metadata,
             creator_handle: directMetadata.creator_handle,
             creator_name: directMetadata.creator_name || directMetadata.creator_handle,
-            thumbnail_url: directMetadata.thumbnail_url,
+            thumbnail_url: thumbnailUrl,
             posted_at: directMetadata.posted_at
           },
           title: `TikTok Video by ${directMetadata.creator_handle}`,
@@ -83,7 +122,7 @@ export class MetadataExtractor {
         };
       }
       
-      // Fallback to trying oEmbed API (though it's currently broken)
+      // Final fallback to trying oEmbed API (though it's currently broken)
       const videoIdMatch = url.match(/video\/(\d+)/);
       const videoId = videoIdMatch ? videoIdMatch[1] : null;
       
