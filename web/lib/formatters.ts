@@ -9,8 +9,11 @@
  * @returns Formatted currency string
  */
 export function formatCurrency(amount: number | null | undefined, showSymbol: boolean = true): string {
-  // Handle null/undefined values
-  const value = amount ?? 0;
+  // Handle null/undefined/NaN values
+  let value = amount ?? 0;
+  if (isNaN(value) || !isFinite(value)) {
+    value = 0;
+  }
   
   // Use Intl.NumberFormat for proper locale-aware formatting
   if (showSymbol) {
@@ -41,6 +44,10 @@ export function formatPercentage(value: number, decimals: number = 0): string {
  * @returns Formatted number string
  */
 export function formatNumber(num: number): string {
+  // Handle NaN and invalid numbers
+  if (!num || isNaN(num) || !isFinite(num)) {
+    return '0';
+  }
   return num.toLocaleString();
 }
 

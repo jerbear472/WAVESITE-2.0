@@ -248,7 +248,7 @@ export default function Dashboard() {
         return false;
       }).length || 0;
       
-      const accuracyScore = totalTrends > 0 ? ((approvedTrends / totalTrends) * 100) : 0;
+      const accuracyScore = totalTrends > 0 && !isNaN(totalTrends) && !isNaN(approvedTrends) ? ((approvedTrends / totalTrends) * 100) : 0;
 
       // Calculate other stats from earnings_ledger
       const approvedEarnings = userEarnings?.filter(e => e.status === 'approved' || e.status === 'paid') || [];
@@ -294,7 +294,7 @@ export default function Dashboard() {
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
         scroll_sessions_count: 0, // Would need scroll_sessions table
-        accuracy_score: Math.round(accuracyScore * 100) / 100, // Round to 2 decimals
+        accuracy_score: !isNaN(accuracyScore) ? Math.round(accuracyScore * 100) / 100 : 0, // Round to 2 decimals
         current_streak: uniqueDays,
         earnings_today: earningsToday,
         earnings_this_week: earningsThisWeek,
@@ -302,7 +302,7 @@ export default function Dashboard() {
         total_cashed_out: totalPaid  // Amount already paid out
       });
 
-      console.log(`Calculated accuracy rate: ${accuracyScore.toFixed(2)}% (${approvedTrends}/${totalTrends} trends approved)`);
+      console.log(`Calculated accuracy rate: ${!isNaN(accuracyScore) ? accuracyScore.toFixed(2) : '0'}% (${approvedTrends}/${totalTrends} trends approved)`);
     } catch (error) {
       console.error('Error in manual stats calculation:', error);
     }
@@ -493,6 +493,8 @@ export default function Dashboard() {
   const formatCurrency = formatCurrencyLib;
 
   const formatNumber = (num: number) => {
+    // Ensure num is a valid number
+    if (!num || isNaN(num)) return '0';
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
     return num.toString();
@@ -517,15 +519,16 @@ export default function Dashboard() {
     const currentShares = trend.shares_count || 0;
     const currentComments = trend.comments_count || 0;
     
-    // Calculate hours since submission
-    const hoursSincePost = Math.max((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60), 0.1);
+    // Calculate hours since submission - ensure valid date
+    const createdTime = new Date(trend.created_at).getTime();
+    const hoursSincePost = !isNaN(createdTime) ? Math.max((Date.now() - createdTime) / (1000 * 60 * 60), 0.1) : 1;
     
-    // Calculate engagement velocity (interactions per hour)
+    // Calculate engagement velocity (interactions per hour) - ensure no NaN
     const totalEngagement = currentLikes + currentShares + currentComments;
-    const engagementVelocity = totalEngagement / hoursSincePost;
+    const engagementVelocity = hoursSincePost > 0 && !isNaN(hoursSincePost) ? totalEngagement / hoursSincePost : 0;
     
-    // Calculate view velocity (views per hour)
-    const viewVelocity = currentViews / hoursSincePost;
+    // Calculate view velocity (views per hour) - ensure no NaN
+    const viewVelocity = hoursSincePost > 0 && !isNaN(hoursSincePost) && !isNaN(currentViews) ? currentViews / hoursSincePost : 0;
     
     // Combined velocity score (weighted)
     const velocityScore = (engagementVelocity * 10) + (viewVelocity / 100);
@@ -545,23 +548,23 @@ export default function Dashboard() {
     
     if (velocityScore > 10000) {
       label = '🚀 Explosive';
-      metric = `+${(engagementVelocity * 24).toFixed(0)}/day`;
+      metric = `+${!isNaN(engagementVelocity) ? (engagementVelocity * 24).toFixed(0) : '0'}/day`;
       color = 'text-red-500';
     } else if (velocityScore > 1000) {
       label = '⚡ Viral';
-      metric = `+${(engagementVelocity * 24).toFixed(0)}/day`;
+      metric = `+${!isNaN(engagementVelocity) ? (engagementVelocity * 24).toFixed(0) : '0'}/day`;
       color = 'text-orange-500';
     } else if (velocityScore > 100) {
       label = '🔥 Hot';
-      metric = `+${(engagementVelocity).toFixed(1)}/hr`;
+      metric = `+${!isNaN(engagementVelocity) ? engagementVelocity.toFixed(1) : '0'}/hr`;
       color = 'text-yellow-500';
     } else if (velocityScore > 10) {
       label = '📈 Rising';
-      metric = `+${(engagementVelocity).toFixed(1)}/hr`;
+      metric = `+${!isNaN(engagementVelocity) ? engagementVelocity.toFixed(1) : '0'}/hr`;
       color = 'text-green-500';
     } else if (velocityScore > 1) {
       label = '🌱 Growing';
-      metric = `+${(totalEngagement).toFixed(0)} total`;
+      metric = `+${!isNaN(totalEngagement) ? totalEngagement.toFixed(0) : '0'} total`;
       color = 'text-blue-500';
     } else {
       label = '🆕 New';
@@ -574,7 +577,7 @@ export default function Dashboard() {
       metric,
       color,
       velocity: velocityScore,
-      growthRate: growthRate > 0 ? `+${growthRate.toFixed(0)}%` : ''
+      growthRate: growthRate > 0 && !isNaN(growthRate) ? `+${growthRate.toFixed(0)}%` : ''
     };
   };
 
@@ -588,8 +591,8 @@ export default function Dashboard() {
     // Calculate estimated reach (views + potential reach from shares)
     const estimatedReach = views + (shares * 100); // Each share reaches ~100 people on average
     
-    // Calculate engagement rate
-    const engagementRate = views > 0 ? ((likes + shares + comments) / views) * 100 : 0;
+    // Calculate engagement rate - ensure no NaN
+    const engagementRate = views > 0 && !isNaN(views) ? ((likes + shares + comments) / views) * 100 : 0;
     
     // Format the audience size
     let sizeDisplay = '';
@@ -617,22 +620,23 @@ export default function Dashboard() {
       }
     }
     
-    // Calculate hourly growth rate
-    const hoursSincePost = Math.max((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60), 0.1);
-    const viewsPerHour = views / hoursSincePost;
+    // Calculate hourly growth rate - ensure valid date
+    const createdTime = new Date(trend.created_at).getTime();
+    const hoursSincePost = !isNaN(createdTime) ? Math.max((Date.now() - createdTime) / (1000 * 60 * 60), 0.1) : 1;
+    const viewsPerHour = views > 0 && !isNaN(hoursSincePost) ? views / hoursSincePost : 0;
     
     // Create growth label based on rate
     let growthLabel = '';
     if (viewsPerHour > 10000) {
-      growthLabel = `+${(viewsPerHour / 1000).toFixed(0)}K/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? (viewsPerHour / 1000).toFixed(0) : '0'}K/hr`;
     } else if (viewsPerHour > 1000) {
-      growthLabel = `+${(viewsPerHour).toFixed(0)}/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '0'}/hr`;
     } else if (viewsPerHour > 100) {
-      growthLabel = `+${(viewsPerHour).toFixed(0)}/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '0'}/hr`;
     } else if (viewsPerHour > 10) {
-      growthLabel = `+${(viewsPerHour * 24).toFixed(0)}/day`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? (viewsPerHour * 24).toFixed(0) : '0'}/day`;
     } else if (views > 0) {
-      growthLabel = `${engagementRate.toFixed(1)}% engagement`;
+      growthLabel = `${!isNaN(engagementRate) ? engagementRate.toFixed(1) : '0'}% engagement`;
     } else {
       growthLabel = 'New submission';
     }
@@ -641,7 +645,7 @@ export default function Dashboard() {
       size: sizeDisplay,
       label: growthIndicator,
       growth: growthLabel,
-      engagementRate: engagementRate > 0.5 ? engagementRate.toFixed(1) : '',
+      engagementRate: engagementRate > 0.5 && !isNaN(engagementRate) ? engagementRate.toFixed(1) : '',
       reach: estimatedReach
     };
   };
@@ -984,7 +988,7 @@ export default function Dashboard() {
                                     {getAudienceSize(trend).growth}
                                   </div>
                                 )}
-                                {parseFloat(getAudienceSize(trend).engagementRate) > 0 && (
+                                {getAudienceSize(trend).engagementRate && parseFloat(getAudienceSize(trend).engagementRate) > 0 && !isNaN(parseFloat(getAudienceSize(trend).engagementRate)) && (
                                   <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">
                                     {getAudienceSize(trend).engagementRate}% engaged
                                   </div>
@@ -1111,7 +1115,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-2">
                     <span className="text-gray-600 dark:text-gray-400">Success Rate</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {stats.trends_spotted > 0 ? `${Math.round((stats.trends_verified / stats.trends_spotted) * 100)}%` : 'N/A'}
+                      {stats.trends_spotted > 0 && !isNaN(stats.trends_verified) && !isNaN(stats.trends_spotted) ? `${Math.round((stats.trends_verified / stats.trends_spotted) * 100)}%` : 'N/A'}
                     </span>
                   </div>
                 </div>
