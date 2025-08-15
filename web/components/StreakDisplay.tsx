@@ -58,9 +58,9 @@ export default function StreakDisplay() {
       
       // Calculate streak (simplified for now)
       let currentStreak = 0;
-      if (todayCount > 0) {
+      if ((todayCount || 0) > 0) {
         currentStreak = 1; // At least 1 if submitted today
-        if (yesterdayCount > 0) {
+        if ((yesterdayCount || 0) > 0) {
           // Would need to check further back for full streak
           currentStreak = 2; // Simplified
         }
