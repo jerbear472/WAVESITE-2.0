@@ -75,6 +75,33 @@ export default function Earnings() {
     }
   }, [user]);
 
+  // Subscribe to real-time earnings updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const subscription = supabase
+      .channel('earnings-ledger-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'earnings_ledger',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Earnings ledger update received:', payload);
+          // Refresh earnings data when ledger changes
+          fetchEarningsData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user?.id]);
+
   const fetchEarningsData = async () => {
     try {
       // Fetch user profile with earnings data

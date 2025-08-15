@@ -422,8 +422,32 @@ export default function ValidatePageFixed() {
         return;
       }
 
-      // Success!
+      // Success! Now create earnings entry
       setSessionValidations(prev => prev + 1);
+      
+      // Create earnings ledger entry for validation reward
+      const { error: earningsError } = await supabase
+        .from('earnings_ledger')
+        .insert({
+          user_id: user.id,
+          trend_id: trendId,
+          amount: rewardAmount,
+          type: 'validation',
+          status: 'pending',
+          description: `Validation: ${voteType === 'verify' ? 'Verified' : 'Rejected'} trend`,
+          metadata: {
+            vote: voteType,
+            validation_id: validationData.id
+          }
+        });
+      
+      if (earningsError) {
+        console.error('Failed to create earnings entry:', earningsError);
+        // Don't fail the validation, just log the error
+      } else {
+        console.log('Earnings entry created for validation:', rewardAmount);
+      }
+      
       await loadStats();
       
       // Remove validated trend from list and handle index properly

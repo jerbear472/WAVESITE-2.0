@@ -270,6 +270,31 @@ export default function WorkingSubmitPage() {
         breakdown: earningResult.breakdown
       });
       
+      // Create earnings ledger entry FIRST
+      const { error: earningsError } = await supabase
+        .from('earnings_ledger')
+        .insert({
+          user_id: user?.id,
+          trend_id: data.id,
+          amount: earningResult.capped,
+          type: 'trend_submission',
+          status: 'pending',
+          description: `Trend: ${trendData.trendName || submission.description}`,
+          metadata: {
+            wave_score: trendData.wave_score,
+            category: displayCategory,
+            platform: trendData.platform,
+            earnings_breakdown: earningResult.breakdown
+          }
+        });
+      
+      if (earningsError) {
+        console.error('Failed to create earnings entry:', earningsError);
+        // Don't fail the submission, just log the error
+      } else {
+        console.log('Earnings entry created successfully:', earningResult.capped);
+      }
+      
       // Update user earnings with the calculated amount
       updateUserEarnings(earningResult.capped);
       
