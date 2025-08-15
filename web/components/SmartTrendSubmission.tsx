@@ -222,6 +222,106 @@ const CATEGORIES = [
         options: ['Raising awareness', 'Changing minds', 'Real policy change', 'Just noise']
       }
     }
+  },
+  { 
+    id: 'cars', 
+    label: 'Cars & Machines', 
+    icon: '🚗',
+    color: 'from-slate-600 to-zinc-700',
+    questions: {
+      type: {
+        label: 'What kind of vehicle trend?',
+        options: ['Car mod/custom', 'New vehicle', 'Driving technique', 'Car culture', 'Racing/performance']
+      },
+      accessibility: {
+        label: 'How accessible is this?',
+        options: ['Anyone with a car', 'Need specific vehicle', 'Expensive mods', 'Professional only']
+      },
+      appeal: {
+        label: 'Why is it trending?',
+        options: ['Looks amazing', 'Performance gains', 'Practical/useful', 'Just for fun', 'Status symbol']
+      }
+    }
+  },
+  { 
+    id: 'animals', 
+    label: 'Animals & Pets', 
+    icon: '🐾',
+    color: 'from-amber-500 to-orange-600',
+    questions: {
+      type: {
+        label: 'What kind of animal trend?',
+        options: ['Cute pet video', 'Training technique', 'Animal behavior', 'Pet care tip', 'Wildlife moment']
+      },
+      species: {
+        label: 'What animal?',
+        options: ['Dogs', 'Cats', 'Exotic pets', 'Farm animals', 'Wildlife']
+      },
+      virality: {
+        label: 'Why is it viral?',
+        options: ['Incredibly cute', 'Funny behavior', 'Unusual/rare', 'Heartwarming', 'Educational']
+      }
+    }
+  },
+  { 
+    id: 'travel', 
+    label: 'Travel & Places', 
+    icon: '✈️',
+    color: 'from-sky-500 to-blue-600',
+    questions: {
+      type: {
+        label: 'What travel trend?',
+        options: ['Hidden gem location', 'Travel hack', 'Tourist spot', 'Local culture', 'Adventure activity']
+      },
+      budget: {
+        label: 'Cost level?',
+        options: ['Budget friendly', 'Mid-range', 'Luxury', 'Free/cheap hack']
+      },
+      accessibility: {
+        label: 'How easy to do?',
+        options: ['Anyone can go', 'Need planning', 'Restricted access', 'Locals only']
+      }
+    }
+  },
+  { 
+    id: 'education', 
+    label: 'Education & Learning', 
+    icon: '📚',
+    color: 'from-indigo-500 to-purple-600',
+    questions: {
+      type: {
+        label: 'What learning trend?',
+        options: ['Study hack', 'Educational content', 'Language learning', 'Skill tutorial', 'Fun fact']
+      },
+      difficulty: {
+        label: 'Learning curve?',
+        options: ['Quick tip', 'Easy to learn', 'Takes practice', 'Expert level']
+      },
+      value: {
+        label: 'How useful?',
+        options: ['Life changing', 'Pretty helpful', 'Nice to know', 'Just interesting']
+      }
+    }
+  },
+  { 
+    id: 'health', 
+    label: 'Health & Wellness', 
+    icon: '💊',
+    color: 'from-teal-500 to-green-600',
+    questions: {
+      type: {
+        label: 'What health trend?',
+        options: ['Wellness routine', 'Medical info', 'Mental health', 'Diet trend', 'Exercise']
+      },
+      evidence: {
+        label: 'How proven?',
+        options: ['Doctor approved', 'Research backed', 'Anecdotal', 'Questionable']
+      },
+      commitment: {
+        label: 'Effort needed?',
+        options: ['One-time thing', 'Daily habit', 'Lifestyle change', 'Medical intervention']
+      }
+    }
   }
 ];
 
