@@ -75,6 +75,7 @@ export const EarningsDashboard: React.FC = () => {
   const [paypalEmail, setPaypalEmail] = useState('email@example.com');
   const [pendingAmount, setPendingAmount] = useState(0);
   const [availableBalance, setAvailableBalance] = useState(0);
+  const MINIMUM_CASHOUT = 10.00; // $10 minimum cashout
 
   // Fetch earnings data
   const fetchEarnings = useCallback(async () => {
@@ -273,13 +274,33 @@ export const EarningsDashboard: React.FC = () => {
                 <Text style={styles.pendingLabel}>Pending</Text>
                 <Text style={styles.pendingValue}>${pendingAmount.toFixed(2)}</Text>
               </View>
+              <View style={styles.totalContainer}>
+                <Text style={styles.totalLabel}>Total:</Text>
+                <Text style={styles.totalValue}>${(availableBalance + pendingAmount).toFixed(2)}</Text>
+              </View>
             </View>
-            <TouchableOpacity 
-              style={styles.cashoutButton}
-              onPress={() => setShowPaymentModal(true)}
-            >
-              <Text style={styles.cashoutButtonText}>Cash Out</Text>
-            </TouchableOpacity>
+            {availableBalance >= MINIMUM_CASHOUT ? (
+              <TouchableOpacity 
+                style={styles.cashoutButton}
+                onPress={() => setShowPaymentModal(true)}
+              >
+                <Text style={styles.cashoutButtonText}>Cash Out</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.cashoutDisabledContainer}>
+                <View style={[styles.cashoutButton, styles.cashoutButtonDisabled]}>
+                  <Text style={[styles.cashoutButtonText, styles.cashoutButtonTextDisabled]}>
+                    Cash Out
+                  </Text>
+                </View>
+                <Text style={styles.minimumText}>
+                  Minimum cashout: ${MINIMUM_CASHOUT.toFixed(2)}
+                </Text>
+                <Text style={styles.needMoreText}>
+                  Need ${(MINIMUM_CASHOUT - availableBalance).toFixed(2)} more
+                </Text>
+              </View>
+            )}
           </LinearGradient>
         </View>
 
@@ -838,5 +859,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  totalContainer: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  totalLabel: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginRight: 8,
+  },
+  totalValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  cashoutDisabledContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  cashoutButtonDisabled: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  cashoutButtonTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+  minimumText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 8,
+  },
+  needMoreText: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginTop: 4,
   },
 });

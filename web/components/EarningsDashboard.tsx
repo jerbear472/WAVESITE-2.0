@@ -67,6 +67,7 @@ export const EarningsDashboard: React.FC = () => {
   const [paypalEmail, setPaypalEmail] = useState('email@example.com');
   const [availableBalance, setAvailableBalance] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
+  const MINIMUM_CASHOUT = 10.00; // $10 minimum cashout
 
   // Fetch earnings data
   const fetchEarningsData = async () => {
@@ -267,13 +268,35 @@ export const EarningsDashboard: React.FC = () => {
                 <p className="text-wave-400 text-sm mb-1">Pending</p>
                 <p className="text-2xl font-semibold text-wave-200">${pendingAmount.toFixed(2)}</p>
               </div>
+              <div className="mt-3 text-sm text-wave-400">
+                Total: <span className="text-wave-200 font-semibold">
+                  ${(availableBalance + pendingAmount).toFixed(2)}
+                </span>
+              </div>
             </div>
-            <button
-              onClick={() => setShowPaymentModal(true)}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg"
-            >
-              Cash Out
-            </button>
+            {availableBalance >= MINIMUM_CASHOUT ? (
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg"
+              >
+                Cash Out
+              </button>
+            ) : (
+              <div className="text-center">
+                <button
+                  disabled
+                  className="bg-wave-700/50 text-wave-400 px-8 py-3 rounded-xl font-semibold cursor-not-allowed opacity-50"
+                >
+                  Cash Out
+                </button>
+                <p className="text-xs text-wave-500 mt-2">
+                  Minimum cashout: ${MINIMUM_CASHOUT.toFixed(2)}
+                </p>
+                <p className="text-xs text-wave-400 mt-1">
+                  Need ${(MINIMUM_CASHOUT - availableBalance).toFixed(2)} more
+                </p>
+              </div>
+            )}
           </div>
           <div className="w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center">
             <DollarSign className="w-10 h-10 text-green-400" />
