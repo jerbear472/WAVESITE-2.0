@@ -489,11 +489,14 @@ const SubmitTrendScreen: React.FC = () => {
     return scripts[platform] || scripts.default;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (isRetry = false) => {
     if (!metadata || !selectedCategory) {
       Alert.alert('Missing Information', 'Please extract metadata and select a category');
       return;
     }
+
+    // Save current state before attempting submission
+    await saveDraft();
 
     setLoading(true);
     buttonScale.value = withSpring(0.95);
@@ -592,6 +595,9 @@ const SubmitTrendScreen: React.FC = () => {
 
       ReactNativeHapticFeedback.trigger('notificationSuccess');
       
+      // Clear draft after successful submission
+      await clearDraft();
+      
       Alert.alert(
         'Success! 🎉',
         'Your trend has been submitted for validation. You\'ll earn $0.25 once it\'s verified!',
@@ -611,18 +617,27 @@ const SubmitTrendScreen: React.FC = () => {
 
     } catch (error: any) {
       console.error('Full submission error:', error);
-      let errorMessage = 'Please try again later';
+      let errorMessage = 'Please try again';
+      let canRetry = true;
       
       if (error.code === '23505') {
         errorMessage = 'You\'ve already submitted this trend';
+        canRetry = false;
       } else if (error.code === '23503') {
         errorMessage = 'Invalid category or user reference';
+        canRetry = false;
       } else if (error.code === '42703') {
         errorMessage = 'Database schema mismatch - please contact support';
+        canRetry = false;
       } else if (error.message?.includes('authenticated')) {
         errorMessage = 'Please log in to submit trends';
+        canRetry = false;
       } else if (error.message?.includes('category')) {
         errorMessage = `Invalid category: ${selectedCategory}. This category may not be available yet.`;
+        canRetry = false;
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = 'Network error - check your connection';
+        canRetry = true;
       } else if (error.hint) {
         errorMessage = error.hint;
       } else if (error.details) {
@@ -631,20 +646,57 @@ const SubmitTrendScreen: React.FC = () => {
         errorMessage = error.message;
       }
       
-      Alert.alert('Submission Failed', errorMessage);
+      // Show retry option for recoverable errors
+      if (canRetry && retryCount < 3) {
+        Alert.alert(
+          'Submission Failed',
+          `${errorMessage}. Your data has been saved.`,
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => {
+                // Data is already saved
+              }
+            },
+            {
+              text: 'Retry',
+              onPress: () => {
+                setRetryCount(prev => prev + 1);
+                setTimeout(() => handleSubmit(true), 1000);
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Submission Failed',
+          `${errorMessage}. Your data has been saved and you can try again later.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Keep the form data so user doesn't lose work
+              }
+            }
+          ]
+        );
+      }
     } finally {
       setLoading(false);
       buttonScale.value = withSpring(1);
     }
   };
 
-  const resetForm = () => {
+  const resetForm = async () => {
     setUrl('');
     setMetadata(null);
     setSelectedCategory('');
     setNotes('');
     setConfidence(50);
     setFollowUpAnswers({});
+    setRetryCount(0);
+    await clearDraft();
   };
 
   const progressStyle = useAnimatedStyle(() => ({

@@ -559,7 +559,6 @@ export default function LegibleScrollPage() {
       'viral': 9,
       'picking_up': 7,
       'just_starting': 5,
-      'saturated': 4,
       'declining': 2
     };
     return map[speed] || 5;

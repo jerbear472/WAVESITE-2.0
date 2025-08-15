@@ -57,10 +57,6 @@ const CATEGORIES = [
         label: 'What type of meme is this?',
         options: ['Image meme', 'Video meme', 'Text joke', 'Sound/Audio', 'Challenge']
       },
-      lifecycle: {
-        label: 'Where is this meme in its lifecycle?',
-        options: ['Just born', 'Going viral', 'Peak funny', 'Getting old', 'Ironically funny now']
-      },
       remixability: {
         label: 'How remixable is it?',
         options: ['Everyone\'s doing their version', 'Some variations', 'One-off joke']
@@ -267,7 +263,7 @@ export default function SmartTrendSubmission({
     brandSafe: null as boolean | null,
     
     // Velocity & Size (HIGH VALUE DATA)
-    trendVelocity: '' as 'just_starting' | 'accelerating' | 'saturated' | 'declining' | 'dead' | '',
+    trendVelocity: '' as 'just_starting' | 'accelerating' | 'viral' | 'declining' | 'dead' | '',
     sentiment: 50,
     trendSize: '' as 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '',
     firstSeen: '' as 'today' | 'yesterday' | 'this_week' | 'last_week' | 'older' | '',
@@ -787,7 +783,7 @@ export default function SmartTrendSubmission({
                     {[
                       { value: 'just_starting', label: '🌱 Just Starting', desc: 'Seeing it for the first time, very few posts' },
                       { value: 'accelerating', label: '🚀 Accelerating', desc: 'Growing rapidly, gaining momentum daily' },
-                      { value: 'saturated', label: '🌊 Saturated', desc: 'Everywhere right now, maximum visibility' },
+                      { value: 'viral', label: '🔥 Viral', desc: 'Everywhere right now, maximum visibility' },
                       { value: 'declining', label: '📉 Declining', desc: 'Starting to slow down, fewer new posts' },
                       { value: 'dead', label: '💀 Dead', desc: 'Pretty much over, only stragglers remain' }
                     ].map((option) => (
@@ -1115,7 +1111,7 @@ export default function SmartTrendSubmission({
                         <p className="text-sm font-medium text-white capitalize">
                           {formData.trendVelocity === 'just_starting' && '🌱 Starting'}
                           {formData.trendVelocity === 'accelerating' && '🚀 Accelerating'}
-                          {formData.trendVelocity === 'saturated' && '🌊 Saturated'}
+                          {formData.trendVelocity === 'viral' && '🔥 Viral'}
                           {formData.trendVelocity === 'declining' && '📉 Declining'}
                           {formData.trendVelocity === 'dead' && '💀 Dead'}
                         </p>
