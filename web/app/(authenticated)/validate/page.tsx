@@ -840,7 +840,7 @@ export default function ValidatePageFixed() {
                           <span className="text-sm text-gray-600">Viral Potential:</span>
                           <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, i) => (
-                              <Star key={i} className={`w-4 h-4 ${i < Math.ceil(currentTrend.virality_prediction / 2) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
+                              <Star key={i} className={`w-4 h-4 ${i < Math.ceil((currentTrend.virality_prediction || 0) / 2) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
                             ))}
                           </div>
                         </div>
