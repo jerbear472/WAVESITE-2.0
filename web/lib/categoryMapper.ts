@@ -53,28 +53,17 @@ export const CATEGORY_MAP: Record<string, string> = {
   'Meme Coin': 'meme_format',
   'Meme Stock': 'meme_format',
   
-  // Direct database enum values (pass-through)
+  // Direct database enum values (pass-through) - only ones not already mapped above
   'visual_style': 'visual_style',
   'audio_music': 'audio_music',
   'creator_technique': 'creator_technique',
   'meme_format': 'meme_format',
   'product_brand': 'product_brand',
   'behavior_pattern': 'behavior_pattern',
-  'political': 'political',
-  'finance': 'finance',
   'news_events': 'news_events',
-  'education': 'education',
   'relationship': 'relationship',
-  'animals_pets': 'animals_pets',
-  'automotive': 'automotive',
-  'food_drink': 'food_drink',
-  'technology': 'technology',
-  'sports': 'sports',
   'dance': 'dance',
-  'travel': 'travel',
-  'fashion': 'fashion',
   'gaming': 'gaming',
-  'health': 'health',
   'diy_crafts': 'diy_crafts'
 };
 
