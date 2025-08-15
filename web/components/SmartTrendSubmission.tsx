@@ -497,7 +497,7 @@ export default function SmartTrendSubmission({
       if (!thumbnailUrl && formData.url) {
         try {
           const thumbnailData = getUltraSimpleThumbnail(formData.url);
-          thumbnailUrl = thumbnailData.thumbnail_url;
+          thumbnailUrl = thumbnailData.thumbnail_url || '';
         } catch (err) {
           console.log('Could not get thumbnail:', err);
         }
