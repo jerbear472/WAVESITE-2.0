@@ -4,27 +4,55 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
   
   // Always return a valid enum no matter what
   const mapping: Record<string, string> = {
-    'Fashion & Beauty': 'visual_style',
-    'Food & Drink': 'behavior_pattern',
-    'Humor & Memes': 'meme_format',
-    'Lifestyle': 'behavior_pattern',
-    'Politics & Social Issues': 'behavior_pattern',
-    'Music & Dance': 'audio_music',
-    'Sports & Fitness': 'behavior_pattern',
-    'Tech & Gaming': 'creator_technique',
-    'Art & Creativity': 'visual_style',
-    'Education & Science': 'creator_technique',
-    // Lowercase versions just in case
-    'fashion & beauty': 'visual_style',
-    'food & drink': 'behavior_pattern',
-    'humor & memes': 'meme_format',
+    // Direct mappings from SmartTrendSubmission component IDs
+    'meme': 'meme_format',
+    'fashion': 'fashion',
+    'food': 'food_drink',
+    'music': 'audio_music',
     'lifestyle': 'behavior_pattern',
-    'politics & social issues': 'behavior_pattern',
-    'music & dance': 'audio_music',
-    'sports & fitness': 'behavior_pattern',
-    'tech & gaming': 'creator_technique',
-    'art & creativity': 'visual_style',
-    'education & science': 'creator_technique'
+    'tech': 'technology',
+    'finance': 'finance',
+    'sports': 'sports',
+    'political': 'political',
+    'cars': 'automotive',
+    'animals': 'animals_pets',
+    'travel': 'travel',
+    'education': 'education',
+    'health': 'health',
+    
+    // Label mappings (what user sees)
+    'Meme/Humor': 'meme_format',
+    'Fashion/Beauty': 'fashion',
+    'Food/Drink': 'food_drink',
+    'Music/Dance': 'audio_music',
+    'Lifestyle': 'behavior_pattern',
+    'Tech/Gaming': 'technology',
+    'Finance/Crypto': 'finance',
+    'Sports/Fitness': 'sports',
+    'Political/Social': 'political',
+    'Cars & Machines': 'automotive',
+    'Animals & Pets': 'animals_pets',
+    'Travel & Places': 'travel',
+    'Education & Learning': 'education',
+    'Health & Wellness': 'health',
+    
+    // Legacy mappings (for backward compatibility)
+    'Fashion & Beauty': 'fashion',
+    'Food & Drink': 'food_drink',
+    'Humor & Memes': 'meme_format',
+    'Politics & Social Issues': 'political',
+    'Music & Dance': 'audio_music',
+    'Sports & Fitness': 'sports',
+    'Tech & Gaming': 'technology',
+    'Art & Creativity': 'visual_style',
+    'Education & Science': 'education',
+    
+    // Lowercase versions
+    'cars & machines': 'automotive',
+    'animals & pets': 'animals_pets',
+    'travel & places': 'travel',
+    'education & learning': 'education',
+    'health & wellness': 'health'
   };
   
   // Try to map the category
@@ -36,8 +64,14 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     return mapped;
   }
   
-  // Check if it's already a valid enum
-  const validEnums = ['visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'];
+  // Check if it's already a valid enum (updated list from database)
+  const validEnums = [
+    'visual_style', 'audio_music', 'creator_technique', 'meme_format', 
+    'product_brand', 'behavior_pattern', 'political', 'finance', 
+    'news_events', 'education', 'relationship', 'animals_pets', 
+    'automotive', 'food_drink', 'technology', 'sports', 'dance', 
+    'travel', 'fashion', 'gaming', 'health', 'diy_crafts'
+  ];
   if (displayCategory && validEnums.includes(displayCategory)) {
     console.log('[getSafeCategory] Already valid:', displayCategory);
     return displayCategory;
