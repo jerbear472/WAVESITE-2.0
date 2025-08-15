@@ -398,36 +398,87 @@ const SubmitTrendScreen: React.FC = () => {
         throw new Error('User not authenticated');
       }
       
+      // Build submission payload with only fields that exist
+      const submissionPayload: any = {
+        spotter_id: user.id,
+        post_url: metadata.url,
+        platform: metadata.platform,
+        trend_name: metadata.title || 'Untitled Trend',
+        description: metadata.description || notes || 'No description',
+        status: 'submitted',
+      };
+
+      // Add optional fields only if they might exist in the table
+      if (metadata.authorHandle) submissionPayload.creator_handle = metadata.authorHandle;
+      if (metadata.author) submissionPayload.creator_name = metadata.author;
+      if (metadata.thumbnail) {
+        submissionPayload.thumbnail_url = metadata.thumbnail;
+        submissionPayload.screenshot_url = metadata.thumbnail;
+      }
+      
+      // Map category to match database enum (handle both old and new categories)
+      const categoryMapping: Record<string, string> = {
+        'visual_style': 'visual_style',
+        'audio_music': 'audio_music',
+        'creator_technique': 'creator_technique',
+        'meme_format': 'meme_format',
+        'product_brand': 'product_brand',
+        'behavior_pattern': 'behavior_pattern',
+        // Map new categories - some may need to be mapped to existing enum values
+        'political': 'political',
+        'finance': 'finance',
+        'news_events': 'news_events',
+        'education': 'education',
+        'relationship': 'relationship',
+        'animals_pets': 'animals_pets',
+        'automotive': 'automotive',
+        'food_drink': 'food_drink',
+        'technology': 'technology',
+        'sports': 'sports',
+        'dance': 'dance',
+        'travel': 'travel',
+        'fashion': 'fashion',
+        'gaming': 'gaming',
+        'health': 'health',
+        'diy_crafts': 'diy_crafts',
+      };
+      
+      submissionPayload.category = categoryMapping[selectedCategory] || selectedCategory;
+      
+      // Add numeric fields with safe defaults
+      submissionPayload.virality_prediction = Math.round(confidence / 10);
+      submissionPayload.views_count = metadata.views || 0;
+      submissionPayload.likes_count = metadata.likes || 0;
+      submissionPayload.shares_count = metadata.shares || 0;
+      submissionPayload.comments_count = metadata.comments || 0;
+      
+      // Add arrays
+      if (metadata.hashtags && metadata.hashtags.length > 0) {
+        submissionPayload.hashtags = metadata.hashtags;
+      }
+      
+      // Add scoring/financial fields if they exist
+      submissionPayload.wave_score = Math.round(confidence);
+      submissionPayload.quality_score = confidence / 100;
+      submissionPayload.base_amount = 0.25;
+      
+      // Add follow-up data if we have any
+      if (Object.keys(followUpAnswers).length > 0) {
+        submissionPayload.follow_up_data = followUpAnswers;
+      }
+
+      console.log('Submitting payload:', submissionPayload);
+      
       const { data, error } = await supabase
         .from('trend_submissions')
-        .insert({
-          spotter_id: user.id,
-          post_url: metadata.url,
-          platform: metadata.platform,
-          trend_name: metadata.title || 'Untitled Trend',
-          description: metadata.description || notes || 'No description',
-          creator_handle: metadata.authorHandle,
-          creator_name: metadata.author,
-          thumbnail_url: metadata.thumbnail,
-          screenshot_url: metadata.thumbnail,
-          category: selectedCategory,
-          virality_prediction: Math.round(confidence / 10), // Convert 0-100 to 1-10
-          views_count: metadata.views || 0,
-          likes_count: metadata.likes || 0,
-          shares_count: metadata.shares || 0,
-          comments_count: metadata.comments || 0,
-          hashtags: metadata.hashtags || [],
-          status: 'submitted',
-          wave_score: Math.round(confidence),
-          quality_score: confidence / 100,
-          base_amount: 0.25, // $0.25 pending earnings per submission
-          follow_up_data: followUpAnswers, // Store category-specific answers
-        })
+        .insert(submissionPayload)
         .select()
         .single();
 
       if (error) {
         console.error('Submission error details:', error);
+        console.error('Error code:', error.code);
+        console.error('Error hint:', error.hint);
         throw error;
       }
 
@@ -435,29 +486,37 @@ const SubmitTrendScreen: React.FC = () => {
       
       Alert.alert(
         'Success! 🎉',
-        'Your trend has been submitted for validation. You\'ll earn points once it\'s verified!',
+        'Your trend has been submitted for validation. You\'ll earn $0.25 once it\'s verified!',
         [
           {
             text: 'Submit Another',
             onPress: resetForm,
           },
           {
-            text: 'View Trends',
+            text: 'View Earnings',
             onPress: () => {
-              // Navigate to trends screen
+              // Navigate to earnings screen
             },
           },
         ]
       );
 
     } catch (error: any) {
-      console.error('Submission error:', error);
+      console.error('Full submission error:', error);
       let errorMessage = 'Please try again later';
       
-      if (error.message?.includes('authenticated')) {
+      if (error.code === '23505') {
+        errorMessage = 'You\'ve already submitted this trend';
+      } else if (error.code === '23503') {
+        errorMessage = 'Invalid category or user reference';
+      } else if (error.code === '42703') {
+        errorMessage = 'Database schema mismatch - please contact support';
+      } else if (error.message?.includes('authenticated')) {
         errorMessage = 'Please log in to submit trends';
       } else if (error.message?.includes('category')) {
-        errorMessage = 'Invalid category selected';
+        errorMessage = `Invalid category: ${selectedCategory}. This category may not be available yet.`;
+      } else if (error.hint) {
+        errorMessage = error.hint;
       } else if (error.details) {
         errorMessage = error.details;
       } else if (error.message) {
