@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import SentimentSlider from './SentimentSlider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
@@ -265,7 +266,8 @@ export default function SmartTrendSubmission({
     brandSafe: null as boolean | null,
     
     // Velocity & Size (HIGH VALUE DATA)
-    trendVelocity: '' as 'just_starting' | 'accelerating' | 'peaking' | 'declining' | 'dead' | '',
+    trendVelocity: '' as 'just_starting' | 'accelerating' | 'saturated' | 'declining' | 'dead' | '',
+    sentiment: 50,
     trendSize: '' as 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '',
     firstSeen: '' as 'today' | 'yesterday' | 'this_week' | 'last_week' | 'older' | '',
     
@@ -714,7 +716,7 @@ export default function SmartTrendSubmission({
                     {[
                       { value: 'just_starting', label: '🌱 Just Starting', desc: 'Seeing it for the first time, very few posts' },
                       { value: 'accelerating', label: '🚀 Accelerating', desc: 'Growing rapidly, gaining momentum daily' },
-                      { value: 'peaking', label: '⚡ Peaking', desc: 'Everywhere right now, maximum visibility' },
+                      { value: 'saturated', label: '🌊 Saturated', desc: 'Everywhere right now, maximum visibility' },
                       { value: 'declining', label: '📉 Declining', desc: 'Starting to slow down, fewer new posts' },
                       { value: 'dead', label: '💀 Dead', desc: 'Pretty much over, only stragglers remain' }
                     ].map((option) => (
@@ -730,13 +732,22 @@ export default function SmartTrendSubmission({
                         <div className="flex items-start gap-3">
                           <span className="text-2xl">{option.label.split(' ')[0]}</span>
                           <div className="flex-1">
-                            <div className="font-medium text-white">{option.label.substring(3)}</div>
+                            <div className="font-medium text-white">{option.label.split(' ').slice(1).join(' ')}</div>
                             <div className="text-sm text-gray-400 mt-0.5">{option.desc}</div>
                           </div>
                         </div>
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Sentiment for Velocity */}
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-400 mb-2">How do you feel about this trend's momentum?</h4>
+                  <SentimentSlider
+                    value={formData.sentiment}
+                    onChange={(value) => setFormData(prev => ({ ...prev, sentiment: value }))}
+                  />
                 </div>
 
                 {/* Trend Size */}
@@ -1003,14 +1014,23 @@ export default function SmartTrendSubmission({
                 
                 {/* Summary cards */}
                 <div className="space-y-3">
-                  {/* Basic info */}
+                  {/* Basic info with thumbnail */}
                   <div className="bg-gray-800/50 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-gray-400 mb-2">Trend Info</h4>
-                    <div className="space-y-1">
-                      <p className="text-white font-medium">{formData.title}</p>
-                      <p className="text-sm text-gray-400">{formData.url}</p>
-                      {formData.creator_handle && (
-                        <p className="text-sm text-gray-400">by @{formData.creator_handle}</p>
+                    <div className="flex gap-4">
+                      <div className="flex-1 space-y-1">
+                        <p className="text-white font-medium">{formData.title}</p>
+                        <p className="text-sm text-gray-400">{formData.url}</p>
+                        {formData.creator_handle && (
+                          <p className="text-sm text-gray-400">by @{formData.creator_handle}</p>
+                        )}
+                      </div>
+                      {formData.thumbnail_url && (
+                        <img 
+                          src={formData.thumbnail_url} 
+                          alt="Trend thumbnail"
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-700"
+                        />
                       )}
                     </div>
                   </div>
@@ -1024,7 +1044,7 @@ export default function SmartTrendSubmission({
                         <p className="text-sm font-medium text-white capitalize">
                           {formData.trendVelocity === 'just_starting' && '🌱 Starting'}
                           {formData.trendVelocity === 'accelerating' && '🚀 Accelerating'}
-                          {formData.trendVelocity === 'peaking' && '⚡ Peaking'}
+                          {formData.trendVelocity === 'saturated' && '🌊 Saturated'}
                           {formData.trendVelocity === 'declining' && '📉 Declining'}
                           {formData.trendVelocity === 'dead' && '💀 Dead'}
                         </p>
@@ -1098,15 +1118,13 @@ export default function SmartTrendSubmission({
                     </div>
                   )}
 
-                  {/* Wave Score */}
-                  <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-400">Wave Score</p>
-                        <p className="text-3xl font-bold text-white">{formData.wave_score}</p>
-                      </div>
-                      <SparklesIcon className="w-8 h-8 text-blue-400" />
-                    </div>
+                  {/* Sentiment Analysis */}
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-400 mb-3">Trend Sentiment</h4>
+                    <SentimentSlider
+                      value={formData.sentiment}
+                      onChange={(value) => setFormData(prev => ({ ...prev, sentiment: value }))}
+                    />
                   </div>
                 </div>
               </motion.div>

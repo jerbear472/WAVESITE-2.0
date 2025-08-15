@@ -218,61 +218,94 @@ export default function PersonaBuilderEnhanced({ onComplete }: { onComplete: (da
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-wave-300 bg-clip-text text-transparent mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-3">
             Build Your Persona
           </h1>
-          <p className="text-wave-300 text-lg">
+          <p className="text-gray-400">
             Help us understand you better to deliver personalized trend insights
           </p>
         </motion.div>
 
         {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="bg-wave-800/30 rounded-full h-2 mb-4 overflow-hidden">
+        {/* Sleek Step Indicators */}
+        <div className="mb-8 bg-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-800">
+          {/* Progress bar */}
+          <div className="bg-gray-800 rounded-full h-1.5 mb-8 overflow-hidden">
             <motion.div
-              className="bg-gradient-to-r from-wave-500 to-wave-600 h-2"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 h-full rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${getStepProgress()}%` }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             />
           </div>
-          <div className="flex items-center justify-between mb-4">
+          
+          {/* Step icons */}
+          <div className="flex items-center justify-between relative">
             {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`
-                    w-12 h-12 rounded-full flex items-center justify-center cursor-pointer
-                    ${index <= currentStep 
-                      ? 'bg-gradient-to-br from-wave-500 to-wave-600 text-white' 
-                      : 'bg-wave-800/50 text-wave-400'
-                    }
-                  `}
-                  onClick={() => index < currentStep && setCurrentStep(index)}
-                >
-                  {index < currentStep ? (
-                    <CheckIcon className="w-6 h-6" />
-                  ) : (
-                    <step.icon className="w-6 h-6" />
-                  )}
-                </motion.div>
+              <div key={step.id} className="flex items-center flex-1">
+                <div className="relative flex flex-col items-center">
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: index * 0.05, type: "spring", stiffness: 200 }}
+                    className={`
+                      w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-all
+                      ${index <= currentStep 
+                        ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/20' 
+                        : 'bg-gray-800 text-gray-500 hover:bg-gray-700'
+                      }
+                      ${index === currentStep ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900' : ''}
+                    `}
+                    onClick={() => index < currentStep && setCurrentStep(index)}
+                  >
+                    {index < currentStep ? (
+                      <CheckIcon className="w-4 h-4" />
+                    ) : (
+                      <step.icon className="w-4 h-4" />
+                    )}
+                  </motion.div>
+                  
+                  {/* Step label */}
+                  <motion.p 
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 + 0.1 }}
+                    className={`text-xs font-medium mt-2 whitespace-nowrap ${
+                      index === currentStep ? 'text-blue-400' : 
+                      index < currentStep ? 'text-gray-400' : 'text-gray-600'
+                    }`}
+                  >
+                    {step.title}
+                  </motion.p>
+                </div>
+                
+                {/* Connector line */}
                 {index < steps.length - 1 && (
-                  <div className={`
-                    h-1 w-full mx-2
-                    ${index < currentStep 
-                      ? 'bg-gradient-to-r from-wave-500 to-wave-600' 
-                      : 'bg-wave-800/50'
-                    }
-                  `} />
+                  <div className="flex-1 mx-2 -mt-5">
+                    <div className="relative h-0.5 bg-gray-800 rounded-full overflow-hidden">
+                      <motion.div
+                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                        initial={{ width: '0%' }}
+                        animate={{ 
+                          width: index < currentStep ? '100%' : '0%' 
+                        }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
           </div>
-          <div className="text-center">
-            <p className="text-wave-200 font-medium">{steps[currentStep].title}</p>
-            <p className="text-wave-400 text-sm">Step {currentStep + 1} of {steps.length}</p>
+          
+          {/* Current step indicator */}
+          <div className="text-center mt-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 rounded-full">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              <p className="text-sm text-blue-400 font-medium">
+                Step {currentStep + 1} of {steps.length}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -283,7 +316,7 @@ export default function PersonaBuilderEnhanced({ onComplete }: { onComplete: (da
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="wave-card p-8 mb-8"
+            className="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-gray-800"
           >
             {renderStepContent()}
           </motion.div>
@@ -295,22 +328,22 @@ export default function PersonaBuilderEnhanced({ onComplete }: { onComplete: (da
             onClick={prevStep}
             disabled={currentStep === 0}
             className={`
-              px-6 py-3 rounded-xl flex items-center gap-2 transition-all
+              px-6 py-3 rounded-xl flex items-center gap-2 transition-all font-medium
               ${currentStep === 0 
-                ? 'bg-wave-800/30 text-wave-600 cursor-not-allowed' 
-                : 'bg-wave-800/50 text-white hover:bg-wave-700/50'
+                ? 'bg-gray-800/30 text-gray-600 cursor-not-allowed' 
+                : 'bg-gray-800 text-white hover:bg-gray-700 border border-gray-700'
               }
             `}
           >
-            <ChevronLeftIcon className="w-5 h-5" />
+            <ChevronLeftIcon className="w-4 h-4" />
             Previous
           </button>
           <button
             onClick={nextStep}
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-wave-500 to-wave-600 text-white hover:from-wave-400 hover:to-wave-500 flex items-center gap-2 transition-all shadow-lg hover:shadow-xl"
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-500 hover:to-purple-500 flex items-center gap-2 transition-all shadow-lg hover:shadow-xl font-medium"
           >
             {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-            <ChevronRightIcon className="w-5 h-5" />
+            <ChevronRightIcon className="w-4 h-4" />
           </button>
         </div>
       </div>
