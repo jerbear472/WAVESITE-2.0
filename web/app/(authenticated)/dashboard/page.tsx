@@ -47,7 +47,7 @@ interface RecentTrend {
   virality_prediction: number;
   status: string;
   created_at: string;
-  validation_count: number;
+  validation_count?: number; // Made optional since it's not being used
   screenshot_url?: string;
   thumbnail_url?: string;
   evidence?: any;
@@ -897,6 +897,7 @@ export default function Dashboard() {
                               <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white`}>
                                 {categoryDetails.label}
                               </span>
+                              {/* Ensure no stray numbers are rendered */}
                               {trend.isUserTrend && (
                                 <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded-full">
                                   Your trend
