@@ -463,6 +463,17 @@ export default function LegibleScrollPage() {
       // Clear retry status on success
       setRetryStatus(null);
       
+      // Calculate tier and multipliers for immediate earnings entry
+      const userTier = user?.performance_tier || 'learning';
+      const tierMultiplierMap: Record<string, number> = {
+        master: 3.0,
+        elite: 2.0,
+        verified: 1.5,
+        learning: 1.0,
+        restricted: 0.5
+      };
+      const tierMultiplier = tierMultiplierMap[userTier] || 1.0;
+      
       // Create earnings entry immediately to ensure pending earnings show up
       // Note: Database trigger may also create one, but we need immediate visibility
       try {
@@ -510,9 +521,7 @@ export default function LegibleScrollPage() {
         logTrendSubmission();
       }
       
-      // Update stats
-      setTodaysPendingEarnings(prev => prev + finalPayment);
-      setTrendsLoggedToday(prev => prev + 1);
+      // Stats will be updated when user context refreshes
       
       console.log('Trend submitted with earnings:', finalPayment);
       
@@ -524,17 +533,7 @@ export default function LegibleScrollPage() {
       // Build multiplier breakdown for success message
       const multipliers = [];
       
-      // Get user tier (default to learning if not available)
-      const userTier = user?.performance_tier || 'learning';
-      const tierMultiplierMap: Record<string, number> = {
-        master: 3.0,
-        elite: 2.0,
-        verified: 1.5,
-        learning: 1.0,
-        restricted: 0.5
-      };
-      const tierMultiplier = tierMultiplierMap[userTier] || 1.0;
-      
+      // Use already calculated tier multiplier
       if (tierMultiplier !== 1.0) {
         multipliers.push(`${userTier} tier: ${tierMultiplier}x`);
       }
