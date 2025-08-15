@@ -65,7 +65,7 @@ export default function TrendingSection() {
   };
 
   const formatEngagement = (num: number): string => {
-    if (!num) return '0';
+    if (!num || isNaN(num)) return '0';
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
@@ -188,9 +188,11 @@ export default function TrendingSection() {
                     )}
 
                     {/* Quality Score */}
-                    <div className="absolute bottom-3 right-3 px-2 py-1 bg-green-500/90 backdrop-blur-sm rounded-full text-white text-xs font-bold">
-                      {Math.round(trend.quality_score * 100)}% Quality
-                    </div>
+                    {trend.quality_score != null && (
+                      <div className="absolute bottom-3 right-3 px-2 py-1 bg-green-500/90 backdrop-blur-sm rounded-full text-white text-xs font-bold">
+                        {Math.round((trend.quality_score || 0.7) * 100)}% Quality
+                      </div>
+                    )}
                   </div>
 
                   {/* Content */}
