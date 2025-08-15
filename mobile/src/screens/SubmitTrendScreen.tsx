@@ -29,6 +29,7 @@ import { WebView } from 'react-native-webview';
 import { supabase } from '../config/supabase';
 import { storage } from '../../App';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { validateTrendSubmission, testSubmissionPayload } from '../utils/trendSubmissionValidator';
 
 interface TrendMetadata {
   url: string;
@@ -602,12 +603,27 @@ const SubmitTrendScreen: React.FC = () => {
         submissionPayload.follow_up_data = followUpAnswers;
       }
 
-      console.log('Submitting payload:', JSON.stringify(submissionPayload, null, 2));
-      console.log('Payload keys:', Object.keys(submissionPayload));
+      // Validate the payload before submission
+      const validation = testSubmissionPayload(submissionPayload);
+      
+      if (!validation.isValid) {
+        console.error('Validation errors:', validation.errors);
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      }
+      
+      if (validation.warnings.length > 0) {
+        console.warn('Validation warnings:', validation.warnings);
+      }
+      
+      // Use the sanitized payload that only includes valid fields
+      const sanitizedPayload = validation.sanitized!;
+      
+      console.log('Submitting sanitized payload:', JSON.stringify(sanitizedPayload, null, 2));
+      console.log('Payload keys:', Object.keys(sanitizedPayload));
       
       const { data, error } = await supabase
         .from('trend_submissions')
-        .insert(submissionPayload)
+        .insert(sanitizedPayload)
         .select()
         .single();
 

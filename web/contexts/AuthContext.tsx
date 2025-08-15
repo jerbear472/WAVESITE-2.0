@@ -492,16 +492,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     
     // Update local state immediately for UI feedback
+    const newPendingEarnings = (user.pending_earnings || 0) + amount;
+    const newTrendsSpotted = (user.trends_spotted || 0) + 1;
+    
     setUser({
       ...user,
-      pending_earnings: user.pending_earnings + amount,
-      trends_spotted: user.trends_spotted + 1
+      pending_earnings: newPendingEarnings,
+      trends_spotted: newTrendsSpotted
     });
 
     // Refresh full user data to get accurate earnings from earnings_ledger
+    // Use a slightly longer delay to ensure database has updated
     setTimeout(() => {
       refreshUser();
-    }, 500);
+    }, 1000);
   };
 
   return (
