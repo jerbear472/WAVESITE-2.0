@@ -43,7 +43,7 @@ interface EarningsData {
 interface EarningTransaction {
   id: string;
   amount: number;
-  status: 'pending' | 'awaiting_verification' | 'approved' | 'rejected' | 'paid';
+  status: 'pending' | 'awaiting_validation' | 'approved' | 'rejected' | 'paid';
   earning_type: string;
   created_at: string;
   approved_at?: string;
@@ -130,7 +130,7 @@ export default function Earnings() {
       
       // Calculate earnings from transactions directly for accuracy
       const pendingEarnings = mappedTransactions
-        .filter(t => t.status === 'pending' || t.status === 'awaiting_verification')
+        .filter(t => t.status === 'pending' || t.status === 'awaiting_validation')
         .reduce((sum, t) => sum + (t.amount || 0), 0);
       
       const approvedEarnings = mappedTransactions
@@ -188,7 +188,7 @@ export default function Earnings() {
 
   const filteredTransactions = transactions.filter(t => {
     if (filter === 'all') return true;
-    if (filter === 'pending') return t.status === 'pending' || t.status === 'awaiting_verification';
+    if (filter === 'pending') return t.status === 'pending' || t.status === 'awaiting_validation';
     if (filter === 'approved') return t.status === 'approved';
     if (filter === 'paid') return t.status === 'paid';
     return false;
@@ -198,7 +198,7 @@ export default function Earnings() {
     switch (status) {
       case 'pending':
         return <Timer className="w-4 h-4 text-yellow-500" />;
-      case 'awaiting_verification':
+      case 'awaiting_validation':
         return <Clock className="w-4 h-4 text-orange-500" />;
       case 'approved':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
@@ -215,8 +215,8 @@ export default function Earnings() {
     switch (status) {
       case 'pending':
         return 'Processing';
-      case 'awaiting_verification':
-        return 'Awaiting Verification';
+      case 'awaiting_validation':
+        return 'Awaiting Validation';
       case 'approved':
         return 'Verified';
       case 'rejected':
@@ -427,6 +427,50 @@ export default function Earnings() {
                             {transaction.notes}
                           </div>
                         )}
+                        {/* Show multiplier breakdown for trend submissions */}
+                        {transaction.earning_type === 'submission' && transaction.metadata && (
+                          <div className="mt-2 p-2 bg-gray-800/50 rounded-lg">
+                            <div className="text-xs space-y-1">
+                              {/* Base amount */}
+                              <div className="flex items-center justify-between text-gray-400">
+                                <span>Base Amount:</span>
+                                <span className="text-white font-medium">${transaction.metadata.base_amount || 0.25}</span>
+                              </div>
+                              
+                              {/* Tier multiplier */}
+                              {transaction.metadata.tier && (
+                                <div className="flex items-center justify-between text-gray-400">
+                                  <span>Tier ({transaction.metadata.tier}):</span>
+                                  <span className="text-blue-400 font-medium">×{transaction.metadata.tier_multiplier || 1.0}</span>
+                                </div>
+                              )}
+                              
+                              {/* Session streak multiplier */}
+                              {transaction.metadata.session_position && transaction.metadata.session_position > 1 && (
+                                <div className="flex items-center justify-between text-gray-400">
+                                  <span>Session Streak (#{transaction.metadata.session_position}):</span>
+                                  <span className="text-yellow-400 font-medium">×{transaction.metadata.session_multiplier || 1.0}</span>
+                                </div>
+                              )}
+                              
+                              {/* Daily streak multiplier */}
+                              {transaction.metadata.daily_streak && transaction.metadata.daily_streak > 0 && (
+                                <div className="flex items-center justify-between text-gray-400">
+                                  <span>Daily Streak ({transaction.metadata.daily_streak} days):</span>
+                                  <span className="text-orange-400 font-medium">×{transaction.metadata.daily_multiplier || 1.0}</span>
+                                </div>
+                              )}
+                              
+                              {/* Total calculation */}
+                              <div className="pt-1 mt-1 border-t border-gray-700">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-300 font-medium">Total Earnings:</span>
+                                  <span className="text-green-400 font-bold">{formatCurrency(transaction.amount)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
@@ -438,6 +482,18 @@ export default function Earnings() {
                       <div className="text-sm text-gray-400">
                         {getStatusText(transaction.status)}
                       </div>
+                      {/* Show total multiplier for submissions */}
+                      {transaction.earning_type === 'submission' && transaction.metadata && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {(() => {
+                            const tierMult = transaction.metadata.tier_multiplier || 1.0;
+                            const sessionMult = transaction.metadata.session_multiplier || 1.0;
+                            const dailyMult = transaction.metadata.daily_multiplier || 1.0;
+                            const totalMult = (tierMult * sessionMult * dailyMult).toFixed(1);
+                            return totalMult !== '1.0' ? `${totalMult}x multiplier` : null;
+                          })()}
+                        </div>
+                      )}
                       {transaction.approved_at && transaction.status === 'approved' && (
                         <div className="text-xs text-green-400 mt-1">
                           Verified {format(new Date(transaction.approved_at), 'MMM d')}

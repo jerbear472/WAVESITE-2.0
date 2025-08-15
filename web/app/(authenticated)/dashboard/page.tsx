@@ -252,19 +252,23 @@ export default function Dashboard() {
 
       // Calculate other stats from earnings_ledger
       const approvedEarnings = userEarnings?.filter(e => e.status === 'approved' || e.status === 'paid') || [];
-      const pendingEarnings = userEarnings?.filter(e => e.status === 'pending' || e.status === 'awaiting_verification') || [];
+      const pendingEarnings = userEarnings?.filter(e => e.status === 'pending' || e.status === 'awaiting_validation') || [];
       const paidEarnings = userEarnings?.filter(e => e.status === 'paid') || [];
       
       const totalApproved = approvedEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
       const pendingAmount = pendingEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
       const totalPaid = paidEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
 
-      // Earnings today
+      // Earnings today (include both approved AND pending from today)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const earningsToday = approvedEarnings
+      const todaysApproved = approvedEarnings
         .filter(e => new Date(e.created_at) >= today)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
+      const todaysPending = pendingEarnings
+        .filter(e => new Date(e.created_at) >= today)
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+      const earningsToday = todaysApproved + todaysPending;
 
       // Earnings this week  
       const weekStart = new Date();
@@ -297,6 +301,8 @@ export default function Dashboard() {
         accuracy_score: !isNaN(accuracyScore) ? Math.round(accuracyScore * 100) / 100 : 0, // Round to 2 decimals
         current_streak: uniqueDays,
         earnings_today: earningsToday,
+        earnings_today_pending: todaysPending,  // Add pending from today
+        earnings_today_approved: todaysApproved,  // Add approved from today
         earnings_this_week: earningsThisWeek,
         earnings_this_month: earningsThisMonth,
         total_cashed_out: totalPaid  // Amount already paid out
@@ -718,9 +724,16 @@ export default function Dashboard() {
                   <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 {stats.earnings_today > 0 && (
-                  <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full animate-pulse">
-                    +{formatCurrency(stats.earnings_today)} today
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full animate-pulse">
+                      +{formatCurrency(stats.earnings_today)} today
+                    </span>
+                    {stats.earnings_today_pending > 0 && (
+                      <span className="text-xs text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
+                        {formatCurrency(stats.earnings_today_pending)} pending
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">Total Earnings</p>

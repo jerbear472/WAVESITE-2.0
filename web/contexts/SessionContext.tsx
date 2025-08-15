@@ -25,7 +25,7 @@ interface SessionContextType {
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
-const STREAK_WINDOW_MINUTES = 30; // 30 minutes between submissions to maintain streak
+const STREAK_WINDOW_MINUTES = 5; // 5 minutes between submissions to maintain session streak
 const STORAGE_KEY = 'wavesight_session_state';
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -140,11 +140,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [session.currentStreak, session.lastSubmissionTime]);
 
   const getStreakMultiplier = (streakCount: number): number => {
-    // Visual multipliers for gamification
-    if (streakCount >= 15) return 3.0;
-    if (streakCount >= 5) return 2.0;
-    if (streakCount >= 2) return 1.2;
-    return 1.0;
+    // Session streak multipliers - must match SUSTAINABLE_EARNINGS
+    if (streakCount >= 5) return 2.5;  // 5+ submissions = 2.5x
+    if (streakCount === 4) return 2.0; // 4th submission = 2.0x
+    if (streakCount === 3) return 1.5; // 3rd submission = 1.5x
+    if (streakCount === 2) return 1.2; // 2nd submission = 1.2x
+    return 1.0; // First submission = 1.0x
   };
 
   const startSession = () => {

@@ -208,12 +208,12 @@ export default function LegibleScrollPage() {
 
   // Streak multipliers - NOT part of base earnings, just for display/gamification
   const getStreakMultiplier = (streakCount: number): number => {
-    // These are display-only multipliers for gamification
-    // Actual earnings are based on SUSTAINABLE_EARNINGS tiers
-    if (streakCount >= 15) return 3.0;
-    if (streakCount >= 5) return 2.0;
-    if (streakCount >= 2) return 1.2;
-    return 1.0;
+    // Session streak multipliers - must match SUSTAINABLE_EARNINGS.sessionStreakMultipliers
+    if (streakCount >= 5) return 2.5;  // 5+ submissions within 5 min
+    if (streakCount === 4) return 2.0; // 4th submission within 5 min
+    if (streakCount === 3) return 1.5; // 3rd submission within 5 min
+    if (streakCount === 2) return 1.2; // 2nd submission within 5 min
+    return 1.0; // First submission
   };
 
   const calculateMultiplier = (streakCount: number): number => {
@@ -473,6 +473,8 @@ export default function LegibleScrollPage() {
           type: 'trend_submission',
           status: 'pending',
           description: `Trend: ${formData.trendName} (${formData.platform})`,
+          reference_id: (data as any).id,
+          reference_type: 'trend_submissions',
           metadata: {
             is_finance: isFinanceTrend,
             tickers,
@@ -512,10 +514,42 @@ export default function LegibleScrollPage() {
       setTrendUrl('');
       setIsSubmitting(false); // Ensure this is reset
       
-      // Show success message with pending verification note
+      // Build multiplier breakdown for success message
+      const multipliers = [];
+      
+      // Get user tier (default to learning if not available)
+      const userTier = (user as any)?.performance_tier || 'learning';
+      const tierMultiplier = {
+        master: 3.0,
+        elite: 2.0,
+        verified: 1.5,
+        learning: 1.0,
+        restricted: 0.5
+      }[userTier] || 1.0;
+      
+      if (tierMultiplier !== 1.0) {
+        multipliers.push(`${userTier} tier: ${tierMultiplier}x`);
+      }
+      
+      // Session streak multiplier
+      if (session.isActive && session.currentStreak > 0) {
+        const sessionMult = getStreakMultiplier(session.currentStreak + 1);
+        if (sessionMult > 1.0) {
+          multipliers.push(`session #${session.currentStreak + 1}: ${sessionMult}x`);
+        }
+      }
+      
+      // Daily streak would come from user profile or database
+      // For now, we'll just show the calculated amount
+      
+      const multiplierText = multipliers.length > 0 
+        ? ` (${multipliers.join(', ')})` 
+        : '';
+      
+      // Show success message with pending verification note and multipliers
       setSubmitMessage({ 
         type: 'success', 
-        text: `Trend submitted! Earning $${finalPayment.toFixed(2)} (pending verification)` 
+        text: `Trend submitted! Earning $${finalPayment.toFixed(2)}${multiplierText} - pending validation` 
       });
       
       // Clear success message after 5 seconds
