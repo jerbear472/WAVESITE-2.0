@@ -463,9 +463,46 @@ export default function LegibleScrollPage() {
       // Clear retry status on success
       setRetryStatus(null);
       
-      // Note: Earnings entry is created automatically by database trigger
-      // The trigger on trend_submissions table calculates all multipliers
-      // and creates the earnings_ledger entry with proper metadata
+      // Create earnings entry immediately to ensure pending earnings show up
+      // Note: Database trigger may also create one, but we need immediate visibility
+      try {
+        const earningsEntry = {
+          user_id: user.id,
+          amount: finalPayment,
+          type: 'trend_submission',
+          status: 'pending',
+          description: `Trend: ${formData.trendName || 'Untitled'} - pending validation`,
+          reference_id: (data as any).id,
+          reference_type: 'trend_submissions',
+          metadata: {
+            base_amount: 0.25,
+            tier: userTier,
+            tier_multiplier: tierMultiplier,
+            session_position: session.isActive ? session.currentStreak + 1 : 1,
+            session_multiplier: session.isActive ? getStreakMultiplier(session.currentStreak + 1) : 1.0,
+            daily_streak: (user as any)?.current_streak || 0,
+            daily_multiplier: (() => {
+              const dailyStreak = (user as any)?.current_streak || 0;
+              return dailyStreak >= 30 ? 2.5 :
+                     dailyStreak >= 14 ? 2.0 :
+                     dailyStreak >= 7 ? 1.5 :
+                     dailyStreak >= 2 ? 1.2 : 1.0;
+            })()
+          }
+        };
+        
+        const { error: earningsError } = await supabase
+          .from('earnings_ledger')
+          .insert(earningsEntry);
+          
+        if (earningsError) {
+          console.error('Failed to create earnings ledger entry:', earningsError);
+        } else {
+          console.log('Earnings ledger entry created:', finalPayment, 'with multipliers');
+        }
+      } catch (earningsError) {
+        console.error('Exception creating earnings ledger entry:', earningsError);
+      }
       
       // Update streak only if session is active
       if (session.isActive) {
@@ -535,13 +572,13 @@ export default function LegibleScrollPage() {
       // Clear success message after 5 seconds
       setTimeout(() => setSubmitMessage(null), 5000);
       
-      // Update user earnings immediately for real-time display
-      if (updateUserEarnings) updateUserEarnings(finalPayment);
-      
-      // Reload stats and refresh user data to update pending earnings
-      loadTodaysStats();
-      if (refreshUser) refreshUser(); // This will update the user context with new pending earnings
-      if (isFinanceTrend) loadRecentTickers();
+      // Give database a moment to process, then refresh user data
+      setTimeout(async () => {
+        if (refreshUser) {
+          await refreshUser(); // This will update the user context with new pending earnings
+          console.log('User data refreshed after trend submission');
+        }
+      }, 500); // 500ms delay to ensure database transaction completes
       
     } catch (error: any) {
       console.error('Submission error caught:', error);

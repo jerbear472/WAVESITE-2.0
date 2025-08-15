@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .from('earnings_ledger')
             .select('amount')
             .eq('user_id', session.user.id)
-            .in('status', ['pending', 'awaiting_verification'])
+            .in('status', ['pending', 'awaiting_validation'])
             .not('amount', 'is', null);
           
           const actualPendingEarnings = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .from('earnings_ledger')
             .select('amount')
             .eq('user_id', session.user.id)
-            .in('status', ['pending', 'awaiting_verification'])
+            .in('status', ['pending', 'awaiting_validation'])
             .not('amount', 'is', null);
           
           const actualPendingEarnings = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
