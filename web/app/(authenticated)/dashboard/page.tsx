@@ -483,54 +483,138 @@ export default function Dashboard() {
   };
 
   const getTrendVelocity = (trend: RecentTrend) => {
-    // Try to get engagement data from evidence field first, then fallback to direct fields
-    const likes = trend.evidence?.likes_count || trend.likes_count || 0;
-    const shares = trend.evidence?.shares_count || trend.shares_count || 0;
-    const comments = trend.evidence?.comments_count || trend.comments_count || 0;
-    const views = trend.evidence?.views_count || trend.views_count || 0;
+    // Get current and initial metrics
+    const currentLikes = trend.likes_count || 0;
+    const currentViews = trend.views_count || 0;
+    const currentShares = trend.shares_count || 0;
+    const currentComments = trend.comments_count || 0;
     
-    // Calculate based on validation activity if no social data
-    const validationActivity = (trend.approve_count || 0) + (trend.reject_count || 0);
-    const hoursSincePost = Math.max((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60), 1);
+    // Calculate hours since submission
+    const hoursSincePost = Math.max((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60), 0.1);
     
-    // Use social engagement if available, otherwise use validation activity
-    let engagementScore = 0;
-    if (likes + shares + comments + views > 0) {
-      engagementScore = (likes * 2 + shares * 3 + comments + views / 100) / hoursSincePost;
-    } else {
-      // Use validation activity as a proxy for velocity
-      engagementScore = (validationActivity * 100) / hoursSincePost;
+    // Calculate engagement velocity (interactions per hour)
+    const totalEngagement = currentLikes + currentShares + currentComments;
+    const engagementVelocity = totalEngagement / hoursSincePost;
+    
+    // Calculate view velocity (views per hour)
+    const viewVelocity = currentViews / hoursSincePost;
+    
+    // Combined velocity score (weighted)
+    const velocityScore = (engagementVelocity * 10) + (viewVelocity / 100);
+    
+    // Growth rate calculation - if we had previous data points
+    let growthRate = 0;
+    if (hoursSincePost > 1) {
+      // Estimate growth rate based on current velocity vs average
+      const avgExpectedEngagement = 100 * hoursSincePost; // baseline expectation
+      growthRate = ((totalEngagement - avgExpectedEngagement) / avgExpectedEngagement) * 100;
     }
     
-    if (engagementScore > 1000) return { label: '🚀 Explosive', color: 'text-red-500' };
-    if (engagementScore > 500) return { label: '⚡ Viral', color: 'text-orange-500' };
-    if (engagementScore > 100) return { label: '🔥 Hot', color: 'text-yellow-500' };
-    if (engagementScore > 10) return { label: '📈 Rising', color: 'text-green-500' };
-    return { label: '🌱 Growing', color: 'text-blue-500' };
+    // Determine velocity label and actual metrics
+    let label = '';
+    let metric = '';
+    let color = '';
+    
+    if (velocityScore > 10000) {
+      label = '🚀 Explosive';
+      metric = `+${(engagementVelocity * 24).toFixed(0)}/day`;
+      color = 'text-red-500';
+    } else if (velocityScore > 1000) {
+      label = '⚡ Viral';
+      metric = `+${(engagementVelocity * 24).toFixed(0)}/day`;
+      color = 'text-orange-500';
+    } else if (velocityScore > 100) {
+      label = '🔥 Hot';
+      metric = `+${(engagementVelocity).toFixed(1)}/hr`;
+      color = 'text-yellow-500';
+    } else if (velocityScore > 10) {
+      label = '📈 Rising';
+      metric = `+${(engagementVelocity).toFixed(1)}/hr`;
+      color = 'text-green-500';
+    } else if (velocityScore > 1) {
+      label = '🌱 Growing';
+      metric = `+${(totalEngagement).toFixed(0)} total`;
+      color = 'text-blue-500';
+    } else {
+      label = '🆕 New';
+      metric = 'Just posted';
+      color = 'text-gray-500';
+    }
+    
+    return { 
+      label, 
+      metric,
+      color,
+      velocity: velocityScore,
+      growthRate: growthRate > 0 ? `+${growthRate.toFixed(0)}%` : ''
+    };
   };
 
   const getAudienceSize = (trend: RecentTrend) => {
-    // Try to get data from evidence field first
-    const views = trend.evidence?.views_count || trend.views_count || 0;
-    const likes = trend.evidence?.likes_count || trend.likes_count || 0;
-    const shares = trend.evidence?.shares_count || trend.shares_count || 0;
+    // Get actual metrics from the trend
+    const views = trend.views_count || 0;
+    const likes = trend.likes_count || 0;
+    const shares = trend.shares_count || 0;
+    const comments = trend.comments_count || 0;
     
-    // Calculate reach
-    let totalReach = views + (likes * 10) + (shares * 50);
+    // Calculate estimated reach (views + potential reach from shares)
+    const estimatedReach = views + (shares * 100); // Each share reaches ~100 people on average
     
-    // If no social data, estimate based on validation and virality prediction
-    if (totalReach === 0) {
-      const validations = (trend.approve_count || 0) + (trend.reject_count || 0);
-      const viralityScore = trend.virality_prediction || 5;
-      totalReach = (validations * 1000) + (viralityScore * 500);
+    // Calculate engagement rate
+    const engagementRate = views > 0 ? ((likes + shares + comments) / views) * 100 : 0;
+    
+    // Format the audience size
+    let sizeDisplay = '';
+    let growthIndicator = '';
+    
+    if (views >= 1000000) {
+      sizeDisplay = `${(views / 1000000).toFixed(1)}M`;
+      growthIndicator = 'views';
+    } else if (views >= 1000) {
+      sizeDisplay = `${(views / 1000).toFixed(1)}K`;
+      growthIndicator = 'views';
+    } else if (views > 0) {
+      sizeDisplay = views.toString();
+      growthIndicator = 'views';
+    } else {
+      // If no views yet, show engagement
+      const totalEngagement = likes + shares + comments;
+      if (totalEngagement > 0) {
+        sizeDisplay = totalEngagement.toString();
+        growthIndicator = 'engagements';
+      } else {
+        sizeDisplay = '0';
+        growthIndicator = 'starting';
+      }
     }
     
-    if (totalReach >= 1000000) return { size: `${(totalReach / 1000000).toFixed(1)}M`, label: 'Massive' };
-    if (totalReach >= 100000) return { size: `${(totalReach / 1000).toFixed(0)}K`, label: 'Large' };
-    if (totalReach >= 10000) return { size: `${(totalReach / 1000).toFixed(1)}K`, label: 'Medium' };
-    if (totalReach >= 1000) return { size: `${(totalReach / 1000).toFixed(1)}K`, label: 'Growing' };
-    if (totalReach > 0) return { size: totalReach.toString(), label: 'Small' };
-    return { size: 'New', label: 'Just Posted' };
+    // Calculate hourly growth rate
+    const hoursSincePost = Math.max((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60), 0.1);
+    const viewsPerHour = views / hoursSincePost;
+    
+    // Create growth label based on rate
+    let growthLabel = '';
+    if (viewsPerHour > 10000) {
+      growthLabel = `+${(viewsPerHour / 1000).toFixed(0)}K/hr`;
+    } else if (viewsPerHour > 1000) {
+      growthLabel = `+${(viewsPerHour).toFixed(0)}/hr`;
+    } else if (viewsPerHour > 100) {
+      growthLabel = `+${(viewsPerHour).toFixed(0)}/hr`;
+    } else if (viewsPerHour > 10) {
+      growthLabel = `+${(viewsPerHour * 24).toFixed(0)}/day`;
+    } else if (views > 0) {
+      growthLabel = `${engagementRate.toFixed(1)}% engagement`;
+    } else {
+      growthLabel = 'New submission';
+    }
+    
+    return { 
+      size: sizeDisplay,
+      label: growthIndicator,
+      growth: growthLabel,
+      engagementRate: engagementRate.toFixed(1),
+      reach: estimatedReach
+    };
   };
 
   if (loading) {
@@ -831,21 +915,35 @@ export default function Dashboard() {
                             </div>
                           </div>
                           
-                          <div className="flex flex-col gap-2 min-w-[100px]">
+                          <div className="flex flex-col gap-2 min-w-[140px]">
                             {/* Velocity Indicator */}
-                            <div className="text-center bg-gray-100 dark:bg-neutral-800 rounded-lg px-3 py-2">
+                            <div className="text-center bg-gradient-to-br from-gray-100 to-gray-50 dark:from-neutral-800 dark:to-neutral-900 rounded-lg px-3 py-2 border border-gray-200 dark:border-neutral-700">
                               <div className={`text-sm font-bold ${getTrendVelocity(trend).color}`}>
                                 {getTrendVelocity(trend).label}
                               </div>
-                              <div className="text-xs text-gray-500">Velocity</div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                {getTrendVelocity(trend).metric}
+                              </div>
+                              {getTrendVelocity(trend).growthRate && (
+                                <div className="text-xs text-green-600 dark:text-green-400 font-semibold mt-1">
+                                  {getTrendVelocity(trend).growthRate}
+                                </div>
+                              )}
                             </div>
                             
-                            {/* Audience Size */}
-                            <div className="text-center bg-gray-100 dark:bg-neutral-800 rounded-lg px-3 py-2">
+                            {/* Audience Reach */}
+                            <div className="text-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg px-3 py-2 border border-blue-200 dark:border-blue-800">
                               <div className="text-lg font-bold text-gray-900 dark:text-white">
                                 {getAudienceSize(trend).size}
                               </div>
-                              <div className="text-xs text-gray-500">{getAudienceSize(trend).label}</div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                {getAudienceSize(trend).growth}
+                              </div>
+                              {parseFloat(getAudienceSize(trend).engagementRate) > 0 && (
+                                <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">
+                                  {getAudienceSize(trend).engagementRate}% engaged
+                                </div>
+                              )}
                             </div>
                             
                             {/* Validation Count if available */}
