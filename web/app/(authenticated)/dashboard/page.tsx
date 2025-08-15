@@ -556,23 +556,23 @@ export default function Dashboard() {
     
     if (velocityScore > 10000) {
       label = '🚀 Explosive';
-      metric = `+${!isNaN(engagementVelocity) ? (engagementVelocity * 24).toFixed(0) : '0'}/day`;
+      metric = `+${!isNaN(engagementVelocity) ? (engagementVelocity * 24).toFixed(0) : '—'}/day`;
       color = 'text-red-500';
     } else if (velocityScore > 1000) {
       label = '⚡ Viral';
-      metric = `+${!isNaN(engagementVelocity) ? (engagementVelocity * 24).toFixed(0) : '0'}/day`;
+      metric = `+${!isNaN(engagementVelocity) ? (engagementVelocity * 24).toFixed(0) : '—'}/day`;
       color = 'text-orange-500';
     } else if (velocityScore > 100) {
       label = '🔥 Hot';
-      metric = `+${!isNaN(engagementVelocity) ? engagementVelocity.toFixed(1) : '0'}/hr`;
+      metric = `+${!isNaN(engagementVelocity) ? engagementVelocity.toFixed(1) : '—'}/hr`;
       color = 'text-yellow-500';
     } else if (velocityScore > 10) {
       label = '📈 Rising';
-      metric = `+${!isNaN(engagementVelocity) ? engagementVelocity.toFixed(1) : '0'}/hr`;
+      metric = `+${!isNaN(engagementVelocity) ? engagementVelocity.toFixed(1) : '—'}/hr`;
       color = 'text-green-500';
     } else if (velocityScore > 1) {
       label = '🌱 Growing';
-      metric = `+${!isNaN(totalEngagement) ? totalEngagement.toFixed(0) : '0'} total`;
+      metric = `+${!isNaN(totalEngagement) ? totalEngagement.toFixed(0) : '—'} total`;
       color = 'text-blue-500';
     } else {
       label = '🆕 New';
@@ -615,6 +615,10 @@ export default function Dashboard() {
     } else if (views >= 100) {
       sizeDisplay = views.toString();
       growthIndicator = 'views';
+    } else if (views > 0) {
+      // Show views if we have any, even if less than 100
+      sizeDisplay = views.toString();
+      growthIndicator = 'views';
     } else {
       // If no views yet, show engagement only if meaningful
       const totalEngagement = likes + shares + comments;
@@ -636,15 +640,15 @@ export default function Dashboard() {
     // Create growth label based on rate
     let growthLabel = '';
     if (viewsPerHour > 10000) {
-      growthLabel = `+${!isNaN(viewsPerHour) ? (viewsPerHour / 1000).toFixed(0) : '0'}K/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? (viewsPerHour / 1000).toFixed(0) : '—'}K/hr`;
     } else if (viewsPerHour > 1000) {
-      growthLabel = `+${!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '0'}/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '—'}/hr`;
     } else if (viewsPerHour > 100) {
-      growthLabel = `+${!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '0'}/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '—'}/hr`;
     } else if (viewsPerHour > 10) {
-      growthLabel = `+${!isNaN(viewsPerHour) ? (viewsPerHour * 24).toFixed(0) : '0'}/day`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? (viewsPerHour * 24).toFixed(0) : '—'}/day`;
     } else if (views > 0) {
-      growthLabel = `${!isNaN(engagementRate) ? engagementRate.toFixed(1) : '0'}% engagement`;
+      growthLabel = `${!isNaN(engagementRate) ? engagementRate.toFixed(1) : '—'}% engagement`;
     } else {
       growthLabel = 'New submission';
     }
@@ -947,15 +951,15 @@ export default function Dashboard() {
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
                               {/* Validation votes - only show if there are actual votes */}
-                              {((trend.approve_count ?? 0) > 0 || (trend.reject_count ?? 0) > 0) && (
+                              {(trend.approve_count > 0 || trend.reject_count > 0) && (
                                 <span className="flex items-center gap-1">
-                                  {(trend.approve_count ?? 0) > 0 && (
+                                  {trend.approve_count > 0 && (
                                     <span className="text-green-500">👍 {trend.approve_count}</span>
                                   )}
-                                  {(trend.approve_count ?? 0) > 0 && (trend.reject_count ?? 0) > 0 && (
+                                  {trend.approve_count > 0 && trend.reject_count > 0 && (
                                     <span className="text-gray-400">·</span>
                                   )}
-                                  {(trend.reject_count ?? 0) > 0 && (
+                                  {trend.reject_count > 0 && (
                                     <span className="text-red-500">👎 {trend.reject_count}</span>
                                   )}
                                 </span>
@@ -1012,11 +1016,11 @@ export default function Dashboard() {
                             )}
                             
                             {/* Validation Count if available - only show if there are actual votes */}
-                            {((trend.approve_count ?? 0) + (trend.reject_count ?? 0)) > 0 && (
+                            {(trend.approve_count > 0 || trend.reject_count > 0) && (
                               <div className="text-center text-xs text-gray-500">
-                                {(trend.approve_count ?? 0) > 0 && <span className="text-green-500">{trend.approve_count} 👍</span>}
-                                {(trend.approve_count ?? 0) > 0 && (trend.reject_count ?? 0) > 0 && <span className="mx-1">·</span>}
-                                {(trend.reject_count ?? 0) > 0 && <span className="text-red-500">{trend.reject_count} 👎</span>}
+                                {trend.approve_count > 0 && <span className="text-green-500">{trend.approve_count} 👍</span>}
+                                {trend.approve_count > 0 && trend.reject_count > 0 && <span className="mx-1">·</span>}
+                                {trend.reject_count > 0 && <span className="text-red-500">{trend.reject_count} 👎</span>}
                               </div>
                             )}
                           </div>
