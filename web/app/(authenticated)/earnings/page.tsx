@@ -100,6 +100,7 @@ export default function Earnings() {
           )
         `)
         .eq('user_id', user?.id)
+        .in('status', ['pending', 'awaiting_verification', 'approved', 'rejected', 'paid']) // Explicitly include all statuses
         .order('created_at', { ascending: false });
 
       if (transError) throw transError;
@@ -138,7 +139,9 @@ export default function Earnings() {
   const filteredTransactions = transactions.filter(t => {
     if (filter === 'all') return true;
     if (filter === 'pending') return t.status === 'pending' || t.status === 'awaiting_verification';
-    return t.status === filter;
+    if (filter === 'approved') return t.status === 'approved';
+    if (filter === 'paid') return t.status === 'paid';
+    return false;
   });
 
   const getStatusIcon = (status: string) => {
@@ -309,39 +312,82 @@ export default function Earnings() {
                 No transactions found
               </div>
             ) : (
-              filteredTransactions.map((transaction) => (
-                <motion.div
-                  key={transaction.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="bg-gray-700/50 rounded-lg p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-10 h-10 bg-gray-700 rounded-full">
-                      {getStatusIcon(transaction.status)}
+              <>
+                {/* Summary for filtered view */}
+                {filter !== 'all' && (
+                  <div className="bg-gray-700/30 rounded-lg p-3 mb-4">
+                    <div className="text-sm text-gray-400">
+                      Showing {filteredTransactions.length} {filter} transaction{filteredTransactions.length !== 1 ? 's' : ''}
+                      {filter === 'pending' && (
+                        <span className="ml-2 text-yellow-500">
+                          Total: {formatCurrency(filteredTransactions.reduce((sum, t) => sum + t.amount, 0))}
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <div className="text-white font-medium">
-                        {transaction.earning_type === 'submission' ? 'Trend Submission' : 'Validation Reward'}
+                  </div>
+                )}
+                
+                {filteredTransactions.map((transaction) => (
+                  <motion.div
+                    key={transaction.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className={`rounded-lg p-4 flex items-center justify-between ${
+                      transaction.status === 'pending' || transaction.status === 'awaiting_verification'
+                        ? 'bg-yellow-900/20 border border-yellow-800/30'
+                        : 'bg-gray-700/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center w-10 h-10 bg-gray-700 rounded-full">
+                        {getStatusIcon(transaction.status)}
+                      </div>
+                      <div>
+                        <div className="text-white font-medium">
+                          {transaction.earning_type === 'submission' ? 'Trend Submission' : 
+                           transaction.earning_type === 'validation' ? 'Validation Reward' :
+                           transaction.earning_type === 'bonus' ? 'Bonus Reward' : 
+                           'Earning'}
+                        </div>
+                        {transaction.trend?.description && (
+                          <div className="text-sm text-gray-400">
+                            {transaction.trend.description.substring(0, 60)}{transaction.trend.description.length > 60 ? '...' : ''}
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                          <span>{format(new Date(transaction.created_at), 'MMM d, yyyy h:mm a')}</span>
+                          {transaction.trend?.category && (
+                            <>
+                              <span>•</span>
+                              <span className="text-blue-400">{transaction.trend.category}</span>
+                            </>
+                          )}
+                        </div>
+                        {transaction.notes && (
+                          <div className="text-xs text-gray-400 mt-1 italic">
+                            {transaction.notes}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-lg font-bold ${
+                        transaction.status === 'rejected' ? 'text-red-400 line-through' : 'text-white'
+                      }`}>
+                        +{formatCurrency(transaction.amount)}
                       </div>
                       <div className="text-sm text-gray-400">
-                        {transaction.trend?.description.substring(0, 50)}...
+                        {getStatusText(transaction.status)}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {format(new Date(transaction.created_at), 'MMM d, yyyy h:mm a')}
-                      </div>
+                      {transaction.approved_at && transaction.status === 'approved' && (
+                        <div className="text-xs text-green-400 mt-1">
+                          Verified {format(new Date(transaction.approved_at), 'MMM d')}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-white">
-                      +{formatCurrency(transaction.amount)}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {getStatusText(transaction.status)}
-                    </div>
-                  </div>
-                </motion.div>
-              ))
+                  </motion.div>
+                ))
+              </>
             )}
           </div>
         </div>
