@@ -653,9 +653,9 @@ export default function LegibleScrollPage() {
           )}
         </AnimatePresence>
 
-        {/* Top Section: Submit Trend (full width) */}
-        <div className="mb-6">
-          {/* Submit a Trend Section */}
+        {/* Top Section: Submit Trend (left) + Streak Display (right) */}
+        <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Submit a Trend Section - Left */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
@@ -704,14 +704,12 @@ export default function LegibleScrollPage() {
               <span>Auto-captures creator info & metrics</span>
             </div>
           </div>
-        </div>
 
-        {/* Streak Display - Shows daily/total streak info */}
-        <div className="mb-6">
+          {/* Streak Display - Right */}
           <StreakDisplay />
         </div>
 
-        {/* Scroll Session Section - Below streak display */}
+        {/* Scroll Session Section - Below both */}
         <div className="mb-6">
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
