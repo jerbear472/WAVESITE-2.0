@@ -247,7 +247,7 @@ export default function Earnings() {
               </div>
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {formatCurrency(displayPending)}
+              {formatCurrency(user?.pending_earnings || displayPending)}
             </div>
             <div className="text-yellow-300 text-sm font-medium">Pending Verification</div>
             <div className="mt-4">
