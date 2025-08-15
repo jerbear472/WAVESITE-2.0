@@ -717,11 +717,28 @@ export default function LegibleScrollPage() {
                     <Zap className="w-5 h-5 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 mb-1">Session Benefits</h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• Track your submission streak</li>
-                      <li>• 30-minute windows between trends</li>
-                      <li>• Gamification multipliers shown (visual only)</li>
+                    <h3 className="font-medium text-gray-900 mb-2">Streak Multipliers & Benefits</h3>
+                    <ul className="text-sm text-gray-600 space-y-1.5">
+                      <li className="flex items-start gap-2">
+                        <span className="text-yellow-500">⚡</span>
+                        <span><strong>2 trends:</strong> 1.2x multiplier unlocked</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-orange-500">🔥</span>
+                        <span><strong>5 trends:</strong> 2.0x multiplier (double rewards)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-purple-500">💎</span>
+                        <span><strong>15 trends:</strong> 3.0x multiplier (triple rewards)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500">⏱️</span>
+                        <span><strong>30-min window:</strong> Submit within time to keep streak</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500">📊</span>
+                        <span><strong>Live tracking:</strong> See timer, earnings & progress in real-time</span>
+                      </li>
                     </ul>
                   </div>
                 </div>
