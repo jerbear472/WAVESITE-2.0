@@ -207,9 +207,9 @@ export const DashboardScreenClean: React.FC = () => {
             />
             <ActionCard
               icon="📊"
-              title="My Trends"
+              title="My Timeline"
               description="View your submissions"
-              onPress={() => navigation.navigate('MyTrends' as never)}
+              onPress={() => navigation.navigate('MyTimeline' as never)}
             />
             <ActionCard
               icon="🏆"

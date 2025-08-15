@@ -13,11 +13,11 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { TrendCaptureScreenPolished } from '../screens/TrendCaptureScreenPolished';
 import { ValidationScreenClean } from '../screens/ValidationScreenClean';
-import { MyTimelineScreen } from '../screens/MyTimelineScreen';
+import MyTimelineScreen from '../screens/MyTimelineScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EarningsDashboard } from '../screens/EarningsDashboard';
 import { TrendsScreen } from '../screens/TrendsScreen';
-import { MyTrendsScreen } from '../screens/MyTrendsScreen';
+// MyTimelineScreen is already imported above
 import { AchievementsScreen } from '../screens/AchievementsScreen';
 
 import { enhancedTheme } from '../styles/theme.enhanced';
@@ -33,7 +33,7 @@ export type AppTabParamList = {
 export type AppStackParamList = {
   MainTabs: undefined;
   Earnings: undefined;
-  MyTrends: undefined;
+  MyTimeline: undefined;
   Achievements: undefined;
   Trends: undefined;
   Leaderboard: undefined;
@@ -141,12 +141,12 @@ export const AppNavigatorClean = () => {
         }}
       />
       <Stack.Screen 
-        name="MyTrends" 
-        component={MyTrendsScreen}
+        name="MyTimeline" 
+        component={MyTimelineScreen}
         options={{ 
           animation: 'slide_from_right',
           headerShown: true,
-          headerTitle: 'My Trends',
+          headerTitle: 'My Timeline',
           headerStyle: styles.header,
           headerTintColor: enhancedTheme.colors.text,
         }}

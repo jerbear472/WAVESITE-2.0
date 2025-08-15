@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import { supabase } from '../config/supabase';
 import supabaseService from '../services/supabaseService';
+import { personaService, UserPersona } from '../services/personaService';
 import { UserProfile } from '../types/database';
 import { Session, User as AuthUser } from '@supabase/supabase-js';
 
@@ -11,12 +12,14 @@ type User = AuthUser & UserProfile;
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  persona: UserPersona | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string, birthday?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  updatePersona: (updates: Partial<UserPersona>) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,6 +35,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [persona, setPersona] = useState<UserPersona | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,6 +79,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else if (authUser) {
         // Profile might not exist yet, set basic user
         setUser(authUser as any);
+      }
+      
+      // Load persona data
+      const personaData = await personaService.loadPersona(userId);
+      if (personaData) {
+        setPersona(personaData);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -144,6 +154,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       setUser(null);
       setSession(null);
+      setPersona(null);
+      personaService.clearLocalPersona();
       await AsyncStorage.clear();
     } catch (error: any) {
       console.error('Sign out error:', error);
@@ -180,8 +192,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updatePersona = async (updates: Partial<UserPersona>) => {
+    try {
+      if (!user?.id) return;
+      
+      await personaService.updatePersona(user.id, updates);
+      
+      // Reload persona to get the updated data
+      const updatedPersona = await personaService.loadPersona(user.id);
+      if (updatedPersona) {
+        setPersona(updatedPersona);
+      }
+    } catch (error: any) {
+      console.error('Update persona error:', error);
+      Alert.alert('Update Failed', error.message || 'Could not update persona.');
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, refreshUser, updateProfile }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      persona,
+      loading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      refreshUser, 
+      updateProfile,
+      updatePersona 
+    }}>
       {children}
     </AuthContext.Provider>
   );

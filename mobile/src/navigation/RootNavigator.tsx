@@ -7,7 +7,7 @@ import { OnboardingNavigator } from './OnboardingNavigator';
 import { LoadingScreenEnhanced } from '../screens/LoadingScreenEnhanced';
 import { PersonaBuilderScreen } from '../screens/PersonaBuilderScreen';
 import { AchievementsScreen } from '../screens/AchievementsScreen';
-import { MyTrendsScreen } from '../screens/MyTrendsScreen';
+import MyTimelineScreen from '../screens/MyTimelineScreen';
 import { enhancedTheme } from '../styles/theme.enhanced';
 
 export type RootStackParamList = {
@@ -16,7 +16,7 @@ export type RootStackParamList = {
   App: undefined;
   PersonaBuilder: undefined;
   Achievements: undefined;
-  MyTrends: undefined;
+  MyTimeline: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -107,11 +107,11 @@ export const RootNavigator: React.FC = () => {
             }}
           />
           <Stack.Screen 
-            name="MyTrends" 
-            component={MyTrendsScreen}
+            name="MyTimeline" 
+            component={MyTimelineScreen}
             options={{
               headerShown: true,
-              headerTitle: 'My Trends',
+              headerTitle: 'My Timeline',
               headerStyle: {
                 backgroundColor: enhancedTheme.colors.background,
               },

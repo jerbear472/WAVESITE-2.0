@@ -38,7 +38,7 @@ import { LEVEL_THRESHOLDS } from '../types/points';
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user, signOut } = useAuth();
+  const { user, signOut, persona } = useAuth();
   
   const userPoints = user?.points || 0;
   const userLevel = PointsService.getUserLevel(userPoints);
@@ -229,9 +229,57 @@ export const ProfileScreen: React.FC = () => {
             />
           </Animated.View>
 
+          {/* Persona Section */}
+          {persona && (
+            <Animated.View
+              entering={FadeIn.delay(900).springify()}
+              style={styles.personaSection}
+            >
+              <GlassCard style={styles.personaCard}>
+                <View style={styles.personaSectionHeader}>
+                  <Text style={styles.personaTitle}>Your Persona</Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('PersonaBuilder')}>
+                    <Icon name="pencil" size={20} color={enhancedTheme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+                
+                {persona.interests && persona.interests.length > 0 && (
+                  <View style={styles.personaGroup}>
+                    <Text style={styles.personaLabel}>Interests</Text>
+                    <View style={styles.tagsContainer}>
+                      {persona.interests.slice(0, 5).map((interest) => (
+                        <View key={interest} style={styles.tag}>
+                          <Text style={styles.tagText}>{interest}</Text>
+                        </View>
+                      ))}
+                      {persona.interests.length > 5 && (
+                        <View style={styles.tag}>
+                          <Text style={styles.tagText}>+{persona.interests.length - 5}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                )}
+                
+                {persona.platforms && persona.platforms.length > 0 && (
+                  <View style={styles.personaGroup}>
+                    <Text style={styles.personaLabel}>Platforms</Text>
+                    <View style={styles.tagsContainer}>
+                      {persona.platforms.map((platform) => (
+                        <View key={platform} style={[styles.tag, styles.platformTag]}>
+                          <Text style={styles.tagText}>{platform}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </GlassCard>
+            </Animated.View>
+          )}
+
           <View style={styles.menuSection}>
             {[
-              { icon: 'folder-multiple', label: 'My Trends', color: enhancedTheme.colors.accent, emoji: '📁', onPress: () => navigation.navigate('MyTrends') },
+              { icon: 'folder-multiple', label: 'My Timeline', color: enhancedTheme.colors.accent, emoji: '📁', onPress: () => navigation.navigate('MyTimeline') },
               { icon: 'trophy', label: 'Achievements', color: enhancedTheme.colors.warning, emoji: '🏆', onPress: () => navigation.navigate('Achievements') },
               { icon: 'target', label: 'Build Your Persona', color: enhancedTheme.colors.accent, emoji: '🎯', onPress: () => navigation.navigate('PersonaBuilder') },
               { icon: 'bell', label: 'Notifications', color: enhancedTheme.colors.primary, emoji: '🔔' },
@@ -547,5 +595,52 @@ const styles = StyleSheet.create({
     color: enhancedTheme.colors.textTertiary,
     textAlign: 'center',
     marginTop: 16,
+  },
+  personaSection: {
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  personaCard: {
+    padding: 16,
+  },
+  personaSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  personaTitle: {
+    ...enhancedTheme.typography.h3,
+    color: enhancedTheme.colors.text,
+  },
+  personaGroup: {
+    marginBottom: 12,
+  },
+  personaLabel: {
+    ...enhancedTheme.typography.bodySmall,
+    color: enhancedTheme.colors.textSecondary,
+    marginBottom: 8,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    backgroundColor: enhancedTheme.colors.primary + '20',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: enhancedTheme.colors.primary + '40',
+  },
+  platformTag: {
+    backgroundColor: enhancedTheme.colors.accent + '20',
+    borderColor: enhancedTheme.colors.accent + '40',
+  },
+  tagText: {
+    ...enhancedTheme.typography.bodySmall,
+    color: enhancedTheme.colors.text,
+    textTransform: 'capitalize',
   },
 });

@@ -21,6 +21,8 @@ import Icon from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useNavigation } from '@react-navigation/native';
 import { storage } from '../../../App';
+import { personaService } from '../../services/personaService';
+import { supabase } from '../../config/supabase';
 
 interface Interest {
   id: string;
@@ -66,12 +68,38 @@ const PersonalizationScreen: React.FC = () => {
   const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
   const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(new Set());
   const [step, setStep] = useState(0); // 0: username, 1: interests, 2: platforms
+  const [loading, setLoading] = useState(true);
 
   const progress = useSharedValue(0);
+
+  // Load existing persona data on mount
+  React.useEffect(() => {
+    loadExistingPersona();
+  }, []);
 
   React.useEffect(() => {
     progress.value = withTiming((step + 1) / 3, { duration: 300 });
   }, [step]);
+
+  const loadExistingPersona = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const persona = await personaService.loadPersona(user.id);
+        
+        if (persona) {
+          if (persona.username) setUsername(persona.username);
+          if (persona.interests.length > 0) setSelectedInterests(new Set(persona.interests));
+          if (persona.platforms.length > 0) setSelectedPlatforms(new Set(persona.platforms));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading persona:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`,
@@ -115,15 +143,37 @@ const PersonalizationScreen: React.FC = () => {
     }
   };
 
-  const completePersonalization = () => {
-    // Save personalization data
-    storage.set('user_username', username);
-    storage.set('user_interests', JSON.stringify(Array.from(selectedInterests)));
-    storage.set('user_platforms', JSON.stringify(Array.from(selectedPlatforms)));
-    storage.set('personalization_completed', 'true');
-    
-    // Navigate to permissions
-    navigation.navigate('Permissions' as never);
+  const completePersonalization = async () => {
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Save to both local storage and Supabase
+        await personaService.savePersona(user.id, {
+          username: username,
+          interests: Array.from(selectedInterests),
+          platforms: Array.from(selectedPlatforms),
+          persona_data: {
+            onboarding_version: '1.0',
+            completed_at: new Date().toISOString(),
+          }
+        });
+      } else {
+        // Fallback to local storage only if no user
+        storage.set('user_username', username);
+        storage.set('user_interests', JSON.stringify(Array.from(selectedInterests)));
+        storage.set('user_platforms', JSON.stringify(Array.from(selectedPlatforms)));
+        storage.set('personalization_completed', 'true');
+      }
+      
+      // Navigate to permissions
+      navigation.navigate('Permissions' as never);
+    } catch (error) {
+      console.error('Error saving personalization:', error);
+      // Still navigate even if save fails
+      navigation.navigate('Permissions' as never);
+    }
   };
 
   const canProceed = () => {

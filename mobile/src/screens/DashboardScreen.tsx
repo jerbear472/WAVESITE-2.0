@@ -249,7 +249,7 @@ export const DashboardScreen: React.FC = () => {
             icon="trending-up"
             color={['#0080ff', '#00d4ff']}
             index={0}
-            onPress={() => navigation.navigate('MyTrends')}
+            onPress={() => navigation.navigate('MyTimeline')}
           />
           <StatCard
             title="Validations"
