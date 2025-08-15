@@ -65,8 +65,8 @@ export const EarningsDashboard: React.FC = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'venmo' | 'paypal' | null>(null);
   const [venmoUsername, setVenmoUsername] = useState('@username');
   const [paypalEmail, setPaypalEmail] = useState('email@example.com');
-  const availableBalance = 23.47;
-  const pendingAmount = 4.25;
+  const [availableBalance, setAvailableBalance] = useState(0);
+  const [pendingAmount, setPendingAmount] = useState(0);
 
   // Fetch earnings data
   const fetchEarningsData = async () => {
@@ -105,16 +105,50 @@ export const EarningsDashboard: React.FC = () => {
 
       if (verError) throw verError;
 
+      // Fetch pending trend submissions (for pending earnings)
+      const { data: pendingTrends, error: pendingError } = await supabase
+        .from('trend_submissions')
+        .select('base_amount, status')
+        .eq('spotter_id', user.id)
+        .in('status', ['submitted', 'validating'])
+        .gte('created_at', startDate.toISOString());
+
+      if (pendingError) console.error('Error fetching pending trends:', pendingError);
+
+      // Fetch approved trend submissions (for available earnings)
+      const { data: approvedTrends, error: approvedError } = await supabase
+        .from('trend_submissions')
+        .select('base_amount, status')
+        .eq('spotter_id', user.id)
+        .in('status', ['approved', 'viral'])
+        .gte('created_at', startDate.toISOString());
+
+      if (approvedError) console.error('Error fetching approved trends:', approvedError);
+
       // Process data
       const sessions = sessionsData || [];
       setSessions(sessions);
+
+      // Calculate pending earnings (from submitted/validating trends)
+      const pendingEarnings = (pendingTrends || []).reduce((sum, trend) => {
+        return sum + (trend.base_amount || 0.25); // Default 25 cents per submission
+      }, 0);
+      setPendingAmount(pendingEarnings);
+
+      // Calculate available earnings (from approved trends)
+      const approvedEarnings = (approvedTrends || []).reduce((sum, trend) => {
+        return sum + (trend.base_amount || 1.00);
+      }, 0);
 
       // Calculate total earnings
       const sessionEarnings = sessions.reduce((sum, s) => sum + s.total_earnings, 0);
       // Calculate verification earnings using SUSTAINABLE_EARNINGS
       const spotterTier = (user?.spotter_tier || 'learning') as SpotterTier;
       const verificationEarnings = calculateValidationEarnings(verificationsCount || 0, spotterTier);
-      setTotalEarnings(sessionEarnings + verificationEarnings);
+      
+      const totalAvailable = sessionEarnings + verificationEarnings + approvedEarnings;
+      setAvailableBalance(totalAvailable);
+      setTotalEarnings(totalAvailable + pendingEarnings);
 
       // Calculate stats
       const totalBonus = sessions.reduce((sum, s) => sum + s.bonus_earnings, 0);

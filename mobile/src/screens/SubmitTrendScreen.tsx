@@ -288,6 +288,7 @@ const SubmitTrendScreen: React.FC = () => {
           status: 'submitted',
           wave_score: Math.round(confidence),
           quality_score: confidence / 100,
+          base_amount: 0.25, // $0.25 pending earnings per submission
         })
         .select()
         .single();

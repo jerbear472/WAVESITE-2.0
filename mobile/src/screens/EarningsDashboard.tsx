@@ -55,8 +55,8 @@ export const EarningsDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('week');
   const [earnings, setEarnings] = useState<EarningsData>({
-    totalEarnings: 23.47,
-    weeklyEarnings: 4.25,
+    totalEarnings: 0,
+    weeklyEarnings: 0,
     sessionsCompleted: 0,
     avgPerSession: 0,
     trendsVerified: 0,
@@ -73,8 +73,8 @@ export const EarningsDashboard: React.FC = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'venmo' | 'paypal' | null>(null);
   const [venmoUsername, setVenmoUsername] = useState('@username');
   const [paypalEmail, setPaypalEmail] = useState('email@example.com');
-  const pendingAmount = 4.25;
-  const availableBalance = 23.47;
+  const [pendingAmount, setPendingAmount] = useState(0);
+  const [availableBalance, setAvailableBalance] = useState(0);
 
   // Fetch earnings data
   const fetchEarnings = useCallback(async () => {
@@ -123,28 +123,48 @@ export const EarningsDashboard: React.FC = () => {
 
       if (verError) throw verError;
 
-      // Calculate earnings (only from trends and validations)
-      const trendEarnings = (trendsData?.length || 0) * 1.00; // $1 per trend
+      // Calculate pending earnings (from submitted/validating trends)
+      const pendingTrends = trendsData?.filter(t => 
+        t.status === 'submitted' || t.status === 'validating'
+      ) || [];
+      const pendingEarnings = pendingTrends.reduce((sum, trend) => {
+        return sum + (trend.base_amount || 0.25); // Default 25 cents per submission
+      }, 0);
+      setPendingAmount(pendingEarnings);
+
+      // Calculate available earnings (from approved trends)  
+      const approvedTrends = trendsData?.filter(t => 
+        t.status === 'approved' || t.status === 'viral'
+      ) || [];
+      const approvedEarnings = approvedTrends.reduce((sum, trend) => {
+        return sum + (trend.base_amount || 1.00);
+      }, 0);
+
+      // Calculate verification earnings
       const verificationEarnings = (verificationsData?.length || 0) * 0.01; // $0.01 per validation
-      const combinedEarnings = trendEarnings + verificationEarnings;
+      
+      // Set available balance (approved + verifications)
+      const totalAvailable = approvedEarnings + verificationEarnings;
+      setAvailableBalance(totalAvailable);
 
       // Calculate weekly earnings
       const weekAgo = new Date();
       weekAgo.setDate(now.getDate() - 7);
-      const weeklyTrendEarnings = trendsData
-        ?.filter(t => new Date(t.created_at) >= weekAgo).length * 1.00 || 0;
+      const weeklyApprovedEarnings = approvedTrends
+        .filter(t => new Date(t.created_at) >= weekAgo)
+        .reduce((sum, trend) => sum + (trend.base_amount || 1.00), 0);
       const weeklyVerificationEarnings = verificationsData
         ?.filter(v => new Date(v.created_at) >= weekAgo).length * 0.01 || 0;
-      const weeklyEarnings = weeklyTrendEarnings + weeklyVerificationEarnings;
+      const weeklyEarnings = weeklyApprovedEarnings + weeklyVerificationEarnings;
 
       // Calculate bonuses from quality trends
       const bonusesEarned = verificationEarnings; // Simplified - validations are the main bonus
 
       setEarnings({
-        totalEarnings: combinedEarnings,
+        totalEarnings: totalAvailable + pendingEarnings,
         weeklyEarnings: weeklyEarnings,
         sessionsCompleted: sessionsData?.length || 0, // Still track sessions for streaks
-        avgPerSession: trendsData?.length ? trendEarnings / trendsData.length : 0,
+        avgPerSession: approvedTrends.length ? approvedEarnings / approvedTrends.length : 0,
         trendsVerified: verificationsData?.length || 0,
         bonusesEarned: bonusesEarned,
       });
