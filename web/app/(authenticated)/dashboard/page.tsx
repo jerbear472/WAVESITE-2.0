@@ -339,6 +339,10 @@ export default function Dashboard() {
             isUserTrend: true
           });
         });
+        // Debug: Log first trend to see available data
+        if (userTrends.length > 0) {
+          console.log('Sample trend data:', userTrends[0]);
+        }
       }
 
       if (allTrends && !allTrendsError) {
@@ -478,25 +482,54 @@ export default function Dashboard() {
   };
 
   const getTrendVelocity = (trend: RecentTrend) => {
-    // Calculate velocity based on time and engagement
-    const hoursSincePost = (Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60);
-    const engagementRate = ((trend.likes_count || 0) + (trend.shares_count || 0) + (trend.comments_count || 0)) / Math.max(hoursSincePost, 1);
+    // Try to get engagement data from evidence field first, then fallback to direct fields
+    const likes = trend.evidence?.likes_count || trend.likes_count || 0;
+    const shares = trend.evidence?.shares_count || trend.shares_count || 0;
+    const comments = trend.evidence?.comments_count || trend.comments_count || 0;
+    const views = trend.evidence?.views_count || trend.views_count || 0;
     
-    if (engagementRate > 1000) return { label: '🚀 Explosive', color: 'text-red-500' };
-    if (engagementRate > 500) return { label: '⚡ Viral', color: 'text-orange-500' };
-    if (engagementRate > 100) return { label: '🔥 Hot', color: 'text-yellow-500' };
-    if (engagementRate > 50) return { label: '📈 Rising', color: 'text-green-500' };
+    // Calculate based on validation activity if no social data
+    const validationActivity = (trend.approve_count || 0) + (trend.reject_count || 0);
+    const hoursSincePost = Math.max((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60), 1);
+    
+    // Use social engagement if available, otherwise use validation activity
+    let engagementScore = 0;
+    if (likes + shares + comments + views > 0) {
+      engagementScore = (likes * 2 + shares * 3 + comments + views / 100) / hoursSincePost;
+    } else {
+      // Use validation activity as a proxy for velocity
+      engagementScore = (validationActivity * 100) / hoursSincePost;
+    }
+    
+    if (engagementScore > 1000) return { label: '🚀 Explosive', color: 'text-red-500' };
+    if (engagementScore > 500) return { label: '⚡ Viral', color: 'text-orange-500' };
+    if (engagementScore > 100) return { label: '🔥 Hot', color: 'text-yellow-500' };
+    if (engagementScore > 10) return { label: '📈 Rising', color: 'text-green-500' };
     return { label: '🌱 Growing', color: 'text-blue-500' };
   };
 
   const getAudienceSize = (trend: RecentTrend) => {
-    const totalReach = (trend.views_count || 0) + (trend.likes_count || 0) * 10;
+    // Try to get data from evidence field first
+    const views = trend.evidence?.views_count || trend.views_count || 0;
+    const likes = trend.evidence?.likes_count || trend.likes_count || 0;
+    const shares = trend.evidence?.shares_count || trend.shares_count || 0;
+    
+    // Calculate reach
+    let totalReach = views + (likes * 10) + (shares * 50);
+    
+    // If no social data, estimate based on validation and virality prediction
+    if (totalReach === 0) {
+      const validations = (trend.approve_count || 0) + (trend.reject_count || 0);
+      const viralityScore = trend.virality_prediction || 5;
+      totalReach = (validations * 1000) + (viralityScore * 500);
+    }
     
     if (totalReach >= 1000000) return { size: `${(totalReach / 1000000).toFixed(1)}M`, label: 'Massive' };
     if (totalReach >= 100000) return { size: `${(totalReach / 1000).toFixed(0)}K`, label: 'Large' };
     if (totalReach >= 10000) return { size: `${(totalReach / 1000).toFixed(1)}K`, label: 'Medium' };
     if (totalReach >= 1000) return { size: `${(totalReach / 1000).toFixed(1)}K`, label: 'Growing' };
-    return { size: totalReach.toString(), label: 'Small' };
+    if (totalReach > 0) return { size: totalReach.toString(), label: 'Small' };
+    return { size: 'New', label: 'Just Posted' };
   };
 
   if (loading) {
@@ -793,6 +826,13 @@ export default function Dashboard() {
                               </div>
                               <div className="text-xs text-gray-500">{getAudienceSize(trend).label}</div>
                             </div>
+                            
+                            {/* Validation Count if available */}
+                            {((trend.approve_count || 0) + (trend.reject_count || 0)) > 0 && (
+                              <div className="text-center text-xs text-gray-500">
+                                {trend.approve_count || 0} 👍 {trend.reject_count || 0} 👎
+                              </div>
+                            )}
                           </div>
                         </div>
                       </motion.div>
