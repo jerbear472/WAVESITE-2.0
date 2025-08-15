@@ -54,13 +54,106 @@ interface TrendCategory {
 }
 
 const categories: TrendCategory[] = [
+  // Original categories
   { id: 'visual_style', label: 'Visual Style', icon: 'eye', color: '#f5576c' },
   { id: 'audio_music', label: 'Audio/Music', icon: 'music', color: '#667eea' },
   { id: 'creator_technique', label: 'Creator Tech', icon: 'video', color: '#4facfe' },
-  { id: 'meme_format', label: 'Meme Format', icon: 'smile', color: '#43e97b' },
+  { id: 'meme_format', label: 'Meme/Comedy', icon: 'smile', color: '#43e97b' },
   { id: 'product_brand', label: 'Product/Brand', icon: 'shopping-bag', color: '#ffa726' },
   { id: 'behavior_pattern', label: 'Behavior', icon: 'trending-up', color: '#ab47bc' },
+  
+  // New categories
+  { id: 'automotive', label: 'Cars/Machines', icon: 'truck', color: '#e74c3c' },
+  { id: 'food_drink', label: 'Food/Drink', icon: 'coffee', color: '#f39c12' },
+  { id: 'technology', label: 'Technology', icon: 'smartphone', color: '#3498db' },
+  { id: 'sports', label: 'Sports/Fitness', icon: 'activity', color: '#27ae60' },
+  { id: 'dance', label: 'Dance', icon: 'users', color: '#9b59b6' },
+  { id: 'travel', label: 'Travel', icon: 'map-pin', color: '#1abc9c' },
+  { id: 'fashion', label: 'Fashion', icon: 'shopping-bag', color: '#e91e63' },
+  { id: 'gaming', label: 'Gaming', icon: 'monitor', color: '#673ab7' },
+  { id: 'health', label: 'Health/Wellness', icon: 'heart', color: '#ff5722' },
+  { id: 'diy_crafts', label: 'DIY/Crafts', icon: 'tool', color: '#795548' },
 ];
+
+// Follow-up questions for each category
+const categoryQuestions: Record<string, Array<{label: string, key: string, type: 'text' | 'select' | 'number', options?: string[]}>> = {
+  automotive: [
+    { label: 'Vehicle Type', key: 'vehicle_type', type: 'select', options: ['Car', 'Truck', 'Motorcycle', 'EV', 'Classic', 'Modified', 'Other'] },
+    { label: 'Brand/Model', key: 'brand_model', type: 'text' },
+    { label: 'Trend Type', key: 'trend_type', type: 'select', options: ['Modification', 'Review', 'Comparison', 'Tutorial', 'Showcase', 'Racing'] },
+  ],
+  food_drink: [
+    { label: 'Type', key: 'food_type', type: 'select', options: ['Recipe', 'Restaurant', 'Cocktail/Drink', 'Food Hack', 'Challenge', 'Review'] },
+    { label: 'Cuisine/Style', key: 'cuisine', type: 'text' },
+    { label: 'Difficulty', key: 'difficulty', type: 'select', options: ['Easy', 'Medium', 'Hard', 'Professional'] },
+  ],
+  technology: [
+    { label: 'Tech Category', key: 'tech_category', type: 'select', options: ['Gadget', 'App', 'AI/ML', 'Software', 'Hardware', 'Review', 'Tutorial'] },
+    { label: 'Product/Service', key: 'product_name', type: 'text' },
+    { label: 'Price Range', key: 'price_range', type: 'select', options: ['Free', 'Under $50', '$50-200', '$200-500', 'Over $500'] },
+  ],
+  sports: [
+    { label: 'Sport Type', key: 'sport_type', type: 'text' },
+    { label: 'Content Type', key: 'content_type', type: 'select', options: ['Tutorial', 'Highlights', 'Training', 'Challenge', 'Equipment Review'] },
+    { label: 'Skill Level', key: 'skill_level', type: 'select', options: ['Beginner', 'Intermediate', 'Advanced', 'Professional'] },
+  ],
+  dance: [
+    { label: 'Dance Style', key: 'dance_style', type: 'text' },
+    { label: 'Difficulty', key: 'difficulty', type: 'select', options: ['Easy', 'Medium', 'Hard', 'Expert'] },
+    { label: 'Song/Audio', key: 'song_name', type: 'text' },
+  ],
+  fashion: [
+    { label: 'Fashion Type', key: 'fashion_type', type: 'select', options: ['Outfit', 'Accessory', 'Makeup', 'Hair', 'Trend', 'Brand Review'] },
+    { label: 'Style', key: 'style', type: 'text' },
+    { label: 'Price Point', key: 'price_point', type: 'select', options: ['Budget', 'Mid-range', 'Luxury', 'Mixed'] },
+  ],
+  travel: [
+    { label: 'Destination Type', key: 'destination_type', type: 'select', options: ['City', 'Beach', 'Mountain', 'Rural', 'Adventure', 'Cultural'] },
+    { label: 'Location', key: 'location', type: 'text' },
+    { label: 'Budget Level', key: 'budget_level', type: 'select', options: ['Budget', 'Mid-range', 'Luxury', 'Backpacker'] },
+  ],
+  gaming: [
+    { label: 'Game Genre', key: 'game_genre', type: 'select', options: ['FPS', 'RPG', 'Strategy', 'Sports', 'Puzzle', 'Mobile', 'Indie'] },
+    { label: 'Game Title', key: 'game_title', type: 'text' },
+    { label: 'Content Type', key: 'content_type', type: 'select', options: ['Gameplay', 'Tutorial', 'Review', 'Trick/Glitch', 'Funny Moments'] },
+  ],
+  health: [
+    { label: 'Health Category', key: 'health_category', type: 'select', options: ['Workout', 'Nutrition', 'Mental Health', 'Medical', 'Wellness Tips', 'Transformation'] },
+    { label: 'Difficulty/Impact', key: 'difficulty', type: 'select', options: ['Beginner', 'Intermediate', 'Advanced', 'Medical Professional'] },
+    { label: 'Duration/Timeframe', key: 'timeframe', type: 'text' },
+  ],
+  diy_crafts: [
+    { label: 'Project Type', key: 'project_type', type: 'select', options: ['Home Decor', 'Art', 'Furniture', 'Electronics', 'Crafts', 'Repairs'] },
+    { label: 'Skill Level', key: 'skill_level', type: 'select', options: ['Beginner', 'Intermediate', 'Advanced', 'Expert'] },
+    { label: 'Estimated Cost', key: 'cost', type: 'select', options: ['Under $20', '$20-50', '$50-100', 'Over $100'] },
+  ],
+  visual_style: [
+    { label: 'Visual Effect', key: 'visual_effect', type: 'select', options: ['Filter', 'Transition', 'Animation', 'Color Grading', 'AR Effect', 'Text Style'] },
+    { label: 'Platform Origin', key: 'platform_origin', type: 'select', options: ['TikTok', 'Instagram', 'YouTube', 'Cross-platform'] },
+  ],
+  audio_music: [
+    { label: 'Audio Type', key: 'audio_type', type: 'select', options: ['Original Song', 'Remix', 'Sound Effect', 'Voiceover', 'Mashup'] },
+    { label: 'Artist/Creator', key: 'artist', type: 'text' },
+    { label: 'Mood/Genre', key: 'mood', type: 'select', options: ['Upbeat', 'Chill', 'Dramatic', 'Funny', 'Emotional'] },
+  ],
+  creator_technique: [
+    { label: 'Technique Type', key: 'technique_type', type: 'select', options: ['Editing', 'Filming', 'Storytelling', 'Engagement', 'Growth Hack'] },
+    { label: 'Difficulty', key: 'difficulty', type: 'select', options: ['Easy', 'Medium', 'Hard', 'Pro'] },
+  ],
+  meme_format: [
+    { label: 'Meme Type', key: 'meme_type', type: 'select', options: ['Template', 'Format', 'Challenge', 'Reaction', 'Parody', 'Original'] },
+    { label: 'Target Audience', key: 'audience', type: 'select', options: ['Gen Z', 'Millennials', 'General', 'Niche Community'] },
+  ],
+  product_brand: [
+    { label: 'Product Category', key: 'product_category', type: 'select', options: ['Tech', 'Fashion', 'Beauty', 'Food', 'Home', 'Service'] },
+    { label: 'Brand Name', key: 'brand_name', type: 'text' },
+    { label: 'Content Type', key: 'content_type', type: 'select', options: ['Review', 'Unboxing', 'Tutorial', 'Comparison', 'Sponsored'] },
+  ],
+  behavior_pattern: [
+    { label: 'Behavior Type', key: 'behavior_type', type: 'select', options: ['Social', 'Lifestyle', 'Work/School', 'Dating', 'Family', 'Internet Culture'] },
+    { label: 'Relatability', key: 'relatability', type: 'select', options: ['Very Relatable', 'Somewhat Relatable', 'Niche', 'Controversial'] },
+  ],
+};
 
 const SubmitTrendScreen: React.FC = () => {
   const [url, setUrl] = useState('');
@@ -70,6 +163,7 @@ const SubmitTrendScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [confidence, setConfidence] = useState(50);
+  const [followUpAnswers, setFollowUpAnswers] = useState<Record<string, any>>({});
   const webViewRef = useRef<WebView>(null);
   const [webViewHtml, setWebViewHtml] = useState('');
 
@@ -289,6 +383,7 @@ const SubmitTrendScreen: React.FC = () => {
           wave_score: Math.round(confidence),
           quality_score: confidence / 100,
           base_amount: 0.25, // $0.25 pending earnings per submission
+          follow_up_data: followUpAnswers, // Store category-specific answers
         })
         .select()
         .single();
@@ -344,6 +439,7 @@ const SubmitTrendScreen: React.FC = () => {
     setSelectedCategory('');
     setNotes('');
     setConfidence(50);
+    setFollowUpAnswers({});
   };
 
   const progressStyle = useAnimatedStyle(() => ({
@@ -551,6 +647,69 @@ const SubmitTrendScreen: React.FC = () => {
                   );
                 })}
               </View>
+            </Animated.View>
+          )}
+
+          {/* Follow-up Questions */}
+          {metadata && selectedCategory && categoryQuestions[selectedCategory] && (
+            <Animated.View 
+              entering={FadeInDown.delay(250).springify()}
+              style={styles.followUpSection}
+            >
+              <Text style={styles.sectionTitle}>Additional Details</Text>
+              {categoryQuestions[selectedCategory].map((question) => (
+                <View key={question.key} style={styles.questionContainer}>
+                  <Text style={styles.questionLabel}>{question.label}</Text>
+                  {question.type === 'select' ? (
+                    <View style={styles.selectContainer}>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <View style={styles.optionsRow}>
+                          {question.options?.map((option) => {
+                            const isSelected = followUpAnswers[question.key] === option;
+                            return (
+                              <TouchableOpacity
+                                key={option}
+                                onPress={() => {
+                                  setFollowUpAnswers(prev => ({
+                                    ...prev,
+                                    [question.key]: option
+                                  }));
+                                  ReactNativeHapticFeedback.trigger('selection');
+                                }}
+                                style={[
+                                  styles.optionButton,
+                                  isSelected && styles.optionButtonSelected
+                                ]}
+                              >
+                                <Text style={[
+                                  styles.optionText,
+                                  isSelected && styles.optionTextSelected
+                                ]}>
+                                  {option}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </ScrollView>
+                    </View>
+                  ) : (
+                    <TextInput
+                      style={styles.questionInput}
+                      placeholder={`Enter ${question.label.toLowerCase()}`}
+                      placeholderTextColor="#999"
+                      value={followUpAnswers[question.key] || ''}
+                      onChangeText={(text) => {
+                        setFollowUpAnswers(prev => ({
+                          ...prev,
+                          [question.key]: text
+                        }));
+                      }}
+                      keyboardType={question.type === 'number' ? 'numeric' : 'default'}
+                    />
+                  )}
+                </View>
+              ))}
             </Animated.View>
           )}
 
@@ -876,6 +1035,54 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '700',
+  },
+  followUpSection: {
+    marginBottom: 24,
+  },
+  questionContainer: {
+    marginBottom: 20,
+  },
+  questionLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 8,
+  },
+  questionInput: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    padding: 14,
+    fontSize: 15,
+    color: '#1a1a1a',
+  },
+  selectContainer: {
+    flexDirection: 'row',
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  optionButton: {
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  optionButtonSelected: {
+    backgroundColor: '#667eea',
+    borderColor: '#667eea',
+  },
+  optionText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  optionTextSelected: {
+    color: '#fff',
   },
 });
 

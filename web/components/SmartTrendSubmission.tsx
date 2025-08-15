@@ -494,6 +494,27 @@ export default function SmartTrendSubmission({
       
       // Get thumbnail if not already captured
       let thumbnailUrl = formData.thumbnail_url;
+      
+      // For TikTok, fetch thumbnail via API
+      if (!thumbnailUrl && formData.url && formData.url.includes('tiktok.com')) {
+        try {
+          const response = await fetch('/api/tiktok-thumbnail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: formData.url })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            thumbnailUrl = data.thumbnail_url || '';
+            console.log('TikTok thumbnail fetched:', thumbnailUrl);
+          }
+        } catch (err) {
+          console.log('Could not fetch TikTok thumbnail:', err);
+        }
+      }
+      
+      // For other platforms, try simple extraction
       if (!thumbnailUrl && formData.url) {
         try {
           const thumbnailData = getUltraSimpleThumbnail(formData.url);

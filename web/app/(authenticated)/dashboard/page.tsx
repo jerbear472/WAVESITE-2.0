@@ -56,7 +56,8 @@ interface RecentTrend {
   shares_count?: number;
   views_count?: number;
   hashtags?: string[];
-  post_url?: string;
+  url?: string;  // Main trend URL
+  post_url?: string;  // Alternative URL field
   posted_at?: string;
   earnings_amount?: number;
   isUserTrend?: boolean;
@@ -720,8 +721,23 @@ export default function Dashboard() {
                         key={trend.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-all cursor-pointer group"
+                        onClick={() => {
+                          // Open the trend URL if available, otherwise open trend details
+                          const trendUrl = trend.url || trend.post_url || trend.evidence?.url;
+                          if (trendUrl) {
+                            window.open(trendUrl, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                        className="p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-all cursor-pointer group relative"
                       >
+                        {/* External link indicator */}
+                        {(trend.url || trend.post_url || trend.evidence?.url) && (
+                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </div>
+                        )}
                         <div className="flex items-start gap-4">
                           {/* Thumbnail */}
                           {(trend.thumbnail_url || trend.screenshot_url) && (
@@ -752,7 +768,7 @@ export default function Dashboard() {
                               )}
                             </div>
                             
-                            <h3 className="font-medium text-gray-900 dark:text-white">
+                            <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                               {trend.evidence?.title || trend.description.split('\n')[0] || 'Untitled Trend'}
                             </h3>
                             
@@ -760,6 +776,23 @@ export default function Dashboard() {
                               <p className="text-sm text-gray-600 dark:text-gray-400">
                                 {trend.creator_handle}
                               </p>
+                            )}
+                            
+                            {/* Platform indicator */}
+                            {(trend.url || trend.post_url || trend.evidence?.url) && (
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-blue-600 dark:text-blue-400">
+                                  {(() => {
+                                    const url = trend.url || trend.post_url || trend.evidence?.url || '';
+                                    if (url.includes('tiktok')) return '🎵 TikTok';
+                                    if (url.includes('instagram')) return '📸 Instagram';
+                                    if (url.includes('twitter') || url.includes('x.com')) return '𝕏 Twitter';
+                                    if (url.includes('youtube')) return '📺 YouTube';
+                                    if (url.includes('reddit')) return '🔥 Reddit';
+                                    return '🔗 View Source';
+                                  })()}
+                                </span>
+                              </div>
                             )}
                             
                             {!trend.isUserTrend && trend.spotter && (

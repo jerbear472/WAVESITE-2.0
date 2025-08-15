@@ -4,24 +4,15 @@
 export function getUltraSimpleThumbnail(url: string): { thumbnail_url?: string; platform?: string; creator_handle?: string } {
   if (!url) return {};
   
-  // TikTok - Extract video ID and return proxied thumbnail URL
+  // TikTok - Return placeholder, actual thumbnail will be fetched via API
   if (url.includes('tiktok.com')) {
     const usernameMatch = url.match(/@([^\/\?]+)/);
-    const videoIdMatch = url.match(/video\/(\d+)/);
-    
-    // If we have a video ID, generate a proxied thumbnail URL
-    let thumbnailUrl = undefined;
-    if (videoIdMatch) {
-      const videoId = videoIdMatch[1];
-      // Generate the CDN URL and proxy it to avoid CORS issues
-      const cdnUrl = `https://p16-sign-sg.tiktokcdn.com/obj/tos-alisg-p-0037/${videoId}~tplv-obj.jpg`;
-      thumbnailUrl = `/api/image-proxy/proxy-image?url=${encodeURIComponent(cdnUrl)}`;
-    }
     
     return {
       platform: 'tiktok',
       creator_handle: usernameMatch ? `@${usernameMatch[1]}` : undefined,
-      thumbnail_url: thumbnailUrl
+      // Don't try to generate thumbnail here - let the API handle it
+      thumbnail_url: undefined
     };
   }
   
