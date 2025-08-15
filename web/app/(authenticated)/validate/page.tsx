@@ -383,12 +383,11 @@ export default function ValidatePageFixed() {
       const userTier = (user?.spotter_tier || 'learning') as Tier;
       const rewardAmount = calculateValidationEarnings(1, userTier);
       
-      // Insert the validation - try minimal fields first
+      // Insert the validation - use only the columns that exist in the database
       const validationPayload = {
         trend_id: trendId,
         validator_id: user.id,
-        is_genuine: voteType === 'verify',
-        vote: voteType
+        vote: voteType  // Only use the vote column, not is_genuine which doesn't exist
       };
 
       console.log('Attempting insert with payload:', validationPayload);
