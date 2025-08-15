@@ -777,12 +777,12 @@ export default function Dashboard() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Accuracy Rate</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-              {stats.accuracy_score > 0 ? `${stats.accuracy_score}%` : 'N/A'}
+              {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `${Math.round(stats.accuracy_score)}%` : 'N/A'}
             </p>
             <div className="mt-2 bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
               <div 
                 className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all"
-                style={{ width: `${stats.accuracy_score}%` }}
+                style={{ width: `${!isNaN(stats.accuracy_score) ? Math.min(stats.accuracy_score, 100) : 0}%` }}
               />
             </div>
           </motion.div>
@@ -927,16 +927,16 @@ export default function Dashboard() {
                               {trend.views_count && trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
-                              {/* Validation votes */}
-                              {((trend.approve_count || 0) > 0 || (trend.reject_count || 0) > 0) && (
+                              {/* Validation votes - only show if there are actual votes */}
+                              {(trend.approve_count > 0 || trend.reject_count > 0) && (
                                 <span className="flex items-center gap-1">
-                                  {(trend.approve_count || 0) > 0 && (
+                                  {trend.approve_count > 0 && (
                                     <span className="text-green-500">👍 {trend.approve_count}</span>
                                   )}
-                                  {(trend.approve_count || 0) > 0 && (trend.reject_count || 0) > 0 && (
+                                  {trend.approve_count > 0 && trend.reject_count > 0 && (
                                     <span className="text-gray-400">·</span>
                                   )}
-                                  {(trend.reject_count || 0) > 0 && (
+                                  {trend.reject_count > 0 && (
                                     <span className="text-red-500">👎 {trend.reject_count}</span>
                                   )}
                                 </span>
@@ -992,12 +992,12 @@ export default function Dashboard() {
                               </div>
                             )}
                             
-                            {/* Validation Count if available */}
+                            {/* Validation Count if available - only show if there are actual votes */}
                             {((trend.approve_count || 0) + (trend.reject_count || 0)) > 0 && (
                               <div className="text-center text-xs text-gray-500">
-                                {(trend.approve_count || 0) > 0 && <span className="text-green-500">{trend.approve_count} 👍</span>}
-                                {(trend.approve_count || 0) > 0 && (trend.reject_count || 0) > 0 && <span className="mx-1">·</span>}
-                                {(trend.reject_count || 0) > 0 && <span className="text-red-500">{trend.reject_count} 👎</span>}
+                                {trend.approve_count > 0 && <span className="text-green-500">{trend.approve_count} 👍</span>}
+                                {trend.approve_count > 0 && trend.reject_count > 0 && <span className="mx-1">·</span>}
+                                {trend.reject_count > 0 && <span className="text-red-500">{trend.reject_count} 👎</span>}
                               </div>
                             )}
                           </div>
@@ -1080,6 +1080,59 @@ export default function Dashboard() {
                     <p className="text-sm">No recent activity</p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Daily Streak Information */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Daily Streak Stats</h2>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">🔥</div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {stats.current_streak} {stats.current_streak === 1 ? 'Day' : 'Days'}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Current Streak</p>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-2">
+                    <span className="text-gray-600 dark:text-gray-400">Accuracy Rate</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `${Math.round(stats.accuracy_score)}%` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-2">
+                    <span className="text-gray-600 dark:text-gray-400">Trends Verified</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {stats.trends_verified}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-2">
+                    <span className="text-gray-600 dark:text-gray-400">Success Rate</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {stats.trends_spotted > 0 ? `${Math.round((stats.trends_verified / stats.trends_spotted) * 100)}%` : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="pt-3 mt-3 border-t border-gray-200 dark:border-neutral-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Streak Rewards:</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">1+ days</span>
+                      <span className="text-green-600 dark:text-green-400">1.2x multiplier</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">3+ days</span>
+                      <span className="text-green-600 dark:text-green-400">1.5x multiplier</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">7+ days</span>
+                      <span className="text-green-600 dark:text-green-400">2.0x multiplier</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
