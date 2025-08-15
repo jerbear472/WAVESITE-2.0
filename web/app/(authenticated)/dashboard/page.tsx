@@ -515,9 +515,32 @@ export default function Dashboard() {
       'creator_technique': { emoji: '🎬', color: 'from-orange-500 to-red-500', label: 'Creator Technique' },
       'meme_format': { emoji: '😂', color: 'from-yellow-500 to-orange-500', label: 'Meme Format' },
       'product_brand': { emoji: '🛍️', color: 'from-green-500 to-teal-500', label: 'Product & Brand' },
-      'behavior_pattern': { emoji: '👥', color: 'from-indigo-500 to-purple-500', label: 'Behavior Pattern' }
+      'behavior_pattern': { emoji: '👥', color: 'from-indigo-500 to-purple-500', label: 'Behavior Pattern' },
+      'political': { emoji: '🏛️', color: 'from-red-500 to-pink-500', label: 'Political' },
+      'finance': { emoji: '💰', color: 'from-green-500 to-emerald-500', label: 'Finance' },
+      'news_events': { emoji: '📰', color: 'from-blue-500 to-indigo-500', label: 'News & Events' },
+      'education': { emoji: '📚', color: 'from-purple-500 to-indigo-500', label: 'Education' },
+      'relationship': { emoji: '💕', color: 'from-pink-500 to-red-500', label: 'Relationship' },
+      'animals_pets': { emoji: '🐾', color: 'from-yellow-500 to-amber-500', label: 'Animals & Pets' },
+      'automotive': { emoji: '🚗', color: 'from-slate-500 to-gray-600', label: 'Cars & Machines' },
+      'food_drink': { emoji: '🍔', color: 'from-orange-500 to-yellow-500', label: 'Food & Drink' },
+      'technology': { emoji: '💻', color: 'from-blue-600 to-purple-600', label: 'Tech & Gaming' },
+      'sports': { emoji: '⚽', color: 'from-green-600 to-emerald-600', label: 'Sports & Fitness' },
+      'dance': { emoji: '💃', color: 'from-purple-500 to-pink-500', label: 'Dance' },
+      'travel': { emoji: '✈️', color: 'from-blue-500 to-sky-500', label: 'Travel & Places' },
+      'fashion': { emoji: '👗', color: 'from-pink-500 to-purple-500', label: 'Fashion & Beauty' },
+      'gaming': { emoji: '🎮', color: 'from-purple-600 to-indigo-600', label: 'Gaming' },
+      'health': { emoji: '🏥', color: 'from-green-500 to-teal-500', label: 'Health & Wellness' },
+      'diy_crafts': { emoji: '🔨', color: 'from-amber-500 to-orange-500', label: 'DIY & Crafts' }
     };
-    return categoryMap[category] || { emoji: '📊', color: 'from-gray-500 to-gray-600', label: category };
+    // Clean the category label if it's invalid or missing
+    const details = categoryMap[category];
+    if (details) {
+      return details;
+    }
+    // Fallback with cleaned category name
+    const cleanLabel = category ? category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Trending';
+    return { emoji: '📊', color: 'from-gray-500 to-gray-600', label: cleanLabel };
   };
 
   const getTrendVelocity = (trend: RecentTrend) => {
@@ -897,7 +920,6 @@ export default function Dashboard() {
                               <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white`}>
                                 {categoryDetails.label}
                               </span>
-                              {/* Ensure no stray numbers are rendered */}
                               {trend.isUserTrend && (
                                 <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded-full">
                                   Your trend
@@ -945,13 +967,12 @@ export default function Dashboard() {
                             
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                               <span>{formatTimeAgo(trend.created_at)}</span>
-                              {trend.likes_count && trend.likes_count > 0 && (
+                              {trend.likes_count > 0 && (
                                 <span>❤️ {formatNumber(trend.likes_count)}</span>
                               )}
-                              {trend.views_count && trend.views_count > 0 && (
+                              {trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
-                              {/* Validation votes - only show if there are actual votes */}
                               {((trend.approve_count ?? 0) > 0 || (trend.reject_count ?? 0) > 0) && (
                                 <span className="flex items-center gap-1">
                                   {(trend.approve_count ?? 0) > 0 && (
@@ -996,25 +1017,36 @@ export default function Dashboard() {
                             </div>
                             
                             {/* Audience Reach */}
-                            {(getAudienceSize(trend).size || getAudienceSize(trend).growth) && (
-                              <div className="text-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg px-3 py-2 border border-blue-200 dark:border-blue-800">
-                                {getAudienceSize(trend).size && (
-                                  <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                    {getAudienceSize(trend).size}
-                                  </div>
-                                )}
-                                {getAudienceSize(trend).growth && (
-                                  <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                    {getAudienceSize(trend).growth}
-                                  </div>
-                                )}
-                                {getAudienceSize(trend).engagementRate && parseFloat(getAudienceSize(trend).engagementRate) > 0 && !isNaN(parseFloat(getAudienceSize(trend).engagementRate)) && (
-                                  <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">
-                                    {getAudienceSize(trend).engagementRate}% engaged
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                            {(() => {
+                              const audienceData = getAudienceSize(trend);
+                              const hasValidSize = audienceData.size && audienceData.size !== '';
+                              const hasValidGrowth = audienceData.growth && audienceData.growth !== '';
+                              const hasValidEngagement = audienceData.engagementRate && 
+                                                        audienceData.engagementRate !== '' && 
+                                                        parseFloat(audienceData.engagementRate) > 0;
+                              
+                              if (!hasValidSize && !hasValidGrowth) return null;
+                              
+                              return (
+                                <div className="text-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg px-3 py-2 border border-blue-200 dark:border-blue-800">
+                                  {hasValidSize && (
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                      {audienceData.size}
+                                    </div>
+                                  )}
+                                  {hasValidGrowth && (
+                                    <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                      {audienceData.growth}
+                                    </div>
+                                  )}
+                                  {hasValidEngagement && (
+                                    <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">
+                                      {audienceData.engagementRate}% engaged
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
                             
                             {/* Validation Count if available - only show if there are actual votes */}
                             {((trend.approve_count ?? 0) > 0 || (trend.reject_count ?? 0) > 0) && (
