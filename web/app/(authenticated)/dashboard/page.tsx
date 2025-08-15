@@ -951,15 +951,15 @@ export default function Dashboard() {
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
                               {/* Validation votes - only show if there are actual votes */}
-                              {(trend.approve_count > 0 || trend.reject_count > 0) && (
+                              {((trend.approve_count ?? 0) > 0 || (trend.reject_count ?? 0) > 0) && (
                                 <span className="flex items-center gap-1">
-                                  {trend.approve_count > 0 && (
+                                  {(trend.approve_count ?? 0) > 0 && (
                                     <span className="text-green-500">👍 {trend.approve_count}</span>
                                   )}
-                                  {trend.approve_count > 0 && trend.reject_count > 0 && (
+                                  {(trend.approve_count ?? 0) > 0 && (trend.reject_count ?? 0) > 0 && (
                                     <span className="text-gray-400">·</span>
                                   )}
-                                  {trend.reject_count > 0 && (
+                                  {(trend.reject_count ?? 0) > 0 && (
                                     <span className="text-red-500">👎 {trend.reject_count}</span>
                                   )}
                                 </span>
