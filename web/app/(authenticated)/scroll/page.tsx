@@ -488,14 +488,15 @@ export default function LegibleScrollPage() {
       const multipliers = [];
       
       // Get user tier (default to learning if not available)
-      const userTier = (user as any)?.performance_tier || 'learning';
-      const tierMultiplier = {
+      const userTier = user?.performance_tier || 'learning';
+      const tierMultiplierMap: Record<string, number> = {
         master: 3.0,
         elite: 2.0,
         verified: 1.5,
         learning: 1.0,
         restricted: 0.5
-      }[userTier] || 1.0;
+      };
+      const tierMultiplier = tierMultiplierMap[userTier] || 1.0;
       
       if (tierMultiplier !== 1.0) {
         multipliers.push(`${userTier} tier: ${tierMultiplier}x`);

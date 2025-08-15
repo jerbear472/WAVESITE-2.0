@@ -25,6 +25,9 @@ interface User {
   trends_spotted: number;
   accuracy_score: number;
   validation_score: number;
+  performance_tier?: string;
+  current_streak?: number;
+  session_streak?: number;
   // Business user fields
   is_business?: boolean;
   business_id?: string;
@@ -114,6 +117,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { data: accountSettings } = await supabase
             .from('user_account_settings')
             .select('account_type')
+            .eq('user_id', session.user.id)
+            .single();
+
+          // Get performance tier from user_profiles
+          const { data: userProfile } = await supabase
+            .from('user_profiles')
+            .select('performance_tier, current_streak, session_streak')
             .eq('user_id', session.user.id)
             .single();
 

@@ -33,6 +33,8 @@ interface DashboardStats {
   accuracy_score: number;
   current_streak: number;
   earnings_today: number;
+  earnings_today_pending?: number;
+  earnings_today_approved?: number;
   earnings_this_week: number;
   earnings_this_month: number;
   total_cashed_out: number;
@@ -728,9 +730,9 @@ export default function Dashboard() {
                     <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full animate-pulse">
                       +{formatCurrency(stats.earnings_today)} today
                     </span>
-                    {stats.earnings_today_pending > 0 && (
+                    {(stats.earnings_today_pending ?? 0) > 0 && (
                       <span className="text-xs text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
-                        {formatCurrency(stats.earnings_today_pending)} pending
+                        {formatCurrency(stats.earnings_today_pending ?? 0)} pending
                       </span>
                     )}
                   </div>

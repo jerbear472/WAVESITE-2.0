@@ -43,7 +43,7 @@ interface EarningsData {
 interface EarningTransaction {
   id: string;
   amount: number;
-  status: 'pending' | 'awaiting_validation' | 'approved' | 'rejected' | 'paid';
+  status: 'pending' | 'awaiting_validation' | 'awaiting_verification' | 'approved' | 'rejected' | 'paid';
   earning_type: string;
   created_at: string;
   approved_at?: string;
@@ -52,6 +52,15 @@ interface EarningTransaction {
     id: string;
     description: string;
     category: string;
+  };
+  metadata?: {
+    base_amount?: number;
+    tier?: string;
+    tier_multiplier?: number;
+    session_position?: number;
+    session_multiplier?: number;
+    daily_streak?: number;
+    daily_multiplier?: number;
   };
 }
 
@@ -199,6 +208,7 @@ export default function Earnings() {
       case 'pending':
         return <Timer className="w-4 h-4 text-yellow-500" />;
       case 'awaiting_validation':
+      case 'awaiting_verification':
         return <Clock className="w-4 h-4 text-orange-500" />;
       case 'approved':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
@@ -216,6 +226,7 @@ export default function Earnings() {
       case 'pending':
         return 'Processing';
       case 'awaiting_validation':
+      case 'awaiting_verification':
         return 'Awaiting Validation';
       case 'approved':
         return 'Verified';
@@ -293,7 +304,7 @@ export default function Earnings() {
             <div className="text-yellow-300 text-sm font-medium">Pending Verification</div>
             <div className="mt-4">
               <div className="text-xs text-yellow-400 mb-2">
-                {transactions.filter(t => t.status === 'pending' || t.status === 'awaiting_verification').length} pending transactions
+                {transactions.filter(t => t.status === 'pending' || t.status === 'awaiting_validation').length} pending transactions
               </div>
               {displayPending > 0 && (
                 <div className="text-xs text-gray-400 bg-gray-800/50 rounded p-2">
