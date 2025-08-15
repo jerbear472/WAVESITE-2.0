@@ -122,7 +122,16 @@ export default function Earnings() {
 
   const totalAvailable = earningsData.earnings_approved;
   const totalPending = earningsData.earnings_pending || 0;
-  const totalEarnings = totalPending + earningsData.earnings_approved + earningsData.earnings_paid;
+  
+  // Also calculate pending from actual transactions for accuracy
+  const actualPendingFromTransactions = transactions
+    .filter(t => t.status === 'pending' || t.status === 'awaiting_verification')
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
+  
+  // Use the higher value to ensure we show all pending earnings
+  const displayPending = Math.max(totalPending, actualPendingFromTransactions);
+  
+  const totalEarnings = displayPending + earningsData.earnings_approved + earningsData.earnings_paid;
   const verificationRate = earningsData.total_submissions > 0 
     ? (earningsData.verified_submissions / earningsData.total_submissions * 100).toFixed(1)
     : '0';
@@ -224,23 +233,32 @@ export default function Earnings() {
             </button>
           </motion.div>
 
-          {/* Pending Earnings */}
+          {/* Pending Earnings - Enhanced */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gray-800 rounded-xl p-6"
+            className="bg-gradient-to-br from-yellow-900/50 to-orange-900/50 border border-yellow-700/50 rounded-xl p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <Timer className="w-8 h-8 text-yellow-500" />
-              <div className="text-xs text-gray-500">Pending</div>
+              <Timer className="w-8 h-8 text-yellow-500 animate-pulse" />
+              <div className="text-xs text-yellow-400 bg-yellow-900/50 px-2 py-1 rounded">
+                Awaiting Validation
+              </div>
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {formatCurrency(totalPending)}
+              {formatCurrency(displayPending)}
             </div>
-            <div className="text-gray-400 text-sm">Pending Verification</div>
-            <div className="mt-4 text-xs text-gray-500">
-              Includes submissions and validations
+            <div className="text-yellow-300 text-sm font-medium">Pending Verification</div>
+            <div className="mt-4">
+              <div className="text-xs text-yellow-400 mb-2">
+                {transactions.filter(t => t.status === 'pending' || t.status === 'awaiting_verification').length} pending transactions
+              </div>
+              {displayPending > 0 && (
+                <div className="text-xs text-gray-400 bg-gray-800/50 rounded p-2">
+                  💡 Earnings will be confirmed after community validation
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -319,7 +337,7 @@ export default function Earnings() {
                     <div className="text-sm text-gray-400">
                       Showing {filteredTransactions.length} {filter} transaction{filteredTransactions.length !== 1 ? 's' : ''}
                       {filter === 'pending' && (
-                        <span className="ml-2 text-yellow-500">
+                        <span className="ml-2 text-yellow-500 font-semibold">
                           Total: {formatCurrency(filteredTransactions.reduce((sum, t) => sum + t.amount, 0))}
                         </span>
                       )}

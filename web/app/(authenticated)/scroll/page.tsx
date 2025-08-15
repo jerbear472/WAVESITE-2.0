@@ -477,10 +477,10 @@ export default function LegibleScrollPage() {
       setTrendUrl('');
       setIsSubmitting(false); // Ensure this is reset
       
-      // Show success message
+      // Show success message with pending verification note
       setSubmitMessage({ 
         type: 'success', 
-        text: `Trend submitted! +$${finalPayment.toFixed(2)} earned` 
+        text: `Trend submitted! Earning $${finalPayment.toFixed(2)} (pending verification)` 
       });
       
       // Clear success message after 5 seconds
@@ -571,26 +571,46 @@ export default function LegibleScrollPage() {
           </div>
         </div>
 
-        {/* Subtle Success/Error Messages */}
+        {/* Enhanced Success/Error Messages */}
         <AnimatePresence>
           {submitMessage && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="mb-4"
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              className="mb-6"
             >
-              <div className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
+              <div className={`px-5 py-4 rounded-xl shadow-lg flex items-start gap-3 ${
                 submitMessage.type === 'success'
-                  ? 'bg-green-50 text-green-700 border border-green-200'
-                  : 'bg-red-50 text-red-700 border border-red-200'
+                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300'
+                  : 'bg-gradient-to-r from-red-50 to-pink-50 border border-red-300'
               }`}>
                 {submitMessage.type === 'success' ? (
-                  <CheckCircle className="w-4 h-4" />
+                  <div className="flex-shrink-0">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  </div>
                 ) : (
-                  <AlertCircle className="w-4 h-4" />
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="w-6 h-6 text-red-600" />
+                  </div>
                 )}
-                <span>{submitMessage.text}</span>
+                <div className="flex-1">
+                  {submitMessage.type === 'success' ? (
+                    <>
+                      <div className="font-semibold text-green-800 mb-1">
+                        Trend Successfully Submitted! 🎉
+                      </div>
+                      <div className="text-sm text-green-700">
+                        {submitMessage.text}
+                      </div>
+                      <div className="mt-2 text-xs text-green-600 bg-green-100 inline-block px-2 py-1 rounded">
+                        💡 Earnings will be confirmed after community validation
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-red-700">{submitMessage.text}</div>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -825,27 +845,41 @@ export default function LegibleScrollPage() {
           </div>
         </div>
 
-        {/* Earnings Summary */}
-        <div className="mb-4 bg-white/60 backdrop-blur-sm rounded-lg px-4 py-3 border border-gray-200/50">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-gray-600">Earned today:</span>
-                <span className="text-sm font-semibold text-green-700">
-                  {formatCurrency(todaysEarnings)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
+        {/* Enhanced Earnings Summary */}
+        <div className="mb-4 bg-gradient-to-r from-yellow-50 to-green-50 rounded-xl px-5 py-4 border border-yellow-200 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-green-600" />
+              Today's Earnings
+            </h3>
+            <div className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
+              {trendsLoggedToday} trends submitted
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/80 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
                 <Clock className="w-4 h-4 text-yellow-600" />
-                <span className="text-sm text-gray-600">Pending:</span>
-                <span className="text-sm font-semibold text-yellow-700">
-                  {formatCurrency(todaysPendingEarnings)}
-                </span>
+                <span className="text-xs text-gray-600">Pending Verification</span>
+              </div>
+              <div className="text-xl font-bold text-yellow-700">
+                {formatCurrency(todaysPendingEarnings)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Awaiting community validation
               </div>
             </div>
-            <div className="text-xs text-gray-500">
-              {trendsLoggedToday} trends today
+            <div className="bg-white/80 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-xs text-gray-600">Confirmed</span>
+              </div>
+              <div className="text-xl font-bold text-green-700">
+                {formatCurrency(todaysEarnings)}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Available to cash out
+              </div>
             </div>
           </div>
           

@@ -196,9 +196,9 @@ export default function Dashboard() {
         return;
       }
 
-      // Get user's earnings
-      const { data: userEarnings, error: earningsError } = await supabase
-        .from('user_earnings')
+      // Get user's earnings from earnings_ledger for accuracy
+      const { data: earningsLedger, error: earningsError } = await supabase
+        .from('earnings_ledger')
         .select('*')
         .eq('user_id', user?.id);
 
@@ -206,6 +206,9 @@ export default function Dashboard() {
         console.error('Error fetching user earnings:', earningsError);
         return;
       }
+      
+      // Map to userEarnings format for compatibility
+      const userEarnings = earningsLedger;
 
       // Calculate accuracy rate: % of trends that get approved
       const totalTrends = userTrends?.length || 0;
@@ -218,12 +221,14 @@ export default function Dashboard() {
       
       const accuracyScore = totalTrends > 0 ? ((approvedTrends / totalTrends) * 100) : 0;
 
-      // Calculate other stats
-      const approvedEarnings = userEarnings?.filter(e => e.status === 'approved') || [];
-      const pendingEarnings = userEarnings?.filter(e => e.status === 'pending') || [];
+      // Calculate other stats from earnings_ledger
+      const approvedEarnings = userEarnings?.filter(e => e.status === 'approved' || e.status === 'paid') || [];
+      const pendingEarnings = userEarnings?.filter(e => e.status === 'pending' || e.status === 'awaiting_verification') || [];
+      const paidEarnings = userEarnings?.filter(e => e.status === 'paid') || [];
       
-      const totalEarnings = approvedEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const totalApproved = approvedEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
       const pendingAmount = pendingEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const totalPaid = paidEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
 
       // Earnings today
       const today = new Date();
@@ -255,7 +260,7 @@ export default function Dashboard() {
       const uniqueDays = new Set(recentTrends.map(t => new Date(t.created_at).toDateString())).size;
 
       setStats({
-        total_earnings: totalEarnings,
+        total_earnings: totalApproved,  // Available earnings
         pending_earnings: pendingAmount,
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
@@ -265,7 +270,7 @@ export default function Dashboard() {
         earnings_today: earningsToday,
         earnings_this_week: earningsThisWeek,
         earnings_this_month: earningsThisMonth,
-        total_cashed_out: 0 // Would need additional tracking
+        total_cashed_out: totalPaid  // Amount already paid out
       });
 
       console.log(`Calculated accuracy rate: ${accuracyScore.toFixed(2)}% (${approvedTrends}/${totalTrends} trends approved)`);
@@ -562,18 +567,32 @@ export default function Dashboard() {
                   </span>
                 )}
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Total Earnings</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(stats.total_earnings + stats.total_cashed_out)}
+              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">💰 Your Money</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+                {formatCurrency(stats.total_earnings + stats.pending_earnings + stats.total_cashed_out)}
               </p>
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-xs text-green-600">
-                  {formatCurrency(stats.total_earnings)} available
-                </p>
+              <div className="mt-3 space-y-1">
+                <div className="flex items-center justify-between bg-green-100/50 dark:bg-green-900/30 rounded px-2 py-1">
+                  <span className="text-xs text-green-700 dark:text-green-400 font-medium">✅ Available</span>
+                  <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                    {formatCurrency(stats.total_earnings)}
+                  </span>
+                </div>
                 {stats.pending_earnings > 0 && (
-                  <p className="text-xs text-yellow-600">
-                    {formatCurrency(stats.pending_earnings)} pending
-                  </p>
+                  <div className="flex items-center justify-between bg-yellow-100/50 dark:bg-yellow-900/30 rounded px-2 py-1">
+                    <span className="text-xs text-yellow-700 dark:text-yellow-400 font-medium">⏳ Pending</span>
+                    <span className="text-sm font-bold text-yellow-700 dark:text-yellow-400">
+                      {formatCurrency(stats.pending_earnings)}
+                    </span>
+                  </div>
+                )}
+                {stats.total_cashed_out > 0 && (
+                  <div className="flex items-center justify-between bg-blue-100/50 dark:bg-blue-900/30 rounded px-2 py-1">
+                    <span className="text-xs text-blue-700 dark:text-blue-400 font-medium">💸 Paid Out</span>
+                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
+                      {formatCurrency(stats.total_cashed_out)}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -857,14 +876,21 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Earnings Summary - Enhanced */}
-            <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-sm text-white">
-              <h2 className="text-xl font-semibold mb-4">Earnings Summary</h2>
+            {/* Earnings Summary - Enhanced with Trust Indicators */}
+            <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 shadow-lg text-white relative overflow-hidden">
+              <div className="absolute top-2 right-2">
+                <div className="bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium">
+                  🔒 Secure
+                </div>
+              </div>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                💵 Real Money Earnings
+              </h2>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm opacity-90">Today</span>
-                  <span className="text-lg font-semibold">
-                    {formatCurrency(stats.earnings_today)}
+                <div className="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2">
+                  <span className="text-sm opacity-90">Today's Earnings</span>
+                  <span className="text-lg font-bold">
+                    +{formatCurrency(stats.earnings_today)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -879,22 +905,45 @@ export default function Dashboard() {
                     {formatCurrency(stats.earnings_this_month)}
                   </span>
                 </div>
+                
+                {/* Pending Section */}
+                {stats.pending_earnings > 0 && (
+                  <div className="bg-yellow-400/20 rounded-lg px-3 py-2 border border-yellow-400/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">⏳ Pending Verification</span>
+                      <span className="text-lg font-bold text-yellow-200">
+                        {formatCurrency(stats.pending_earnings)}
+                      </span>
+                    </div>
+                    <div className="text-xs opacity-80 mt-1">
+                      Will be available after validation
+                    </div>
+                  </div>
+                )}
+                
                 <div className="pt-3 mt-3 border-t border-white/20">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium">Available to Cash Out</span>
-                    <span className="text-2xl font-bold">
+                    <span className="font-medium">✅ Available Now</span>
+                    <span className="text-2xl font-bold animate-pulse">
                       {formatCurrency(stats.total_earnings)}
                     </span>
                   </div>
+                  <div className="text-xs opacity-80 mt-1">
+                    Ready to cash out to your account
+                  </div>
                 </div>
               </div>
-              {stats.total_earnings >= 10 && (
+              {stats.total_earnings >= 10 ? (
                 <Link 
                   href="/earnings" 
-                  className="mt-4 block w-full bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg text-center transition-colors"
+                  className="mt-4 block w-full bg-white text-green-600 hover:bg-gray-100 font-bold py-3 px-4 rounded-lg text-center transition-all transform hover:scale-105"
                 >
-                  Cash Out →
+                  💸 Cash Out Now →
                 </Link>
+              ) : (
+                <div className="mt-4 bg-white/10 rounded-lg px-3 py-2 text-sm text-center">
+                  ${(10 - stats.total_earnings).toFixed(2)} more to cash out
+                </div>
               )}
             </div>
           </div>
