@@ -603,16 +603,17 @@ export default function Dashboard() {
     } else if (views >= 1000) {
       sizeDisplay = `${(views / 1000).toFixed(1)}K`;
       growthIndicator = 'views';
-    } else if (views > 0) {
+    } else if (views >= 100) {
       sizeDisplay = views.toString();
       growthIndicator = 'views';
     } else {
-      // If no views yet, show engagement
+      // If no views yet, show engagement only if meaningful
       const totalEngagement = likes + shares + comments;
-      if (totalEngagement > 0) {
+      if (totalEngagement >= 10) {
         sizeDisplay = totalEngagement.toString();
         growthIndicator = 'engagements';
       } else {
+        // Don't show anything if numbers are too small
         sizeDisplay = '';
         growthIndicator = '';
       }
@@ -642,7 +643,7 @@ export default function Dashboard() {
       size: sizeDisplay,
       label: growthIndicator,
       growth: growthLabel,
-      engagementRate: engagementRate.toFixed(1),
+      engagementRate: engagementRate > 0.5 ? engagementRate.toFixed(1) : '',
       reach: estimatedReach
     };
   };

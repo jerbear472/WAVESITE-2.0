@@ -29,7 +29,9 @@ import {
   Image as ImageIcon,
   Link,
   Users,
-  BarChart3
+  BarChart3,
+  ExternalLink,
+  Star
 } from 'lucide-react';
 import { 
   SUSTAINABLE_EARNINGS,
@@ -734,33 +736,33 @@ export default function ValidatePageFixed() {
                   </div>
 
                   {/* Title and Caption */}
-                  <h2 className="text-base font-bold text-gray-900 mb-2 leading-tight">
+                  <h2 className="text-lg font-bold text-gray-900 mb-3 leading-tight">
                     {currentTrend.description || 'No description provided'}
                   </h2>
                   
                   {currentTrend.post_caption && (
-                    <p className="text-gray-600 text-xs leading-relaxed mb-2">
-                      {currentTrend.post_caption}
+                    <p className="text-gray-700 text-sm leading-relaxed mb-3 italic">
+                      "{currentTrend.post_caption}"
                     </p>
                   )}
 
                   {/* Metadata Tags */}
-                  <div className="flex flex-wrap gap-1 mb-2">
+                  <div className="flex flex-wrap gap-2 mb-4">
                     {currentTrend.platform && (
-                      <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">
-                        <TrendingUp className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                        <TrendingUp className="w-4 h-4" />
                         {currentTrend.platform}
                       </span>
                     )}
                     {currentTrend.category && (
-                      <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-                        <Hash className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                        <Hash className="w-4 h-4" />
                         {currentTrend.category.replace(/_/g, ' ')}
                       </span>
                     )}
                     {currentTrend.creator_handle && (
-                      <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
-                        <User className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1.5 bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                        <User className="w-4 h-4" />
                         {currentTrend.creator_handle}
                       </span>
                     )}
@@ -768,10 +770,10 @@ export default function ValidatePageFixed() {
 
                   {/* Hashtags */}
                   {currentTrend.hashtags && currentTrend.hashtags.length > 0 && (
-                    <div className="mb-2">
-                      <div className="flex flex-wrap gap-1">
-                        {currentTrend.hashtags.slice(0, 3).map((tag, idx) => (
-                          <span key={idx} className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                    <div className="mb-4">
+                      <div className="flex flex-wrap gap-2">
+                        {currentTrend.hashtags.slice(0, 5).map((tag, idx) => (
+                          <span key={idx} className="text-sm bg-gray-100 px-2 py-1 rounded-lg text-gray-700 font-medium">
                             #{tag}
                           </span>
                         ))}
@@ -781,19 +783,19 @@ export default function ValidatePageFixed() {
 
                   {/* Validation Progress */}
                   {(Number(currentTrend.approve_count) > 0 || Number(currentTrend.reject_count) > 0) && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-2 mb-2">
-                      <h4 className="text-xs font-semibold text-gray-900 mb-1">Validation Progress</h4>
-                      <div className="flex gap-3 mb-1">
-                        <div className="flex items-center gap-1">
-                          <ThumbsUp className="w-3 h-3 text-green-600" />
-                          <span className="text-xs font-medium">{Number(currentTrend.approve_count) || 0}/2</span>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">Community Validation</h4>
+                      <div className="flex gap-4 mb-2">
+                        <div className="flex items-center gap-2">
+                          <ThumbsUp className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium text-gray-700">{Number(currentTrend.approve_count) || 0}/2 Verified</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <ThumbsDown className="w-3 h-3 text-red-600" />
-                          <span className="text-xs font-medium">{Number(currentTrend.reject_count) || 0}/2</span>
+                        <div className="flex items-center gap-2">
+                          <ThumbsDown className="w-4 h-4 text-red-600" />
+                          <span className="text-sm font-medium text-gray-700">{Number(currentTrend.reject_count) || 0}/2 Rejected</span>
                         </div>
                       </div>
-                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-300"
                           style={{ width: `${Math.min((Number(currentTrend.approve_count) || 0) * 50, 100)}%` }}
@@ -803,52 +805,62 @@ export default function ValidatePageFixed() {
                   )}
 
                   {/* Submission Details */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-2">
-                    <h3 className="font-semibold text-gray-900 text-xs mb-2">Submission Details</h3>
-                    <div className="space-y-1 text-xs">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <h3 className="font-semibold text-gray-900 text-base mb-3 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                      Trend Details
+                    </h3>
+                    <div className="space-y-2.5">
                       {currentTrend.post_url && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Source URL:</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Source:</span>
                           <a href={currentTrend.post_url} target="_blank" rel="noopener noreferrer" 
-                             className="text-blue-600 hover:underline truncate max-w-[150px]">
-                            View Post
+                             className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1">
+                            View Original Post
+                            <ExternalLink className="w-3 h-3" />
                           </a>
                         </div>
                       )}
-                      {currentTrend.virality_prediction && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Virality Prediction:</span>
-                          <span className="font-medium">{currentTrend.virality_prediction}/10</span>
-                        </div>
-                      )}
                       {currentTrend.wave_score !== undefined && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Wave Score:</span>
-                          <span className="font-medium">{currentTrend.wave_score}/100</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Wave Score:</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
+                                style={{ width: `${currentTrend.wave_score}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-bold text-gray-900">{currentTrend.wave_score}</span>
+                          </div>
                         </div>
                       )}
-                      {currentTrend.creator_name && currentTrend.creator_name !== currentTrend.creator_handle && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Creator Name:</span>
-                          <span className="font-medium truncate max-w-[150px]">{currentTrend.creator_name}</span>
+                      {currentTrend.virality_prediction && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Viral Potential:</span>
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`w-4 h-4 ${i < Math.ceil(currentTrend.virality_prediction / 2) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
+                            ))}
+                          </div>
                         </div>
                       )}
                       {currentTrend.follower_count && Number(currentTrend.follower_count) > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Creator Followers:</span>
-                          <span className="font-medium">{formatCount(currentTrend.follower_count)}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Creator Reach:</span>
+                          <span className="text-sm font-bold text-purple-600">{formatCount(currentTrend.follower_count)} followers</span>
                         </div>
                       )}
                       {currentTrend.trending_position && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Trending Position:</span>
-                          <span className="font-medium">#{currentTrend.trending_position}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Trending:</span>
+                          <span className="text-sm font-bold text-green-600">#{currentTrend.trending_position}</span>
                         </div>
                       )}
                       {currentTrend.evidence && typeof currentTrend.evidence === 'object' && Object.keys(currentTrend.evidence).length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-blue-200">
-                          <span className="text-gray-600 block mb-1">Additional Evidence:</span>
-                          <div className="bg-white rounded p-2 space-y-1">
+                        <div className="mt-3 pt-3 border-t border-blue-200">
+                          <span className="text-sm font-medium text-gray-700 block mb-2">Additional Info:</span>
+                          <div className="bg-white rounded-lg p-3 space-y-2">
                             {(() => {
                               const entries = Object.entries(currentTrend.evidence)
                                 .filter(([key, value]) => value && value !== '' && value !== null)
@@ -861,7 +873,7 @@ export default function ValidatePageFixed() {
                                   // Format the value based on type
                                   let formattedValue = value;
                                   if (typeof value === 'boolean') {
-                                    formattedValue = value ? 'Yes' : 'No';
+                                    formattedValue = value ? '✓ Yes' : '✗ No';
                                   } else if (typeof value === 'number') {
                                     formattedValue = value.toLocaleString();
                                   } else if (Array.isArray(value)) {
@@ -871,9 +883,9 @@ export default function ValidatePageFixed() {
                                   }
                                   
                                   return (
-                                    <div key={key} className="flex justify-between text-[11px]">
-                                      <span className="text-gray-600">{formattedKey}:</span>
-                                      <span className="font-medium text-gray-800 truncate max-w-[120px]">
+                                    <div key={key} className="flex justify-between items-center">
+                                      <span className="text-sm text-gray-600">{formattedKey}:</span>
+                                      <span className="text-sm font-medium text-gray-900 truncate max-w-[140px]">
                                         {String(formattedValue)}
                                       </span>
                                     </div>

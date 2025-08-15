@@ -197,6 +197,21 @@ const categoryQuestions: Record<string, Array<{label: string, key: string, type:
 const DRAFT_STORAGE_KEY = 'trend_submission_draft';
 const AUTO_SAVE_DELAY = 2000; // Auto-save after 2 seconds of inactivity
 
+const getTimeSinceLastSave = (lastSaved: Date | null): string => {
+  if (!lastSaved) return '';
+  
+  const seconds = Math.floor((Date.now() - lastSaved.getTime()) / 1000);
+  
+  if (seconds < 5) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  
+  const minutes = Math.floor(seconds / 60);
+  if (minutes === 1) return '1 minute ago';
+  if (minutes < 60) return `${minutes} minutes ago`;
+  
+  return 'over an hour ago';
+};
+
 const SubmitTrendScreen: React.FC = () => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -509,76 +524,86 @@ const SubmitTrendScreen: React.FC = () => {
         throw new Error('User not authenticated');
       }
       
-      // Build submission payload with only fields that exist
+      // Build submission payload - ONLY include fields that exist in the database
+      // Based on the actual table schema from migrations
       const submissionPayload: any = {
+        // Required fields
         spotter_id: user.id,
         post_url: metadata.url,
         platform: metadata.platform,
         trend_name: metadata.title || 'Untitled Trend',
+        
+        // Optional text fields
         description: metadata.description || notes || 'No description',
         status: 'submitted',
       };
 
-      // Add optional fields only if they might exist in the table
-      if (metadata.authorHandle) submissionPayload.creator_handle = metadata.authorHandle;
-      if (metadata.author) submissionPayload.creator_name = metadata.author;
+      // Creator info - only add if provided
+      if (metadata.authorHandle) {
+        submissionPayload.creator_handle = metadata.authorHandle;
+      }
+      if (metadata.author) {
+        submissionPayload.creator_name = metadata.author;
+      }
+      
+      // Media URLs - only add if provided
       if (metadata.thumbnail) {
         submissionPayload.thumbnail_url = metadata.thumbnail;
         submissionPayload.screenshot_url = metadata.thumbnail;
       }
       
-      // Map category to match database enum (handle both old and new categories)
-      const categoryMapping: Record<string, string> = {
-        'visual_style': 'visual_style',
-        'audio_music': 'audio_music',
-        'creator_technique': 'creator_technique',
-        'meme_format': 'meme_format',
-        'product_brand': 'product_brand',
-        'behavior_pattern': 'behavior_pattern',
-        // Map new categories - some may need to be mapped to existing enum values
-        'political': 'political',
-        'finance': 'finance',
-        'news_events': 'news_events',
-        'education': 'education',
-        'relationship': 'relationship',
-        'animals_pets': 'animals_pets',
-        'automotive': 'automotive',
-        'food_drink': 'food_drink',
-        'technology': 'technology',
-        'sports': 'sports',
-        'dance': 'dance',
-        'travel': 'travel',
-        'fashion': 'fashion',
-        'gaming': 'gaming',
-        'health': 'health',
-        'diy_crafts': 'diy_crafts',
-      };
+      // Category - ensure it matches the enum exactly
+      const validCategories = [
+        'visual_style', 'audio_music', 'creator_technique', 'meme_format',
+        'product_brand', 'behavior_pattern', 'political', 'finance',
+        'news_events', 'education', 'relationship', 'animals_pets',
+        'automotive', 'food_drink', 'technology', 'sports',
+        'dance', 'travel', 'fashion', 'gaming', 'health', 'diy_crafts'
+      ];
       
-      submissionPayload.category = categoryMapping[selectedCategory] || selectedCategory;
+      if (validCategories.includes(selectedCategory)) {
+        submissionPayload.category = selectedCategory;
+      }
       
-      // Add numeric fields with safe defaults
-      submissionPayload.virality_prediction = Math.round(confidence / 10);
-      submissionPayload.views_count = metadata.views || 0;
-      submissionPayload.likes_count = metadata.likes || 0;
-      submissionPayload.shares_count = metadata.shares || 0;
-      submissionPayload.comments_count = metadata.comments || 0;
+      // Metrics - only add if they have values
+      if (metadata.views && metadata.views > 0) {
+        submissionPayload.views_count = metadata.views;
+      }
+      if (metadata.likes && metadata.likes > 0) {
+        submissionPayload.likes_count = metadata.likes;
+      }
+      if (metadata.shares && metadata.shares > 0) {
+        submissionPayload.shares_count = metadata.shares;
+      }
+      if (metadata.comments && metadata.comments > 0) {
+        submissionPayload.comments_count = metadata.comments;
+      }
       
-      // Add arrays
-      if (metadata.hashtags && metadata.hashtags.length > 0) {
+      // Hashtags - only add if array is not empty
+      if (metadata.hashtags && Array.isArray(metadata.hashtags) && metadata.hashtags.length > 0) {
         submissionPayload.hashtags = metadata.hashtags;
       }
       
-      // Add scoring/financial fields if they exist
-      submissionPayload.wave_score = Math.round(confidence);
-      submissionPayload.quality_score = confidence / 100;
-      submissionPayload.base_amount = 0.25;
+      // Scoring fields - ensure they meet constraints
+      const viralityScore = Math.max(1, Math.min(10, Math.round(confidence / 10)));
+      submissionPayload.virality_prediction = viralityScore;
       
-      // Add follow-up data if we have any
+      // Wave score and quality score
+      submissionPayload.wave_score = Math.round(confidence);
+      submissionPayload.quality_score = Math.min(1.00, confidence / 100);
+      
+      // Earnings fields
+      submissionPayload.base_amount = 0.25;
+      submissionPayload.bonus_amount = 0.00;
+      submissionPayload.total_earned = 0.00;
+      
+      // Follow-up data as JSONB
       if (Object.keys(followUpAnswers).length > 0) {
         submissionPayload.follow_up_data = followUpAnswers;
       }
 
-      console.log('Submitting payload:', submissionPayload);
+      console.log('Submitting payload:', JSON.stringify(submissionPayload, null, 2));
+      console.log('Payload keys:', Object.keys(submissionPayload));
       
       const { data, error } = await supabase
         .from('trend_submissions')
@@ -1014,11 +1039,37 @@ const SubmitTrendScreen: React.FC = () => {
             </Animated.View>
           )}
 
+          {/* Auto-save Status */}
+          {lastSaved && (
+            <Animated.View 
+              entering={FadeIn.duration(300)}
+              style={styles.autoSaveStatus}
+            >
+              <Icon name="check-circle" size={14} color="#27ae60" />
+              <Text style={styles.autoSaveText}>
+                Draft saved {getTimeSinceLastSave(lastSaved)}
+              </Text>
+            </Animated.View>
+          )}
+
+          {/* Retry indicator for failed submissions */}
+          {retryCount > 0 && (
+            <Animated.View 
+              entering={FadeIn.duration(300)}
+              style={styles.retryStatus}
+            >
+              <Icon name="alert-triangle" size={14} color="#f39c12" />
+              <Text style={styles.retryText}>
+                Retry attempt {retryCount}/3
+              </Text>
+            </Animated.View>
+          )}
+
           {/* Submit Button */}
           {metadata && selectedCategory && (
             <Animated.View entering={FadeInDown.delay(500).springify()}>
               <TouchableOpacity
-                onPress={handleSubmit}
+                onPress={() => handleSubmit(false)}
                 disabled={loading}
                 activeOpacity={0.8}
               >
@@ -1340,6 +1391,35 @@ const styles = StyleSheet.create({
   },
   optionTextSelected: {
     color: '#fff',
+  },
+  autoSaveStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+    gap: 6,
+  },
+  autoSaveText: {
+    fontSize: 12,
+    color: '#27ae60',
+    fontStyle: 'italic',
+  },
+  retryStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    backgroundColor: '#fff3cd',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 6,
+  },
+  retryText: {
+    fontSize: 12,
+    color: '#856404',
+    fontWeight: '500',
   },
 });
 
