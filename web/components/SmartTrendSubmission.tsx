@@ -26,6 +26,7 @@ import {
   Clock as ClockIcon,
   Users as UsersIcon,
   Globe as GlobeIcon,
+  Camera as CameraIcon,
   Music as MusicIcon,
   DollarSign as DollarSignIcon,
   Shirt as ShirtIcon,
@@ -330,7 +331,8 @@ export default function SmartTrendSubmission({
       setFormData(prev => ({
         ...prev,
         platform,
-        title: extractedData.title || prev.title,
+        // Don't auto-fill title - let user provide their own
+        title: prev.title,
         creator_handle: extractedData.creator_handle || '',
         creator_name: extractedData.creator_name || '',
         post_caption: extractedData.post_caption || '',
@@ -580,7 +582,7 @@ export default function SmartTrendSubmission({
               >
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Trend URL
+                    Trend URL <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -621,7 +623,7 @@ export default function SmartTrendSubmission({
                         {formData.creator_handle && (
                           <div className="flex items-center gap-2 text-sm">
                             <UserIcon className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-300">@{formData.creator_handle}</span>
+                            <span className="text-gray-300">{formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</span>
                           </div>
                         )}
                         
@@ -661,15 +663,22 @@ export default function SmartTrendSubmission({
                       </div>
                       
                       {/* Right side - thumbnail */}
-                      {formData.thumbnail_url && (
-                        <div className="flex justify-end">
+                      <div className="flex justify-end">
+                        {formData.thumbnail_url ? (
                           <img 
                             src={formData.thumbnail_url} 
                             alt="Trend thumbnail"
-                            className="w-24 h-24 object-cover rounded-lg border border-gray-700"
+                            className="w-24 h-24 object-cover rounded-lg border border-gray-700 shadow-lg"
                           />
-                        </div>
-                      )}
+                        ) : (
+                          <div className="w-24 h-24 bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center">
+                            <div className="text-center">
+                              <CameraIcon className="w-6 h-6 text-gray-500 mx-auto mb-1" />
+                              <p className="text-xs text-gray-500">No thumbnail</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -677,7 +686,7 @@ export default function SmartTrendSubmission({
                 {/* Title Input */}
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Give it a catchy title
+                    Give it a catchy title <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -1022,7 +1031,7 @@ export default function SmartTrendSubmission({
                         <p className="text-white font-medium">{formData.title}</p>
                         <p className="text-sm text-gray-400">{formData.url}</p>
                         {formData.creator_handle && (
-                          <p className="text-sm text-gray-400">by @{formData.creator_handle}</p>
+                          <p className="text-sm text-gray-400">by {formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</p>
                         )}
                       </div>
                       {formData.thumbnail_url && (
