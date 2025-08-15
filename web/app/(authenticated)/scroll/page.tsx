@@ -58,7 +58,7 @@ const PLATFORMS = [
 
 export default function LegibleScrollPage() {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, updateUserEarnings } = useAuth();
   
   // Default tier info for display
   const tierInfo = user ? calculateUserTier({
@@ -485,6 +485,9 @@ export default function LegibleScrollPage() {
       
       // Clear success message after 5 seconds
       setTimeout(() => setSubmitMessage(null), 5000);
+      
+      // Update user earnings immediately for real-time display
+      if (updateUserEarnings) updateUserEarnings(finalPayment);
       
       // Reload stats and refresh user data to update pending earnings
       loadTodaysStats();

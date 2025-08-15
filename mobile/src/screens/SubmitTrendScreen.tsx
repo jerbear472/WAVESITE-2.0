@@ -54,7 +54,7 @@ interface TrendCategory {
 }
 
 const categories: TrendCategory[] = [
-  // Original categories
+  // Core categories
   { id: 'visual_style', label: 'Visual Style', icon: 'eye', color: '#f5576c' },
   { id: 'audio_music', label: 'Audio/Music', icon: 'music', color: '#667eea' },
   { id: 'creator_technique', label: 'Creator Tech', icon: 'video', color: '#4facfe' },
@@ -62,16 +62,24 @@ const categories: TrendCategory[] = [
   { id: 'product_brand', label: 'Product/Brand', icon: 'shopping-bag', color: '#ffa726' },
   { id: 'behavior_pattern', label: 'Behavior', icon: 'trending-up', color: '#ab47bc' },
   
-  // New categories
-  { id: 'automotive', label: 'Cars/Machines', icon: 'truck', color: '#e74c3c' },
-  { id: 'food_drink', label: 'Food/Drink', icon: 'coffee', color: '#f39c12' },
+  // Essential categories
+  { id: 'political', label: 'Political', icon: 'flag', color: '#2c3e50' },
+  { id: 'finance', label: 'Finance/Crypto', icon: 'dollar-sign', color: '#16a085' },
+  { id: 'news_events', label: 'News/Events', icon: 'alert-circle', color: '#c0392b' },
+  { id: 'education', label: 'Education', icon: 'book', color: '#8e44ad' },
+  { id: 'relationship', label: 'Relationships', icon: 'heart', color: '#e74c3c' },
+  { id: 'animals_pets', label: 'Animals/Pets', icon: 'github', color: '#f39c12' },
+  
+  // Lifestyle categories
+  { id: 'automotive', label: 'Cars/Machines', icon: 'truck', color: '#34495e' },
+  { id: 'food_drink', label: 'Food/Drink', icon: 'coffee', color: '#d35400' },
   { id: 'technology', label: 'Technology', icon: 'smartphone', color: '#3498db' },
   { id: 'sports', label: 'Sports/Fitness', icon: 'activity', color: '#27ae60' },
   { id: 'dance', label: 'Dance', icon: 'users', color: '#9b59b6' },
   { id: 'travel', label: 'Travel', icon: 'map-pin', color: '#1abc9c' },
-  { id: 'fashion', label: 'Fashion', icon: 'shopping-bag', color: '#e91e63' },
+  { id: 'fashion', label: 'Fashion', icon: 'shopping-cart', color: '#e91e63' },
   { id: 'gaming', label: 'Gaming', icon: 'monitor', color: '#673ab7' },
-  { id: 'health', label: 'Health/Wellness', icon: 'heart', color: '#ff5722' },
+  { id: 'health', label: 'Health/Wellness', icon: 'shield', color: '#ff5722' },
   { id: 'diy_crafts', label: 'DIY/Crafts', icon: 'tool', color: '#795548' },
 ];
 
@@ -152,6 +160,36 @@ const categoryQuestions: Record<string, Array<{label: string, key: string, type:
   behavior_pattern: [
     { label: 'Behavior Type', key: 'behavior_type', type: 'select', options: ['Social', 'Lifestyle', 'Work/School', 'Dating', 'Family', 'Internet Culture'] },
     { label: 'Relatability', key: 'relatability', type: 'select', options: ['Very Relatable', 'Somewhat Relatable', 'Niche', 'Controversial'] },
+  ],
+  political: [
+    { label: 'Political Spectrum', key: 'spectrum', type: 'select', options: ['Far Left', 'Left', 'Center-Left', 'Center', 'Center-Right', 'Right', 'Far Right', 'Non-partisan'] },
+    { label: 'Topic Type', key: 'topic_type', type: 'select', options: ['Policy', 'Election', 'Politician', 'Commentary', 'Satire', 'Activism', 'International'] },
+    { label: 'Tone', key: 'tone', type: 'select', options: ['Serious', 'Humorous', 'Critical', 'Supportive', 'Educational', 'Inflammatory'] },
+  ],
+  finance: [
+    { label: 'Finance Type', key: 'finance_type', type: 'select', options: ['Stocks', 'Crypto', 'Real Estate', 'Personal Finance', 'Business', 'Economy', 'Trading'] },
+    { label: 'Asset/Symbol', key: 'asset', type: 'text' },
+    { label: 'Sentiment', key: 'sentiment', type: 'select', options: ['Bullish', 'Bearish', 'Neutral', 'Educational', 'Warning'] },
+  ],
+  news_events: [
+    { label: 'News Category', key: 'news_category', type: 'select', options: ['Breaking', 'Local', 'National', 'International', 'Entertainment', 'Science', 'Weather'] },
+    { label: 'Location/Region', key: 'location', type: 'text' },
+    { label: 'Severity', key: 'severity', type: 'select', options: ['Critical', 'Major', 'Moderate', 'Minor', 'Positive'] },
+  ],
+  education: [
+    { label: 'Subject Area', key: 'subject', type: 'select', options: ['STEM', 'History', 'Language', 'Arts', 'Life Skills', 'Test Prep', 'Career'] },
+    { label: 'Education Level', key: 'level', type: 'select', options: ['Elementary', 'Middle School', 'High School', 'College', 'Professional', 'General'] },
+    { label: 'Format', key: 'format', type: 'select', options: ['Tutorial', 'Fact', 'Study Tip', 'Explainer', 'Demo', 'Quiz'] },
+  ],
+  relationship: [
+    { label: 'Relationship Type', key: 'relationship_type', type: 'select', options: ['Dating', 'Marriage', 'Friendship', 'Family', 'Breakup', 'Advice', 'Story'] },
+    { label: 'Perspective', key: 'perspective', type: 'select', options: ['Personal Story', 'Advice', 'Comedy', 'Educational', 'Warning', 'Celebration'] },
+    { label: 'Target Audience', key: 'audience', type: 'select', options: ['Singles', 'Couples', 'Parents', 'Teens', 'General'] },
+  ],
+  animals_pets: [
+    { label: 'Animal Type', key: 'animal_type', type: 'select', options: ['Dog', 'Cat', 'Bird', 'Exotic', 'Farm', 'Wild', 'Aquatic', 'Multiple'] },
+    { label: 'Content Type', key: 'content_type', type: 'select', options: ['Cute/Funny', 'Training', 'Rescue', 'Educational', 'Care Tips', 'Adoption'] },
+    { label: 'Breed/Species', key: 'breed', type: 'text' },
   ],
 };
 

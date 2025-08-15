@@ -967,11 +967,11 @@ export default function Dashboard() {
                       {formatCurrency(stats.total_earnings)}
                     </span>
                   </div>
-                  {stats.pending_earnings > 0 && (
+                  {(user?.pending_earnings || stats.pending_earnings) > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">Pending</span>
                       <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                        {formatCurrency(stats.pending_earnings)}
+                        {formatCurrency(user?.pending_earnings || stats.pending_earnings)}
                       </span>
                     </div>
                   )}

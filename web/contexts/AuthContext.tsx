@@ -97,6 +97,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userStats = {};
           }
           
+          // Also fetch pending earnings directly from earnings_ledger
+          const { data: pendingData } = await supabase
+            .from('earnings_ledger')
+            .select('amount')
+            .eq('user_id', session.user.id)
+            .in('status', ['pending', 'awaiting_verification'])
+            .not('amount', 'is', null);
+          
+          const actualPendingEarnings = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+          
           // Check if user is admin from database field
           const isAdmin = profile.is_admin === true;
           
@@ -112,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ...profile,
             role: 'participant',
             total_earnings: userStats.total_earnings || profile.total_earnings || 0,
-            pending_earnings: userStats.pending_earnings || profile.pending_earnings || 0,
+            pending_earnings: actualPendingEarnings || userStats.pending_earnings || profile.pending_earnings || 0,
             trends_spotted: userStats.trends_spotted || 0,
             accuracy_score: userStats.accuracy_score || 0,
             validation_score: userStats.validation_score || 0,
@@ -140,6 +150,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Subscribe to earnings_ledger changes for real-time updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const earningsSubscription = supabase
+      .channel('earnings-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'earnings_ledger',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Earnings update received:', payload);
+          // Refresh user data when earnings change
+          refreshUser();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      earningsSubscription.unsubscribe();
+    };
+  }, [user?.id]);
 
   const checkUser = async () => {
     try {
@@ -181,6 +218,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userStats = {};
           }
           
+          // Also fetch pending earnings directly from earnings_ledger
+          const { data: pendingData } = await supabase
+            .from('earnings_ledger')
+            .select('amount')
+            .eq('user_id', session.user.id)
+            .in('status', ['pending', 'awaiting_verification'])
+            .not('amount', 'is', null);
+          
+          const actualPendingEarnings = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+          
           // Check if user is admin from database field
           const isAdmin = profile.is_admin === true;
           
@@ -196,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ...profile,
             role: 'participant',
             total_earnings: userStats.total_earnings || profile.total_earnings || 0,
-            pending_earnings: userStats.pending_earnings || profile.pending_earnings || 0,
+            pending_earnings: actualPendingEarnings || userStats.pending_earnings || profile.pending_earnings || 0,
             trends_spotted: userStats.trends_spotted || 0,
             accuracy_score: userStats.accuracy_score || 0,
             validation_score: userStats.validation_score || 0,
@@ -447,26 +494,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Update local state immediately for UI feedback
     setUser({
       ...user,
-      total_earnings: user.total_earnings + amount,
+      pending_earnings: user.pending_earnings + amount,
       trends_spotted: user.trends_spotted + 1
     });
 
-    // Also update in database
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          total_earnings: user.total_earnings + amount,
-          trends_spotted: user.trends_spotted + 1
-        })
-        .eq('id', user.id);
-
-      if (error) {
-        console.error('Error updating earnings:', error);
-      }
-    } catch (error) {
-      console.error('Error updating earnings:', error);
-    }
+    // Refresh full user data to get accurate earnings from earnings_ledger
+    setTimeout(() => {
+      refreshUser();
+    }, 500);
   };
 
   return (
