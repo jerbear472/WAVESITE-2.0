@@ -54,10 +54,12 @@ interface TrendCategory {
 }
 
 const categories: TrendCategory[] = [
-  { id: 'viral', label: 'Viral', icon: 'trending-up', color: '#f5576c' },
-  { id: 'emerging', label: 'Emerging', icon: 'sunrise', color: '#667eea' },
-  { id: 'niche', label: 'Niche', icon: 'target', color: '#4facfe' },
-  { id: 'comeback', label: 'Comeback', icon: 'refresh-cw', color: '#43e97b' },
+  { id: 'visual_style', label: 'Visual Style', icon: 'eye', color: '#f5576c' },
+  { id: 'audio_music', label: 'Audio/Music', icon: 'music', color: '#667eea' },
+  { id: 'creator_technique', label: 'Creator Tech', icon: 'video', color: '#4facfe' },
+  { id: 'meme_format', label: 'Meme Format', icon: 'smile', color: '#43e97b' },
+  { id: 'product_brand', label: 'Product/Brand', icon: 'shopping-bag', color: '#ffa726' },
+  { id: 'behavior_pattern', label: 'Behavior', icon: 'trending-up', color: '#ab47bc' },
 ];
 
 const SubmitTrendScreen: React.FC = () => {
@@ -258,35 +260,42 @@ const SubmitTrendScreen: React.FC = () => {
     ReactNativeHapticFeedback.trigger('impactMedium');
 
     try {
-      const username = storage.getString('user_username') || 'anonymous';
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
       
       const { data, error } = await supabase
-        .from('captured_trends')
+        .from('trend_submissions')
         .insert({
-          url: metadata.url,
+          spotter_id: user.id,
+          post_url: metadata.url,
           platform: metadata.platform,
-          title: metadata.title,
-          description: metadata.description,
-          author_name: metadata.author,
-          author_handle: metadata.authorHandle,
+          trend_name: metadata.title || 'Untitled Trend',
+          description: metadata.description || notes || 'No description',
+          creator_handle: metadata.authorHandle,
+          creator_name: metadata.author,
           thumbnail_url: metadata.thumbnail,
+          screenshot_url: metadata.thumbnail,
           category: selectedCategory,
-          confidence_score: confidence,
-          notes: notes,
-          metadata: {
-            likes: metadata.likes,
-            views: metadata.views,
-            shares: metadata.shares,
-            comments: metadata.comments,
-            hashtags: metadata.hashtags,
-          },
-          submitted_by: username,
-          status: 'pending_validation',
+          virality_prediction: Math.round(confidence / 10), // Convert 0-100 to 1-10
+          views_count: metadata.views || 0,
+          likes_count: metadata.likes || 0,
+          shares_count: metadata.shares || 0,
+          comments_count: metadata.comments || 0,
+          hashtags: metadata.hashtags || [],
+          status: 'submitted',
+          wave_score: Math.round(confidence),
+          quality_score: confidence / 100,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Submission error details:', error);
+        throw error;
+      }
 
       ReactNativeHapticFeedback.trigger('notificationSuccess');
       
@@ -307,9 +316,21 @@ const SubmitTrendScreen: React.FC = () => {
         ]
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submission error:', error);
-      Alert.alert('Submission Failed', 'Please try again later');
+      let errorMessage = 'Please try again later';
+      
+      if (error.message?.includes('authenticated')) {
+        errorMessage = 'Please log in to submit trends';
+      } else if (error.message?.includes('category')) {
+        errorMessage = 'Invalid category selected';
+      } else if (error.details) {
+        errorMessage = error.details;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Submission Failed', errorMessage);
     } finally {
       setLoading(false);
       buttonScale.value = withSpring(1);

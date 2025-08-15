@@ -385,6 +385,191 @@ export const EarningsDashboard: React.FC = () => {
           )}
         </div>
       </motion.div>
+      
+      {/* Payment Method Selection Modal */}
+      <AnimatePresence>
+        {showPaymentModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center"
+            onClick={() => setShowPaymentModal(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="bg-wave-900 rounded-t-3xl md:rounded-3xl p-8 w-full md:max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-white">Choose Payment Method</h3>
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  className="text-wave-400 hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <p className="text-wave-300 mb-6">Where should we send your money?</p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setSelectedPaymentMethod('venmo');
+                    setShowPaymentModal(false);
+                    setShowConfirmModal(true);
+                  }}
+                  className="w-full bg-wave-800/50 hover:bg-wave-700/50 border border-wave-600/30 rounded-xl p-4 flex items-center gap-4 transition-all group"
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg flex items-center justify-center">
+                    <Wallet className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-white">Venmo</p>
+                    <p className="text-sm text-wave-400">{venmoUsername}</p>
+                  </div>
+                  <ArrowUpRight className="w-5 h-5 text-wave-500 group-hover:text-wave-300 transition-colors" />
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setSelectedPaymentMethod('paypal');
+                    setShowPaymentModal(false);
+                    setShowConfirmModal(true);
+                  }}
+                  className="w-full bg-wave-800/50 hover:bg-wave-700/50 border border-wave-600/30 rounded-xl p-4 flex items-center gap-4 transition-all group"
+                >
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-yellow-400" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-white">PayPal</p>
+                    <p className="text-sm text-wave-400">{paypalEmail}</p>
+                  </div>
+                  <ArrowUpRight className="w-5 h-5 text-wave-500 group-hover:text-wave-300 transition-colors" />
+                </button>
+              </div>
+              
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="w-full mt-6 py-3 text-wave-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {showConfirmModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowConfirmModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-wave-900 rounded-3xl p-8 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-yellow-400" />
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-white text-center mb-4">Confirm Cash Out</h3>
+              
+              <p className="text-wave-300 text-center mb-8">
+                Send <span className="font-bold text-white">${availableBalance.toFixed(2)}</span> to{' '}
+                <span className="font-bold text-white">
+                  {selectedPaymentMethod === 'venmo' ? venmoUsername : paypalEmail}
+                </span>?
+              </p>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setShowSuccessModal(true);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-600 transition-all"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 bg-wave-800/50 text-wave-300 py-3 rounded-xl font-semibold hover:bg-wave-700/50 transition-all border border-wave-600/30"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Success Modal */}
+      <AnimatePresence>
+        {showSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowSuccessModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-wave-900 rounded-3xl p-8 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-center mb-6">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', duration: 0.5 }}
+                  className="w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center"
+                >
+                  <CheckCircle className="w-10 h-10 text-green-400" />
+                </motion.div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-white text-center mb-4">Success!</h3>
+              
+              <p className="text-wave-200 text-center text-lg mb-2">
+                You'll receive payment within 48 hours
+              </p>
+              
+              <p className="text-wave-400 text-center text-sm mb-8">
+                ${availableBalance.toFixed(2)} sent to {selectedPaymentMethod === 'venmo' ? venmoUsername : paypalEmail}
+              </p>
+              
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  // Reset balance after successful cashout
+                  setTotalEarnings(pendingAmount);
+                }}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-600 transition-all"
+              >
+                Done
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

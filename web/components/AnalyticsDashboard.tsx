@@ -88,19 +88,19 @@ export default function AnalyticsDashboard() {
 
       // Get recent submissions
       const { data: recentTrends } = await supabase
-        .from('captured_trends')
+        .from('trend_submissions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('spotter_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5);
 
       // Get best performing trend
       const { data: bestTrend } = await supabase
-        .from('captured_trends')
+        .from('trend_submissions')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('validation_status', 'approved')
-        .order('earnings', { ascending: false })
+        .eq('spotter_id', user.id)
+        .eq('status', 'approved')
+        .order('base_amount', { ascending: false })
         .limit(1)
         .single();
 
@@ -118,9 +118,9 @@ export default function AnalyticsDashboard() {
 
       // Get category distribution
       const { data: categoryData } = await supabase
-        .from('captured_trends')
+        .from('trend_submissions')
         .select('category')
-        .eq('user_id', user.id)
+        .eq('spotter_id', user.id)
         .gte('created_at', getTimeRangeStart());
 
       // Process category chart data

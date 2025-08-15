@@ -7,6 +7,9 @@ import {
   RefreshControl,
   Pressable,
   Dimensions,
+  Modal,
+  TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import Animated, {
   FadeIn,
@@ -52,8 +55,8 @@ export const EarningsDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('week');
   const [earnings, setEarnings] = useState<EarningsData>({
-    totalEarnings: 0,
-    weeklyEarnings: 0,
+    totalEarnings: 23.47,
+    weeklyEarnings: 4.25,
     sessionsCompleted: 0,
     avgPerSession: 0,
     trendsVerified: 0,
@@ -61,6 +64,17 @@ export const EarningsDashboard: React.FC = () => {
   });
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [chartData, setChartData] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  
+  // Cashout states
+  const [showCashoutModal, setShowCashoutModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'venmo' | 'paypal' | null>(null);
+  const [venmoUsername, setVenmoUsername] = useState('@username');
+  const [paypalEmail, setPaypalEmail] = useState('email@example.com');
+  const pendingAmount = 4.25;
+  const availableBalance = 23.47;
 
   // Fetch earnings data
   const fetchEarnings = useCallback(async () => {
@@ -228,10 +242,24 @@ export const EarningsDashboard: React.FC = () => {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={styles.totalLabel}>Total Earnings</Text>
-            <AnimatedText style={styles.totalValue}>
-              ${earnings.totalEarnings.toFixed(2)}
-            </AnimatedText>
+            <View style={styles.balanceContainer}>
+              <View>
+                <Text style={styles.totalLabel}>Available Balance</Text>
+                <AnimatedText style={styles.totalValue}>
+                  ${availableBalance.toFixed(2)}
+                </AnimatedText>
+              </View>
+              <View style={styles.pendingContainer}>
+                <Text style={styles.pendingLabel}>Pending</Text>
+                <Text style={styles.pendingValue}>${pendingAmount.toFixed(2)}</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={styles.cashoutButton}
+              onPress={() => setShowPaymentModal(true)}
+            >
+              <Text style={styles.cashoutButtonText}>Cash Out</Text>
+            </TouchableOpacity>
           </LinearGradient>
         </View>
 
@@ -360,6 +388,134 @@ export const EarningsDashboard: React.FC = () => {
           </GlassCard>
         </Animated.View>
       </ScrollView>
+      
+      {/* Payment Method Selection Modal */}
+      <Modal
+        visible={showPaymentModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowPaymentModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Where should we send your money?</Text>
+            
+            <TouchableOpacity
+              style={styles.paymentOption}
+              onPress={() => {
+                setSelectedPaymentMethod('venmo');
+                setShowPaymentModal(false);
+                setShowConfirmModal(true);
+              }}
+            >
+              <Icon name="wallet" size={24} color={enhancedTheme.colors.primary} />
+              <View style={styles.paymentOptionText}>
+                <Text style={styles.paymentMethodName}>Venmo</Text>
+                <Text style={styles.paymentMethodDetail}>{venmoUsername}</Text>
+              </View>
+              <Icon name="chevron-right" size={24} color={enhancedTheme.colors.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.paymentOption}
+              onPress={() => {
+                setSelectedPaymentMethod('paypal');
+                setShowPaymentModal(false);
+                setShowConfirmModal(true);
+              }}
+            >
+              <Icon name="cash" size={24} color={enhancedTheme.colors.primary} />
+              <View style={styles.paymentOptionText}>
+                <Text style={styles.paymentMethodName}>PayPal</Text>
+                <Text style={styles.paymentMethodDetail}>{paypalEmail}</Text>
+              </View>
+              <Icon name="chevron-right" size={24} color={enhancedTheme.colors.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setShowPaymentModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Confirmation Modal */}
+      <Modal
+        visible={showConfirmModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowConfirmModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Icon name="help-circle" size={48} color={enhancedTheme.colors.primary} style={styles.modalIcon} />
+            <Text style={styles.modalTitle}>Confirm Cash Out</Text>
+            <Text style={styles.confirmText}>
+              Send ${availableBalance.toFixed(2)} to {selectedPaymentMethod === 'venmo' ? venmoUsername : paypalEmail}?
+            </Text>
+            
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.confirmActionButton]}
+                onPress={() => {
+                  setShowConfirmModal(false);
+                  setShowSuccessModal(true);
+                  // Here you would trigger the actual cashout API call
+                }}
+              >
+                <Text style={styles.confirmButtonText}>Confirm</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.actionButton, styles.cancelActionButton]}
+                onPress={() => setShowConfirmModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <LinearGradient
+              colors={[enhancedTheme.colors.success + '20', enhancedTheme.colors.success + '10']}
+              style={styles.successIconContainer}
+            >
+              <Icon name="check-circle" size={48} color={enhancedTheme.colors.success} />
+            </LinearGradient>
+            <Text style={styles.modalTitle}>Success!</Text>
+            <Text style={styles.successMessage}>
+              You'll receive payment within 48 hours
+            </Text>
+            <Text style={styles.successDetail}>
+              ${availableBalance.toFixed(2)} sent to {selectedPaymentMethod === 'venmo' ? venmoUsername : paypalEmail}
+            </Text>
+            
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={() => {
+                setShowSuccessModal(false);
+                // Reset balance after successful cashout
+                setEarnings(prev => ({ ...prev, totalEarnings: pendingAmount }));
+              }}
+            >
+              <Text style={styles.doneButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -513,5 +669,154 @@ const styles = StyleSheet.create({
   bonusColumn: {
     flex: 1,
     textAlign: 'right',
+  },
+  balanceContainer: {
+    width: '100%',
+  },
+  pendingContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  pendingLabel: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  pendingValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginTop: 2,
+  },
+  cashoutButton: {
+    marginTop: 16,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    alignSelf: 'center',
+  },
+  cashoutButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: enhancedTheme.colors.primary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: enhancedTheme.colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalIcon: {
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: enhancedTheme.colors.text,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  paymentOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: enhancedTheme.colors.background,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  paymentOptionText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  paymentMethodName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: enhancedTheme.colors.text,
+  },
+  paymentMethodDetail: {
+    fontSize: 14,
+    color: enhancedTheme.colors.textSecondary,
+    marginTop: 2,
+  },
+  cancelButton: {
+    marginTop: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: enhancedTheme.colors.textSecondary,
+  },
+  confirmText: {
+    fontSize: 16,
+    color: enhancedTheme.colors.text,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  confirmActionButton: {
+    backgroundColor: enhancedTheme.colors.primary,
+  },
+  cancelActionButton: {
+    backgroundColor: enhancedTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: enhancedTheme.colors.border,
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  successIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  successMessage: {
+    fontSize: 18,
+    color: enhancedTheme.colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  successDetail: {
+    fontSize: 14,
+    color: enhancedTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  doneButton: {
+    backgroundColor: enhancedTheme.colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    alignSelf: 'center',
+  },
+  doneButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

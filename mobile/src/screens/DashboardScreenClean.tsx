@@ -59,16 +59,16 @@ export const DashboardScreenClean: React.FC = () => {
 
       // Get trends count
       const { count: trendsCount } = await supabase
-        .from('captured_trends')
+        .from('trend_submissions')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+        .eq('spotter_id', user.id);
 
       // Get recent activity (validations and trends)
       const { data: recentTrends } = await supabase
-        .from('captured_trends')
-        .select('id, title, status, captured_at, validation_reward')
-        .eq('user_id', user.id)
-        .order('captured_at', { ascending: false })
+        .from('trend_submissions')
+        .select('id, trend_name, status, created_at, base_amount')
+        .eq('spotter_id', user.id)
+        .order('created_at', { ascending: false })
         .limit(5);
 
       const { data: recentValidations } = await supabase

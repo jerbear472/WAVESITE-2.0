@@ -75,11 +75,11 @@ export const MyTrendsScreen: React.FC = () => {
       startDate.setDate(startDate.getDate() - daysAgo);
       
       const { data, error } = await supabase
-        .from('captured_trends')
+        .from('trend_submissions')
         .select('*')
-        .eq('user_id', user.id)
-        .gte('captured_at', startDate.toISOString())
-        .order('captured_at', { ascending: false });
+        .eq('spotter_id', user.id)
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       setTrends(data || []);

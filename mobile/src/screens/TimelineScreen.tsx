@@ -144,6 +144,52 @@ export const TimelineScreen: React.FC = () => {
 
               <Text style={styles.trendDescription}>{trend.description}</Text>
 
+              {trend.creator_handle && (
+                <View style={styles.creatorInfo}>
+                  <Text style={styles.creatorLabel}>Creator:</Text>
+                  <Text style={styles.creatorHandle}>@{trend.creator_handle}</Text>
+                </View>
+              )}
+
+              {trend.platform && (
+                <View style={styles.platformBadge}>
+                  <Text style={styles.platformText}>{trend.platform}</Text>
+                </View>
+              )}
+
+              <View style={styles.trendStats}>
+                <View style={styles.stat}>
+                  <Text style={styles.statIcon}>👁</Text>
+                  <Text style={styles.statValue}>
+                    {trend.views_count ? 
+                      (trend.views_count >= 1000000 ? `${(trend.views_count / 1000000).toFixed(1)}M` :
+                       trend.views_count >= 1000 ? `${(trend.views_count / 1000).toFixed(1)}K` :
+                       trend.views_count.toString()) : '0'}
+                  </Text>
+                  <Text style={styles.statLabel}>Views</Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={styles.statIcon}>❤️</Text>
+                  <Text style={styles.statValue}>
+                    {trend.likes_count ? 
+                      (trend.likes_count >= 1000000 ? `${(trend.likes_count / 1000000).toFixed(1)}M` :
+                       trend.likes_count >= 1000 ? `${(trend.likes_count / 1000).toFixed(1)}K` :
+                       trend.likes_count.toString()) : '0'}
+                  </Text>
+                  <Text style={styles.statLabel}>Likes</Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={styles.statIcon}>👥</Text>
+                  <Text style={styles.statValue}>
+                    {trend.follower_count ? 
+                      (trend.follower_count >= 1000000 ? `${(trend.follower_count / 1000000).toFixed(1)}M` :
+                       trend.follower_count >= 1000 ? `${(trend.follower_count / 1000).toFixed(1)}K` :
+                       trend.follower_count.toString()) : '0'}
+                  </Text>
+                  <Text style={styles.statLabel}>Audience</Text>
+                </View>
+              </View>
+
               <View style={styles.trendStats}>
                 <View style={styles.stat}>
                   <Text style={styles.statIcon}>🌊</Text>
@@ -157,10 +203,20 @@ export const TimelineScreen: React.FC = () => {
                 </View>
                 <View style={styles.stat}>
                   <Text style={styles.statIcon}>💰</Text>
-                  <Text style={styles.statValue}>${trend.reward_amount || 0}</Text>
+                  <Text style={styles.statValue}>${trend.base_amount || trend.reward_amount || 0}</Text>
                   <Text style={styles.statLabel}>Earned</Text>
                 </View>
               </View>
+
+              {trend.hashtags && trend.hashtags.length > 0 && (
+                <View style={styles.hashtagsContainer}>
+                  {trend.hashtags.slice(0, 3).map((tag: string, index: number) => (
+                    <View key={index} style={styles.hashtagBadge}>
+                      <Text style={styles.hashtagText}>#{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
 
               {trend.validations && trend.validations.length > 0 && (
                 <View style={styles.validationSection}>
@@ -337,5 +393,51 @@ const styles = StyleSheet.create({
   validationText: {
     fontSize: theme.typography.bodySmall.fontSize,
     color: theme.colors.textLight,
+  },
+  creatorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  creatorLabel: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.textMuted,
+    marginRight: theme.spacing.xs,
+  },
+  creatorHandle: {
+    fontSize: theme.typography.bodySmall.fontSize,
+    color: theme.colors.primary,
+    fontWeight: '500',
+  },
+  platformBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.primary + '20',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    marginBottom: theme.spacing.sm,
+  },
+  platformText: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  hashtagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.sm,
+  },
+  hashtagBadge: {
+    backgroundColor: theme.colors.wave[100],
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.xs,
+  },
+  hashtagText: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.wave[600],
+    fontWeight: '500',
   },
 });
