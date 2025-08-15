@@ -168,8 +168,6 @@ export default function Dashboard() {
         (payload) => {
           console.log('Earnings update on dashboard:', payload);
           // Refresh dashboard data when earnings change
-          calculateManualStats();
-          // Also update activity feed
           fetchDashboardData();
         }
       )
