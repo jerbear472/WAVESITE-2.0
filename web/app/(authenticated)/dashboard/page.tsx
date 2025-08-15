@@ -612,8 +612,8 @@ export default function Dashboard() {
         sizeDisplay = totalEngagement.toString();
         growthIndicator = 'engagements';
       } else {
-        sizeDisplay = '0';
-        growthIndicator = 'starting';
+        sizeDisplay = '';
+        growthIndicator = '';
       }
     }
     
@@ -923,13 +923,19 @@ export default function Dashboard() {
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
                               {/* Validation votes */}
-                              {(trend.approve_count || trend.reject_count) ? (
+                              {(trend.approve_count > 0 || trend.reject_count > 0) && (
                                 <span className="flex items-center gap-1">
-                                  <span className="text-green-500">👍 {trend.approve_count || 0}</span>
-                                  <span className="text-gray-400">·</span>
-                                  <span className="text-red-500">👎 {trend.reject_count || 0}</span>
+                                  {trend.approve_count > 0 && (
+                                    <span className="text-green-500">👍 {trend.approve_count}</span>
+                                  )}
+                                  {trend.approve_count > 0 && trend.reject_count > 0 && (
+                                    <span className="text-gray-400">·</span>
+                                  )}
+                                  {trend.reject_count > 0 && (
+                                    <span className="text-red-500">👎 {trend.reject_count}</span>
+                                  )}
                                 </span>
-                              ) : null}
+                              )}
                               <span className={`
                                 ${trend.status === 'viral' ? 'text-red-600' :
                                   trend.status === 'approved' ? 'text-green-600' :
@@ -961,24 +967,32 @@ export default function Dashboard() {
                             </div>
                             
                             {/* Audience Reach */}
-                            <div className="text-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg px-3 py-2 border border-blue-200 dark:border-blue-800">
-                              <div className="text-lg font-bold text-gray-900 dark:text-white">
-                                {getAudienceSize(trend).size}
+                            {(getAudienceSize(trend).size || getAudienceSize(trend).growth) && (
+                              <div className="text-center bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg px-3 py-2 border border-blue-200 dark:border-blue-800">
+                                {getAudienceSize(trend).size && (
+                                  <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                    {getAudienceSize(trend).size}
+                                  </div>
+                                )}
+                                {getAudienceSize(trend).growth && (
+                                  <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                    {getAudienceSize(trend).growth}
+                                  </div>
+                                )}
+                                {parseFloat(getAudienceSize(trend).engagementRate) > 0 && (
+                                  <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">
+                                    {getAudienceSize(trend).engagementRate}% engaged
+                                  </div>
+                                )}
                               </div>
-                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                {getAudienceSize(trend).growth}
-                              </div>
-                              {parseFloat(getAudienceSize(trend).engagementRate) > 0 && (
-                                <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-1">
-                                  {getAudienceSize(trend).engagementRate}% engaged
-                                </div>
-                              )}
-                            </div>
+                            )}
                             
                             {/* Validation Count if available */}
                             {((trend.approve_count || 0) + (trend.reject_count || 0)) > 0 && (
                               <div className="text-center text-xs text-gray-500">
-                                {trend.approve_count || 0} 👍 {trend.reject_count || 0} 👎
+                                {trend.approve_count > 0 && <span className="text-green-500">{trend.approve_count} 👍</span>}
+                                {trend.approve_count > 0 && trend.reject_count > 0 && <span className="mx-1">·</span>}
+                                {trend.reject_count > 0 && <span className="text-red-500">{trend.reject_count} 👎</span>}
                               </div>
                             )}
                           </div>
