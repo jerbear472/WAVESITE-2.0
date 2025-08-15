@@ -859,14 +859,17 @@ export default function Timeline() {
                           <div className="pt-4 border-t border-gray-800 space-y-2">
                             {/* Primary Metrics Row */}
                             <div className="grid grid-cols-2 gap-2">
-                              <div className="flex items-center gap-1.5 bg-gray-800/50 rounded-lg px-2.5 py-1.5">
-                                <BarChartIcon className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
-                                <span className="text-xs text-gray-300 font-medium">Sentiment: {trend.wave_score || 50}%</span>
-                              </div>
-                              <div className="flex items-center justify-center bg-gray-800/50 rounded-lg px-2.5 py-1.5">
-                                <span className={`text-xs font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                              <div className="flex flex-col items-center bg-gray-800/50 rounded-lg px-2 py-1.5">
+                                <span className={`text-xs font-bold ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
                                   {getVelocityDisplay(getTrendVelocity(trend)).text}
                                 </span>
+                                <span className="text-xs text-gray-500">Velocity</span>
+                              </div>
+                              <div className="flex flex-col items-center bg-gray-800/50 rounded-lg px-2 py-1.5">
+                                <span className="text-xs font-bold text-gray-300">
+                                  {formatEngagement((trend.views_count || 0) + (trend.likes_count || 0) * 10)}
+                                </span>
+                                <span className="text-xs text-gray-500">Audience</span>
                               </div>
                             </div>
                             
@@ -1046,14 +1049,17 @@ export default function Timeline() {
                             )}
 
                             <div className="flex flex-wrap items-center gap-3">
-                              <div className="flex items-center gap-1.5 bg-gray-800/50 rounded-lg px-3 py-1.5">
-                                <BarChartIcon className="w-4 h-4 text-yellow-400" />
-                                <span className="text-sm text-gray-300 font-medium">Sentiment: {trend.wave_score || 50}%</span>
-                              </div>
-                              <div className="bg-gray-800/50 rounded-lg px-3 py-1.5">
-                                <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                              <div className="flex flex-col items-center bg-gray-800/50 rounded-lg px-3 py-1.5 min-w-[80px]">
+                                <span className={`text-sm font-bold ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
                                   {getVelocityDisplay(getTrendVelocity(trend)).text}
                                 </span>
+                                <span className="text-xs text-gray-500">Velocity</span>
+                              </div>
+                              <div className="flex flex-col items-center bg-gray-800/50 rounded-lg px-3 py-1.5 min-w-[80px]">
+                                <span className="text-sm font-bold text-gray-300">
+                                  {formatEngagement((trend.views_count || 0) + (trend.likes_count || 0) * 10)}
+                                </span>
+                                <span className="text-xs text-gray-500">Audience</span>
                               </div>
                               <div className="flex items-center gap-2 bg-gray-800/50 rounded-lg px-3 py-1.5">
                                 <span className="text-sm text-green-400 font-medium">👍 {trend.approve_count || 0}</span>
@@ -1302,11 +1308,16 @@ export default function Timeline() {
                                                   </div>
                                                 )}
 
-                                                {/* Wave Score */}
+                                                {/* Velocity & Audience */}
                                                 <div className="flex items-center justify-between text-xs">
-                                                  <div className="flex items-center gap-1 text-gray-400">
-                                                    <BarChartIcon className="w-3 h-3 text-yellow-400" />
-                                                    <span>Sentiment: {trend.wave_score || 50}%</span>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className={`font-bold ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                                                      {getVelocityDisplay(getTrendVelocity(trend)).text.split(' ')[1]}
+                                                    </span>
+                                                    <span className="text-gray-400">•</span>
+                                                    <span className="text-gray-400">
+                                                      {formatEngagement((trend.views_count || 0) + (trend.likes_count || 0) * 10)} reach
+                                                    </span>
                                                   </div>
                                                   {trend.bounty_amount > 0 && (
                                                     <div className={`px-2 py-0.5 rounded-full ${

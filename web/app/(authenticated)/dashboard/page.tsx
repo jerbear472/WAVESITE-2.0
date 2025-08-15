@@ -472,18 +472,26 @@ export default function Dashboard() {
     return categoryMap[category] || { emoji: '📊', color: 'from-gray-500 to-gray-600', label: category };
   };
 
-  const calculateSentiment = (trend: RecentTrend) => {
-    // Use wave_score if available (this is where sentiment is stored)
-    if (trend.wave_score) return trend.wave_score;
+  const getTrendVelocity = (trend: RecentTrend) => {
+    // Calculate velocity based on time and engagement
+    const hoursSincePost = (Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60);
+    const engagementRate = ((trend.likes_count || 0) + (trend.shares_count || 0) + (trend.comments_count || 0)) / Math.max(hoursSincePost, 1);
     
-    // Fallback calculation based on engagement and validation
-    const baseScore = 50; // Start at neutral
-    const engagementScore = Math.min(
-      ((trend.likes_count || 0) + (trend.shares_count || 0)) / 1000, 
-      30
-    );
-    const validationScore = Math.min(trend.validation_count * 5, 20);
-    return Math.min(baseScore + engagementScore + validationScore, 100);
+    if (engagementRate > 1000) return { label: '🚀 Explosive', color: 'text-red-500' };
+    if (engagementRate > 500) return { label: '⚡ Viral', color: 'text-orange-500' };
+    if (engagementRate > 100) return { label: '🔥 Hot', color: 'text-yellow-500' };
+    if (engagementRate > 50) return { label: '📈 Rising', color: 'text-green-500' };
+    return { label: '🌱 Growing', color: 'text-blue-500' };
+  };
+
+  const getAudienceSize = (trend: RecentTrend) => {
+    const totalReach = (trend.views_count || 0) + (trend.likes_count || 0) * 10;
+    
+    if (totalReach >= 1000000) return { size: `${(totalReach / 1000000).toFixed(1)}M`, label: 'Massive' };
+    if (totalReach >= 100000) return { size: `${(totalReach / 1000).toFixed(0)}K`, label: 'Large' };
+    if (totalReach >= 10000) return { size: `${(totalReach / 1000).toFixed(1)}K`, label: 'Medium' };
+    if (totalReach >= 1000) return { size: `${(totalReach / 1000).toFixed(1)}K`, label: 'Growing' };
+    return { size: totalReach.toString(), label: 'Small' };
   };
 
   if (loading) {
@@ -750,21 +758,21 @@ export default function Dashboard() {
                             </div>
                           </div>
                           
-                          <div className="text-center min-w-[80px]">
-                            <div className="relative">
-                              {/* Sentiment circle indicator */}
-                              <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-neutral-800 relative overflow-hidden">
-                                <div 
-                                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-500 to-green-500 transition-all duration-500"
-                                  style={{ height: `${calculateSentiment(trend)}%` }}
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-lg font-bold text-gray-900 dark:text-white">
-                                    {calculateSentiment(trend)}
-                                  </span>
-                                </div>
+                          <div className="flex flex-col gap-2 min-w-[100px]">
+                            {/* Velocity Indicator */}
+                            <div className="text-center bg-gray-100 dark:bg-neutral-800 rounded-lg px-3 py-2">
+                              <div className={`text-sm font-bold ${getTrendVelocity(trend).color}`}>
+                                {getTrendVelocity(trend).label}
                               </div>
-                              <div className="text-xs text-gray-500 mt-1">Sentiment</div>
+                              <div className="text-xs text-gray-500">Velocity</div>
+                            </div>
+                            
+                            {/* Audience Size */}
+                            <div className="text-center bg-gray-100 dark:bg-neutral-800 rounded-lg px-3 py-2">
+                              <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                {getAudienceSize(trend).size}
+                              </div>
+                              <div className="text-xs text-gray-500">{getAudienceSize(trend).label}</div>
                             </div>
                           </div>
                         </div>
