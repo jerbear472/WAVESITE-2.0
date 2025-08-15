@@ -967,10 +967,10 @@ export default function Dashboard() {
                             
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                               <span>{formatTimeAgo(trend.created_at)}</span>
-                              {trend.likes_count > 0 && (
+                              {trend.likes_count && trend.likes_count > 0 && (
                                 <span>❤️ {formatNumber(trend.likes_count)}</span>
                               )}
-                              {trend.views_count > 0 && (
+                              {trend.views_count && trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
                               {((trend.approve_count ?? 0) > 0 || (trend.reject_count ?? 0) > 0) && (
