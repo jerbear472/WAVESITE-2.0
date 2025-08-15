@@ -1,0 +1,46 @@
+{
+  "name": "wavesite-desktop",
+  "version": "2.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "NODE_ENV=development electron .",
+    "build-web": "cd ../web && npm run build && npx next export",
+    "build": "npm run build-web && electron-builder",
+    "dist": "electron-builder",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": ["wavesite", "desktop", "dashboard"],
+  "author": "WaveSite",
+  "license": "ISC",
+  "description": "WaveSite Desktop Application",
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.wavesite.desktop",
+    "productName": "WaveSite",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "icon.png",
+      "../web/out/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "icon.png"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "icon.png"
+    }
+  }
+}
