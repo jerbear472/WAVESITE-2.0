@@ -60,6 +60,9 @@ interface RecentTrend {
   posted_at?: string;
   earnings_amount?: number;
   isUserTrend?: boolean;
+  wave_score?: number; // This holds the sentiment value
+  approve_count?: number;
+  reject_count?: number;
   spotter?: {
     username: string;
     email: string;
@@ -469,14 +472,18 @@ export default function Dashboard() {
     return categoryMap[category] || { emoji: '📊', color: 'from-gray-500 to-gray-600', label: category };
   };
 
-  const calculateWaveScore = (trend: RecentTrend) => {
-    const baseScore = trend.virality_prediction || 5;
-    const validationBonus = Math.min(trend.validation_count * 0.5, 3);
-    const engagementBonus = Math.min(
-      ((trend.likes_count || 0) + (trend.shares_count || 0)) / 10000, 
-      2
+  const calculateSentiment = (trend: RecentTrend) => {
+    // Use wave_score if available (this is where sentiment is stored)
+    if (trend.wave_score) return trend.wave_score;
+    
+    // Fallback calculation based on engagement and validation
+    const baseScore = 50; // Start at neutral
+    const engagementScore = Math.min(
+      ((trend.likes_count || 0) + (trend.shares_count || 0)) / 1000, 
+      30
     );
-    return Math.min(baseScore + validationBonus + engagementBonus, 10).toFixed(1);
+    const validationScore = Math.min(trend.validation_count * 5, 20);
+    return Math.min(baseScore + engagementScore + validationScore, 100);
   };
 
   if (loading) {
@@ -532,27 +539,36 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
+            className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
-                <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 animate-pulse" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
+                  <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+                {stats.earnings_today > 0 && (
+                  <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full animate-pulse">
+                    +{formatCurrency(stats.earnings_today)} today
+                  </span>
+                )}
               </div>
-              {stats.earnings_today > 0 && (
-                <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full">
-                  +{formatCurrency(stats.earnings_today)} today
-                </span>
-              )}
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Total Cashed Out</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-              {formatCurrency(stats.total_cashed_out)}
-            </p>
-            {stats.total_earnings > 0 && (
-              <p className="text-sm text-green-600 mt-2">
-                {formatCurrency(stats.total_earnings)} available
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Total Earnings</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {formatCurrency(stats.total_earnings + stats.total_cashed_out)}
               </p>
-            )}
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-green-600">
+                  {formatCurrency(stats.total_earnings)} available
+                </p>
+                {stats.pending_earnings > 0 && (
+                  <p className="text-xs text-yellow-600">
+                    {formatCurrency(stats.pending_earnings)} pending
+                  </p>
+                )}
+              </div>
+            </div>
           </motion.div>
 
           <motion.div
@@ -712,6 +728,14 @@ export default function Dashboard() {
                               {trend.views_count && trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
+                              {/* Validation votes */}
+                              {(trend.approve_count || trend.reject_count) ? (
+                                <span className="flex items-center gap-1">
+                                  <span className="text-green-500">👍 {trend.approve_count || 0}</span>
+                                  <span className="text-gray-400">·</span>
+                                  <span className="text-red-500">👎 {trend.reject_count || 0}</span>
+                                </span>
+                              ) : null}
                               <span className={`
                                 ${trend.status === 'viral' ? 'text-red-600' :
                                   trend.status === 'approved' ? 'text-green-600' :
@@ -726,11 +750,22 @@ export default function Dashboard() {
                             </div>
                           </div>
                           
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-gradient">
-                              {calculateWaveScore(trend)}
+                          <div className="text-center min-w-[80px]">
+                            <div className="relative">
+                              {/* Sentiment circle indicator */}
+                              <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-neutral-800 relative overflow-hidden">
+                                <div 
+                                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-500 to-green-500 transition-all duration-500"
+                                  style={{ height: `${calculateSentiment(trend)}%` }}
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-lg font-bold text-gray-900 dark:text-white">
+                                    {calculateSentiment(trend)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">Sentiment</div>
                             </div>
-                            <div className="text-xs text-gray-500">Wave Score</div>
                           </div>
                         </div>
                       </motion.div>
