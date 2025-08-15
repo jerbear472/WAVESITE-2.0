@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import StreakDisplay from '@/components/StreakDisplay';
 import { formatCurrency as formatCurrencyLib } from '@/lib/formatters';
 import { 
   SUSTAINABLE_EARNINGS,
@@ -692,6 +693,11 @@ export default function Dashboard() {
               Submit New Trend
             </Link>
           </div>
+        </div>
+
+        {/* Streak Display */}
+        <div className="mb-6">
+          <StreakDisplay />
         </div>
 
         {/* Enhanced Stats Grid */}

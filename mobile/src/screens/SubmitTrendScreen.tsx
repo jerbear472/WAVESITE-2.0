@@ -28,6 +28,7 @@ import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { WebView } from 'react-native-webview';
 import { supabase } from '../config/supabase';
 import { storage } from '../../App';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface TrendMetadata {
   url: string;
@@ -193,6 +194,9 @@ const categoryQuestions: Record<string, Array<{label: string, key: string, type:
   ],
 };
 
+const DRAFT_STORAGE_KEY = 'trend_submission_draft';
+const AUTO_SAVE_DELAY = 2000; // Auto-save after 2 seconds of inactivity
+
 const SubmitTrendScreen: React.FC = () => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -202,15 +206,119 @@ const SubmitTrendScreen: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [confidence, setConfidence] = useState(50);
   const [followUpAnswers, setFollowUpAnswers] = useState<Record<string, any>>({});
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const webViewRef = useRef<WebView>(null);
   const [webViewHtml, setWebViewHtml] = useState('');
+  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
   const buttonScale = useSharedValue(1);
   const progressWidth = useSharedValue(0);
 
+  // Load saved draft on mount
   useEffect(() => {
+    loadDraft();
     checkClipboard();
+    
+    // Clean up auto-save timer on unmount
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+      }
+    };
   }, []);
+
+  // Auto-save whenever form data changes
+  useEffect(() => {
+    // Clear existing timer
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+    }
+    
+    // Set new timer for auto-save
+    autoSaveTimer.current = setTimeout(() => {
+      saveDraft();
+    }, AUTO_SAVE_DELAY);
+    
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+      }
+    };
+  }, [url, metadata, selectedCategory, notes, confidence, followUpAnswers]);
+
+  const saveDraft = async () => {
+    try {
+      const draft = {
+        url,
+        metadata,
+        selectedCategory,
+        notes,
+        confidence,
+        followUpAnswers,
+        savedAt: new Date().toISOString(),
+      };
+      
+      await AsyncStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      setLastSaved(new Date());
+      console.log('Draft saved successfully');
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+    }
+  };
+
+  const loadDraft = async () => {
+    try {
+      const draftString = await AsyncStorage.getItem(DRAFT_STORAGE_KEY);
+      if (draftString) {
+        const draft = JSON.parse(draftString);
+        
+        // Check if draft is less than 24 hours old
+        const savedAt = new Date(draft.savedAt);
+        const hoursSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursSinceSave < 24) {
+          Alert.alert(
+            'Resume Previous Submission?',
+            `You have an unsaved trend from ${hoursSinceSave < 1 ? 'a few minutes' : Math.round(hoursSinceSave) + ' hours'} ago. Would you like to continue where you left off?`,
+            [
+              {
+                text: 'Discard',
+                style: 'destructive',
+                onPress: () => clearDraft(),
+              },
+              {
+                text: 'Resume',
+                onPress: () => {
+                  setUrl(draft.url || '');
+                  setMetadata(draft.metadata || null);
+                  setSelectedCategory(draft.selectedCategory || '');
+                  setNotes(draft.notes || '');
+                  setConfidence(draft.confidence || 50);
+                  setFollowUpAnswers(draft.followUpAnswers || {});
+                  ReactNativeHapticFeedback.trigger('notificationSuccess');
+                },
+              },
+            ]
+          );
+        } else {
+          // Clear old draft
+          clearDraft();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load draft:', error);
+    }
+  };
+
+  const clearDraft = async () => {
+    try {
+      await AsyncStorage.removeItem(DRAFT_STORAGE_KEY);
+      setLastSaved(null);
+    } catch (error) {
+      console.error('Failed to clear draft:', error);
+    }
+  };
 
   const checkClipboard = async () => {
     try {

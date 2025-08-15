@@ -28,6 +28,7 @@ import {
 import { ScrollSession } from '@/components/ScrollSession';
 import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
 import SmartTrendSubmission from '@/components/SmartTrendSubmission';
+import StreakDisplay from '@/components/StreakDisplay';
 // import TrendSubmissionFormSimple from '@/components/TrendSubmissionFormSimple';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
@@ -705,8 +706,11 @@ export default function LegibleScrollPage() {
             </div>
           </div>
 
+          {/* Streak Display */}
+          <StreakDisplay />
+
           {/* Session Control & Streak Display */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="bg-white rounded-2xl shadow-sm p-6 mt-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Scroll Session</h2>
