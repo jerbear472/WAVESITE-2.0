@@ -491,10 +491,22 @@ export default function SmartTrendSubmission({
 
     try {
       const category = getSelectedCategory();
+      
+      // Get thumbnail if not already captured
+      let thumbnailUrl = formData.thumbnail_url;
+      if (!thumbnailUrl && formData.url) {
+        try {
+          thumbnailUrl = await getUltraSimpleThumbnail(formData.url);
+        } catch (err) {
+          console.log('Could not get thumbnail:', err);
+        }
+      }
+      
       const submissionData = {
         ...formData,
         url: formData.url.trim(),
-        screenshot_url: formData.thumbnail_url || await getUltraSimpleThumbnail(formData.url),
+        screenshot_url: thumbnailUrl,
+        thumbnail_url: thumbnailUrl,
         trendName: formData.title,
         explanation: formData.whyTrending,
         categories: [formData.category],
@@ -517,20 +529,48 @@ export default function SmartTrendSubmission({
           size: formData.trendSize,
           timing: formData.firstSeen,
           capturedAt: new Date().toISOString()
-        }
+        },
+        // Ensure wave_score is included
+        wave_score: formData.sentiment || 50
       };
 
       if (customSubmit) {
-        await customSubmit(submissionData);
+        // Add timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Submission timed out after 30 seconds')), 30000)
+        );
+        
+        await Promise.race([
+          customSubmit(submissionData),
+          timeoutPromise
+        ]);
       }
 
-      // Success - close form
-      setTimeout(onClose, 1500);
+      // Success - show success message then close
+      setError('');
+      setTimeout(() => {
+        onClose();
+      }, 500);
     } catch (error: any) {
       console.error('Submission error:', error);
-      setError(error.message || 'Failed to submit trend');
-    } finally {
+      const errorMsg = error.message || 'Failed to submit trend';
+      
+      // Check for specific error types
+      if (errorMsg.includes('timeout')) {
+        setError('Submission timed out. Please check your connection and try again.');
+      } else if (errorMsg.includes('network')) {
+        setError('Network error. Please check your internet connection.');
+      } else {
+        setError(errorMsg);
+      }
+      
+      // Don't keep loading state on error
       setLoading(false);
+    } finally {
+      // Only set loading false if not closing
+      if (!error) {
+        setTimeout(() => setLoading(false), 500);
+      }
     }
   };
 

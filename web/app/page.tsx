@@ -62,18 +62,18 @@ export default function Home() {
           {/* Stats */}
           <div className="flex flex-wrap justify-center items-center gap-8 mt-20 text-sm text-gray-500 dark:text-gray-500">
             <div className="text-center">
-              <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">500K+</div>
-              <div>Active Users</div>
+              <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">1,000+</div>
+              <div>Active Spotters</div>
             </div>
             <div className="hidden sm:block w-px h-8 bg-gray-300 dark:bg-gray-700"></div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">10M+</div>
-              <div>Trends Tracked</div>
+              <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">5,000+</div>
+              <div>Trends Spotted</div>
             </div>
             <div className="hidden sm:block w-px h-8 bg-gray-300 dark:bg-gray-700"></div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">99.9%</div>
-              <div>Uptime</div>
+              <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">$0.25-5</div>
+              <div>Per Trend</div>
             </div>
           </div>
         </div>

@@ -16,8 +16,36 @@ export class MetadataExtractor {
   static async extractFromUrl(url: string): Promise<PostMetadata & { title?: string; description?: string }> {
     const platform = this.detectPlatform(url);
     
-    // Just return basic data extracted from URL patterns
-    // No external API calls that could fail
+    // For TikTok, try to use the API endpoint
+    if (platform === 'tiktok') {
+      try {
+        const response = await fetch('/api/extract-tiktok', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            return {
+              creator_handle: result.data.creator_handle,
+              creator_name: result.data.creator_name,
+              thumbnail_url: result.data.thumbnail_url,
+              post_caption: result.data.post_caption,
+              title: result.data.post_caption,
+              description: result.data.post_caption,
+            };
+          }
+        }
+      } catch (error) {
+        console.log('TikTok API extraction failed, falling back to basic extraction:', error);
+      }
+    }
+    
+    // Fallback to basic data extraction
     const basicData = this.extractBasicDataFromUrl(url, platform);
     
     return {
