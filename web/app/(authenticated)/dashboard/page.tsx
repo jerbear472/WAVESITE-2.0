@@ -673,7 +673,7 @@ export default function Dashboard() {
     } else if (views > 0) {
       growthLabel = `${!isNaN(engagementRate) ? engagementRate.toFixed(1) : '—'}% engagement`;
     } else {
-      growthLabel = 'New submission';
+      growthLabel = '';  // Don't show redundant text for new submissions
     }
     
     return { 
@@ -918,7 +918,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-2xl">{categoryDetails.emoji}</span>
                               <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white`}>
-                                {categoryDetails.label}
+                                {categoryDetails.label.replace(/\s*0+$/, '').trim()}
                               </span>
                               {trend.isUserTrend && (
                                 <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded-full">
@@ -1016,7 +1016,7 @@ export default function Dashboard() {
                               )}
                             </div>
                             
-                            {/* Audience Reach */}
+                            {/* Audience Reach - only show if there's meaningful data */}
                             {(() => {
                               const audienceData = getAudienceSize(trend);
                               const hasValidSize = audienceData.size && audienceData.size !== '';
@@ -1025,6 +1025,12 @@ export default function Dashboard() {
                                                         audienceData.engagementRate !== '' && 
                                                         parseFloat(audienceData.engagementRate) > 0;
                               
+                              // Only show if we have actual views or meaningful engagement
+                              const hasViewData = trend.views_count && trend.views_count >= 100;
+                              const hasEngagementData = (trend.likes_count && trend.likes_count >= 10) || 
+                                                       (trend.shares_count && trend.shares_count >= 5);
+                              
+                              if (!hasViewData && !hasEngagementData) return null;
                               if (!hasValidSize && !hasValidGrowth) return null;
                               
                               return (
