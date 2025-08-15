@@ -129,6 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             view_mode: 'user',
             subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
             spotter_tier: profile.spotter_tier || 'learning',
+            performance_tier: userProfile?.performance_tier || 'learning',
+            current_streak: userProfile?.current_streak || 0,
+            session_streak: userProfile?.session_streak || 0,
             is_admin: isAdmin,
             account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
             permissions: isAdmin ? {
@@ -200,6 +203,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, spotter_tier, created_at, updated_at')
           .eq('id', session.user.id)
           .single();
+          
+        // Also get performance tier from user_profiles
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('performance_tier, current_streak, session_streak')
+          .eq('user_id', session.user.id)
+          .single();
 
         if (profileError) {
           console.error('Profile fetch error:', profileError);
@@ -238,6 +248,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .eq('user_id', session.user.id)
             .single();
 
+          // Also get performance tier from user_profiles
+          const { data: userProfile } = await supabase
+            .from('user_profiles')
+            .select('performance_tier, current_streak, session_streak')
+            .eq('user_id', session.user.id)
+            .single();
+            
           // Map profile to user format
           const userData = {
             ...profile,
@@ -247,6 +264,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             trends_spotted: userStats.trends_spotted || 0,
             accuracy_score: userStats.accuracy_score || 0,
             validation_score: userStats.validation_score || 0,
+            performance_tier: userProfile?.performance_tier || 'learning',
+            current_streak: userProfile?.current_streak || 0,
+            session_streak: userProfile?.session_streak || 0,
             view_mode: 'user' as const,
             subscription_tier: isAdmin ? 'enterprise' as const : (profile.subscription_tier || 'starter') as any,
             spotter_tier: profile.spotter_tier || 'learning',

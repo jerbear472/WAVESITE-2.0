@@ -463,32 +463,9 @@ export default function LegibleScrollPage() {
       // Clear retry status on success
       setRetryStatus(null);
       
-      // Create earnings entry asynchronously - don't block main submission
-      supabase
-        .from('earnings_ledger')
-        .insert({
-          user_id: user.id,
-          trend_id: (data as any).id,
-          amount: finalPayment,
-          type: 'trend_submission',
-          status: 'pending',
-          description: `Trend: ${formData.trendName} (${formData.platform})`,
-          reference_id: (data as any).id,
-          reference_type: 'trend_submissions',
-          metadata: {
-            is_finance: isFinanceTrend,
-            tickers,
-            wave_score: formData.wave_score,
-            streak_multiplier: session.isActive ? session.streakMultiplier : 1,
-            base_payment: basePayment
-          }
-        })
-        .then(({ error: earningsError }) => {
-          if (earningsError) {
-            console.error('Earnings ledger error:', earningsError);
-            // Don't throw - trend was submitted successfully
-          }
-        });
+      // Note: Earnings entry is created automatically by database trigger
+      // The trigger on trend_submissions table calculates all multipliers
+      // and creates the earnings_ledger entry with proper metadata
       
       // Update streak only if session is active
       if (session.isActive) {
@@ -500,14 +477,7 @@ export default function LegibleScrollPage() {
       setTodaysPendingEarnings(prev => prev + finalPayment);
       setTrendsLoggedToday(prev => prev + 1);
       
-      console.log('Showing earnings animation for amount:', finalPayment);
-      
-      // Show earnings animation with calculated bonuses
-      showEarningsAnimation(
-        finalPayment, 
-        (earningsResult as any).appliedBonuses || [], 
-        session.isActive ? getStreakMultiplier(session.currentStreak + 1) : 1
-      );
+      console.log('Trend submitted with earnings:', finalPayment);
       
       // Reset form and close modal FIRST
       setShowSubmissionForm(false);
@@ -539,8 +509,17 @@ export default function LegibleScrollPage() {
         }
       }
       
-      // Daily streak would come from user profile or database
-      // For now, we'll just show the calculated amount
+      // Daily streak from user profile
+      const dailyStreak = (user as any)?.current_streak || 0;
+      if (dailyStreak > 0) {
+        const dailyMult = dailyStreak >= 30 ? 2.5 :
+                         dailyStreak >= 14 ? 2.0 :
+                         dailyStreak >= 7 ? 1.5 :
+                         dailyStreak >= 2 ? 1.2 : 1.0;
+        if (dailyMult > 1.0) {
+          multipliers.push(`${dailyStreak}-day streak: ${dailyMult}x`);
+        }
+      }
       
       const multiplierText = multipliers.length > 0 
         ? ` (${multipliers.join(', ')})` 

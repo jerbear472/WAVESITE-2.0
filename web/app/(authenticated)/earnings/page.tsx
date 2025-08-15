@@ -123,7 +123,7 @@ export default function Earnings() {
       // Map transaction types properly
       const mappedTransactions = (transactionsData || []).map(t => ({
         ...t,
-        earning_type: t.type === 'submission' ? 'submission' : t.type === 'validation' ? 'validation' : t.type
+        earning_type: t.type === 'trend_submission' ? 'submission' : t.type === 'trend_validation' ? 'validation' : t.type
       }));
       
       setTransactions(mappedTransactions);
