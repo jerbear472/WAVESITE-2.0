@@ -73,7 +73,7 @@ export default function Earnings() {
     if (user) {
       fetchEarningsData();
     }
-  }, [user]);
+  }, [user, user?.pending_earnings, user?.total_earnings]);
 
   // Subscribe to real-time earnings updates
   useEffect(() => {
@@ -104,18 +104,7 @@ export default function Earnings() {
 
   const fetchEarningsData = async () => {
     try {
-      // Fetch user profile with earnings data
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('earnings_pending, earnings_approved, earnings_paid, total_submissions, verified_submissions')
-        .eq('id', user?.id)
-        .single();
-
-      if (profileError) throw profileError;
-      
-      setEarningsData(profile);
-
-      // Fetch ALL earnings transactions including pending and awaiting_verification
+      // Fetch ALL earnings transactions first to get accurate totals
       const { data: transactionsData, error: transError } = await supabase
         .from('earnings_ledger')
         .select(`
@@ -127,7 +116,6 @@ export default function Earnings() {
           )
         `)
         .eq('user_id', user?.id)
-        .in('status', ['pending', 'awaiting_verification', 'approved', 'rejected', 'paid']) // Explicitly include all statuses
         .order('created_at', { ascending: false });
 
       if (transError) throw transError;
@@ -139,6 +127,36 @@ export default function Earnings() {
       }));
       
       setTransactions(mappedTransactions);
+      
+      // Calculate earnings from transactions directly for accuracy
+      const pendingEarnings = mappedTransactions
+        .filter(t => t.status === 'pending' || t.status === 'awaiting_verification')
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      
+      const approvedEarnings = mappedTransactions
+        .filter(t => t.status === 'approved')
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      
+      const paidEarnings = mappedTransactions
+        .filter(t => t.status === 'paid')
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      
+      const totalSubmissions = mappedTransactions
+        .filter(t => t.type === 'trend_submission')
+        .length;
+      
+      const verifiedSubmissions = mappedTransactions
+        .filter(t => t.type === 'trend_submission' && t.status === 'approved')
+        .length;
+      
+      // Set earnings data calculated from ledger
+      setEarningsData({
+        earnings_pending: pendingEarnings,
+        earnings_approved: approvedEarnings,
+        earnings_paid: paidEarnings,
+        total_submissions: totalSubmissions,
+        verified_submissions: verifiedSubmissions
+      });
 
     } catch (error) {
       console.error('Error fetching earnings data:', error);
@@ -147,16 +165,12 @@ export default function Earnings() {
     }
   };
 
-  const totalAvailable = earningsData.earnings_approved;
+  const totalAvailable = earningsData.earnings_approved || 0;
   const totalPending = earningsData.earnings_pending || 0;
   
-  // Also calculate pending from actual transactions for accuracy
-  const actualPendingFromTransactions = transactions
-    .filter(t => t.status === 'pending' || t.status === 'awaiting_verification')
-    .reduce((sum, t) => sum + (t.amount || 0), 0);
-  
-  // Use the higher value to ensure we show all pending earnings
-  const displayPending = Math.max(totalPending, actualPendingFromTransactions);
+  // Earnings data is now calculated directly from transactions
+  // So we can trust the totalPending value
+  const displayPending = totalPending;
   
   const totalEarnings = displayPending + earningsData.earnings_approved + earningsData.earnings_paid;
   const verificationRate = earningsData.total_submissions > 0 
@@ -274,7 +288,7 @@ export default function Earnings() {
               </div>
             </div>
             <div className="text-3xl font-bold text-white mb-1">
-              {formatCurrency(user?.pending_earnings || displayPending)}
+              {formatCurrency(displayPending)}
             </div>
             <div className="text-yellow-300 text-sm font-medium">Pending Verification</div>
             <div className="mt-4">
