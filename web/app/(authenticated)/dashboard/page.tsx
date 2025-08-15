@@ -150,6 +150,35 @@ export default function Dashboard() {
     }
   }, [user, timeframe]);
 
+  // Subscribe to real-time earnings updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const subscription = supabase
+      .channel('dashboard-earnings-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'earnings_ledger',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Earnings update on dashboard:', payload);
+          // Refresh dashboard data when earnings change
+          calculateManualStats();
+          // Also update activity feed
+          fetchDashboardData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user?.id]);
+
   const fetchDashboardData = async () => {
     setLoading(true);
     try {

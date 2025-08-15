@@ -91,6 +91,33 @@ export default function LegibleScrollPage() {
     }
   }, [user]);
 
+  // Subscribe to real-time earnings updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const subscription = supabase
+      .channel('scroll-earnings-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'earnings_ledger',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Earnings update on scroll page:', payload);
+          // Reload stats when earnings change
+          loadTodaysStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user?.id]);
+
   const loadTodaysStats = async () => {
     if (!user) return;
     
@@ -98,30 +125,37 @@ export default function LegibleScrollPage() {
     today.setHours(0, 0, 0, 0);
     
     try {
-      // Get user's current earnings from profiles table
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('earnings_pending, earnings_approved, total_earnings')
-        .eq('id', user.id)
-        .single();
+      // Get pending earnings directly from earnings_ledger for accuracy
+      const { data: pendingTransactions } = await supabase
+        .from('earnings_ledger')
+        .select('amount, created_at')
+        .eq('user_id', user.id)
+        .in('status', ['pending', 'awaiting_verification']);
       
-      if (profile) {
-        // For now, show all pending earnings (not just today's)
-        setTodaysPendingEarnings(profile.earnings_pending || 0);
-        
-        // Get today's approved earnings from trend_submissions
-        const { data: todaysTrends } = await supabase
-          .from('trend_submissions')
-          .select('total_earned, status')
-          .eq('spotter_id', user.id)
-          .gte('created_at', today.toISOString());
-        
-        const todaysApproved = todaysTrends
-          ?.filter(t => t.status === 'approved')
-          .reduce((sum, t) => sum + (t.total_earned || 0), 0) || 0;
-        
-        setTodaysEarnings(todaysApproved);
-      }
+      // Calculate today's pending earnings
+      const todaysPending = pendingTransactions
+        ?.filter(t => new Date(t.created_at) >= today)
+        .reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      
+      // Calculate all pending earnings
+      const allPending = pendingTransactions
+        ?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      
+      // Show all pending earnings (more motivating for users)
+      setTodaysPendingEarnings(allPending);
+      
+      // Get today's approved earnings from earnings_ledger
+      const { data: approvedToday } = await supabase
+        .from('earnings_ledger')
+        .select('amount')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .gte('created_at', today.toISOString());
+      
+      const todaysApproved = approvedToday
+        ?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      
+      setTodaysEarnings(todaysApproved);
       
       const { count } = await supabase
         .from('trend_submissions')
@@ -786,7 +820,7 @@ export default function LegibleScrollPage() {
               <Clock className="w-5 h-5 text-yellow-600" />
               <span className="text-xs text-gray-500">Pending</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(todaysPendingEarnings)}</p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(todaysPendingEarnings || user?.pending_earnings || 0)}</p>
             <p className="text-xs text-gray-500">Verification</p>
           </div>
           
@@ -866,7 +900,7 @@ export default function LegibleScrollPage() {
                 <span className="text-xs text-gray-600">Pending Verification</span>
               </div>
               <div className="text-xl font-bold text-yellow-700">
-                {formatCurrency(todaysPendingEarnings)}
+                {formatCurrency(todaysPendingEarnings || user?.pending_earnings || 0)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 Awaiting community validation
