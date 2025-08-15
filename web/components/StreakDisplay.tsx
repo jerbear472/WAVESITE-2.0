@@ -69,7 +69,7 @@ export default function StreakDisplay() {
       setDailyStreak({
         current: currentStreak,
         longest: Math.max(currentStreak, dailyStreak.longest),
-        lastActive: todayCount > 0 ? new Date() : null
+        lastActive: (todayCount || 0) > 0 ? new Date() : null
       });
     } catch (error) {
       console.error('Error loading daily streak:', error);
