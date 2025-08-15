@@ -1053,6 +1053,66 @@ export default function LegibleScrollPage() {
         </ErrorBoundary>
       )}
       
+      {/* Bottom Left Earnings Display - Prominent */}
+      <div className="fixed bottom-6 left-6 z-40">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-gradient-to-br from-yellow-900/95 to-orange-900/95 backdrop-blur-md text-white rounded-2xl p-6 shadow-2xl border border-yellow-700/50 min-w-[280px]"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-6 h-6 text-yellow-400" />
+              <span className="text-lg font-bold text-yellow-100">Today's Earnings</span>
+            </div>
+            <div className="text-xs text-yellow-300 bg-yellow-900/50 px-2 py-1 rounded">
+              {trendsLoggedToday} trends
+            </div>
+          </div>
+          
+          {/* Pending Earnings - Big and Prominent */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Timer className="w-5 h-5 text-yellow-400 animate-pulse" />
+              <span className="text-sm text-yellow-300">Pending Validation</span>
+            </div>
+            <div className="text-4xl font-black text-yellow-100 mb-1">
+              {formatCurrency(todaysPendingEarnings || user?.pending_earnings || 0)}
+            </div>
+            <div className="text-xs text-yellow-400">
+              💡 Earnings confirmed after community validation
+            </div>
+          </div>
+          
+          {/* Confirmed Earnings */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="w-4 h-4 text-green-400" />
+              <span className="text-sm text-green-300">Confirmed Today</span>
+            </div>
+            <div className="text-2xl font-bold text-green-100">
+              {formatCurrency(todaysEarnings)}
+            </div>
+          </div>
+          
+          {/* Active Session Bonus */}
+          {session.isActive && session.currentStreak > 0 && (
+            <div className="bg-purple-800/50 rounded-lg p-3 border border-purple-600/30">
+              <div className="flex items-center gap-2 mb-1">
+                <Flame className="w-4 h-4 text-purple-400" />
+                <span className="text-sm text-purple-300">Active Streak</span>
+              </div>
+              <div className="text-lg font-bold text-purple-100">
+                {getStreakMultiplier(session.currentStreak)}x multiplier
+              </div>
+              <div className="text-xs text-purple-400">
+                Streak #{session.currentStreak} • {formatTime(session.streakTimeRemaining)} left
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+      
       {/* Earnings Animation */}
       <EarningsAnimation
         amount={earningsData.amount}

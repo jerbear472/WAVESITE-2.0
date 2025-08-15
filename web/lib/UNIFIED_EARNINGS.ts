@@ -44,7 +44,7 @@ export const UNIFIED_EARNINGS = {
   limits: {
     maxSingleSubmission: 5.00,  // Max per submission (after all multipliers)
     maxDailyEarnings: 50.00,     // Max daily earnings
-    minCashoutAmount: 5.00,      // Minimum cashout
+    minCashoutAmount: 10.00,     // Minimum cashout (FIXED: Changed from 5.00 to match payment methods)
     sessionWindowMinutes: 5,     // Minutes to maintain session streak
   },
 

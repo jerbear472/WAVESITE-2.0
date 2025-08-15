@@ -122,7 +122,7 @@ export const SUSTAINABLE_EARNINGS = {
 
   // Payment settings
   payment: {
-    minCashout: 5.00,
+    minCashout: 10.00,  // FIXED: Changed from 5.00 to match actual payment method minimums
     methods: [
       { id: 'venmo', name: 'Venmo', min: 10, fee: 0 },
       { id: 'paypal', name: 'PayPal', min: 10, fee: 0.30 },
