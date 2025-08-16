@@ -45,9 +45,12 @@ interface EarningTransaction {
   amount: number;
   status: 'pending' | 'awaiting_validation' | 'awaiting_verification' | 'approved' | 'rejected' | 'paid';
   earning_type: string;
+  type?: string;  // Original type from database
   created_at: string;
   approved_at?: string;
   notes?: string;
+  description?: string;  // Also adding description field
+  trend_id?: string;  // Adding trend_id field
   trend?: {
     id: string;
     description: string;
@@ -61,6 +64,7 @@ interface EarningTransaction {
     session_multiplier?: number;
     daily_streak?: number;
     daily_multiplier?: number;
+    category?: string;  // Also found in the template
   };
 }
 
@@ -467,7 +471,7 @@ export default function Earnings() {
                           {transaction.earning_type === 'submission' ? 'Trend Submission' : 
                            transaction.earning_type === 'validation' ? 'Validation Reward' :
                            transaction.earning_type === 'bonus' ? 'Bonus Reward' : 
-                           transaction.type || 'Earning'}
+                           'Earning'}
                         </div>
                         {(transaction.description || transaction.trend?.description) && (
                           <div className="text-sm text-gray-400">
