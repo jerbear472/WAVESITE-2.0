@@ -336,7 +336,26 @@ export default function WorkingSubmitPage() {
         console.error('❌ [SUBMIT] Exception calling add_pending_earnings:', rpcException);
       }
       
-      // Method 2: Update via auth context (local state)
+      // Method 2: Directly update profiles table (Auth reads from here!)
+      try {
+        const { error: profileUpdateError } = await supabase
+          .from('profiles')
+          .update({ 
+            pending_earnings: ((user as any)?.pending_earnings || 0) + earningResult.total,
+            total_earnings: ((user as any)?.total_earnings || 0) + earningResult.total
+          })
+          .eq('id', user.id);
+          
+        if (profileUpdateError) {
+          console.error('❌ [SUBMIT] Failed to update profiles table:', profileUpdateError);
+        } else {
+          console.log('✅ [SUBMIT] profiles table updated successfully');
+        }
+      } catch (profileException) {
+        console.error('❌ [SUBMIT] Exception updating profiles:', profileException);
+      }
+      
+      // Method 3: Update via auth context (local state)
       updateUserEarnings(earningResult.total);
       
       // Show earnings notification in bottom left
