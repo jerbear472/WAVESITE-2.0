@@ -152,8 +152,11 @@ export default function WorkingSubmitPage() {
           brandAdoption: trendData.brandAdoption || false
         },
         status: 'submitted', // Initial status - goes to verification queue
-        virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : 
-                            trendData.spreadSpeed === 'picking_up' ? 6 : 5,
+        virality_prediction: trendData.spreadSpeed === 'viral' ? 9 : 
+                            trendData.spreadSpeed === 'saturated' ? 8 :
+                            trendData.spreadSpeed === 'picking_up' ? 7 :
+                            trendData.spreadSpeed === 'just_starting' ? 5 :
+                            trendData.spreadSpeed === 'declining' ? 3 : 5,
         quality_score: 0.5,
         validation_count: 0,
         screenshot_url: screenshotUrl || trendData.screenshot_url || null,
@@ -345,7 +348,14 @@ export default function WorkingSubmitPage() {
 
     } catch (error: any) {
       console.error('Error submitting trend:', error);
-      alert(`Error: ${error.message || 'Failed to submit trend'}`);
+      
+      // Don't show alert for user-caused errors that SmartTrendSubmission will handle
+      if (!error.message?.includes('timed out')) {
+        alert(`Error: ${error.message || 'Failed to submit trend'}`);
+      }
+      
+      // Re-throw the error so SmartTrendSubmission can handle it
+      throw error;
     } finally {
       setSubmitting(false);
     }
@@ -528,7 +538,7 @@ export default function WorkingSubmitPage() {
             setTrendUrl('');
             setSelectedCategory(null);
           }}
-          onSubmit={handleTrendSubmit}
+          customSubmit={handleTrendSubmit}
           initialUrl={trendUrl}
         />
       )}

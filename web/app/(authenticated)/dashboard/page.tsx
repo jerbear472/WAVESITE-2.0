@@ -61,7 +61,8 @@ interface RecentTrend {
   hashtags?: string[];
   url?: string;  // Main trend URL
   post_url?: string;  // Alternative URL field
-  follow_up_data?: {
+  // follow_up_data is now stored in evidence
+  evidence?: {
     velocityMetrics?: {
       velocity?: string;
       size?: string;
@@ -332,7 +333,7 @@ export default function Dashboard() {
         .from('trend_submissions')
         .select(`
           *,
-          follow_up_data,
+          evidence,
           spotter:profiles(username, email),
           earnings:earnings_ledger(amount)
         `)
@@ -372,12 +373,12 @@ export default function Dashboard() {
         console.error('All trends error:', allTrendsError);
       } else {
         console.log('All trends found:', allTrends?.length || 0);
-        // Debug: Check if follow_up_data is coming through
+        // Debug: Check if evidence data is coming through
         if (allTrends && allTrends.length > 0) {
-          console.log('First trend follow_up_data:', {
-            hasFollowUpData: !!allTrends[0].follow_up_data,
-            followUpData: allTrends[0].follow_up_data,
-            velocityMetrics: allTrends[0].follow_up_data?.velocityMetrics
+          console.log('First trend evidence:', {
+            hasEvidence: !!allTrends[0].evidence,
+            evidence: allTrends[0].evidence,
+            velocityMetrics: allTrends[0].evidence?.velocityMetrics
           });
         }
       }
@@ -520,7 +521,7 @@ export default function Dashboard() {
 
   const formatNumber = (num: number) => {
     // Ensure num is a valid number
-    if (!num || isNaN(num)) return '0';
+    if (!num || isNaN(num) || num === 0) return '';
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
     return num.toString();
@@ -557,19 +558,21 @@ export default function Dashboard() {
       return details;
     }
     // Fallback with cleaned category name
-    const cleanLabel = category ? category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Trending';
+    const cleanLabel = category && category !== '0' && category !== 0 
+      ? category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) 
+      : 'Trending';
     return { emoji: '📊', color: 'from-gray-500 to-gray-600', label: cleanLabel };
   };
 
   const getTrendVelocity = (trend: RecentTrend) => {
     // First check if we have submitted velocity data from the form
-    // Check both follow_up_data and evidence fields for backward compatibility
-    const submittedVelocity = trend.follow_up_data?.velocityMetrics?.velocity || 
-                             trend.follow_up_data?.trendVelocity ||
+    // Check evidence field for velocity data
+    const submittedVelocity = trend.evidence?.velocityMetrics?.velocity || 
+                             trend.evidence?.trendVelocity ||
                              trend.evidence?.velocityMetrics?.velocity ||
                              trend.evidence?.trendVelocity;
-    const submittedSize = trend.follow_up_data?.velocityMetrics?.size || 
-                         trend.follow_up_data?.trendSize ||
+    const submittedSize = trend.evidence?.velocityMetrics?.size || 
+                         trend.evidence?.trendSize ||
                          trend.evidence?.velocityMetrics?.size ||
                          trend.evidence?.trendSize;
     
@@ -951,6 +954,19 @@ export default function Dashboard() {
                 {recentTrends.length > 0 ? (
                   recentTrends.map((trend) => {
                     const categoryDetails = getCategoryDetails(trend.category);
+                    
+                    // Debug log to see what category value is causing the issue
+                    if (!trend.category || trend.category === '0' || trend.category === 0 || 
+                        trend.description === '0' || categoryDetails.label === '0' || 
+                        categoryDetails.label === 0) {
+                      console.log('DEBUG - Problem trend:', {
+                        category: trend.category,
+                        categoryLabel: categoryDetails.label,
+                        description: trend.description,
+                        earnings_amount: trend.earnings_amount,
+                        allFields: Object.keys(trend)
+                      });
+                    }
                     return (
                       <motion.div
                         key={trend.id}
@@ -1012,15 +1028,17 @@ export default function Dashboard() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-2xl">{categoryDetails.emoji}</span>
-                              <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white`}>
-                                {categoryDetails.label.replace(/\s*\d+\s*/g, ' ').replace(/\s+/g, ' ').trim()}
-                              </span>
+                              {categoryDetails.label && categoryDetails.label !== '0' && (
+                                <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white`}>
+                                  {categoryDetails.label}
+                                </span>
+                              )}
                               {trend.isUserTrend && (
                                 <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded-full">
                                   Your trend
                                 </span>
                               )}
-                              {trend.earnings_amount && trend.earnings_amount > 0 && (
+                              {trend.earnings_amount > 0 && (
                                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">
                                   +{formatCurrency(trend.earnings_amount)}
                                 </span>
@@ -1028,7 +1046,7 @@ export default function Dashboard() {
                             </div>
                             
                             <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              {trend.evidence?.title || trend.description.split('\n')[0] || 'Untitled Trend'}
+                              {trend.evidence?.title || (trend.description && trend.description.split('\n')[0]) || 'Untitled Trend'}
                             </h3>
                             
                             {trend.creator_handle && (
@@ -1062,10 +1080,10 @@ export default function Dashboard() {
                             
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                               <span>{formatTimeAgo(trend.created_at)}</span>
-                              {trend.likes_count && trend.likes_count > 0 && (
+                              {trend.likes_count > 0 && (
                                 <span>❤️ {formatNumber(trend.likes_count)}</span>
                               )}
-                              {trend.views_count && trend.views_count > 0 && (
+                              {trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
                               {((trend.approve_count ?? 0) > 0 || (trend.reject_count ?? 0) > 0) && (

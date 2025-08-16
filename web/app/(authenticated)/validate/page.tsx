@@ -377,9 +377,8 @@ export default function ValidatePageFixed() {
         return;
       }
 
-      // Calculate reward based on user tier ($0.02 base)
-      const userTier = (user?.spotter_tier || 'learning') as Tier;
-      const rewardAmount = calculateValidationEarnings(1, userTier);
+      // Fixed $0.02 for validation - immediate payout, no tier multiplier
+      const rewardAmount = 0.02;
       
       // Insert the validation - use only the columns that exist in the database
       const validationPayload = {
@@ -431,7 +430,7 @@ export default function ValidatePageFixed() {
           trend_id: trendId,
           amount: rewardAmount,
           type: 'validation',
-          status: 'pending',
+          status: 'approved', // Immediate payout for validations
           description: `Validation: ${voteType === 'verify' ? 'Verified' : 'Rejected'} trend`,
           metadata: {
             vote: voteType,
@@ -444,6 +443,17 @@ export default function ValidatePageFixed() {
         // Don't fail the validation, just log the error
       } else {
         console.log('Earnings entry created for validation:', rewardAmount);
+        
+        // Show earnings notification in bottom left
+        showEarnings(
+          rewardAmount,
+          'validation',
+          `Validation submitted! You earned $${rewardAmount.toFixed(2)}`,
+          [`Immediate payout to approved earnings`]
+        );
+        
+        // Update user earnings immediately
+        refreshUser();
       }
       
       await loadStats();

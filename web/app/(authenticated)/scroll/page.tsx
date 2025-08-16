@@ -262,6 +262,7 @@ export default function LegibleScrollPage() {
     }
     
     setIsSubmitting(true);
+    setRetryStatus(''); // Clear any previous retry status
     
     try {
       // Handle screenshot upload
@@ -350,8 +351,26 @@ export default function LegibleScrollPage() {
         userProfileForEarnings
       );
       
-      const basePayment = earningsResult.base;
-      const finalPayment = earningsResult.capped;
+      console.log('Earnings calculation result:', {
+        base: earningsResult.base,
+        tierMultiplier: earningsResult.tierMultiplier,
+        total: earningsResult.total,
+        capped: earningsResult.capped,
+        breakdown: earningsResult.breakdown
+      });
+      
+      const basePayment = earningsResult.base || 0.25;
+      let finalPayment = earningsResult.capped || earningsResult.total || basePayment;
+      
+      // Ensure we have a valid payment amount
+      if (!finalPayment || finalPayment <= 0 || isNaN(finalPayment)) {
+        console.error('Invalid payment amount calculated:', finalPayment);
+        // Default to base payment if calculation fails
+        finalPayment = 0.25; // Base amount
+        console.log('Using fallback payment:', finalPayment);
+      }
+      
+      console.log('Final payment amount to be used:', finalPayment);
       
       // Prepare submission - use basic fields that exist in database
       const submissionData: any = {
@@ -366,10 +385,8 @@ export default function LegibleScrollPage() {
           streak_multiplier: session.isActive ? session.streakMultiplier : 1,
           // Profile data can be added later when available
           user_profile: {},
-          payment_amount: finalPayment // Store payment in evidence instead
-        },
-        // Store velocity data in follow_up_data for the dashboard to display
-        follow_up_data: {
+          payment_amount: finalPayment, // Store payment in evidence instead
+          // Store velocity data in evidence instead of follow_up_data
           velocityMetrics: formData.velocityMetrics || {
             velocity: formData.trendVelocity,
             size: formData.trendSize,
@@ -382,8 +399,8 @@ export default function LegibleScrollPage() {
         },
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
         quality_score: calculateQualityScore(formData), // Calculate actual quality score
-        validation_count: 0,
-        created_at: new Date().toISOString()
+        validation_count: 0
+        // Remove created_at - let database handle it
       };
       
       // Add optional fields that might exist in database
@@ -391,13 +408,15 @@ export default function LegibleScrollPage() {
       if (formData.creator_handle) submissionData.creator_handle = formData.creator_handle;
       if (formData.creator_name) submissionData.creator_name = formData.creator_name;
       if (formData.post_caption) submissionData.post_caption = formData.post_caption;
-      if (formData.likes_count) submissionData.likes_count = formData.likes_count;
-      if (formData.comments_count) submissionData.comments_count = formData.comments_count;
-      if (formData.shares_count) submissionData.shares_count = formData.shares_count;
-      if (formData.views_count) submissionData.views_count = formData.views_count;
+      if (formData.likes_count !== undefined) submissionData.likes_count = parseInt(formData.likes_count) || 0;
+      if (formData.comments_count !== undefined) submissionData.comments_count = parseInt(formData.comments_count) || 0;
+      if (formData.shares_count !== undefined) submissionData.shares_count = parseInt(formData.shares_count) || 0;
+      if (formData.views_count !== undefined) submissionData.views_count = parseInt(formData.views_count) || 0;
       if (formData.hashtags?.length) submissionData.hashtags = formData.hashtags;
       if (formData.thumbnail_url) submissionData.thumbnail_url = formData.thumbnail_url;
       if (screenshotUrl) submissionData.screenshot_url = screenshotUrl;
+      if (formData.url) submissionData.post_url = formData.url; // Map URL to post_url
+      if (formData.wave_score !== undefined) submissionData.wave_score = formData.wave_score;
       
       console.log('Submitting to Supabase:', submissionData);
       
@@ -430,6 +449,24 @@ export default function LegibleScrollPage() {
           
           if (error) {
             console.error(`Submission attempt ${4 - retries} failed:`, error);
+            console.error('Error details:', {
+              message: error.message,
+              code: error.code,
+              details: error.details,
+              hint: error.hint
+            });
+            
+            // Check for specific database errors
+            if (error.message?.includes('column') || error.code === '42703') {
+              console.error('Column error - payload might have invalid fields');
+              setSubmitMessage({ 
+                type: 'error', 
+                text: `Database error: ${error.message}. Please refresh and try again.` 
+              });
+              setIsSubmitting(false);
+              return; // Don't retry on column errors
+            }
+            
             retries--;
             if (retries > 0) {
               setRetryStatus(`Connection issue - retrying... (${retries} attempts left)`);
@@ -476,6 +513,14 @@ export default function LegibleScrollPage() {
       setRetryStatus(null);
       
       // Calculate tier and multipliers for immediate earnings entry
+      console.log('User data for earnings:', {
+        id: user?.id,
+        performance_tier: user?.performance_tier,
+        pending_earnings: (user as any)?.pending_earnings,
+        trends_spotted: (user as any)?.trends_spotted,
+        current_streak: (user as any)?.current_streak
+      });
+      
       const userTier = user?.performance_tier || 'learning';
       const tierMultiplierMap: Record<string, number> = {
         master: 3.0,
@@ -491,12 +536,11 @@ export default function LegibleScrollPage() {
       try {
         const earningsEntry = {
           user_id: user.id,
+          trend_id: (data as any).id, // Use trend_id field
           amount: finalPayment,
           type: 'trend_submission',
           status: 'pending',
           description: `Trend: ${formData.trendName || 'Untitled'} - pending validation`,
-          reference_id: (data as any).id,
-          reference_type: 'trend_submissions',
           metadata: {
             base_amount: 0.25,
             tier: userTier,
@@ -514,14 +558,32 @@ export default function LegibleScrollPage() {
           }
         };
         
+        console.log('Creating earnings ledger entry with amount:', earningsEntry.amount);
+        
         const { error: earningsError } = await supabase
           .from('earnings_ledger')
           .insert(earningsEntry);
           
         if (earningsError) {
           console.error('Failed to create earnings ledger entry:', earningsError);
+          console.error('Entry that failed:', earningsEntry);
         } else {
           console.log('Earnings ledger entry created:', finalPayment, 'with multipliers');
+          
+          // Also update user's pending earnings in user_profiles table
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ 
+              pending_earnings: ((user as any)?.pending_earnings || 0) + finalPayment,
+              trends_spotted: ((user as any)?.trends_spotted || 0) + 1
+            })
+            .eq('id', user.id);
+            
+          if (updateError) {
+            console.error('Failed to update user pending earnings:', updateError);
+          } else {
+            console.log('User pending earnings updated successfully');
+          }
         }
       } catch (earningsError) {
         console.error('Exception creating earnings ledger entry:', earningsError);
@@ -574,11 +636,49 @@ export default function LegibleScrollPage() {
         ? ` (${multipliers.join(', ')})` 
         : '';
       
+      // Show earnings animation in bottom left corner
+      const animationBreakdown = [];
+      animationBreakdown.push(`Base: $0.25`);
+      
+      if (tierMultiplier !== 1.0) {
+        animationBreakdown.push(`Tier (${userTier}): ${tierMultiplier}x`);
+      }
+      
+      if (session.isActive && session.currentStreak > 0) {
+        const sessionMult = getStreakMultiplier(session.currentStreak + 1);
+        if (sessionMult > 1.0) {
+          animationBreakdown.push(`Session #${session.currentStreak + 1}: ${sessionMult}x`);
+        }
+      }
+      
+      if (dailyStreak > 0) {
+        const dailyMult = dailyStreak >= 30 ? 2.5 :
+                         dailyStreak >= 14 ? 2.0 :
+                         dailyStreak >= 7 ? 1.5 :
+                         dailyStreak >= 2 ? 1.2 : 1.0;
+        if (dailyMult > 1.0) {
+          animationBreakdown.push(`${dailyStreak}-day streak: ${dailyMult}x`);
+        }
+      }
+      
+      // Trigger the earnings animation
+      console.log('Triggering earnings animation with amount:', finalPayment);
+      showEarningsAnimation({
+        amount: finalPayment,
+        type: 'submission',
+        message: 'Trend submitted! Pending validation...',
+        breakdown: animationBreakdown
+      });
+      
       // Show success message with pending verification note and multipliers
       setSubmitMessage({ 
         type: 'success', 
         text: `Trend submitted! Earning $${finalPayment.toFixed(2)}${multiplierText} - pending validation` 
       });
+      
+      // Close the submission form on success
+      setShowSubmissionForm(false);
+      setTrendUrl('');
       
       // Clear success message after 5 seconds
       setTimeout(() => setSubmitMessage(null), 5000);
@@ -612,6 +712,9 @@ export default function LegibleScrollPage() {
       
       // Clear message after 5 seconds
       setTimeout(() => setSubmitMessage(null), 5000);
+    } finally {
+      // Always reset submitting state
+      setIsSubmitting(false);
     }
   };
 
@@ -729,9 +832,21 @@ export default function LegibleScrollPage() {
               <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
                 <Link className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-xl font-bold text-gray-900">Submit a Trend</h2>
                 <p className="text-sm text-gray-500">Paste a URL to start the 3-step submission</p>
+              </div>
+            </div>
+            
+            {/* Earnings Info */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-700">
+                  Base: <span className="font-semibold">${SUSTAINABLE_EARNINGS.base.trendSubmission}</span> per trend
+                </span>
+                <span className="text-green-700">
+                  Paid after 3 validations ✓
+                </span>
               </div>
             </div>
 
@@ -956,61 +1071,6 @@ export default function LegibleScrollPage() {
           </div>
         </div>
 
-        {/* Enhanced Earnings Summary */}
-        <div className="mb-4 bg-gradient-to-r from-yellow-50 to-green-50 rounded-xl px-5 py-4 border border-yellow-200 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-green-600" />
-              Today's Earnings
-            </h3>
-            <div className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
-              {trendsLoggedToday} trends submitted
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/80 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="w-4 h-4 text-yellow-600" />
-                <span className="text-xs text-gray-600">Pending Verification</span>
-              </div>
-              <div className="text-xl font-bold text-yellow-700">
-                {formatCurrency(todaysPendingEarnings || user?.pending_earnings || 0)}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Awaiting community validation
-              </div>
-            </div>
-            <div className="bg-white/80 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                <span className="text-xs text-gray-600">Confirmed</span>
-              </div>
-              <div className="text-xl font-bold text-green-700">
-                {formatCurrency(todaysEarnings)}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Available to cash out
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-3">
-              <span className="text-gray-500">
-                Base: {formatCurrency(SUSTAINABLE_EARNINGS.base.trendSubmission)} per trend
-              </span>
-              <span className="text-blue-600">
-                Tier multiplier: {typeof tierInfo === 'object' ? tierInfo.multiplier : 1}x
-              </span>
-              {getStreakMultiplier(session.currentStreak) > 1.0 && (
-                <span className="text-orange-600">
-                  Streak: {getStreakMultiplier(session.currentStreak)}x multiplier
-                </span>
-              )}
-            </div>
-            <span className="text-gray-500">Paid after 2 validations ✓</span>
-          </div>
-        </div>
 
         {/* Finance Bonus Section */}
         <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-200">
@@ -1066,7 +1126,7 @@ export default function LegibleScrollPage() {
               setShowSubmissionForm(false);
               setTrendUrl('');
             }}
-            onSubmit={handleTrendSubmit}
+            customSubmit={handleTrendSubmit}
             initialUrl={trendUrl}
           />
         </ErrorBoundary>

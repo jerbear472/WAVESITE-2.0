@@ -363,7 +363,7 @@ export default function SmartTrendSubmission({
     brandSafe: null as boolean | null,
     
     // Velocity & Size (HIGH VALUE DATA)
-    trendVelocity: '' as 'just_starting' | 'accelerating' | 'viral' | 'declining' | 'dead' | '',
+    trendVelocity: '' as 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining' | '',
     sentiment: 50,
     trendSize: '' as 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '',
     firstSeen: '' as 'today' | 'yesterday' | 'this_week' | 'last_week' | 'older' | '',
@@ -423,6 +423,25 @@ export default function SmartTrendSubmission({
       const extractedData = await MetadataExtractor.extractFromUrl(url);
       const platform = detectPlatform(url);
       
+      // Also try to get thumbnail via our API
+      let thumbnailUrl = extractedData.thumbnail_url || '';
+      if (!thumbnailUrl) {
+        try {
+          const response = await fetch('/api/extract-thumbnail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            thumbnailUrl = data.thumbnail_url || '';
+          }
+        } catch (err) {
+          console.log('Could not fetch thumbnail during metadata extraction:', err);
+        }
+      }
+      
       // Update form data with extracted metadata
       setFormData(prev => ({
         ...prev,
@@ -436,7 +455,7 @@ export default function SmartTrendSubmission({
         comments_count: extractedData.comments_count || 0,
         views_count: extractedData.views_count || 0,
         hashtags: extractedData.hashtags || [],
-        thumbnail_url: extractedData.thumbnail_url || '',
+        thumbnail_url: thumbnailUrl || extractedData.thumbnail_url || '',
         posted_at: extractedData.posted_at || new Date().toISOString()
       }));
       
@@ -591,32 +610,39 @@ export default function SmartTrendSubmission({
       // Get thumbnail if not already captured
       let thumbnailUrl = formData.thumbnail_url;
       
-      // For TikTok, fetch thumbnail via API
-      if (!thumbnailUrl && formData.url && formData.url.includes('tiktok.com')) {
+      // Try to fetch thumbnail with timeout - don't block submission
+      if (!thumbnailUrl && formData.url) {
         try {
-          const response = await fetch('/api/tiktok-thumbnail', {
+          // Add timeout to prevent hanging
+          const thumbnailPromise = fetch('/api/extract-thumbnail', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: formData.url })
           });
           
-          if (response.ok) {
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Thumbnail fetch timeout')), 3000)
+          );
+          
+          const response = await Promise.race([thumbnailPromise, timeoutPromise]) as Response;
+          
+          if (response && response.ok) {
             const data = await response.json();
             thumbnailUrl = data.thumbnail_url || '';
-            console.log('TikTok thumbnail fetched:', thumbnailUrl);
+            console.log(`Thumbnail fetched for ${data.platform}:`, thumbnailUrl);
           }
         } catch (err) {
-          console.log('Could not fetch TikTok thumbnail:', err);
+          console.log('Could not fetch thumbnail (will continue without):', err);
         }
       }
       
-      // For other platforms, try simple extraction
+      // For other platforms, try simple extraction (but don't block)
       if (!thumbnailUrl && formData.url) {
         try {
           const thumbnailData = getUltraSimpleThumbnail(formData.url);
           thumbnailUrl = thumbnailData.thumbnail_url || '';
         } catch (err) {
-          console.log('Could not get thumbnail:', err);
+          console.log('Could not get thumbnail (will continue without):', err);
         }
       }
       
@@ -629,7 +655,7 @@ export default function SmartTrendSubmission({
         explanation: formData.whyTrending,
         categories: [formData.category],
         ageRanges: formData.audienceAge,
-        spreadSpeed: formData.predictedPeak || 'emerging',
+        spreadSpeed: formData.trendVelocity || 'just_starting',
         categorySpecific: formData.categoryAnswers,
         brandAdoption: formData.brandSafe || false,
         motivation: `Category: ${category?.label}, ${Object.entries(formData.categoryAnswers).map(([k, v]) => `${k}: ${v}`).join(', ')}`,
@@ -653,22 +679,19 @@ export default function SmartTrendSubmission({
       };
 
       if (customSubmit) {
-        // Add timeout to prevent hanging
+        // Call the submit handler with timeout to prevent infinite hanging
+        const submitPromise = customSubmit(submissionData);
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Submission timed out after 30 seconds')), 30000)
+          setTimeout(() => reject(new Error('Submission timed out. Please try again.')), 15000)
         );
         
-        await Promise.race([
-          customSubmit(submissionData),
-          timeoutPromise
-        ]);
+        await Promise.race([submitPromise, timeoutPromise]);
       }
 
-      // Success - show success message then close
+      // Success - close immediately
       setError('');
-      setTimeout(() => {
-        onClose();
-      }, 500);
+      setLoading(false);
+      onClose();
     } catch (error: any) {
       console.error('Submission error:', error);
       const errorMsg = error.message || 'Failed to submit trend';
@@ -682,13 +705,8 @@ export default function SmartTrendSubmission({
         setError(errorMsg);
       }
       
-      // Don't keep loading state on error
+      // Always set loading false on error
       setLoading(false);
-    } finally {
-      // Only set loading false if not closing
-      if (!error) {
-        setTimeout(() => setLoading(false), 500);
-      }
     }
   };
 
@@ -829,13 +847,6 @@ export default function SmartTrendSubmission({
                               alt="Trend thumbnail"
                               className="w-24 h-24 object-cover rounded-lg border border-gray-700 shadow-lg"
                             />
-                            <button
-                              onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
-                              aria-label="Remove thumbnail"
-                            >
-                              ×
-                            </button>
                           </div>
                         ) : (
                           <label className="w-24 h-24 bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors">
@@ -910,11 +921,11 @@ export default function SmartTrendSubmission({
                   
                   <div className="space-y-2">
                     {[
-                      { value: 'just_starting', label: '🌱 Just Starting', desc: 'Seeing it for the first time, very few posts' },
-                      { value: 'accelerating', label: '🚀 Accelerating', desc: 'Growing rapidly, gaining momentum daily' },
-                      { value: 'viral', label: '🔥 Viral', desc: 'Everywhere right now, maximum visibility' },
-                      { value: 'declining', label: '📉 Declining', desc: 'Starting to slow down, fewer new posts' },
-                      { value: 'dead', label: '💀 Dead', desc: 'Pretty much over, only stragglers remain' }
+                      { value: 'just_starting', label: '🌱 Just Starting', desc: 'Brand new, very few people know' },
+                      { value: 'picking_up', label: '📈 Picking Up', desc: 'Gaining traction, growing steadily' },
+                      { value: 'viral', label: '🚀 Going Viral', desc: 'Explosive growth, spreading everywhere' },
+                      { value: 'saturated', label: '⚡ Saturated', desc: 'Peak reached, maximum visibility' },
+                      { value: 'declining', label: '📉 Declining', desc: 'Losing momentum, past its prime' }
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -1143,55 +1154,34 @@ export default function SmartTrendSubmission({
                   </div>
                 </div>
 
-                {/* Quick predictions */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">
-                      When will this peak?
-                    </label>
-                    <select
-                      value={formData.predictedPeak}
-                      onChange={(e) => setFormData(prev => ({ ...prev, predictedPeak: e.target.value }))}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:outline-none"
+                {/* Brand Safety */}
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Is this content brand-safe?
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, brandSafe: true }))}
+                      className={`flex-1 py-3 rounded-lg border text-sm transition-all ${
+                        formData.brandSafe === true
+                          ? 'border-green-500 bg-green-500/10 text-green-300'
+                          : 'border-gray-700 text-gray-300 hover:border-gray-600'
+                      }`}
                     >
-                      <option value="">Select...</option>
-                      <option value="already_peaked">Already peaked</option>
-                      <option value="peaking_now">Peaking now</option>
-                      <option value="1_week">1 week</option>
-                      <option value="2_weeks">2 weeks</option>
-                      <option value="1_month">1 month</option>
-                      <option value="longer">Longer</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">
-                      Brand-safe?
-                    </label>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, brandSafe: true }))}
-                        className={`flex-1 py-2 rounded-lg border text-sm transition-all ${
-                          formData.brandSafe === true
-                            ? 'border-green-500 bg-green-500/10 text-green-300'
-                            : 'border-gray-700 text-gray-300 hover:border-gray-600'
-                        }`}
-                      >
-                        Yes
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, brandSafe: false }))}
-                        className={`flex-1 py-2 rounded-lg border text-sm transition-all ${
-                          formData.brandSafe === false
-                            ? 'border-red-500 bg-red-500/10 text-red-300'
-                            : 'border-gray-700 text-gray-300 hover:border-gray-600'
-                        }`}
-                      >
-                        No
-                      </button>
-                    </div>
+                      ✅ Yes - Appropriate for all audiences
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, brandSafe: false }))}
+                      className={`flex-1 py-3 rounded-lg border text-sm transition-all ${
+                        formData.brandSafe === false
+                          ? 'border-red-500 bg-red-500/10 text-red-300'
+                          : 'border-gray-700 text-gray-300 hover:border-gray-600'
+                      }`}
+                    >
+                      ⚠️ No - Contains mature content
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -1238,11 +1228,12 @@ export default function SmartTrendSubmission({
                       <div>
                         <p className="text-xs text-gray-400">Velocity</p>
                         <p className="text-sm font-medium text-white capitalize">
-                          {formData.trendVelocity === 'just_starting' && '🌱 Starting'}
-                          {formData.trendVelocity === 'accelerating' && '🚀 Accelerating'}
-                          {formData.trendVelocity === 'viral' && '🔥 Viral'}
+                          {formData.trendVelocity === 'just_starting' && '🌱 Just Starting'}
+                          {formData.trendVelocity === 'picking_up' && '📈 Picking Up'}
+                          {formData.trendVelocity === 'viral' && '🚀 Going Viral'}
+                          {formData.trendVelocity === 'saturated' && '⚡ Saturated'}
                           {formData.trendVelocity === 'declining' && '📉 Declining'}
-                          {formData.trendVelocity === 'dead' && '💀 Dead'}
+                          {!formData.trendVelocity && 'Not selected'}
                         </p>
                       </div>
                       <div>
@@ -1253,6 +1244,7 @@ export default function SmartTrendSubmission({
                           {formData.trendSize === 'viral' && '🔥 Viral'}
                           {formData.trendSize === 'mega' && '💥 Mega'}
                           {formData.trendSize === 'global' && '🌍 Global'}
+                          {!formData.trendSize && 'Not selected'}
                         </p>
                       </div>
                       <div>
