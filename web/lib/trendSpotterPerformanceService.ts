@@ -328,7 +328,8 @@ export class TrendSpotterPerformanceService {
       restricted: { tier: 'learning' as SpotterTier, approvalRate: 0.3, minTrends: 10 },
       learning: { tier: 'verified' as SpotterTier, approvalRate: 0.5, minTrends: 20 },
       verified: { tier: 'elite' as SpotterTier, approvalRate: 0.8, minTrends: 50 },
-      elite: null
+      elite: { tier: 'master' as SpotterTier, approvalRate: 0.9, minTrends: 100 },
+      master: null
     };
 
     const nextTier = thresholds[currentTier];
