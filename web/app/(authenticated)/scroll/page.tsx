@@ -327,18 +327,17 @@ export default function LegibleScrollPage() {
         last_submission_at: profileData?.last_submission_at
       };
       
-      // Calculate earnings with UNIFIED_EARNINGS (expects userProfile, forceNewSession)
+      // Calculate earnings with SUSTAINABLE_EARNINGS (expects trend, userProfile)
       const earningsResult = calculateTrendEarnings(
-        userProfileForEarnings,
-        false // not forcing new session
+        null, // trend data not used in calculation
+        userProfileForEarnings
       );
       
       console.log('💰 [SCROLL] Earnings calculation result:', {
         base: earningsResult.base,
         tierMultiplier: earningsResult.tierMultiplier,
-        sessionMultiplier: earningsResult.sessionMultiplier,
-        dailyMultiplier: earningsResult.dailyMultiplier,
         total: earningsResult.total,
+        capped: earningsResult.capped,
         breakdown: earningsResult.breakdown,
         userTier: userProfileForEarnings.performance_tier,
         currentStreak: userProfileForEarnings.current_streak,
@@ -346,7 +345,7 @@ export default function LegibleScrollPage() {
       });
       
       const basePayment = earningsResult.base || 0.25;
-      let finalPayment = earningsResult.total || basePayment;
+      let finalPayment = earningsResult.capped || earningsResult.total || basePayment;
       
       // Ensure we have a valid payment amount
       if (!finalPayment || finalPayment <= 0 || isNaN(finalPayment)) {

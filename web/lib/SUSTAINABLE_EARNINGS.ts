@@ -234,6 +234,8 @@ export function calculateTrendEarnings(
   qualityBonuses: number;  // Always 0 now
   performanceBonuses: number;  // Always 0 now
   tierMultiplier: number;
+  sessionMultiplier: number;  // Added for compatibility
+  dailyMultiplier: number;  // Added for compatibility
   total: number;
   capped: number;
   breakdown: string[];
@@ -282,6 +284,8 @@ export function calculateTrendEarnings(
     qualityBonuses: 0,  // No longer used
     performanceBonuses: 0,  // No longer used
     tierMultiplier,
+    sessionMultiplier,  // Now included in return
+    dailyMultiplier,  // Now included in return
     total,
     capped,
     breakdown,
