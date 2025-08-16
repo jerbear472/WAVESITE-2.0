@@ -885,18 +885,42 @@ export default function Dashboard() {
                         key={trend.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        onClick={() => {
-                          // Open the trend URL if available, otherwise open trend details
+                        onClick={(e) => {
+                          // Prevent navigation if clicking on the external link icon
+                          if ((e.target as HTMLElement).closest('.external-link-icon')) {
+                            return;
+                          }
+                          
+                          // Open the trend URL if available
                           const trendUrl = trend.url || trend.post_url || trend.evidence?.url;
                           if (trendUrl) {
-                            window.open(trendUrl, '_blank', 'noopener,noreferrer');
+                            try {
+                              // Validate URL first
+                              const url = new URL(trendUrl);
+                              
+                              // Check if on mobile device
+                              const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                              
+                              if (isMobile) {
+                                // Show confirmation on mobile to avoid app issues
+                                if (confirm('Open this trend in a new window?')) {
+                                  window.open(trendUrl, '_blank');
+                                }
+                              } else {
+                                // For desktop, open in new tab
+                                window.open(trendUrl, '_blank', 'noopener,noreferrer');
+                              }
+                            } catch (error) {
+                              console.error('Invalid URL:', trendUrl);
+                              alert('Unable to open this trend. The URL may be invalid.');
+                            }
                           }
                         }}
                         className="p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-all cursor-pointer group relative"
                       >
                         {/* External link indicator */}
                         {(trend.url || trend.post_url || trend.evidence?.url) && (
-                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="external-link-icon absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>

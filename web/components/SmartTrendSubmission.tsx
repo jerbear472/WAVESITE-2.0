@@ -820,21 +820,50 @@ export default function SmartTrendSubmission({
                         )}
                       </div>
                       
-                      {/* Right side - thumbnail */}
+                      {/* Right side - thumbnail with upload */}
                       <div className="flex justify-end">
                         {formData.thumbnail_url ? (
-                          <img 
-                            src={formData.thumbnail_url} 
-                            alt="Trend thumbnail"
-                            className="w-24 h-24 object-cover rounded-lg border border-gray-700 shadow-lg"
-                          />
-                        ) : (
-                          <div className="w-24 h-24 bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center">
-                            <div className="text-center">
-                              <CameraIcon className="w-6 h-6 text-gray-500 mx-auto mb-1" />
-                              <p className="text-xs text-gray-500">No thumbnail</p>
-                            </div>
+                          <div className="relative">
+                            <img 
+                              src={formData.thumbnail_url} 
+                              alt="Trend thumbnail"
+                              className="w-24 h-24 object-cover rounded-lg border border-gray-700 shadow-lg"
+                            />
+                            <button
+                              onClick={() => setFormData(prev => ({ ...prev, thumbnail_url: '' }))}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                              aria-label="Remove thumbnail"
+                            >
+                              ×
+                            </button>
                           </div>
+                        ) : (
+                          <label className="w-24 h-24 bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  // Convert to base64 for immediate display
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    setFormData(prev => ({ 
+                                      ...prev, 
+                                      thumbnail_url: reader.result as string 
+                                    }));
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                            <div className="text-center">
+                              <CameraIcon className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                              <p className="text-xs text-gray-400">Tap to add</p>
+                            </div>
+                          </label>
                         )}
                       </div>
                     </div>
