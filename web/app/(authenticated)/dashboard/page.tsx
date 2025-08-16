@@ -50,7 +50,6 @@ interface RecentTrend {
   validation_count?: number; // Made optional since it's not being used
   screenshot_url?: string;
   thumbnail_url?: string;
-  evidence?: any;
   creator_handle?: string;
   creator_name?: string;
   post_caption?: string;
