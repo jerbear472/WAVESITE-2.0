@@ -639,15 +639,15 @@ export default function SmartTrendSubmission({
       // Calculate potential earnings
       const userProfile = {
         user_id: user?.id || '',
-        performance_tier: (user?.performance_tier || 'learning') as any,
-        current_balance: user?.current_balance || 0,
-        total_earned: user?.total_earned || 0,
-        trends_submitted: user?.trends_submitted || 0,
-        approval_rate: user?.approval_rate || 0,
-        quality_score: user?.quality_score || 0.5,
-        current_streak: user?.current_streak || 0,
-        session_streak: user?.session_streak || 0,
-        last_submission_at: user?.last_submission_at
+        performance_tier: (user?.performance_tier || user?.spotter_tier || 'learning') as any,
+        current_balance: user?.total_earnings || 0,
+        total_earned: user?.total_earnings || 0,
+        trends_submitted: user?.trends_spotted || 0,
+        approval_rate: user?.accuracy_score ? user.accuracy_score / 100 : 0,
+        quality_score: user?.validation_score ? user.validation_score / 100 : 0.5,
+        current_streak: 0,  // These fields don't exist on User type
+        session_streak: 0,  // Will default to base calculations
+        last_submission_at: undefined
       };
       
       const earningsCalc = calculateTrendEarnings(null, userProfile);
