@@ -1119,7 +1119,7 @@ export default function LegibleScrollPage() {
               setShowSubmissionForm(false);
               setTrendUrl('');
             }}
-            customSubmit={handleTrendSubmit}
+            onSubmit={handleTrendSubmit}
             initialUrl={trendUrl}
           />
         </ErrorBoundary>
