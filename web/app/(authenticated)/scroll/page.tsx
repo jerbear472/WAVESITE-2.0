@@ -527,7 +527,7 @@ export default function LegibleScrollPage() {
             base_amount: earningsResult.base,
             tier: userTier,
             tier_multiplier: earningsResult.tierMultiplier,
-            session_position: earningsResult.sessionPosition || 1,
+            session_position: profileData?.session_streak || 1,
             session_multiplier: earningsResult.sessionMultiplier,
             daily_streak: profileData?.current_streak || 0,
             daily_multiplier: earningsResult.dailyMultiplier,
