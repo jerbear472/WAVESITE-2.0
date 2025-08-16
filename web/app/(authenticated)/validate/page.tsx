@@ -40,6 +40,7 @@ import {
   calculateUserTier,
   type Tier
 } from '@/lib/SUSTAINABLE_EARNINGS';
+import EarningsNotificationComponent, { useEarningsNotification } from '@/components/EarningsNotification';
 
 interface TrendToValidate {
   id: string;
@@ -601,6 +602,11 @@ export default function ValidatePageFixed() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
+      {/* Earnings Notification */}
+      <EarningsNotificationComponent 
+        notification={notification} 
+        onDismiss={dismissNotification} 
+      />
       {/* Elegant Header */}
       <div className="max-w-5xl mx-auto mb-6">
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-white/20 shadow-xl p-4">

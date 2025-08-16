@@ -332,6 +332,7 @@ export default function Dashboard() {
         .from('trend_submissions')
         .select(`
           *,
+          follow_up_data,
           spotter:profiles(username, email),
           earnings:earnings_ledger(amount)
         `)
@@ -371,6 +372,14 @@ export default function Dashboard() {
         console.error('All trends error:', allTrendsError);
       } else {
         console.log('All trends found:', allTrends?.length || 0);
+        // Debug: Check if follow_up_data is coming through
+        if (allTrends && allTrends.length > 0) {
+          console.log('First trend follow_up_data:', {
+            hasFollowUpData: !!allTrends[0].follow_up_data,
+            followUpData: allTrends[0].follow_up_data,
+            velocityMetrics: allTrends[0].follow_up_data?.velocityMetrics
+          });
+        }
       }
 
       // Combine user trends and recent platform trends, prioritizing user trends

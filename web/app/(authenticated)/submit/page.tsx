@@ -17,6 +17,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import SmartTrendSubmission from '@/components/SmartTrendSubmission';
+import EarningsNotificationComponent, { useEarningsNotification } from '@/components/EarningsNotification';
 
 // Fixed category mapping
 const CATEGORY_MAP: Record<string, string> = {
@@ -42,6 +43,7 @@ interface SubmissionStats {
 export default function WorkingSubmitPage() {
   const router = useRouter();
   const { user, updateUserEarnings } = useAuth();
+  const { notification, showEarnings, dismissNotification } = useEarningsNotification();
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [trendUrl, setTrendUrl] = useState('');
@@ -219,8 +221,8 @@ export default function WorkingSubmitPage() {
 
       console.log('Submission successful:', data);
 
-      // Calculate earnings using EARNINGS_STANDARD
-      const { calculateTrendEarnings, formatCurrency } = await import('@/lib/SUSTAINABLE_EARNINGS');
+      // Calculate earnings using UNIFIED EARNINGS for proper multipliers
+      const { calculateTrendEarnings, formatCurrency } = await import('@/lib/UNIFIED_EARNINGS');
       
       // Build trend data for earnings calculation
       const trendDataForEarnings = {
@@ -245,7 +247,14 @@ export default function WorkingSubmitPage() {
         wave_score: trendData.wave_score || 70
       };
       
-      // Build user profile for earnings calculation
+      // Get user's current streak information
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('current_streak, session_streak, last_submission_at')
+        .eq('user_id', user.id)
+        .single();
+      
+      // Build user profile for earnings calculation with streak data
       const userProfileForEarnings = {
         user_id: user?.id || '',
         performance_tier: (user?.spotter_tier || 'learning') as any,
@@ -253,20 +262,24 @@ export default function WorkingSubmitPage() {
         total_earned: user?.total_earnings || 0,
         trends_submitted: user?.trends_spotted || 0,
         approval_rate: user?.accuracy_score || 0.5,
-        quality_score: user?.validation_score || 0.5
+        quality_score: user?.validation_score || 0.5,
+        current_streak: profileData?.current_streak || 0,
+        session_streak: profileData?.session_streak || 0,
+        last_submission_at: profileData?.last_submission_at
       };
       
+      // Calculate earnings with all multipliers
       const earningResult = calculateTrendEarnings(
-        trendDataForEarnings,
-        userProfileForEarnings
+        userProfileForEarnings,
+        false // not forcing new session
       );
       
       console.log('Earning calculation:', {
         base: earningResult.base,
-        qualityBonuses: earningResult.qualityBonuses,
-        performanceBonuses: earningResult.performanceBonuses,
+        tierMultiplier: earningResult.tierMultiplier,
+        sessionMultiplier: earningResult.sessionMultiplier,
+        dailyMultiplier: earningResult.dailyMultiplier,
         total: earningResult.total,
-        capped: earningResult.capped,
         breakdown: earningResult.breakdown
       });
       
@@ -276,7 +289,7 @@ export default function WorkingSubmitPage() {
         .insert({
           user_id: user?.id,
           trend_id: data.id,
-          amount: earningResult.capped,
+          amount: earningResult.total,
           type: 'trend_submission',
           status: 'pending',
           description: `Trend: ${trendData.trendName || submission.description}`,
@@ -284,7 +297,12 @@ export default function WorkingSubmitPage() {
             wave_score: trendData.wave_score,
             category: displayCategory,
             platform: trendData.platform,
-            earnings_breakdown: earningResult.breakdown
+            earnings_breakdown: earningResult.breakdown,
+            multipliers: {
+              tier: earningResult.tierMultiplier,
+              session: earningResult.sessionMultiplier,
+              daily: earningResult.dailyMultiplier
+            }
           }
         });
       
@@ -292,17 +310,25 @@ export default function WorkingSubmitPage() {
         console.error('Failed to create earnings entry:', earningsError);
         // Don't fail the submission, just log the error
       } else {
-        console.log('Earnings entry created successfully:', earningResult.capped);
+        console.log('Earnings entry created successfully:', earningResult.total);
       }
       
       // Update user earnings with the calculated amount
-      updateUserEarnings(earningResult.capped);
+      updateUserEarnings(earningResult.total);
+      
+      // Show earnings notification in bottom left
+      showEarnings(
+        earningResult.total,
+        'submission',
+        `Trend submitted! Pending validation...`,
+        earningResult.breakdown
+      );
       
       // Store submission with earnings info for display
       setRecentSubmission({
         ...data,
-        calculatedEarnings: earningResult.capped,
-        formattedEarnings: formatCurrency(earningResult.capped)
+        calculatedEarnings: earningResult.total,
+        formattedEarnings: formatCurrency(earningResult.total)
       });
 
       // Show success state
@@ -487,6 +513,12 @@ export default function WorkingSubmitPage() {
           </ol>
         </motion.div>
       </div>
+
+      {/* Earnings Notification */}
+      <EarningsNotificationComponent 
+        notification={notification} 
+        onDismiss={dismissNotification} 
+      />
 
       {/* Smart Trend Submission Form Modal */}
       {showForm && (
