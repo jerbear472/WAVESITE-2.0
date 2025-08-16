@@ -174,13 +174,24 @@ export default function Earnings() {
         .length;
       
       // Set earnings data calculated from ledger
-      setEarningsData({
+      const calculatedData = {
         earnings_pending: pendingEarnings,
         earnings_approved: approvedEarnings,
         earnings_paid: paidEarnings,
         total_submissions: totalSubmissions,
         verified_submissions: verifiedSubmissions
+      };
+      
+      console.log('Calculated earnings data:', {
+        ...calculatedData,
+        todaysEarnings,
+        totalTransactions: mappedTransactions.length,
+        pendingCount: mappedTransactions.filter(t => t.status === 'pending' || t.status === 'awaiting_validation').length,
+        approvedCount: mappedTransactions.filter(t => t.status === 'approved').length,
+        paidCount: mappedTransactions.filter(t => t.status === 'paid').length
       });
+      
+      setEarningsData(calculatedData);
 
     } catch (error) {
       console.error('Error fetching earnings data:', error);
