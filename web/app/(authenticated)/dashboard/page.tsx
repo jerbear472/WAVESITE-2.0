@@ -69,6 +69,9 @@ interface RecentTrend {
     };
     trendVelocity?: string;
     trendSize?: string;
+    url?: string;
+    title?: string;
+    [key: string]: any; // Allow other properties
   };
   posted_at?: string;
   earnings_amount?: number;
