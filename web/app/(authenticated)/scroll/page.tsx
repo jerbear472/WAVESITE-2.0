@@ -663,12 +663,12 @@ export default function LegibleScrollPage() {
       
       // Trigger the earnings animation
       console.log('Triggering earnings animation with amount:', finalPayment);
-      showEarningsAnimation({
-        amount: finalPayment,
-        type: 'submission',
-        message: 'Trend submitted! Pending validation...',
-        breakdown: animationBreakdown
-      });
+      // Calculate total multiplier for display
+      const totalMultiplier = tierMultiplier * 
+        (session.isActive && session.currentStreak > 0 ? getStreakMultiplier(session.currentStreak + 1) : 1.0) *
+        (dailyStreak >= 30 ? 2.5 : dailyStreak >= 14 ? 2.0 : dailyStreak >= 7 ? 1.5 : dailyStreak >= 2 ? 1.2 : 1.0);
+      
+      showEarningsAnimation(finalPayment, animationBreakdown, totalMultiplier);
       
       // Show success message with pending verification note and multipliers
       setSubmitMessage({ 
