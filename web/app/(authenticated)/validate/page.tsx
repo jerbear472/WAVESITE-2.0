@@ -857,7 +857,7 @@ export default function ValidatePageFixed() {
                           <div className="mt-3 pt-3 border-t border-blue-200">
                             <div className="space-y-1">
                               {relevantEntries.map(([key, value]) => {
-                                const labels = {
+                                const labels: Record<string, string> = {
                                   platform: 'Platform',
                                   region: 'Region',
                                   spreadSpeed: 'Speed',
@@ -873,7 +873,7 @@ export default function ValidatePageFixed() {
                                 
                                 return (
                                   <div key={key} className="flex justify-between items-center">
-                                    <span className="text-xs text-gray-500">{labels[key] || key}:</span>
+                                    <span className="text-xs text-gray-500">{labels[key as string] || key}:</span>
                                     <span className="text-xs font-medium text-gray-700 truncate max-w-[120px]">
                                       {String(displayValue)}
                                     </span>
