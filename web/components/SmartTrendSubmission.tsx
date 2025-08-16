@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
 import { calculateWaveScore } from '@/lib/calculateWaveScore';
+import TrendWritingHelper from './TrendWritingHelper';
 import { 
   Link as LinkIcon,
   Send as SendIcon,
@@ -322,6 +323,26 @@ const CATEGORIES = [
         options: ['One-time thing', 'Daily habit', 'Lifestyle change', 'Medical intervention']
       }
     }
+  },
+  { 
+    id: 'product', 
+    label: 'Product/Shopping', 
+    icon: '🛍️',
+    color: 'from-purple-500 to-pink-600',
+    questions: {
+      type: {
+        label: 'What kind of product trend?',
+        options: ['Must-have item', 'Shopping hack', 'Brand collab', 'Discount/deal', 'Unboxing/review']
+      },
+      priceRange: {
+        label: 'Price point?',
+        options: ['Under $20', '$20-50', '$50-100', '$100-500', 'Over $500']
+      },
+      availability: {
+        label: 'How easy to get?',
+        options: ['Widely available', 'Limited stock', 'Exclusive drop', 'Sold out everywhere', 'Pre-order only']
+      }
+    }
   }
 ];
 
@@ -361,6 +382,7 @@ export default function SmartTrendSubmission({
     audienceAge: [] as string[],
     predictedPeak: '',
     brandSafe: null as boolean | null,
+    is_ai_generated: false,  // New field for AI-generated content
     
     // Velocity & Size (HIGH VALUE DATA)
     trendVelocity: '' as 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining' | '',
@@ -881,17 +903,28 @@ export default function SmartTrendSubmission({
                   </motion.div>
                 )}
 
-                {/* Title Input */}
+                {/* Title Input with Writing Helper */}
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Give it a catchy title <span className="text-red-400">*</span>
+                    Write a headline-style title <span className="text-red-400">*</span>
                   </label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Think like a news headline: "Retail investors are jumping on this meme stock"
+                  </p>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g., 'Mob Wife Aesthetic' or 'Dupe Culture'"
+                    placeholder='e.g., "Gaming community going crazy over AI-generated RPG"'
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                  />
+                  
+                  {/* Integrated Writing Helper */}
+                  <TrendWritingHelper
+                    value={formData.title}
+                    onChange={(value) => setFormData(prev => ({ ...prev, title: value }))}
+                    category={formData.platform || 'General'}
+                    showInline={true}
                   />
                 </div>
 
@@ -1313,6 +1346,28 @@ export default function SmartTrendSubmission({
                       value={formData.sentiment}
                       onChange={(value) => setFormData(prev => ({ ...prev, sentiment: value }))}
                     />
+                  </div>
+
+                  {/* AI-Generated Content Disclosure */}
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="ai-generated"
+                        checked={formData.is_ai_generated}
+                        onChange={(e) => setFormData(prev => ({ ...prev, is_ai_generated: e.target.checked }))}
+                        className="mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                      />
+                      <label htmlFor="ai-generated" className="flex-1 cursor-pointer">
+                        <div className="flex items-center gap-2 mb-1">
+                          <SparklesIcon className="w-4 h-4 text-yellow-400" />
+                          <h4 className="text-sm font-medium text-gray-300">AI-Generated Content</h4>
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          Check this box if this trend involves AI-generated content (images, videos, text, music, etc.)
+                        </p>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </motion.div>

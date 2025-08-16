@@ -87,8 +87,17 @@ export class TrendSpotterPerformanceService {
    */
   getTierBenefits(tier: SpotterTier): SpotterTierBenefits {
     const benefits: Record<SpotterTier, SpotterTierBenefits> = {
+      master: {
+        paymentMultiplier: 3.0,
+        basePaymentRange: { min: 0.20, max: 0.30 },
+        canAccessPremiumCategories: true,
+        dailyTrendLimit: -1, // Unlimited
+        qualityBonusEnabled: true,
+        earlyDetectionBonusRate: 1.0, // 100% bonus for early detection
+        displayBadge: '👑 Master Spotter'
+      },
       elite: {
-        paymentMultiplier: 1.5,
+        paymentMultiplier: 2.0,
         basePaymentRange: { min: 0.12, max: 0.20 },
         canAccessPremiumCategories: true,
         dailyTrendLimit: -1, // Unlimited
@@ -97,7 +106,7 @@ export class TrendSpotterPerformanceService {
         displayBadge: '🏆 Elite Spotter'
       },
       verified: {
-        paymentMultiplier: 1.0,
+        paymentMultiplier: 1.5,
         basePaymentRange: { min: 0.08, max: 0.15 },
         canAccessPremiumCategories: true,
         dailyTrendLimit: 100,
@@ -106,7 +115,7 @@ export class TrendSpotterPerformanceService {
         displayBadge: '✅ Verified Spotter'
       },
       learning: {
-        paymentMultiplier: 0.7,
+        paymentMultiplier: 1.0,
         basePaymentRange: { min: 0.05, max: 0.10 },
         canAccessPremiumCategories: false,
         dailyTrendLimit: 50,
@@ -115,7 +124,7 @@ export class TrendSpotterPerformanceService {
         displayBadge: '📚 Learning Spotter'
       },
       restricted: {
-        paymentMultiplier: 0.3,
+        paymentMultiplier: 0.5,
         basePaymentRange: { min: 0.02, max: 0.05 },
         canAccessPremiumCategories: false,
         dailyTrendLimit: 20,
@@ -291,7 +300,7 @@ export class TrendSpotterPerformanceService {
       earlyDetectionBonus: 0.1,
       currentTier: 'learning',
       consecutiveApprovedTrends: 0,
-      paymentMultiplier: 0.7,
+      paymentMultiplier: 1.0,
       categoryExpertise: [],
       achievements: []
     };
@@ -570,29 +579,35 @@ export class TrendSpotterPerformanceService {
     description: string;
   } {
     const displays = {
+      master: {
+        badge: '👑',
+        name: 'Master Spotter',
+        color: 'text-purple-400',
+        description: '3x payments • VIP access • Maximum bonuses'
+      },
       elite: {
         badge: '🏆',
         name: 'Elite Spotter',
         color: 'text-yellow-400',
-        description: '1.5x payments • Premium access • All bonuses'
+        description: '2x payments • Premium access • All bonuses'
       },
       verified: {
         badge: '✅',
         name: 'Verified Spotter',
         color: 'text-green-400',
-        description: 'Standard payments • Full access • Quality bonuses'
+        description: '1.5x payments • Full access • Quality bonuses'
       },
       learning: {
         badge: '📚',
         name: 'Learning Spotter',
         color: 'text-blue-400',
-        description: '0.7x payments • Building reputation • Keep improving!'
+        description: '1x base payments • Building reputation • Keep improving!'
       },
       restricted: {
         badge: '⚠️',
         name: 'Restricted',
         color: 'text-orange-400',
-        description: '0.3x payments • Limited access • Quality improvement needed'
+        description: '0.5x payments • Limited access • Quality improvement needed'
       }
     };
 

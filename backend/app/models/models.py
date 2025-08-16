@@ -57,7 +57,7 @@ class User(Base):
     
     # Relationships
     recordings = relationship("Recording", back_populates="user")
-    trend_submissions = relationship("TrendSubmission", back_populates="spotter")
+    trend_submissions = relationship("TrendSubmission", back_populates="spotter", foreign_keys="TrendSubmission.spotter_id")
     validations = relationship("TrendValidation", back_populates="validator")
     payments = relationship("Payment", back_populates="user")
 
@@ -83,7 +83,7 @@ class Recording(Base):
     
     # Relationships
     user = relationship("User", back_populates="recordings")
-    insights = relationship("RecordingInsight", back_populates="recording")
+    # insights = relationship("RecordingInsight", back_populates="recording")  # Model not defined
 
 
 class TrendSubmission(Base):
@@ -126,7 +126,7 @@ class TrendSubmission(Base):
     # Relationships
     spotter = relationship("User", back_populates="trend_submissions", foreign_keys=[spotter_id])
     validations = relationship("TrendValidation", back_populates="trend")
-    insights = relationship("TrendInsight", back_populates="trend")
+    # insights = relationship("TrendInsight", back_populates="trend")  # Model not defined
 
 
 class TrendValidation(Base):

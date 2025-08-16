@@ -589,21 +589,21 @@ export default function Dashboard() {
           label = '🌱 Just Starting';
           color = 'text-green-500';
           break;
-        case 'accelerating':
-          label = '🚀 Accelerating';
+        case 'picking_up':
+          label = '📈 Picking Up';
+          color = 'text-blue-500';
+          break;
+        case 'going_viral':
+          label = '🔥 Going Viral';
           color = 'text-orange-500';
           break;
-        case 'viral':
-          label = '🔥 Viral';
-          color = 'text-red-500';
+        case 'saturated':
+          label = '⭐ Saturated';
+          color = 'text-purple-500';
           break;
         case 'declining':
           label = '📉 Declining';
           color = 'text-yellow-600';
-          break;
-        case 'dead':
-          label = '💀 Dead';
-          color = 'text-gray-500';
           break;
         default:
           label = '🆕 New';

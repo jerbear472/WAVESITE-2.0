@@ -19,18 +19,52 @@ import { supabase } from '@/lib/supabase';
 import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import EarningsNotificationComponent, { useEarningsNotification } from '@/components/EarningsNotification';
 
-// Fixed category mapping
+// Fixed category mapping - maps frontend IDs and labels to backend enum values
 const CATEGORY_MAP: Record<string, string> = {
-  'Fashion & Beauty': 'visual_style',
-  'Food & Drink': 'behavior_pattern',
-  'Humor & Memes': 'meme_format',
+  // Map category IDs from SmartTrendSubmission to backend enums
+  'meme': 'meme_format',
+  'fashion': 'fashion',
+  'food': 'food_drink',  // Fixed: 'food' ID maps to 'food_drink' enum
+  'music': 'dance',  // or 'audio_music' depending on backend preference
+  'lifestyle': 'behavior_pattern',
+  'tech': 'technology',
+  'finance': 'finance',
+  'sports': 'sports',
+  'political': 'political',
+  'cars': 'automotive',
+  'animals': 'animals_pets',
+  'travel': 'travel',
+  'education': 'education',
+  'health': 'health',
+  'product': 'product_brand',  // For product/shopping trends
+  'shopping': 'product_brand',  // Alias for shopping
+  
+  // Map category labels (for backward compatibility and other forms)
+  'Meme/Humor': 'meme_format',
+  'Fashion/Beauty': 'fashion',
+  'Food/Drink': 'food_drink',
+  'Music & Dance': 'dance',
   'Lifestyle': 'behavior_pattern',
-  'Politics & Social Issues': 'behavior_pattern',
-  'Music & Dance': 'audio_music',
-  'Sports & Fitness': 'behavior_pattern',
-  'Tech & Gaming': 'creator_technique',
+  'Tech & Gaming': 'gaming',
+  'Finance/Money': 'finance',
+  'Sports/Fitness': 'sports',
+  'Politics/Social': 'political',
+  'Cars & Vehicles': 'automotive',
+  'Animals & Pets': 'animals_pets',
+  'Travel & Places': 'travel',
+  'Education & Learning': 'education',
+  'Health & Wellness': 'health',
+  'Product/Shopping': 'product_brand',
+  
+  // Legacy mappings
+  'Fashion & Beauty': 'fashion',
+  'Food & Drink': 'food_drink',
+  'Humor & Memes': 'meme_format',
+  'Politics & Social Issues': 'political',
+  'Sports & Fitness': 'sports',
+  'Tech & Gaming': 'technology',
   'Art & Creativity': 'visual_style',
-  'Education & Science': 'creator_technique'
+  'Education & Science': 'education'
 };
 
 interface SubmissionStats {
@@ -128,8 +162,12 @@ export default function WorkingSubmitPage() {
       }
 
       // Map category to enum value
-      const displayCategory = trendData.categories?.[0] || 'Humor & Memes';
-      const mappedCategory = CATEGORY_MAP[displayCategory] || 'meme_format';
+      // trendData.categories contains the category ID from SmartTrendSubmission (e.g., 'food', 'meme')
+      const categoryId = trendData.categories?.[0] || 'meme';
+      const mappedCategory = CATEGORY_MAP[categoryId] || CATEGORY_MAP['meme'] || 'meme_format';
+      
+      // For display/logging purposes, get the label if needed
+      const displayCategory = trendData.categoryLabel || categoryId;
 
       // Build submission object
       const submission: any = {
@@ -149,7 +187,8 @@ export default function WorkingSubmitPage() {
           motivation: trendData.motivation || '',
           firstSeen: trendData.firstSeen || new Date().toISOString(),
           audioOrCatchphrase: trendData.audioOrCatchphrase || '',
-          brandAdoption: trendData.brandAdoption || false
+          brandAdoption: trendData.brandAdoption || false,
+          is_ai_generated: trendData.is_ai_generated || false  // Add AI-generated flag to evidence
         },
         status: 'submitted', // Initial status - goes to verification queue
         virality_prediction: trendData.spreadSpeed === 'viral' ? 9 : 
@@ -161,7 +200,8 @@ export default function WorkingSubmitPage() {
         validation_count: 0,
         screenshot_url: screenshotUrl || trendData.screenshot_url || null,
         post_url: trendData.url ? trendData.url.trim() : null,
-        thumbnail_url: trendData.thumbnail_url || null // Ensure thumbnail_url is included
+        thumbnail_url: trendData.thumbnail_url || null,
+        is_ai_generated: trendData.is_ai_generated || false  // Also add at top level for easier querying
         // Remove created_at - it's handled by database default
       };
 

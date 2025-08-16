@@ -66,6 +66,7 @@ BEGIN
         
         ALTER TABLE captured_trends
         ADD COLUMN IF NOT EXISTS earnings DECIMAL(10,2) DEFAULT 0.00,
+        ADD COLUMN IF NOT EXISTS payment_amount DECIMAL(10,2) DEFAULT 0.00,
         ADD COLUMN IF NOT EXISTS session_position INTEGER DEFAULT 1,
         ADD COLUMN IF NOT EXISTS session_multiplier DECIMAL(3,2) DEFAULT 1.0,
         ADD COLUMN IF NOT EXISTS daily_multiplier DECIMAL(3,2) DEFAULT 1.0,
@@ -86,6 +87,7 @@ BEGIN
         
         ALTER TABLE trend_submissions
         ADD COLUMN IF NOT EXISTS earnings DECIMAL(10,2) DEFAULT 0.00,
+        ADD COLUMN IF NOT EXISTS payment_amount DECIMAL(10,2) DEFAULT 0.00,
         ADD COLUMN IF NOT EXISTS session_position INTEGER DEFAULT 1,
         ADD COLUMN IF NOT EXISTS session_multiplier DECIMAL(3,2) DEFAULT 1.0,
         ADD COLUMN IF NOT EXISTS daily_multiplier DECIMAL(3,2) DEFAULT 1.0,

@@ -1,3 +1,2 @@
-from . import auth, trends, metadata, similarity
-
-__all__ = ["auth", "trends", "metadata", "similarity"]
+# Empty init file to avoid circular imports
+# Individual modules should be imported directly

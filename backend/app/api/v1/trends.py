@@ -7,15 +7,24 @@ from datetime import datetime, timedelta
 from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.models.models import User, TrendSubmission, TrendValidation, TrendStatus, TrendCategory
-from app.schemas.trends import (
+from app.schemas.trends_updated import (
     TrendSubmissionCreate, 
     TrendSubmissionResponse,
     TrendValidationCreate,
     TrendBountyCalculation
 )
 from app.ml.trend_analyzer import TrendAnalyzer
-from app.services.bounty_service import BountyService
-from app.services.storage_service import StorageService
+# from app.services.bounty_service import BountyService
+# from app.services.storage_service import StorageService
+
+# Dummy services for now
+class BountyService:
+    def calculate_bounty(self, *args, **kwargs):
+        return 0.25
+        
+class StorageService:
+    async def upload_file(self, *args, **kwargs):
+        return "dummy_url"
 
 router = APIRouter()
 trend_analyzer = TrendAnalyzer()

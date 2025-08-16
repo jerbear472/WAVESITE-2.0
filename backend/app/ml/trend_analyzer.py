@@ -9,14 +9,23 @@ from typing import List, Dict, Optional
 # from app.core.redis_client import redis_client
 import redis
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
-from app.ml.models import TrendPredictionModel, ViralityDetector
+# from app.ml.models import TrendPredictionModel, ViralityDetector
 from app.models.models import TrendSubmission
 
+# Dummy classes for now
+class TrendPredictionModel:
+    def predict(self, *args, **kwargs):
+        return 0.5
+
+class ViralityDetector:
+    def detect(self, *args, **kwargs):
+        return False
 
 class TrendAnalyzer:
     def __init__(self):
-        self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        # Skip loading CLIP model for now to speed up startup
+        self.clip_model = None  # CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        self.clip_processor = None  # CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.trend_predictor = TrendPredictionModel()
         self.virality_detector = ViralityDetector()
         self.trend_cache = {}
@@ -24,6 +33,10 @@ class TrendAnalyzer:
     def check_duplicate(self, description: str, category: str, db) -> Optional[object]:
         """Check if similar trend already exists"""
         
+        # Skip duplicate check if models not loaded
+        if self.clip_processor is None or self.clip_model is None:
+            return None
+            
         # Generate embedding for new trend
         inputs = self.clip_processor(text=description, return_tensors="pt")
         with torch.no_grad():
