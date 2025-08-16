@@ -265,10 +265,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .eq('user_id', session.user.id)
             .single();
 
-          // Also get performance tier from user_profiles
+          // Also get performance tier and earnings from user_profiles
           const { data: userProfile } = await supabase
             .from('user_profiles')
-            .select('performance_tier, current_streak, session_streak')
+            .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
             .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
             .single();
             
