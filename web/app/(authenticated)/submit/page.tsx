@@ -577,7 +577,7 @@ export default function WorkingSubmitPage() {
             setTrendUrl('');
             setSelectedCategory(null);
           }}
-          customSubmit={handleTrendSubmit}
+          onSubmit={handleTrendSubmit}
           initialUrl={trendUrl}
         />
       )}
