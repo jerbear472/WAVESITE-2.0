@@ -305,6 +305,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
           
           console.log('Setting user data:', userData.username);
+          console.log('🎯 [AUTH] Final user data with earnings:', {
+            pending: userData.pending_earnings,
+            total: userData.total_earnings,
+            spotted: userData.trends_spotted
+          });
           setUser(userData);
         } else {
           console.log('No profile found for user');
@@ -518,7 +523,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshUser = async () => {
+    console.log('🔄 [AUTH] RefreshUser called - fetching latest data...');
     await checkUser();
+    console.log('✅ [AUTH] RefreshUser complete, current pending:', user?.pending_earnings);
   };
 
   const switchViewMode = async (mode: 'user' | 'professional') => {

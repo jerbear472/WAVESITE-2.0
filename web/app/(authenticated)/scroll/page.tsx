@@ -680,15 +680,23 @@ export default function LegibleScrollPage() {
         await updateUserEarnings(finalPayment);
       }
       
-      // Give database a moment to process, then refresh everything
+      // FORCE IMMEDIATE REFRESH of user data
+      console.log('🔄 [SCROLL] Force refreshing user data...');
+      if (refreshUser) {
+        await refreshUser(); // Refresh immediately, don't wait
+        console.log('✅ [SCROLL] User data refreshed!');
+      }
+      
+      // Also reload stats
+      await loadTodaysStats();
+      
+      // Do another refresh after a delay to ensure everything syncs
       setTimeout(async () => {
-        // Reload stats to get accurate data from database
-        await loadTodaysStats();
         if (refreshUser) {
-          await refreshUser(); // This will update the user context with new pending earnings
-          console.log('User data refreshed after trend submission');
+          await refreshUser();
+          console.log('✅ [SCROLL] Second refresh complete');
         }
-      }, 500); // 500ms delay to ensure database transaction completes
+      }, 1000);
       
     } catch (error: any) {
       console.error('Submission error caught:', error);
