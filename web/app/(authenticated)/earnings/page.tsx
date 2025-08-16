@@ -118,13 +118,30 @@ export default function Earnings() {
 
   const fetchEarningsData = async () => {
     try {
-      console.log('🔍 [EARNINGS PAGE] Fetching earnings for user:', user?.id);
+      console.log('🔍 [EARNINGS PAGE] Starting fetch for user:', user?.id);
+      
+      if (!user?.id) {
+        console.error('❌ [EARNINGS PAGE] No user ID available');
+        setLoading(false);
+        return;
+      }
+      
+      // First, let's try to count the records
+      const { count, error: countError } = await supabase
+        .from('earnings_ledger')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      
+      console.log('📊 [EARNINGS PAGE] Total earnings records for user:', count);
+      if (countError) {
+        console.error('❌ [EARNINGS PAGE] Count error:', countError);
+      }
       
       // Fetch ALL earnings transactions - simplified query without join
       const { data: transactionsData, error: transError } = await supabase
         .from('earnings_ledger')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (transError) {
@@ -148,8 +165,25 @@ export default function Earnings() {
         return;
       }
       
-      console.log('✅ [EARNINGS PAGE] Fetched transactions:', transactionsData);
+      console.log('✅ [EARNINGS PAGE] Raw response:', { transactionsData, transError });
       console.log('✅ [EARNINGS PAGE] Number of transactions:', transactionsData?.length || 0);
+      
+      // If no data, let's check if it's an RLS issue
+      if (!transactionsData || transactionsData.length === 0) {
+        console.log('⚠️ [EARNINGS PAGE] No transactions found. Checking with service role...');
+        
+        // Also log what we're looking for
+        console.log('🔍 [EARNINGS PAGE] Query details:', {
+          table: 'earnings_ledger',
+          filter: `user_id = ${user.id}`,
+          expected: 'Should have entries from trend submissions'
+        });
+      }
+      
+      // Log first transaction if exists for debugging
+      if (transactionsData && transactionsData.length > 0) {
+        console.log('📝 [EARNINGS PAGE] Sample transaction:', transactionsData[0]);
+      }
       
       // Map transaction types properly
       const mappedTransactions = (transactionsData || []).map(t => ({
@@ -449,15 +483,33 @@ export default function Earnings() {
         </div>
 
         {/* Debug Info - Remove in production */}
-        {process.env.NODE_ENV === 'development' && transactions.length > 0 && (
+        {(
           <div className="bg-yellow-900/20 border border-yellow-700 rounded-xl p-4 mb-4">
-            <h3 className="text-yellow-400 font-bold mb-2">Debug Info (Dev Only)</h3>
+            <h3 className="text-yellow-400 font-bold mb-2">Debug Info</h3>
             <div className="text-xs text-gray-400 space-y-1">
-              <div>Total transactions fetched: {transactions.length}</div>
-              <div>First transaction: {JSON.stringify(transactions[0], null, 2).substring(0, 200)}...</div>
-              <div>Pending amount sum: ${displayPending.toFixed(2)}</div>
-              <div>User ID: {user?.id}</div>
+              <div>User ID: {user?.id || 'No user'}</div>
+              <div>Total transactions in state: {transactions.length}</div>
+              {transactions.length > 0 ? (
+                <>
+                  <div>First transaction ID: {transactions[0]?.id}</div>
+                  <div>First transaction amount: ${transactions[0]?.amount}</div>
+                  <div>First transaction status: {transactions[0]?.status}</div>
+                </>
+              ) : (
+                <div className="text-red-400">No transactions loaded</div>
+              )}
+              <div>Pending earnings: ${displayPending.toFixed(2)}</div>
+              <div>Total earnings: ${totalEarnings.toFixed(2)}</div>
             </div>
+            <button
+              onClick={() => {
+                console.log('Manual refresh triggered');
+                fetchEarningsData();
+              }}
+              className="mt-2 px-3 py-1 bg-yellow-600 hover:bg-yellow-500 text-white rounded text-xs"
+            >
+              Manual Refresh
+            </button>
           </div>
         )}
 
