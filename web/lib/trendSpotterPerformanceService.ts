@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type SpotterTier = 'elite' | 'verified' | 'learning' | 'restricted';
+export type SpotterTier = 'master' | 'elite' | 'verified' | 'learning' | 'restricted';
 
 export interface SpotterPerformanceMetrics {
   trendApprovalRate30d: number;
