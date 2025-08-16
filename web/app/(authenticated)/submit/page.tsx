@@ -316,7 +316,27 @@ export default function WorkingSubmitPage() {
         console.log('Earnings entry created successfully:', earningResult.total);
       }
       
-      // Update user earnings with the calculated amount
+      // Update user earnings using BOTH methods to ensure it works
+      // Method 1: Call the database function directly
+      try {
+        console.log('💰 [SUBMIT] Calling add_pending_earnings RPC with amount:', earningResult.total);
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('add_pending_earnings', {
+            p_user_id: user.id,
+            p_amount: earningResult.total,
+            p_description: `Trend: ${trendData.trendName || submission.description}`
+          });
+        
+        if (rpcError) {
+          console.error('❌ [SUBMIT] RPC add_pending_earnings failed:', rpcError);
+        } else {
+          console.log('✅ [SUBMIT] RPC add_pending_earnings succeeded:', rpcResult);
+        }
+      } catch (rpcException) {
+        console.error('❌ [SUBMIT] Exception calling add_pending_earnings:', rpcException);
+      }
+      
+      // Method 2: Update via auth context (local state)
       updateUserEarnings(earningResult.total);
       
       // Show earnings notification in bottom left

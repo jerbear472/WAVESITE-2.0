@@ -639,13 +639,32 @@ export default function LegibleScrollPage() {
       setTodaysPendingEarnings(prev => prev + finalPayment);
       setTrendsLoggedToday(prev => prev + 1);
       
-      // CRITICAL: Update user earnings in the auth context
-      // This was missing and causing earnings not to be added!
+      // CRITICAL: Update user earnings using BOTH methods to ensure it works
+      // Method 1: Call the database function directly
+      try {
+        console.log('💰 [SCROLL] Calling add_pending_earnings RPC with amount:', finalPayment);
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('add_pending_earnings', {
+            p_user_id: user.id,
+            p_amount: finalPayment,
+            p_description: `Trend: ${formData.trendName || 'Untitled'}`
+          });
+        
+        if (rpcError) {
+          console.error('❌ [SCROLL] RPC add_pending_earnings failed:', rpcError);
+        } else {
+          console.log('✅ [SCROLL] RPC add_pending_earnings succeeded:', rpcResult);
+        }
+      } catch (rpcException) {
+        console.error('❌ [SCROLL] Exception calling add_pending_earnings:', rpcException);
+      }
+      
+      // Method 2: Update via auth context (local state)
       if (updateUserEarnings) {
-        console.log('Updating user earnings in auth context with:', finalPayment);
+        console.log('💰 [SCROLL] Updating user earnings in auth context with:', finalPayment);
         await updateUserEarnings(finalPayment);
       } else {
-        console.error('updateUserEarnings function not available!');
+        console.error('❌ [SCROLL] updateUserEarnings function not available!');
       }
       
       // Give database a moment to process, then refresh everything
