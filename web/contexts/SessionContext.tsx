@@ -55,6 +55,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (parsed.startTime) parsed.startTime = new Date(parsed.startTime);
         if (parsed.lastSubmissionTime) parsed.lastSubmissionTime = new Date(parsed.lastSubmissionTime);
         
+        // IMPORTANT: If session was paused (isActive = false), keep it paused
+        // Don't auto-restart on page reload
+        if (!parsed.isActive) {
+          parsed.startTime = null; // Clear start time if paused
+        }
+        
         // Check if streak is still valid
         if (parsed.lastSubmissionTime) {
           const timeSinceLastSubmission = Date.now() - new Date(parsed.lastSubmissionTime).getTime();
@@ -76,9 +82,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Save session to localStorage whenever it changes
   useEffect(() => {
-    if (session.isActive || session.currentStreak > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-    }
+    // Always save session state, even when paused
+    // This preserves the paused state on reload
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   }, [session]);
 
   // Session timer - updates duration
