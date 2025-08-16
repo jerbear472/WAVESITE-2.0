@@ -114,31 +114,33 @@ export default function Earnings() {
 
   const fetchEarningsData = async () => {
     try {
-      // Fetch ALL earnings transactions first to get accurate totals
+      console.log('Fetching earnings for user:', user?.id);
+      
+      // Fetch ALL earnings transactions - simplified query without join
       const { data: transactionsData, error: transError } = await supabase
         .from('earnings_ledger')
-        .select(`
-          *,
-          trend:trend_submissions(
-            id,
-            description,
-            category
-          )
-        `)
+        .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
-      if (transError) throw transError;
+      if (transError) {
+        console.error('Error fetching transactions:', transError);
+        throw transError;
+      }
+      
+      console.log('Fetched transactions:', transactionsData);
       
       // Map transaction types properly
       const mappedTransactions = (transactionsData || []).map(t => ({
         ...t,
-        earning_type: t.type === 'trend_submission' ? 'submission' : t.type === 'trend_validation' ? 'validation' : t.type
+        earning_type: t.type === 'trend_submission' ? 'submission' : 
+                      t.type === 'validation' ? 'validation' : 
+                      t.type
       }));
       
       setTransactions(mappedTransactions);
       
-      // Calculate today's earnings
+      // Calculate today's earnings using the fetched data
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayEarnings = mappedTransactions
@@ -454,25 +456,32 @@ export default function Earnings() {
                           {transaction.earning_type === 'submission' ? 'Trend Submission' : 
                            transaction.earning_type === 'validation' ? 'Validation Reward' :
                            transaction.earning_type === 'bonus' ? 'Bonus Reward' : 
-                           'Earning'}
+                           transaction.type || 'Earning'}
                         </div>
-                        {transaction.trend?.description && (
+                        {(transaction.description || transaction.trend?.description) && (
                           <div className="text-sm text-gray-400">
-                            {transaction.trend.description.substring(0, 60)}{transaction.trend.description.length > 60 ? '...' : ''}
+                            {(transaction.description || transaction.trend?.description || '').substring(0, 60)}
+                            {(transaction.description || transaction.trend?.description || '').length > 60 ? '...' : ''}
                           </div>
                         )}
                         <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
                           <span>{format(new Date(transaction.created_at), 'MMM d, yyyy h:mm a')}</span>
-                          {transaction.trend?.category && (
+                          {transaction.trend_id && (
                             <>
                               <span>•</span>
-                              <span className="text-blue-400">{transaction.trend.category}</span>
+                              <span className="text-blue-400">Trend #{transaction.trend_id.slice(0, 8)}</span>
+                            </>
+                          )}
+                          {transaction.metadata?.category && (
+                            <>
+                              <span>•</span>
+                              <span className="text-purple-400">{transaction.metadata.category}</span>
                             </>
                           )}
                         </div>
-                        {transaction.notes && (
+                        {(transaction.notes || transaction.description) && (
                           <div className="text-xs text-gray-400 mt-1 italic">
-                            {transaction.notes}
+                            {transaction.notes || transaction.description}
                           </div>
                         )}
                         {/* Show multiplier breakdown for trend submissions */}
