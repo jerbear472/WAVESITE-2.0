@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import SentimentSlider from './SentimentSlider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import EarningsNotificationComponent, { useEarningsNotification } from './EarningsNotification';
+import { 
+  calculateTrendEarnings, 
+  SUSTAINABLE_EARNINGS,
+  isWithinSessionWindow
+} from '@/lib/SUSTAINABLE_EARNINGS';
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
 import { calculateWaveScore } from '@/lib/calculateWaveScore';
@@ -355,6 +361,7 @@ export default function SmartTrendSubmission({
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState('');
+  const { notification, showEarnings, dismissNotification } = useEarningsNotification();
   const urlInputRef = useRef<HTMLInputElement>(null);
   const extractionTimeoutRef = useRef<NodeJS.Timeout>();
   
@@ -629,6 +636,22 @@ export default function SmartTrendSubmission({
     try {
       const category = getSelectedCategory();
       
+      // Calculate potential earnings
+      const userProfile = {
+        user_id: user?.id || '',
+        performance_tier: (user?.performance_tier || 'learning') as any,
+        current_balance: user?.current_balance || 0,
+        total_earned: user?.total_earned || 0,
+        trends_submitted: user?.trends_submitted || 0,
+        approval_rate: user?.approval_rate || 0,
+        quality_score: user?.quality_score || 0.5,
+        current_streak: user?.current_streak || 0,
+        session_streak: user?.session_streak || 0,
+        last_submission_at: user?.last_submission_at
+      };
+      
+      const earningsCalc = calculateTrendEarnings(null, userProfile);
+      
       // Get thumbnail if not already captured
       let thumbnailUrl = formData.thumbnail_url;
       
@@ -710,6 +733,14 @@ export default function SmartTrendSubmission({
         await Promise.race([submitPromise, timeoutPromise]);
       }
 
+      // Show earnings notification in bottom-left corner
+      showEarnings(
+        earningsCalc.capped,
+        'submission',
+        `Trend "${formData.trendName}" submitted!`,
+        earningsCalc.breakdown
+      );
+      
       // Success - close immediately
       setError('');
       setLoading(false);
@@ -733,8 +764,15 @@ export default function SmartTrendSubmission({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <motion.div 
+    <>
+      {/* Earnings Notification - shows in bottom-left corner */}
+      <EarningsNotificationComponent 
+        notification={notification} 
+        onDismiss={dismissNotification} 
+      />
+      
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="bg-gray-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-gray-800 shadow-2xl"
@@ -1439,5 +1477,6 @@ export default function SmartTrendSubmission({
         </div>
       </motion.div>
     </div>
+    </>
   );
 }

@@ -598,7 +598,7 @@ export default function Dashboard() {
           color = 'text-orange-500';
           break;
         case 'saturated':
-          label = '⭐ Saturated';
+          label = '⚡ Saturated';
           color = 'text-purple-500';
           break;
         case 'declining':
@@ -1030,7 +1030,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-2xl">{categoryDetails.emoji}</span>
                               {categoryDetails.label && categoryDetails.label !== '0' && (
-                                <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white`}>
+                                <span className={`text-xs px-2.5 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white font-medium shadow-sm`}>
                                   {categoryDetails.label}
                                 </span>
                               )}
@@ -1087,15 +1087,15 @@ export default function Dashboard() {
                               {trend.views_count && trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
-                              {((trend.approve_count ?? 0) > 0 || (trend.reject_count ?? 0) > 0) && (
+                              {(trend.approve_count > 0 || trend.reject_count > 0) && (
                                 <span className="flex items-center gap-1">
-                                  {(trend.approve_count ?? 0) > 0 && (
+                                  {trend.approve_count > 0 && (
                                     <span className="text-green-500">👍 {trend.approve_count}</span>
                                   )}
-                                  {(trend.approve_count ?? 0) > 0 && (trend.reject_count ?? 0) > 0 && (
+                                  {trend.approve_count > 0 && trend.reject_count > 0 && (
                                     <span className="text-gray-400">·</span>
                                   )}
-                                  {(trend.reject_count ?? 0) > 0 && (
+                                  {trend.reject_count > 0 && (
                                     <span className="text-red-500">👎 {trend.reject_count}</span>
                                   )}
                                 </span>
@@ -1115,12 +1115,12 @@ export default function Dashboard() {
                           </div>
                           
                           <div className="flex flex-col gap-2 min-w-[140px]">
-                            {/* Velocity Indicator */}
-                            <div className="text-center bg-gradient-to-br from-gray-100 to-gray-50 dark:from-neutral-800 dark:to-neutral-900 rounded-lg px-3 py-2 border border-gray-200 dark:border-neutral-700">
+                            {/* Velocity Indicator - Enhanced */}
+                            <div className="text-center bg-gradient-to-br from-gray-100 to-gray-50 dark:from-neutral-800 dark:to-neutral-900 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-shadow">
                               <div className={`text-sm font-bold ${getTrendVelocity(trend).color}`}>
                                 {getTrendVelocity(trend).label}
                               </div>
-                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mt-0.5">
                                 {getTrendVelocity(trend).metric}
                               </div>
                               {getTrendVelocity(trend).growthRate && (

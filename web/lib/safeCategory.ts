@@ -10,7 +10,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'food': 'food_drink',
     'music': 'audio_music',
     'lifestyle': 'behavior_pattern',
-    'tech': 'technology',
+    'tech': 'gaming',  // Changed from 'technology' to 'gaming' which is valid
     'finance': 'finance',
     'sports': 'sports',
     'political': 'political',
@@ -19,6 +19,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'travel': 'travel',
     'education': 'education',
     'health': 'health',
+    'product': 'product_brand',  // Added for new product category
     
     // Label mappings (what user sees)
     'Meme/Humor': 'meme_format',
@@ -26,7 +27,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Food/Drink': 'food_drink',
     'Music/Dance': 'audio_music',
     'Lifestyle': 'behavior_pattern',
-    'Tech/Gaming': 'technology',
+    'Tech/Gaming': 'gaming',  // Changed from 'technology' to 'gaming'
     'Finance/Crypto': 'finance',
     'Sports/Fitness': 'sports',
     'Political/Social': 'political',
@@ -35,6 +36,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Travel & Places': 'travel',
     'Education & Learning': 'education',
     'Health & Wellness': 'health',
+    'Product/Shopping': 'product_brand',  // Added for new product category
     
     // Legacy mappings (for backward compatibility)
     'Fashion & Beauty': 'fashion',
@@ -43,7 +45,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Politics & Social Issues': 'political',
     'Music & Dance': 'audio_music',
     'Sports & Fitness': 'sports',
-    'Tech & Gaming': 'technology',
+    'Tech & Gaming': 'gaming',  // Changed from 'technology' to 'gaming'
     'Art & Creativity': 'visual_style',
     'Education & Science': 'education',
     
@@ -69,7 +71,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'visual_style', 'audio_music', 'creator_technique', 'meme_format', 
     'product_brand', 'behavior_pattern', 'political', 'finance', 
     'news_events', 'education', 'relationship', 'animals_pets', 
-    'automotive', 'food_drink', 'technology', 'sports', 'dance', 
+    'automotive', 'food_drink', 'sports', 'dance', 
     'travel', 'fashion', 'gaming', 'health', 'diy_crafts'
   ];
   if (displayCategory && validEnums.includes(displayCategory)) {
