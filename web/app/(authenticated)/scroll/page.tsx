@@ -640,32 +640,44 @@ export default function LegibleScrollPage() {
       setTodaysPendingEarnings(prev => prev + finalPayment);
       setTrendsLoggedToday(prev => prev + 1);
       
-      // CRITICAL: Update user earnings using BOTH methods to ensure it works
-      // Method 1: Call the database function directly
+      // Update user earnings - Direct update is WORKING!
+      // Skip the RPC since it's failing due to missing columns
       try {
-        console.log('💰 [SCROLL] Calling add_pending_earnings RPC with amount:', finalPayment);
-        const { data: rpcResult, error: rpcError } = await supabase
-          .rpc('add_pending_earnings', {
-            p_user_id: user.id,
-            p_amount: finalPayment,
-            p_description: `Trend: ${formData.trendName || 'Untitled'}`
-          });
+        console.log('💰 [SCROLL] Directly updating user_profiles with earnings:', finalPayment);
         
-        if (rpcError) {
-          console.error('❌ [SCROLL] RPC add_pending_earnings failed:', rpcError);
+        // Get current earnings first
+        const { data: currentProfile } = await supabase
+          .from('user_profiles')
+          .select('pending_earnings, total_earned')
+          .eq('id', user.id)
+          .single();
+        
+        const currentPending = currentProfile?.pending_earnings || 0;
+        const currentTotal = currentProfile?.total_earned || 0;
+        
+        // Update with new earnings
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update({
+            pending_earnings: currentPending + finalPayment,
+            total_earned: currentTotal + finalPayment
+          })
+          .eq('id', user.id);
+        
+        if (updateError) {
+          console.error('❌ [SCROLL] Failed to update earnings:', updateError);
         } else {
-          console.log('✅ [SCROLL] RPC add_pending_earnings succeeded:', rpcResult);
+          console.log('✅ [SCROLL] Earnings updated successfully!');
+          console.log('✅ [SCROLL] New pending:', currentPending + finalPayment);
         }
-      } catch (rpcException) {
-        console.error('❌ [SCROLL] Exception calling add_pending_earnings:', rpcException);
+      } catch (error) {
+        console.error('❌ [SCROLL] Exception updating earnings:', error);
       }
       
-      // Method 2: Update via auth context (local state)
+      // Update auth context for immediate UI update
       if (updateUserEarnings) {
-        console.log('💰 [SCROLL] Updating user earnings in auth context with:', finalPayment);
+        console.log('💰 [SCROLL] Updating auth context with:', finalPayment);
         await updateUserEarnings(finalPayment);
-      } else {
-        console.error('❌ [SCROLL] updateUserEarnings function not available!');
       }
       
       // Give database a moment to process, then refresh everything
