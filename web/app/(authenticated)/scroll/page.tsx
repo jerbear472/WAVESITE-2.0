@@ -550,19 +550,58 @@ export default function LegibleScrollPage() {
           console.log('✅ [SCROLL] Amount added to ledger:', finalPayment, 'with multipliers');
           
           // Update user_profiles table (profiles is a VIEW, can't update it)
+          // CRITICAL: Also update streaks!
+          const now = new Date();
+          const lastSubmission = profileData?.last_submission_at ? new Date(profileData.last_submission_at) : null;
+          
+          // Calculate if this continues a daily streak
+          let newDailyStreak = 1; // Default to 1 for first submission
+          if (lastSubmission) {
+            const hoursSinceLast = (now.getTime() - lastSubmission.getTime()) / (1000 * 60 * 60);
+            if (hoursSinceLast < 24) {
+              // Within 24 hours - continue or maintain streak
+              newDailyStreak = (profileData?.current_streak || 0) + 1;
+            } else if (hoursSinceLast > 48) {
+              // More than 48 hours - streak broken
+              newDailyStreak = 1;
+            } else {
+              // Between 24-48 hours - maintain streak but don't increment
+              newDailyStreak = profileData?.current_streak || 1;
+            }
+          }
+          
+          // Calculate session streak
+          let newSessionStreak = 1;
+          if (lastSubmission) {
+            const minutesSinceLast = (now.getTime() - lastSubmission.getTime()) / (1000 * 60);
+            if (minutesSinceLast <= 5) {
+              // Within 5 minutes - continue session
+              newSessionStreak = Math.min((profileData?.session_streak || 0) + 1, 5);
+            } else {
+              // New session
+              newSessionStreak = 1;
+            }
+          }
+          
           const { error: updateError } = await supabase
             .from('user_profiles')
             .update({ 
               pending_earnings: ((user as any)?.pending_earnings || 0) + finalPayment,
               total_earned: ((user as any)?.total_earned || 0) + finalPayment,
-              trends_spotted: ((user as any)?.trends_spotted || 0) + 1
+              trends_spotted: ((user as any)?.trends_spotted || 0) + 1,
+              current_streak: newDailyStreak,
+              session_streak: newSessionStreak,
+              last_submission_at: now.toISOString()
             })
             .eq('id', user.id);  // Primary key is 'id' not 'user_id'
             
           if (updateError) {
             console.error('❌ [SCROLL] Failed to update user_profiles:', updateError);
           } else {
-            console.log('✅ [SCROLL] user_profiles updated successfully with earnings:', finalPayment);
+            console.log('✅ [SCROLL] user_profiles updated successfully with:');
+            console.log('  - Earnings:', finalPayment);
+            console.log('  - Daily streak:', newDailyStreak);
+            console.log('  - Session streak:', newSessionStreak);
           }
         }
       } catch (earningsError) {

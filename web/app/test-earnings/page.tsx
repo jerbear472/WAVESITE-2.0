@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function TestEarningsPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [data, setData] = useState<any>({});
   const [loading, setLoading] = useState(true);
   
@@ -113,17 +113,44 @@ export default function TestEarningsPage() {
   
   if (loading) return <div className="p-8">Loading...</div>;
   
+  const forceRefreshAuth = async () => {
+    console.log('Force refreshing auth context...');
+    // Use the refreshUser from the existing auth context hook
+    if (refreshUser) {
+      await refreshUser();
+      console.log('Auth context refreshed!');
+    }
+    // Also reload the test data
+    setTimeout(() => testEverything(), 500);
+  };
+
   return (
     <div className="p-8 bg-gray-900 text-white min-h-screen">
       <h1 className="text-2xl font-bold mb-4">Earnings Test Page</h1>
       <p className="mb-4">User ID: {user?.id}</p>
       
-      <button 
-        onClick={addTestEarnings}
-        className="mb-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
-      >
-        Add $0.25 Test Earnings
-      </button>
+      <div className="flex gap-4 mb-6">
+        <button 
+          onClick={addTestEarnings}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+        >
+          Add $0.25 Test Earnings
+        </button>
+        
+        <button 
+          onClick={forceRefreshAuth}
+          className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
+        >
+          Force Refresh Auth
+        </button>
+        
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded"
+        >
+          Hard Reload Page
+        </button>
+      </div>
       
       <div className="space-y-6">
         <section>
