@@ -310,7 +310,7 @@ export default function LegibleScrollPage() {
       const { data: profileData } = await supabase
         .from('user_profiles')
         .select('current_streak, session_streak, last_submission_at, performance_tier')
-        .eq('user_id', user.id)
+        .eq('id', user.id)  // Primary key is 'id' not 'user_id'
         .single();
       
       // Build user profile for earnings calculation with streak data
@@ -557,7 +557,7 @@ export default function LegibleScrollPage() {
               total_earned: ((user as any)?.total_earned || 0) + finalPayment,
               trends_spotted: ((user as any)?.trends_spotted || 0) + 1
             })
-            .eq('user_id', user.id);
+            .eq('id', user.id);  // Primary key is 'id' not 'user_id'
             
           if (updateError) {
             console.error('❌ [SCROLL] Failed to update user_profiles:', updateError);

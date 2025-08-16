@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { data: userProfile } = await supabase
             .from('user_profiles')
             .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
-            .eq('user_id', session.user.id)
+            .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
             .single();
 
           // Map profile to user format expected by app
@@ -219,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: userProfile } = await supabase
           .from('user_profiles')
           .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
-          .eq('user_id', session.user.id)
+          .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
           .single();
 
         if (profileError) {
@@ -263,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { data: userProfile } = await supabase
             .from('user_profiles')
             .select('performance_tier, current_streak, session_streak')
-            .eq('user_id', session.user.id)
+            .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
             .single();
             
           // Map profile to user format (combine profiles VIEW with user_profiles TABLE)
