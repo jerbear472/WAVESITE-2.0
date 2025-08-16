@@ -118,7 +118,7 @@ export default function Earnings() {
 
   const fetchEarningsData = async () => {
     try {
-      console.log('Fetching earnings for user:', user?.id);
+      console.log('🔍 [EARNINGS PAGE] Fetching earnings for user:', user?.id);
       
       // Fetch ALL earnings transactions - simplified query without join
       const { data: transactionsData, error: transError } = await supabase
@@ -128,11 +128,28 @@ export default function Earnings() {
         .order('created_at', { ascending: false });
 
       if (transError) {
-        console.error('Error fetching transactions:', transError);
-        throw transError;
+        console.error('❌ [EARNINGS PAGE] Error fetching transactions:', transError);
+        console.error('❌ [EARNINGS PAGE] Error details:', {
+          message: transError.message,
+          code: transError.code,
+          details: transError.details,
+          hint: transError.hint
+        });
+        // Don't throw, just set empty data
+        setTransactions([]);
+        setEarningsData({
+          earnings_pending: 0,
+          earnings_approved: 0,
+          earnings_paid: 0,
+          total_submissions: 0,
+          verified_submissions: 0
+        });
+        setLoading(false);
+        return;
       }
       
-      console.log('Fetched transactions:', transactionsData);
+      console.log('✅ [EARNINGS PAGE] Fetched transactions:', transactionsData);
+      console.log('✅ [EARNINGS PAGE] Number of transactions:', transactionsData?.length || 0);
       
       // Map transaction types properly
       const mappedTransactions = (transactionsData || []).map(t => ({
@@ -157,17 +174,29 @@ export default function Earnings() {
       setTodaysEarnings(todayEarnings);
       
       // Calculate earnings from transactions directly for accuracy
-      const pendingEarnings = mappedTransactions
-        .filter(t => t.status === 'pending' || t.status === 'awaiting_validation')
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      const pendingTransactions = mappedTransactions
+        .filter(t => t.status === 'pending' || t.status === 'awaiting_validation');
+      const pendingEarnings = pendingTransactions
+        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
       
-      const approvedEarnings = mappedTransactions
-        .filter(t => t.status === 'approved')
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      console.log('💰 [EARNINGS PAGE] Pending transactions:', pendingTransactions.length);
+      console.log('💰 [EARNINGS PAGE] Pending earnings total:', pendingEarnings);
       
-      const paidEarnings = mappedTransactions
-        .filter(t => t.status === 'paid')
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      const approvedTransactions = mappedTransactions
+        .filter(t => t.status === 'approved');
+      const approvedEarnings = approvedTransactions
+        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+      
+      console.log('✅ [EARNINGS PAGE] Approved transactions:', approvedTransactions.length);
+      console.log('✅ [EARNINGS PAGE] Approved earnings total:', approvedEarnings);
+      
+      const paidTransactions = mappedTransactions
+        .filter(t => t.status === 'paid');
+      const paidEarnings = paidTransactions
+        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+      
+      console.log('💵 [EARNINGS PAGE] Paid transactions:', paidTransactions.length);
+      console.log('💵 [EARNINGS PAGE] Paid earnings total:', paidEarnings);
       
       const totalSubmissions = mappedTransactions
         .filter(t => t.type === 'trend_submission')
@@ -186,19 +215,29 @@ export default function Earnings() {
         verified_submissions: verifiedSubmissions
       };
       
-      console.log('Calculated earnings data:', {
+      console.log('📊 [EARNINGS PAGE] Final calculated earnings data:', {
         ...calculatedData,
         todaysEarnings,
         totalTransactions: mappedTransactions.length,
         pendingCount: mappedTransactions.filter(t => t.status === 'pending' || t.status === 'awaiting_validation').length,
         approvedCount: mappedTransactions.filter(t => t.status === 'approved').length,
-        paidCount: mappedTransactions.filter(t => t.status === 'paid').length
+        paidCount: mappedTransactions.filter(t => t.status === 'paid').length,
+        sampleTransaction: mappedTransactions[0] // Show first transaction for debugging
       });
       
       setEarningsData(calculatedData);
 
     } catch (error) {
-      console.error('Error fetching earnings data:', error);
+      console.error('🚨 [EARNINGS PAGE] Unexpected error fetching earnings data:', error);
+      // Set default values on error
+      setTransactions([]);
+      setEarningsData({
+        earnings_pending: 0,
+        earnings_approved: 0,
+        earnings_paid: 0,
+        total_submissions: 0,
+        verified_submissions: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -408,6 +447,19 @@ export default function Earnings() {
             </div>
           </motion.div>
         </div>
+
+        {/* Debug Info - Remove in production */}
+        {process.env.NODE_ENV === 'development' && transactions.length > 0 && (
+          <div className="bg-yellow-900/20 border border-yellow-700 rounded-xl p-4 mb-4">
+            <h3 className="text-yellow-400 font-bold mb-2">Debug Info (Dev Only)</h3>
+            <div className="text-xs text-gray-400 space-y-1">
+              <div>Total transactions fetched: {transactions.length}</div>
+              <div>First transaction: {JSON.stringify(transactions[0], null, 2).substring(0, 200)}...</div>
+              <div>Pending amount sum: ${displayPending.toFixed(2)}</div>
+              <div>User ID: {user?.id}</div>
+            </div>
+          </div>
+        )}
 
         {/* Transaction History */}
         <div className="bg-gray-800 rounded-xl p-6">
