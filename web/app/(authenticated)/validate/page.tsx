@@ -83,6 +83,7 @@ interface QualityCriteria {
 
 export default function ValidatePageFixed() {
   const { user, refreshUser } = useAuth();
+  const { notification, showEarnings, dismissNotification } = useEarningsNotification();
   const [trends, setTrends] = useState<TrendToValidate[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -163,12 +164,6 @@ export default function ValidatePageFixed() {
         label: 'Creator Info',
         description: 'Creator details provided',
         met: !!(trend.creator_handle || trend.creator_name)
-      },
-      {
-        id: 'viral_potential',
-        label: 'Viral Potential',
-        description: 'Shows growth indicators',
-        met: (trend.virality_prediction && trend.virality_prediction >= 5) || Number(trend.views_count || 0) > 1000
       }
     ];
   };
@@ -827,30 +822,6 @@ export default function ValidatePageFixed() {
                           </a>
                         </div>
                       )}
-                      {currentTrend.wave_score !== undefined && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Wave Score:</span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
-                                style={{ width: `${currentTrend.wave_score}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-bold text-gray-900">{currentTrend.wave_score}</span>
-                          </div>
-                        </div>
-                      )}
-                      {currentTrend.virality_prediction && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Viral Potential:</span>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className={`w-4 h-4 ${i < Math.ceil((currentTrend.virality_prediction || 0) / 2) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
                       {currentTrend.follower_count && Number(currentTrend.follower_count) > 0 && (
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-gray-600">Creator Reach:</span>
@@ -863,59 +834,54 @@ export default function ValidatePageFixed() {
                           <span className="text-sm font-bold text-green-600">#{currentTrend.trending_position}</span>
                         </div>
                       )}
-                      {currentTrend.evidence && typeof currentTrend.evidence === 'object' && Object.keys(currentTrend.evidence).length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-blue-200">
-                          <span className="text-sm font-medium text-gray-700 block mb-2">Additional Info:</span>
-                          <div className="bg-white rounded-lg p-3 space-y-2">
-                            {(() => {
-                              const entries = Object.entries(currentTrend.evidence)
-                                .filter(([key, value]) => value && value !== '' && value !== null)
-                                .map(([key, value]) => {
-                                  // Format the key to be more readable
-                                  const formattedKey = key
-                                    .replace(/_/g, ' ')
-                                    .replace(/\b\w/g, l => l.toUpperCase());
-                                  
-                                  // Format the value based on type
-                                  let formattedValue = value;
-                                  if (typeof value === 'boolean') {
-                                    formattedValue = value ? '✓ Yes' : '✗ No';
-                                  } else if (typeof value === 'number') {
-                                    formattedValue = value.toLocaleString();
-                                  } else if (Array.isArray(value)) {
-                                    formattedValue = value.join(', ');
-                                  } else if (typeof value === 'object') {
-                                    return null; // Skip complex objects
-                                  }
-                                  
-                                  return (
-                                    <div key={key} className="flex justify-between items-center">
-                                      <span className="text-sm text-gray-600">{formattedKey}:</span>
-                                      <span className="text-sm font-medium text-gray-900 truncate max-w-[140px]">
-                                        {String(formattedValue)}
-                                      </span>
-                                    </div>
-                                  );
-                                })
-                                .filter(Boolean);
-                              
-                              if (entries.length === 0) {
-                                return <span className="text-[11px] text-gray-500 italic">No additional data</span>;
-                              }
-                              
-                              return entries;
-                            })()}
+                      {currentTrend.evidence && typeof currentTrend.evidence === 'object' && (() => {
+                        // Only show key evidence fields
+                        const keyFields = ['platform', 'region', 'spreadSpeed', 'categories', 'moods'];
+                        const relevantEntries = Object.entries(currentTrend.evidence)
+                          .filter(([key, value]) => keyFields.includes(key) && value && value !== '' && value !== null)
+                          .slice(0, 3); // Max 3 items
+                        
+                        if (relevantEntries.length === 0) return null;
+                        
+                        return (
+                          <div className="mt-3 pt-3 border-t border-blue-200">
+                            <div className="space-y-1">
+                              {relevantEntries.map(([key, value]) => {
+                                const labels = {
+                                  platform: 'Platform',
+                                  region: 'Region',
+                                  spreadSpeed: 'Speed',
+                                  categories: 'Categories',
+                                  moods: 'Moods'
+                                };
+                                
+                                let displayValue = value;
+                                if (Array.isArray(value)) {
+                                  displayValue = value.slice(0, 2).join(', ');
+                                  if (value.length > 2) displayValue += '...';
+                                }
+                                
+                                return (
+                                  <div key={key} className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-500">{labels[key] || key}:</span>
+                                    <span className="text-xs font-medium text-gray-700 truncate max-w-[120px]">
+                                      {String(displayValue)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   </div>
 
-                  {/* Quality Assessment */}
+                  {/* Quick Quality Check */}
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-2">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-gray-900 text-xs">Quality</h3>
-                      <div className={`text-sm font-bold ${
+                      <h3 className="font-semibold text-gray-900 text-xs">Quick Check</h3>
+                      <div className={`text-xs font-bold ${
                         qualityScore >= 80 ? 'text-green-600' :
                         qualityScore >= 60 ? 'text-yellow-600' :
                         'text-red-600'
@@ -925,18 +891,12 @@ export default function ValidatePageFixed() {
                     </div>
                     
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-                      {qualityCriteria.slice(0, 6).map(criterion => (
+                      {qualityCriteria.slice(0, 4).map(criterion => (
                         <div key={criterion.id} className="flex items-center gap-1">
-                          <div className={`w-3 h-3 rounded-full flex items-center justify-center ${
-                            criterion.met ? 'bg-green-100' : 'bg-gray-200'
-                          }`}>
-                            {criterion.met ? (
-                              <CheckCircle className="w-2 h-2 text-green-600" />
-                            ) : (
-                              <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                            )}
-                          </div>
-                          <p className={`text-[11px] ${
+                          <div className={`w-2.5 h-2.5 rounded-full ${
+                            criterion.met ? 'bg-green-500' : 'bg-gray-300'
+                          }`} />
+                          <p className={`text-[10px] ${
                             criterion.met ? 'text-gray-700 font-medium' : 'text-gray-400'
                           }`}>
                             {criterion.label}
@@ -944,28 +904,6 @@ export default function ValidatePageFixed() {
                         </div>
                       ))}
                     </div>
-                    {qualityCriteria.length > 6 && (
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1 pt-1 border-t border-gray-200">
-                        {qualityCriteria.slice(6).map(criterion => (
-                          <div key={criterion.id} className="flex items-center gap-1">
-                            <div className={`w-3 h-3 rounded-full flex items-center justify-center ${
-                              criterion.met ? 'bg-green-100' : 'bg-gray-200'
-                            }`}>
-                              {criterion.met ? (
-                                <CheckCircle className="w-2 h-2 text-green-600" />
-                              ) : (
-                                <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                              )}
-                            </div>
-                            <p className={`text-[11px] ${
-                              criterion.met ? 'text-gray-700 font-medium' : 'text-gray-400'
-                            }`}>
-                              {criterion.label}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
 

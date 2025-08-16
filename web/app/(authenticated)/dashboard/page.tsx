@@ -563,10 +563,15 @@ export default function Dashboard() {
 
   const getTrendVelocity = (trend: RecentTrend) => {
     // First check if we have submitted velocity data from the form
+    // Check both follow_up_data and evidence fields for backward compatibility
     const submittedVelocity = trend.follow_up_data?.velocityMetrics?.velocity || 
-                             trend.follow_up_data?.trendVelocity;
+                             trend.follow_up_data?.trendVelocity ||
+                             trend.evidence?.velocityMetrics?.velocity ||
+                             trend.evidence?.trendVelocity;
     const submittedSize = trend.follow_up_data?.velocityMetrics?.size || 
-                         trend.follow_up_data?.trendSize;
+                         trend.follow_up_data?.trendSize ||
+                         trend.evidence?.velocityMetrics?.size ||
+                         trend.evidence?.trendSize;
     
     // If we have submitted velocity data, use it to show what the spotter indicated
     if (submittedVelocity) {
@@ -1008,7 +1013,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-2xl">{categoryDetails.emoji}</span>
                               <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white`}>
-                                {categoryDetails.label.replace(/\s*0+$/, '').trim()}
+                                {categoryDetails.label.replace(/\s*\d+\s*/g, ' ').replace(/\s+/g, ' ').trim()}
                               </span>
                               {trend.isUserTrend && (
                                 <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded-full">

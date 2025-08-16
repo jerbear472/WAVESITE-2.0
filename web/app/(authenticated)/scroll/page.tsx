@@ -368,6 +368,18 @@ export default function LegibleScrollPage() {
           user_profile: {},
           payment_amount: finalPayment // Store payment in evidence instead
         },
+        // Store velocity data in follow_up_data for the dashboard to display
+        follow_up_data: {
+          velocityMetrics: formData.velocityMetrics || {
+            velocity: formData.trendVelocity,
+            size: formData.trendSize,
+            timing: formData.firstSeen
+          },
+          trendVelocity: formData.trendVelocity,
+          trendSize: formData.trendSize,
+          firstSeenTiming: formData.firstSeenTiming || formData.firstSeen,
+          categoryAnswers: formData.categoryAnswers
+        },
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
         quality_score: calculateQualityScore(formData), // Calculate actual quality score
         validation_count: 0,
