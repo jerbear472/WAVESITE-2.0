@@ -737,7 +737,7 @@ export default function SmartTrendSubmission({
       showEarnings(
         earningsCalc.capped,
         'submission',
-        `Trend "${formData.trendName}" submitted!`,
+        `Trend "${formData.title}" submitted!`,
         earningsCalc.breakdown
       );
       
