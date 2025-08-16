@@ -61,6 +61,15 @@ interface RecentTrend {
   hashtags?: string[];
   url?: string;  // Main trend URL
   post_url?: string;  // Alternative URL field
+  follow_up_data?: {
+    velocityMetrics?: {
+      velocity?: string;
+      size?: string;
+      timing?: string;
+    };
+    trendVelocity?: string;
+    trendSize?: string;
+  };
   posted_at?: string;
   earnings_amount?: number;
   isUserTrend?: boolean;
@@ -544,72 +553,120 @@ export default function Dashboard() {
   };
 
   const getTrendVelocity = (trend: RecentTrend) => {
-    // Get current and initial metrics
+    // First check if we have submitted velocity data from the form
+    const submittedVelocity = trend.follow_up_data?.velocityMetrics?.velocity || 
+                             trend.follow_up_data?.trendVelocity;
+    const submittedSize = trend.follow_up_data?.velocityMetrics?.size || 
+                         trend.follow_up_data?.trendSize;
+    
+    // If we have submitted velocity data, use it to show what the spotter indicated
+    if (submittedVelocity) {
+      let label = '';
+      let metric = '';
+      let color = '';
+      
+      switch (submittedVelocity) {
+        case 'just_starting':
+          label = '🌱 Just Starting';
+          color = 'text-green-500';
+          break;
+        case 'accelerating':
+          label = '🚀 Accelerating';
+          color = 'text-orange-500';
+          break;
+        case 'viral':
+          label = '🔥 Viral';
+          color = 'text-red-500';
+          break;
+        case 'declining':
+          label = '📉 Declining';
+          color = 'text-yellow-600';
+          break;
+        case 'dead':
+          label = '💀 Dead';
+          color = 'text-gray-500';
+          break;
+        default:
+          label = '🆕 New';
+          color = 'text-gray-500';
+      }
+      
+      // Add size context to metric
+      if (submittedSize) {
+        switch (submittedSize) {
+          case 'micro':
+            metric = '<10K reach';
+            break;
+          case 'niche':
+            metric = '10K-100K reach';
+            break;
+          case 'viral':
+            metric = '100K-1M reach';
+            break;
+          case 'mega':
+            metric = '1M-10M reach';
+            break;
+          case 'global':
+            metric = '10M+ reach';
+            break;
+          default:
+            metric = 'Trending';
+        }
+      } else {
+        // Fallback to engagement metrics
+        const totalEngagement = (trend.likes_count || 0) + (trend.shares_count || 0) + (trend.comments_count || 0);
+        if (totalEngagement > 0) {
+          metric = `${totalEngagement} engagements`;
+        } else {
+          metric = 'Just spotted';
+        }
+      }
+      
+      return { label, metric, color, velocity: 0, growthRate: '' };
+    }
+    
+    // Fallback to calculated velocity if no submitted data
     const currentLikes = trend.likes_count || 0;
     const currentViews = trend.views_count || 0;
     const currentShares = trend.shares_count || 0;
     const currentComments = trend.comments_count || 0;
     
-    // Calculate hours since submission - ensure valid date
+    // Calculate hours since submission
     const createdTime = new Date(trend.created_at).getTime();
     const hoursSincePost = !isNaN(createdTime) ? Math.max((Date.now() - createdTime) / (1000 * 60 * 60), 0.1) : 1;
     
-    // Calculate engagement velocity (interactions per hour) - ensure no NaN
+    // Calculate engagement velocity
     const totalEngagement = currentLikes + currentShares + currentComments;
-    const engagementVelocity = hoursSincePost > 0 && !isNaN(hoursSincePost) ? totalEngagement / hoursSincePost : 0;
+    const engagementVelocity = hoursSincePost > 0 ? totalEngagement / hoursSincePost : 0;
     
-    // Calculate view velocity (views per hour) - ensure no NaN
-    const viewVelocity = hoursSincePost > 0 && !isNaN(hoursSincePost) && !isNaN(currentViews) ? currentViews / hoursSincePost : 0;
-    
-    // Combined velocity score (weighted)
-    const velocityScore = (engagementVelocity * 10) + (viewVelocity / 100);
-    
-    // Growth rate calculation - if we had previous data points
-    let growthRate = 0;
-    if (hoursSincePost > 1) {
-      // Estimate growth rate based on current velocity vs average
-      const avgExpectedEngagement = 100 * hoursSincePost; // baseline expectation
-      growthRate = ((totalEngagement - avgExpectedEngagement) / avgExpectedEngagement) * 100;
-    }
-    
-    // Determine velocity label and actual metrics
+    // Determine velocity label based on actual metrics
     let label = '';
     let metric = '';
     let color = '';
     
-    if (velocityScore > 10000) {
+    if (engagementVelocity > 100) {
       label = '🚀 Explosive';
-      metric = `+${!isNaN(engagementVelocity) ? (engagementVelocity * 24).toFixed(0) : '—'}/day`;
+      metric = `+${(engagementVelocity * 24).toFixed(0)}/day`;
       color = 'text-red-500';
-    } else if (velocityScore > 1000) {
-      label = '⚡ Viral';
-      metric = `+${!isNaN(engagementVelocity) ? (engagementVelocity * 24).toFixed(0) : '—'}/day`;
+    } else if (engagementVelocity > 10) {
+      label = '⚡ Trending';
+      metric = `+${engagementVelocity.toFixed(0)}/hr`;
       color = 'text-orange-500';
-    } else if (velocityScore > 100) {
-      label = '🔥 Hot';
-      metric = `+${!isNaN(engagementVelocity) ? engagementVelocity.toFixed(1) : '—'}/hr`;
-      color = 'text-yellow-500';
-    } else if (velocityScore > 10) {
+    } else if (engagementVelocity > 1) {
       label = '📈 Rising';
-      metric = `+${!isNaN(engagementVelocity) ? engagementVelocity.toFixed(1) : '—'}/hr`;
+      metric = `+${engagementVelocity.toFixed(1)}/hr`;
       color = 'text-green-500';
-    } else if (velocityScore > 1) {
+    } else if (totalEngagement > 0) {
       label = '🌱 Growing';
-      metric = `+${!isNaN(totalEngagement) ? totalEngagement.toFixed(0) : '—'} total`;
+      metric = `${totalEngagement} total`;
       color = 'text-blue-500';
     } else {
-      label = '🆕 New';
-      metric = 'Just posted';
+      label = '🆕 New Submission';
+      metric = 'Recently posted';
       color = 'text-gray-500';
     }
     
-    return { 
-      label, 
-      metric,
-      color,
-      velocity: velocityScore,
-      growthRate: growthRate > 0 && !isNaN(growthRate) ? `+${growthRate.toFixed(0)}%` : ''
-    };
+    return { label, metric, color, velocity: engagementVelocity, growthRate: '' };
   };
 
   const getAudienceSize = (trend: RecentTrend) => {
