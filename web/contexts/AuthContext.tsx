@@ -216,11 +216,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
           
         // Get ALL earnings and performance data from user_profiles (the actual table)
-        const { data: userProfile } = await supabase
+        console.log('🔍 [AUTH] Fetching user_profiles for user:', session.user.id);
+        const { data: userProfile, error: userProfileError } = await supabase
           .from('user_profiles')
           .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
           .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
           .single();
+        
+        console.log('📊 [AUTH] user_profiles data:', userProfile);
+        if (userProfileError) {
+          console.error('❌ [AUTH] user_profiles error:', userProfileError);
+        }
 
         if (profileError) {
           console.error('Profile fetch error:', profileError);
@@ -266,6 +272,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
             .single();
             
+          console.log('💰 [AUTH] Building user data with earnings:', {
+            from_userProfile: userProfile?.pending_earnings,
+            from_ledger: actualPendingEarnings,
+            from_stats: userStats.pending_earnings
+          });
+          
           // Map profile to user format (combine profiles VIEW with user_profiles TABLE)
           const userData = {
             ...profile,
