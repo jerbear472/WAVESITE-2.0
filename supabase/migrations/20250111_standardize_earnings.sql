@@ -36,7 +36,7 @@ ADD COLUMN IF NOT EXISTS applied_bonuses JSONB DEFAULT '[]'::jsonb;
 
 -- Ensure trend_validations has correct reward amount
 ALTER TABLE public.trend_validations
-ADD COLUMN IF NOT EXISTS reward_amount DECIMAL(10,2) DEFAULT 0.10,
+ADD COLUMN IF NOT EXISTS reward_amount DECIMAL(10,2) DEFAULT 0.02,
 ADD COLUMN IF NOT EXISTS reward_status TEXT DEFAULT 'pending' CHECK (reward_status IN ('pending', 'approved', 'paid', 'cancelled'));
 
 -- Add columns for tracking hashtags, platforms, etc. if missing

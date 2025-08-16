@@ -356,7 +356,7 @@ BEGIN
             p_user_id,
             p_vote,
             true,
-            0.10,
+            0.02,
             'approved'
         );
         

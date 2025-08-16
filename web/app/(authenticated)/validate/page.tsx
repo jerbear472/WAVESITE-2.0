@@ -377,8 +377,8 @@ export default function ValidatePageFixed() {
         return;
       }
 
-      // Fixed $0.02 for validation - immediate payout, no tier multiplier
-      const rewardAmount = 0.02;
+      // Get validation reward from earnings config
+      const rewardAmount = SUSTAINABLE_EARNINGS.base.validationVote;
       
       // Insert the validation - use only the columns that exist in the database
       const validationPayload = {

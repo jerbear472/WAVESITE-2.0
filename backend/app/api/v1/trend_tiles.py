@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_, text
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 from datetime import datetime, timedelta
 
@@ -42,7 +42,7 @@ class TrendMerge(BaseModel):
 
 class TrendSplit(BaseModel):
     tile_id: UUID
-    new_tiles: List[Dict[str, any]]  # Contains title, description, and content_ids for each new tile
+    new_tiles: List[Dict[str, Any]]  # Contains title, description, and content_ids for each new tile
 
 class ClusteringSuggestionResponse(BaseModel):
     suggestion_id: UUID

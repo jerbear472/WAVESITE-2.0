@@ -42,9 +42,9 @@ import {
   SUSTAINABLE_EARNINGS,
   formatCurrency,
   calculateUserTier,
+  calculateTrendEarnings,
   type Tier
 } from '@/lib/SUSTAINABLE_EARNINGS';
-import { calculateTrendEarnings } from '@/lib/UNIFIED_EARNINGS';
 import { calculateQualityScore } from '@/lib/calculateQualityScore';
 
 // Primary platforms with better colors

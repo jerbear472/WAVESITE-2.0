@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS public.trend_validations (
     confirmed BOOLEAN NOT NULL DEFAULT FALSE,
     
     -- Earnings (matching EARNINGS_STANDARD)
-    reward_amount DECIMAL(10,2) DEFAULT 0.10,
+    reward_amount DECIMAL(10,2) DEFAULT 0.02,
     reward_status earning_status DEFAULT 'approved',
     
     -- Additional data
@@ -507,7 +507,7 @@ BEGIN
             p_user_id,
             p_vote,
             true,
-            0.10,
+            0.02,
             'approved'
         );
         

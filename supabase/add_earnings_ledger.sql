@@ -160,10 +160,10 @@ CREATE TRIGGER on_trend_submission_create
 CREATE OR REPLACE FUNCTION handle_validation_earnings()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Award $0.10 for validation
+    -- Award $0.02 for validation
     PERFORM add_earnings(
         NEW.validator_id,
-        0.10,
+        0.02,
         'trend_validation',
         'Reward for validating a trend',
         NEW.id,
