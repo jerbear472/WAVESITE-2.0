@@ -40,11 +40,11 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EarningsAnimation, useEarningsAnimation } from '@/components/EarningsAnimation';
 import { 
   SUSTAINABLE_EARNINGS,
-  calculateTrendEarnings,
   formatCurrency,
   calculateUserTier,
   type Tier
 } from '@/lib/SUSTAINABLE_EARNINGS';
+import { calculateTrendEarnings } from '@/lib/UNIFIED_EARNINGS';
 import { calculateQualityScore } from '@/lib/calculateQualityScore';
 
 // Primary platforms with better colors
@@ -306,61 +306,47 @@ export default function LegibleScrollPage() {
           c.toLowerCase().includes('crypto')
         );
       
-      // Calculate payment using SUSTAINABLE_EARNINGS
-      const spotterTier = calculateUserTier({
-        trends_submitted: (user as any).trends_submitted || 0,
-        approval_rate: (user as any).approval_rate || 0.5,
-        quality_score: (user as any).quality_score || 0.5
-      });
+      // Get user's current streak information for earnings calculation
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('current_streak, session_streak, last_submission_at, performance_tier')
+        .eq('user_id', user.id)
+        .single();
       
-      // Build trend data for earnings calculation
-      const trendDataForEarnings = {
-        screenshot_url: formData.screenshot_url,
-        title: formData.trendName,
-        description: formData.explanation,
-        quality_score: formData.wave_score || 70,
-        category: isFinanceTrend ? 'finance' : 'general',
-        demographics_data: formData.ageRanges?.length > 0 ? {
-          ageRanges: formData.ageRanges
-        } : null,
-        platform: formData.otherPlatforms || [],
-        creator_info: formData.creator_handle ? { handle: formData.creator_handle } : null,
-        hashtags: formData.hashtags || [],
-        metadata: {
-          view_count: formData.views_count || 0,
-          engagement_rate: (formData.likes_count && formData.views_count) 
-            ? (formData.likes_count / formData.views_count) 
-            : 0
-        },
-        wave_score: formData.wave_score || 70
-      };
-      
-      // Build user profile for earnings calculation
+      // Build user profile for earnings calculation with streak data
       const userProfileForEarnings = {
         user_id: user?.id || '',
-        performance_tier: spotterTier,
+        performance_tier: profileData?.performance_tier || user?.performance_tier || 'learning',
         current_balance: user?.total_earnings || 0,
         total_earned: user?.total_earnings || 0,
-        trends_submitted: (user as any)?.trends_submitted || 0,
-        approval_rate: (user as any)?.approval_rate || 0.5,
-        quality_score: (user as any)?.quality_score || 0.5
+        trends_submitted: (user as any)?.trends_spotted || 0,
+        approval_rate: user?.accuracy_score || 0.5,
+        quality_score: user?.validation_score || 0.5,
+        current_streak: profileData?.current_streak || 0,
+        session_streak: profileData?.session_streak || 0,
+        last_submission_at: profileData?.last_submission_at
       };
       
+      // Calculate earnings with UNIFIED_EARNINGS (expects userProfile, forceNewSession)
       const earningsResult = calculateTrendEarnings(
-        trendDataForEarnings,
-        userProfileForEarnings
+        userProfileForEarnings,
+        false // not forcing new session
       );
       
-      console.log('Earnings calculation result:', {
+      console.log('💰 [SCROLL] Earnings calculation result:', {
         base: earningsResult.base,
         tierMultiplier: earningsResult.tierMultiplier,
+        sessionMultiplier: earningsResult.sessionMultiplier,
+        dailyMultiplier: earningsResult.dailyMultiplier,
         total: earningsResult.total,
-        capped: earningsResult.capped,
-        breakdown: earningsResult.breakdown
+        breakdown: earningsResult.breakdown,
+        userTier: userProfileForEarnings.performance_tier,
+        currentStreak: userProfileForEarnings.current_streak,
+        sessionStreak: userProfileForEarnings.session_streak
       });
       
       const basePayment = earningsResult.base || 0.25;
-      let finalPayment = earningsResult.capped || earningsResult.total || basePayment;
+      let finalPayment = earningsResult.total || basePayment;
       
       // Ensure we have a valid payment amount
       if (!finalPayment || finalPayment <= 0 || isNaN(finalPayment)) {
@@ -399,7 +385,9 @@ export default function LegibleScrollPage() {
         },
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
         quality_score: calculateQualityScore(formData), // Calculate actual quality score
-        validation_count: 0
+        validation_count: 0,
+        // Store the calculated payment amount
+        payment_amount: finalPayment
         // Remove created_at - let database handle it
       };
       
@@ -512,24 +500,18 @@ export default function LegibleScrollPage() {
       // Clear retry status on success
       setRetryStatus(null);
       
-      // Calculate tier and multipliers for immediate earnings entry
+      // Log user data for debugging
       console.log('User data for earnings:', {
         id: user?.id,
-        performance_tier: user?.performance_tier,
+        performance_tier: profileData?.performance_tier || user?.performance_tier,
         pending_earnings: (user as any)?.pending_earnings,
         trends_spotted: (user as any)?.trends_spotted,
-        current_streak: (user as any)?.current_streak
+        current_streak: profileData?.current_streak,
+        session_streak: profileData?.session_streak
       });
       
-      const userTier = user?.performance_tier || 'learning';
-      const tierMultiplierMap: Record<string, number> = {
-        master: 3.0,
-        elite: 2.0,
-        verified: 1.5,
-        learning: 1.0,
-        restricted: 0.5
-      };
-      const tierMultiplier = tierMultiplierMap[userTier] || 1.0;
+      const userTier = profileData?.performance_tier || user?.performance_tier || 'learning';
+      const tierMultiplier = earningsResult.tierMultiplier || 1.0;
       
       // Create earnings entry immediately to ensure pending earnings show up
       // Note: Database trigger may also create one, but we need immediate visibility
@@ -542,33 +524,30 @@ export default function LegibleScrollPage() {
           status: 'pending',
           description: `Trend: ${formData.trendName || 'Untitled'} - pending validation`,
           metadata: {
-            base_amount: 0.25,
+            base_amount: earningsResult.base,
             tier: userTier,
-            tier_multiplier: tierMultiplier,
-            session_position: session.isActive ? session.currentStreak + 1 : 1,
-            session_multiplier: session.isActive ? getStreakMultiplier(session.currentStreak + 1) : 1.0,
-            daily_streak: (user as any)?.current_streak || 0,
-            daily_multiplier: (() => {
-              const dailyStreak = (user as any)?.current_streak || 0;
-              return dailyStreak >= 30 ? 2.5 :
-                     dailyStreak >= 14 ? 2.0 :
-                     dailyStreak >= 7 ? 1.5 :
-                     dailyStreak >= 2 ? 1.2 : 1.0;
-            })()
+            tier_multiplier: earningsResult.tierMultiplier,
+            session_position: earningsResult.sessionPosition || 1,
+            session_multiplier: earningsResult.sessionMultiplier,
+            daily_streak: profileData?.current_streak || 0,
+            daily_multiplier: earningsResult.dailyMultiplier,
+            breakdown: earningsResult.breakdown
           }
         };
         
-        console.log('Creating earnings ledger entry with amount:', earningsEntry.amount);
+        console.log('💸 [SCROLL] Creating earnings ledger entry with amount:', earningsEntry.amount);
+        console.log('💸 [SCROLL] Full earnings entry:', earningsEntry);
         
         const { error: earningsError } = await supabase
           .from('earnings_ledger')
           .insert(earningsEntry);
           
         if (earningsError) {
-          console.error('Failed to create earnings ledger entry:', earningsError);
-          console.error('Entry that failed:', earningsEntry);
+          console.error('❌ [SCROLL] Failed to create earnings ledger entry:', earningsError);
+          console.error('❌ [SCROLL] Entry that failed:', earningsEntry);
         } else {
-          console.log('Earnings ledger entry created:', finalPayment, 'with multipliers');
+          console.log('✅ [SCROLL] Earnings ledger entry created successfully!');
+          console.log('✅ [SCROLL] Amount added to ledger:', finalPayment, 'with multipliers');
           
           // Also update user's pending earnings in user_profiles table
           const { error: updateError } = await supabase
@@ -607,29 +586,17 @@ export default function LegibleScrollPage() {
       // Build multiplier breakdown for success message
       const multipliers = [];
       
-      // Use already calculated tier multiplier
-      if (tierMultiplier !== 1.0) {
-        multipliers.push(`${userTier} tier: ${tierMultiplier}x`);
+      if (earningsResult.tierMultiplier !== 1.0) {
+        multipliers.push(`${userTier} tier: ${earningsResult.tierMultiplier}x`);
       }
       
-      // Session streak multiplier
-      if (session.isActive && session.currentStreak > 0) {
-        const sessionMult = getStreakMultiplier(session.currentStreak + 1);
-        if (sessionMult > 1.0) {
-          multipliers.push(`session #${session.currentStreak + 1}: ${sessionMult}x`);
-        }
+      if (earningsResult.sessionMultiplier !== 1.0) {
+        multipliers.push(`session: ${earningsResult.sessionMultiplier}x`);
       }
       
-      // Daily streak from user profile
-      const dailyStreak = (user as any)?.current_streak || 0;
-      if (dailyStreak > 0) {
-        const dailyMult = dailyStreak >= 30 ? 2.5 :
-                         dailyStreak >= 14 ? 2.0 :
-                         dailyStreak >= 7 ? 1.5 :
-                         dailyStreak >= 2 ? 1.2 : 1.0;
-        if (dailyMult > 1.0) {
-          multipliers.push(`${dailyStreak}-day streak: ${dailyMult}x`);
-        }
+      if (earningsResult.dailyMultiplier !== 1.0) {
+        const dailyStreak = profileData?.current_streak || 0;
+        multipliers.push(`${dailyStreak}-day streak: ${earningsResult.dailyMultiplier}x`);
       }
       
       const multiplierText = multipliers.length > 0 
@@ -637,38 +604,23 @@ export default function LegibleScrollPage() {
         : '';
       
       // Show earnings animation in bottom left corner
-      const animationBreakdown = [];
-      animationBreakdown.push(`Base: $0.25`);
-      
-      if (tierMultiplier !== 1.0) {
-        animationBreakdown.push(`Tier (${userTier}): ${tierMultiplier}x`);
-      }
-      
-      if (session.isActive && session.currentStreak > 0) {
-        const sessionMult = getStreakMultiplier(session.currentStreak + 1);
-        if (sessionMult > 1.0) {
-          animationBreakdown.push(`Session #${session.currentStreak + 1}: ${sessionMult}x`);
-        }
-      }
-      
-      if (dailyStreak > 0) {
-        const dailyMult = dailyStreak >= 30 ? 2.5 :
-                         dailyStreak >= 14 ? 2.0 :
-                         dailyStreak >= 7 ? 1.5 :
-                         dailyStreak >= 2 ? 1.2 : 1.0;
-        if (dailyMult > 1.0) {
-          animationBreakdown.push(`${dailyStreak}-day streak: ${dailyMult}x`);
-        }
-      }
+      const animationBreakdown = earningsResult.breakdown || [];
       
       // Trigger the earnings animation
-      console.log('Triggering earnings animation with amount:', finalPayment);
-      // Calculate total multiplier for display
-      const totalMultiplier = tierMultiplier * 
-        (session.isActive && session.currentStreak > 0 ? getStreakMultiplier(session.currentStreak + 1) : 1.0) *
-        (dailyStreak >= 30 ? 2.5 : dailyStreak >= 14 ? 2.0 : dailyStreak >= 7 ? 1.5 : dailyStreak >= 2 ? 1.2 : 1.0);
+      console.log('🎯 [SCROLL] Triggering earnings animation with amount:', finalPayment);
+      console.log('🎯 [SCROLL] Animation breakdown:', animationBreakdown);
       
+      // Calculate total multiplier for display
+      const totalMultiplier = earningsResult.tierMultiplier * 
+        earningsResult.sessionMultiplier * 
+        earningsResult.dailyMultiplier;
+      
+      console.log('🎯 [SCROLL] Total multiplier for animation:', totalMultiplier);
+      
+      // This should show the animation in the bottom left corner
       showEarningsAnimation(finalPayment, animationBreakdown, totalMultiplier);
+      
+      console.log('🎯 [SCROLL] Animation function called successfully');
       
       // Show success message with pending verification note and multipliers
       setSubmitMessage({ 
@@ -686,6 +638,15 @@ export default function LegibleScrollPage() {
       // Update local earnings immediately (optimistic update)
       setTodaysPendingEarnings(prev => prev + finalPayment);
       setTrendsLoggedToday(prev => prev + 1);
+      
+      // CRITICAL: Update user earnings in the auth context
+      // This was missing and causing earnings not to be added!
+      if (updateUserEarnings) {
+        console.log('Updating user earnings in auth context with:', finalPayment);
+        await updateUserEarnings(finalPayment);
+      } else {
+        console.error('updateUserEarnings function not available!');
+      }
       
       // Give database a moment to process, then refresh everything
       setTimeout(async () => {
