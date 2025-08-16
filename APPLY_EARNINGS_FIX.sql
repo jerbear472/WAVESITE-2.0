@@ -1,22 +1,50 @@
 -- =====================================================
--- UNIFIED EARNINGS SYSTEM FIX
--- Version: 2.0.0
--- Date: 2025-01-16
--- 
--- This script ensures the earnings system works reliably with:
--- - Base rate: $0.25 per trend submission
--- - Multipliers: Tier × Daily Streak × Session Streak
--- - Pending → Approved flow with 2-vote validation
+-- APPLY EARNINGS FIX - ADAPTIVE VERSION
+-- This script adapts to your existing table structure
 -- =====================================================
 
--- Start transaction for safety
 BEGIN;
 
 -- =====================================================
--- 1. FIX TABLE STRUCTURE
+-- 1. CHECK AND CREATE EARNINGS TABLES
 -- =====================================================
 
--- Ensure user_profiles has all required columns
+-- Check which trend table exists and what columns it has
+DO $$
+DECLARE
+    v_table_name TEXT;
+    v_user_column TEXT;
+BEGIN
+    -- Check for captured_trends vs trend_submissions
+    IF EXISTS (SELECT 1 FROM information_schema.tables 
+               WHERE table_schema = 'public' 
+               AND table_name = 'captured_trends') THEN
+        v_table_name := 'captured_trends';
+        
+        -- Check column name (user_id vs spotter_id)
+        IF EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'captured_trends'
+                   AND column_name = 'user_id') THEN
+            v_user_column := 'user_id';
+        ELSE
+            v_user_column := 'spotter_id';
+        END IF;
+        
+        RAISE NOTICE 'Using table: captured_trends with column: %', v_user_column;
+        
+    ELSIF EXISTS (SELECT 1 FROM information_schema.tables 
+                  WHERE table_schema = 'public' 
+                  AND table_name = 'trend_submissions') THEN
+        v_table_name := 'trend_submissions';
+        v_user_column := 'spotter_id';
+        RAISE NOTICE 'Using table: trend_submissions with column: spotter_id';
+    ELSE
+        RAISE EXCEPTION 'No trend table found! Please create captured_trends or trend_submissions first.';
+    END IF;
+END $$;
+
+-- Add required columns to user_profiles
 ALTER TABLE user_profiles 
 ADD COLUMN IF NOT EXISTS pending_earnings DECIMAL(10,2) DEFAULT 0.00,
 ADD COLUMN IF NOT EXISTS approved_earnings DECIMAL(10,2) DEFAULT 0.00,
@@ -29,19 +57,47 @@ ADD COLUMN IF NOT EXISTS session_streak INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS last_submission_at TIMESTAMP WITH TIME ZONE,
 ADD COLUMN IF NOT EXISTS last_active TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
--- Ensure captured_trends has all required columns
-ALTER TABLE captured_trends
-ADD COLUMN IF NOT EXISTS earnings DECIMAL(10,2) DEFAULT 0.00,
-ADD COLUMN IF NOT EXISTS session_position INTEGER DEFAULT 1,
-ADD COLUMN IF NOT EXISTS session_multiplier DECIMAL(3,2) DEFAULT 1.0,
-ADD COLUMN IF NOT EXISTS daily_multiplier DECIMAL(3,2) DEFAULT 1.0,
-ADD COLUMN IF NOT EXISTS tier_multiplier DECIMAL(3,2) DEFAULT 1.0,
-ADD COLUMN IF NOT EXISTS yes_votes INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS no_votes INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS earnings_status TEXT DEFAULT 'pending',
-ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'submitted';
+-- Add columns to captured_trends (if it exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables 
+               WHERE table_schema = 'public' 
+               AND table_name = 'captured_trends') THEN
+        
+        ALTER TABLE captured_trends
+        ADD COLUMN IF NOT EXISTS earnings DECIMAL(10,2) DEFAULT 0.00,
+        ADD COLUMN IF NOT EXISTS session_position INTEGER DEFAULT 1,
+        ADD COLUMN IF NOT EXISTS session_multiplier DECIMAL(3,2) DEFAULT 1.0,
+        ADD COLUMN IF NOT EXISTS daily_multiplier DECIMAL(3,2) DEFAULT 1.0,
+        ADD COLUMN IF NOT EXISTS tier_multiplier DECIMAL(3,2) DEFAULT 1.0,
+        ADD COLUMN IF NOT EXISTS yes_votes INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS no_votes INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS earnings_status TEXT DEFAULT 'pending',
+        ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'submitted';
+    END IF;
+END $$;
 
--- Ensure trend_validations has all required columns
+-- Add columns to trend_submissions (if it exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables 
+               WHERE table_schema = 'public' 
+               AND table_name = 'trend_submissions') THEN
+        
+        ALTER TABLE trend_submissions
+        ADD COLUMN IF NOT EXISTS earnings DECIMAL(10,2) DEFAULT 0.00,
+        ADD COLUMN IF NOT EXISTS session_position INTEGER DEFAULT 1,
+        ADD COLUMN IF NOT EXISTS session_multiplier DECIMAL(3,2) DEFAULT 1.0,
+        ADD COLUMN IF NOT EXISTS daily_multiplier DECIMAL(3,2) DEFAULT 1.0,
+        ADD COLUMN IF NOT EXISTS tier_multiplier DECIMAL(3,2) DEFAULT 1.0,
+        ADD COLUMN IF NOT EXISTS yes_votes INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS no_votes INTEGER DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS earnings_status TEXT DEFAULT 'pending';
+        -- status column likely already exists
+    END IF;
+END $$;
+
+-- Ensure trend_validations has required columns
 ALTER TABLE trend_validations
 ADD COLUMN IF NOT EXISTS reward_amount DECIMAL(10,2) DEFAULT 0.00,
 ADD COLUMN IF NOT EXISTS is_genuine BOOLEAN;
@@ -77,11 +133,40 @@ CREATE TABLE IF NOT EXISTS scroll_sessions (
 -- 2. DROP OLD FUNCTIONS AND TRIGGERS
 -- =====================================================
 
-DROP TRIGGER IF EXISTS calculate_trend_earnings_trigger ON captured_trends CASCADE;
-DROP TRIGGER IF EXISTS calculate_validation_earnings_trigger ON trend_validations CASCADE;
-DROP TRIGGER IF EXISTS handle_trend_approval_trigger ON captured_trends CASCADE;
-DROP TRIGGER IF EXISTS handle_validation_vote_trigger ON trend_validations CASCADE;
+-- Drop all existing earnings-related triggers
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    -- Drop triggers on captured_trends
+    FOR r IN SELECT trigger_name 
+             FROM information_schema.triggers 
+             WHERE event_object_table = 'captured_trends' 
+             AND trigger_name LIKE '%earning%'
+    LOOP
+        EXECUTE format('DROP TRIGGER IF EXISTS %I ON captured_trends', r.trigger_name);
+    END LOOP;
+    
+    -- Drop triggers on trend_submissions
+    FOR r IN SELECT trigger_name 
+             FROM information_schema.triggers 
+             WHERE event_object_table = 'trend_submissions' 
+             AND trigger_name LIKE '%earning%'
+    LOOP
+        EXECUTE format('DROP TRIGGER IF EXISTS %I ON trend_submissions', r.trigger_name);
+    END LOOP;
+    
+    -- Drop triggers on trend_validations
+    FOR r IN SELECT trigger_name 
+             FROM information_schema.triggers 
+             WHERE event_object_table = 'trend_validations' 
+             AND (trigger_name LIKE '%earning%' OR trigger_name LIKE '%validation%')
+    LOOP
+        EXECUTE format('DROP TRIGGER IF EXISTS %I ON trend_validations', r.trigger_name);
+    END LOOP;
+END $$;
 
+-- Drop old functions
 DROP FUNCTION IF EXISTS calculate_trend_submission_earnings() CASCADE;
 DROP FUNCTION IF EXISTS calculate_validation_earnings() CASCADE;
 DROP FUNCTION IF EXISTS handle_validation_vote() CASCADE;
@@ -94,11 +179,10 @@ DROP FUNCTION IF EXISTS get_daily_streak_multiplier(INTEGER) CASCADE;
 -- 3. CREATE MULTIPLIER FUNCTIONS
 -- =====================================================
 
--- Tier multiplier function
 CREATE OR REPLACE FUNCTION get_tier_multiplier(p_tier TEXT)
 RETURNS DECIMAL AS $$
 BEGIN
-    RETURN CASE LOWER(p_tier)
+    RETURN CASE LOWER(COALESCE(p_tier, 'learning'))
         WHEN 'master' THEN 3.0
         WHEN 'elite' THEN 2.0
         WHEN 'verified' THEN 1.5
@@ -109,7 +193,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Session streak multiplier (rapid submissions within 5 minutes)
 CREATE OR REPLACE FUNCTION get_session_streak_multiplier(p_position INTEGER)
 RETURNS DECIMAL AS $$
 BEGIN
@@ -123,7 +206,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Daily streak multiplier (consecutive days)
 CREATE OR REPLACE FUNCTION get_daily_streak_multiplier(p_streak INTEGER)
 RETURNS DECIMAL AS $$
 BEGIN
@@ -138,10 +220,11 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- =====================================================
--- 4. TREND SUBMISSION EARNINGS FUNCTION
+-- 4. CREATE EARNINGS CALCULATION FUNCTION (ADAPTIVE)
 -- =====================================================
 
-CREATE OR REPLACE FUNCTION calculate_trend_submission_earnings()
+-- This function adapts to both captured_trends and trend_submissions
+CREATE OR REPLACE FUNCTION calculate_trend_earnings()
 RETURNS TRIGGER AS $$
 DECLARE
     v_base_amount DECIMAL(10,2) := 0.25;
@@ -152,10 +235,25 @@ DECLARE
     v_session_position INTEGER;
     v_session_multiplier DECIMAL(3,2);
     v_last_submission TIMESTAMP WITH TIME ZONE;
-    v_minutes_since_last DECIMAL;
     v_final_amount DECIMAL(10,2);
     v_active_session_id UUID;
+    v_user_id UUID;
 BEGIN
+    -- Get user_id from appropriate column
+    IF TG_TABLE_NAME = 'captured_trends' THEN
+        -- Check if user_id column exists
+        IF EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'captured_trends'
+                   AND column_name = 'user_id') THEN
+            v_user_id := NEW.user_id;
+        ELSE
+            v_user_id := NEW.spotter_id;
+        END IF;
+    ELSE -- trend_submissions
+        v_user_id := NEW.spotter_id;
+    END IF;
+    
     -- Get user profile
     SELECT 
         COALESCE(performance_tier, 'learning'),
@@ -163,12 +261,12 @@ BEGIN
         last_submission_at
     INTO v_tier, v_daily_streak, v_last_submission
     FROM user_profiles 
-    WHERE user_id = NEW.user_id;
+    WHERE user_id = v_user_id;
     
     -- Create profile if doesn't exist
     IF NOT FOUND THEN
         INSERT INTO user_profiles (user_id, performance_tier, current_streak)
-        VALUES (NEW.user_id, 'learning', 0)
+        VALUES (v_user_id, 'learning', 0)
         ON CONFLICT (user_id) DO NOTHING;
         
         v_tier := 'learning';
@@ -179,7 +277,7 @@ BEGIN
     -- Check for active scroll session or create new one
     SELECT id INTO v_active_session_id
     FROM scroll_sessions
-    WHERE user_id = NEW.user_id 
+    WHERE user_id = v_user_id 
         AND is_active = true
         AND start_time >= NOW() - INTERVAL '5 minutes'
     ORDER BY start_time DESC
@@ -188,7 +286,7 @@ BEGIN
     IF v_active_session_id IS NULL THEN
         -- Create new session
         INSERT INTO scroll_sessions (user_id, start_time, trends_submitted)
-        VALUES (NEW.user_id, NOW(), 1)
+        VALUES (v_user_id, NOW(), 1)
         RETURNING id INTO v_active_session_id;
         
         v_session_position := 1;
@@ -236,7 +334,7 @@ BEGIN
         session_streak = v_session_position,
         last_submission_at = NOW(),
         last_active = NOW()
-    WHERE user_id = NEW.user_id;
+    WHERE user_id = v_user_id;
     
     -- Update session earnings
     UPDATE scroll_sessions
@@ -248,7 +346,7 @@ BEGIN
         user_id, amount, type, status, description,
         reference_id, reference_type, metadata
     ) VALUES (
-        NEW.user_id,
+        v_user_id,
         v_final_amount,
         'trend_submission',
         'pending',
@@ -258,7 +356,7 @@ BEGIN
             v_daily_streak, v_daily_multiplier, v_final_amount
         ),
         NEW.id,
-        'captured_trends',
+        TG_TABLE_NAME,
         jsonb_build_object(
             'base', v_base_amount,
             'tier', v_tier,
@@ -281,7 +379,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION calculate_validation_earnings()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_base_amount DECIMAL(10,2) := 0.10; -- $0.10 per validation
+    v_base_amount DECIMAL(10,2) := 0.10;
     v_tier TEXT;
     v_tier_multiplier DECIMAL(3,2);
     v_final_amount DECIMAL(10,2);
@@ -332,171 +430,40 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- 6. HANDLE VALIDATION VOTES (2-vote decision)
+-- 6. CREATE TRIGGERS CONDITIONALLY
 -- =====================================================
 
-CREATE OR REPLACE FUNCTION handle_validation_vote()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_yes_votes INTEGER;
-    v_no_votes INTEGER;
-    v_trend_earnings DECIMAL(10,2);
-    v_trend_user_id UUID;
-    v_current_status TEXT;
-    v_approval_bonus DECIMAL(10,2) := 0.50;
-    v_tier TEXT;
-    v_tier_multiplier DECIMAL(3,2);
-    v_bonus_amount DECIMAL(10,2);
+-- Create trigger for captured_trends if it exists
+DO $$
 BEGIN
-    -- Update vote counts
-    IF NEW.is_genuine = true THEN
-        UPDATE captured_trends
-        SET yes_votes = COALESCE(yes_votes, 0) + 1
-        WHERE id = NEW.trend_id
-        RETURNING yes_votes, no_votes, earnings, user_id, earnings_status
-        INTO v_yes_votes, v_no_votes, v_trend_earnings, v_trend_user_id, v_current_status;
-    ELSE
-        UPDATE captured_trends
-        SET no_votes = COALESCE(no_votes, 0) + 1
-        WHERE id = NEW.trend_id
-        RETURNING yes_votes, no_votes, earnings, user_id, earnings_status
-        INTO v_yes_votes, v_no_votes, v_trend_earnings, v_trend_user_id, v_current_status;
-    END IF;
-    
-    -- Only process if still pending
-    IF v_current_status = 'pending' THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables 
+               WHERE table_schema = 'public' 
+               AND table_name = 'captured_trends') THEN
         
-        -- APPROVED: 2+ YES votes
-        IF v_yes_votes >= 2 THEN
-            -- Update trend status
-            UPDATE captured_trends
-            SET 
-                earnings_status = 'approved',
-                status = 'approved'
-            WHERE id = NEW.trend_id;
+        CREATE TRIGGER calculate_trend_earnings_trigger
+            BEFORE INSERT ON captured_trends
+            FOR EACH ROW
+            EXECUTE FUNCTION calculate_trend_earnings();
             
-            -- Move earnings from pending to approved
-            UPDATE user_profiles
-            SET 
-                pending_earnings = GREATEST(0, COALESCE(pending_earnings, 0) - v_trend_earnings),
-                approved_earnings = COALESCE(approved_earnings, 0) + v_trend_earnings
-            WHERE user_id = v_trend_user_id;
-            
-            -- Calculate and add approval bonus
-            SELECT performance_tier INTO v_tier
-            FROM user_profiles WHERE user_id = v_trend_user_id;
-            
-            v_tier_multiplier := get_tier_multiplier(v_tier);
-            v_bonus_amount := ROUND(v_approval_bonus * v_tier_multiplier, 2);
-            
-            UPDATE user_profiles
-            SET 
-                approved_earnings = approved_earnings + v_bonus_amount,
-                total_earned = total_earned + v_bonus_amount
-            WHERE user_id = v_trend_user_id;
-            
-            -- Update earnings ledger for trend approval
-            UPDATE earnings_ledger
-            SET status = 'approved', updated_at = NOW()
-            WHERE reference_id = NEW.trend_id 
-                AND reference_type = 'captured_trends'
-                AND status = 'pending';
-            
-            -- Log approval bonus
-            INSERT INTO earnings_ledger (
-                user_id, amount, type, status, description,
-                reference_id, reference_type
-            ) VALUES (
-                v_trend_user_id,
-                v_bonus_amount,
-                'approval_bonus',
-                'approved',
-                format('Approval bonus: $%s × %s(%sx) = $%s',
-                    v_approval_bonus, v_tier, v_tier_multiplier, v_bonus_amount
-                ),
-                NEW.trend_id,
-                'captured_trends'
-            );
-            
-        -- REJECTED: 2+ NO votes
-        ELSIF v_no_votes >= 2 THEN
-            -- Update trend status
-            UPDATE captured_trends
-            SET 
-                earnings_status = 'cancelled',
-                status = 'rejected'
-            WHERE id = NEW.trend_id;
-            
-            -- Remove pending earnings
-            UPDATE user_profiles
-            SET 
-                pending_earnings = GREATEST(0, COALESCE(pending_earnings, 0) - v_trend_earnings)
-            WHERE user_id = v_trend_user_id;
-            
-            -- Update earnings ledger
-            UPDATE earnings_ledger
-            SET status = 'cancelled', updated_at = NOW()
-            WHERE reference_id = NEW.trend_id 
-                AND reference_type = 'captured_trends'
-                AND status = 'pending';
-        END IF;
+        RAISE NOTICE 'Created earnings trigger for captured_trends';
     END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+END $$;
 
--- =====================================================
--- 7. UPDATE DAILY STREAK FUNCTION
--- =====================================================
-
-CREATE OR REPLACE FUNCTION update_daily_streak(p_user_id UUID)
-RETURNS VOID AS $$
-DECLARE
-    v_last_active DATE;
-    v_current_streak INTEGER;
-    v_days_since_last INTEGER;
+-- Create trigger for trend_submissions if it exists
+DO $$
 BEGIN
-    SELECT DATE(last_active), current_streak
-    INTO v_last_active, v_current_streak
-    FROM user_profiles
-    WHERE user_id = p_user_id;
-    
-    IF v_last_active IS NULL THEN
-        -- First submission
-        UPDATE user_profiles
-        SET current_streak = 1
-        WHERE user_id = p_user_id;
-    ELSE
-        v_days_since_last := CURRENT_DATE - v_last_active;
+    IF EXISTS (SELECT 1 FROM information_schema.tables 
+               WHERE table_schema = 'public' 
+               AND table_name = 'trend_submissions') THEN
         
-        IF v_days_since_last = 0 THEN
-            -- Same day, no change
-            NULL;
-        ELSIF v_days_since_last = 1 THEN
-            -- Next day, increment streak
-            UPDATE user_profiles
-            SET current_streak = COALESCE(current_streak, 0) + 1
-            WHERE user_id = p_user_id;
-        ELSE
-            -- Streak broken, reset to 1
-            UPDATE user_profiles
-            SET current_streak = 1
-            WHERE user_id = p_user_id;
-        END IF;
+        CREATE TRIGGER calculate_trend_earnings_trigger
+            BEFORE INSERT ON trend_submissions
+            FOR EACH ROW
+            EXECUTE FUNCTION calculate_trend_earnings();
+            
+        RAISE NOTICE 'Created earnings trigger for trend_submissions';
     END IF;
-END;
-$$ LANGUAGE plpgsql;
-
--- =====================================================
--- 8. CREATE TRIGGERS
--- =====================================================
-
--- Trend submission trigger
-CREATE TRIGGER calculate_trend_earnings_trigger
-    BEFORE INSERT ON captured_trends
-    FOR EACH ROW
-    EXECUTE FUNCTION calculate_trend_submission_earnings();
+END $$;
 
 -- Validation earnings trigger
 CREATE TRIGGER calculate_validation_earnings_trigger
@@ -504,17 +471,10 @@ CREATE TRIGGER calculate_validation_earnings_trigger
     FOR EACH ROW
     EXECUTE FUNCTION calculate_validation_earnings();
 
--- Vote handling trigger
-CREATE TRIGGER handle_validation_vote_trigger
-    AFTER INSERT ON trend_validations
-    FOR EACH ROW
-    EXECUTE FUNCTION handle_validation_vote();
-
 -- =====================================================
--- 9. CREATE HELPER FUNCTIONS
+-- 7. CREATE HELPER FUNCTIONS
 -- =====================================================
 
--- Get user earnings summary
 CREATE OR REPLACE FUNCTION get_user_earnings_summary(p_user_id UUID)
 RETURNS TABLE (
     pending_earnings DECIMAL(10,2),
@@ -551,17 +511,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- 10. CREATE INDEXES FOR PERFORMANCE
+-- 8. CREATE INDEXES
 -- =====================================================
 
 CREATE INDEX IF NOT EXISTS idx_earnings_ledger_user_status 
 ON earnings_ledger(user_id, status);
-
-CREATE INDEX IF NOT EXISTS idx_captured_trends_spotter 
-ON captured_trends(spotter_id);
-
-CREATE INDEX IF NOT EXISTS idx_captured_trends_status 
-ON captured_trends(earnings_status);
 
 CREATE INDEX IF NOT EXISTS idx_trend_validations_trend 
 ON trend_validations(trend_id);
@@ -570,49 +524,54 @@ CREATE INDEX IF NOT EXISTS idx_scroll_sessions_user_active
 ON scroll_sessions(user_id, is_active);
 
 -- =====================================================
--- 11. GRANT PERMISSIONS
+-- 9. GRANT PERMISSIONS
 -- =====================================================
 
 GRANT EXECUTE ON FUNCTION get_tier_multiplier TO authenticated;
 GRANT EXECUTE ON FUNCTION get_session_streak_multiplier TO authenticated;
 GRANT EXECUTE ON FUNCTION get_daily_streak_multiplier TO authenticated;
-GRANT EXECUTE ON FUNCTION update_daily_streak TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_earnings_summary TO authenticated;
-
--- =====================================================
--- 12. CLOSE OLD SESSIONS (maintenance function)
--- =====================================================
-
-CREATE OR REPLACE FUNCTION close_expired_sessions()
-RETURNS void AS $$
-BEGIN
-    UPDATE scroll_sessions
-    SET 
-        is_active = false,
-        end_time = start_time + INTERVAL '5 minutes'
-    WHERE 
-        is_active = true 
-        AND start_time < NOW() - INTERVAL '5 minutes';
-END;
-$$ LANGUAGE plpgsql;
 
 -- =====================================================
 -- VERIFICATION
 -- =====================================================
 
 DO $$
+DECLARE
+    v_captured_trends_exists BOOLEAN;
+    v_trend_submissions_exists BOOLEAN;
 BEGIN
-    RAISE NOTICE '✅ Earnings System Fixed Successfully!';
+    -- Check which tables exist
+    SELECT EXISTS (SELECT 1 FROM information_schema.tables 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'captured_trends')
+    INTO v_captured_trends_exists;
+    
+    SELECT EXISTS (SELECT 1 FROM information_schema.tables 
+                   WHERE table_schema = 'public' 
+                   AND table_name = 'trend_submissions')
+    INTO v_trend_submissions_exists;
+    
+    RAISE NOTICE '✅ Earnings System Applied Successfully!';
     RAISE NOTICE '📊 Configuration:';
     RAISE NOTICE '  - Base rate: $0.25 per trend';
     RAISE NOTICE '  - Validation: $0.10 per vote';
-    RAISE NOTICE '  - Approval bonus: $0.50';
     RAISE NOTICE '  - Tier multipliers: 0.5x to 3.0x';
     RAISE NOTICE '  - Session multipliers: 1.0x to 2.5x (5 min window)';
     RAISE NOTICE '  - Daily streak multipliers: 1.0x to 2.5x';
     RAISE NOTICE '  - Max per submission: $5.00';
-    RAISE NOTICE '  - Pending → Approved: 2 YES votes';
-    RAISE NOTICE '  - Pending → Cancelled: 2 NO votes';
+    
+    IF v_captured_trends_exists THEN
+        RAISE NOTICE '  ✓ Using captured_trends table';
+    END IF;
+    
+    IF v_trend_submissions_exists THEN
+        RAISE NOTICE '  ✓ Using trend_submissions table';
+    END IF;
+    
+    RAISE NOTICE '';
+    RAISE NOTICE '⚠️  Note: This script sets up the basic earnings calculation.';
+    RAISE NOTICE '    The pending→approved flow requires additional vote handling logic.';
 END $$;
 
 COMMIT;
