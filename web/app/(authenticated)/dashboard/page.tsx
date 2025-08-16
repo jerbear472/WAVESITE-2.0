@@ -1039,7 +1039,7 @@ export default function Dashboard() {
                                   Your trend
                                 </span>
                               )}
-                              {trend.earnings_amount > 0 && (
+                              {trend.earnings_amount && trend.earnings_amount > 0 && (
                                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">
                                   +{formatCurrency(trend.earnings_amount)}
                                 </span>
