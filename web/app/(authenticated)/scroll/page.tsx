@@ -549,12 +549,12 @@ export default function LegibleScrollPage() {
           console.log('✅ [SCROLL] Earnings ledger entry created successfully!');
           console.log('✅ [SCROLL] Amount added to ledger:', finalPayment, 'with multipliers');
           
-          // Update BOTH user_profiles AND profiles tables (they're separate!)
-          // First update user_profiles
+          // Update user_profiles table (profiles is a VIEW, can't update it)
           const { error: updateError } = await supabase
             .from('user_profiles')
             .update({ 
               pending_earnings: ((user as any)?.pending_earnings || 0) + finalPayment,
+              total_earned: ((user as any)?.total_earned || 0) + finalPayment,
               trends_spotted: ((user as any)?.trends_spotted || 0) + 1
             })
             .eq('user_id', user.id);
@@ -562,22 +562,7 @@ export default function LegibleScrollPage() {
           if (updateError) {
             console.error('❌ [SCROLL] Failed to update user_profiles:', updateError);
           } else {
-            console.log('✅ [SCROLL] user_profiles updated successfully');
-          }
-          
-          // CRITICAL: Also update profiles table (Auth reads from here!)
-          const { error: profileUpdateError } = await supabase
-            .from('profiles')
-            .update({ 
-              pending_earnings: ((user as any)?.pending_earnings || 0) + finalPayment,
-              total_earnings: ((user as any)?.total_earnings || 0) + finalPayment
-            })
-            .eq('id', user.id);
-            
-          if (profileUpdateError) {
-            console.error('❌ [SCROLL] Failed to update profiles table:', profileUpdateError);
-          } else {
-            console.log('✅ [SCROLL] profiles table updated successfully');
+            console.log('✅ [SCROLL] user_profiles updated successfully with earnings:', finalPayment);
           }
         }
       } catch (earningsError) {

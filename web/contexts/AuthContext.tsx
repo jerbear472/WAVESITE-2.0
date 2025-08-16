@@ -81,10 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         
-        // Fetch user profile when signed in
+        // Fetch user profile when signed in (profiles is a VIEW)
         const { data: profile } = await supabase
           .from('profiles')
-          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, spotter_tier, created_at, updated_at')
+          .select('id, email, username, is_admin, subscription_tier, spotter_tier, created_at, updated_at')
           .eq('id', session.user.id)
           .single();
           
@@ -120,10 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .eq('user_id', session.user.id)
             .single();
 
-          // Get performance tier from user_profiles
+          // Get ALL earnings and performance data from user_profiles TABLE
           const { data: userProfile } = await supabase
             .from('user_profiles')
-            .select('performance_tier, current_streak, session_streak')
+            .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
             .eq('user_id', session.user.id)
             .single();
 
@@ -131,9 +131,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser({
             ...profile,
             role: 'participant',
-            total_earnings: userStats.total_earnings || profile.total_earnings || 0,
-            pending_earnings: actualPendingEarnings || userStats.pending_earnings || profile.pending_earnings || 0,
-            trends_spotted: userStats.trends_spotted || 0,
+            // Use userProfile (from table) as primary source
+            total_earnings: userProfile?.total_earned || userStats.total_earnings || 0,
+            pending_earnings: userProfile?.pending_earnings || actualPendingEarnings || userStats.pending_earnings || 0,
+            trends_spotted: userProfile?.trends_spotted || userStats.trends_spotted || 0,
             accuracy_score: userStats.accuracy_score || 0,
             validation_score: userStats.validation_score || 0,
             view_mode: 'user',
@@ -207,17 +208,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         console.log('User ID from session:', session.user.id);
-        // Get user profile from database
+        // Get user profile from database (profiles is a VIEW, no earnings there)
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, spotter_tier, created_at, updated_at')
+          .select('id, email, username, is_admin, subscription_tier, spotter_tier, created_at, updated_at')
           .eq('id', session.user.id)
           .single();
           
-        // Also get performance tier from user_profiles
+        // Get ALL earnings and performance data from user_profiles (the actual table)
         const { data: userProfile } = await supabase
           .from('user_profiles')
-          .select('performance_tier, current_streak, session_streak')
+          .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
           .eq('user_id', session.user.id)
           .single();
 
@@ -265,13 +266,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .eq('user_id', session.user.id)
             .single();
             
-          // Map profile to user format
+          // Map profile to user format (combine profiles VIEW with user_profiles TABLE)
           const userData = {
             ...profile,
             role: 'participant',
-            total_earnings: userStats.total_earnings || profile.total_earnings || 0,
-            pending_earnings: actualPendingEarnings || userStats.pending_earnings || profile.pending_earnings || 0,
-            trends_spotted: userStats.trends_spotted || 0,
+            // Use userProfile data (from table) as primary source for earnings
+            total_earnings: userProfile?.total_earned || userStats.total_earnings || 0,
+            pending_earnings: userProfile?.pending_earnings || actualPendingEarnings || userStats.pending_earnings || 0,
+            trends_spotted: userProfile?.trends_spotted || userStats.trends_spotted || 0,
             accuracy_score: userStats.accuracy_score || 0,
             validation_score: userStats.validation_score || 0,
             performance_tier: userProfile?.performance_tier || 'learning',
