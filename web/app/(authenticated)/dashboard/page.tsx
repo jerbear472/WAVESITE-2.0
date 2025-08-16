@@ -557,7 +557,7 @@ export default function Dashboard() {
       return details;
     }
     // Fallback with cleaned category name
-    const cleanLabel = category && category !== '0' && category !== 0 
+    const cleanLabel = category && category !== '0' 
       ? category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) 
       : 'Trending';
     return { emoji: '📊', color: 'from-gray-500 to-gray-600', label: cleanLabel };
@@ -955,9 +955,8 @@ export default function Dashboard() {
                     const categoryDetails = getCategoryDetails(trend.category);
                     
                     // Debug log to see what category value is causing the issue
-                    if (!trend.category || trend.category === '0' || trend.category === 0 || 
-                        trend.description === '0' || categoryDetails.label === '0' || 
-                        categoryDetails.label === 0) {
+                    if (!trend.category || trend.category === '0' || 
+                        trend.description === '0' || categoryDetails.label === '0') {
                       console.log('DEBUG - Problem trend:', {
                         category: trend.category,
                         categoryLabel: categoryDetails.label,
