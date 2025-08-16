@@ -87,6 +87,7 @@ export const SpotterTierDisplay: React.FC<Props> = ({
         <button
           onClick={() => setShowTooltip(!showTooltip)}
           className={`flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white shadow-sm border-2 transition-all duration-200 hover:shadow-md hover:scale-105 ${
+            metrics.currentTier === 'master' ? 'border-purple-400 hover:border-purple-500 bg-gradient-to-r from-purple-50 to-pink-50' :
             metrics.currentTier === 'elite' ? 'border-yellow-400 hover:border-yellow-500 bg-gradient-to-r from-yellow-50 to-orange-50' :
             metrics.currentTier === 'verified' ? 'border-green-400 hover:border-green-500 bg-gradient-to-r from-green-50 to-emerald-50' :
             metrics.currentTier === 'learning' ? 'border-blue-400 hover:border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50' :
@@ -96,6 +97,7 @@ export const SpotterTierDisplay: React.FC<Props> = ({
           <span className="text-xl filter drop-shadow-sm">{tierDisplay.badge}</span>
           <div className="flex flex-col items-start">
             <span className={`text-sm font-semibold leading-none ${
+              metrics.currentTier === 'master' ? 'text-purple-700' :
               metrics.currentTier === 'elite' ? 'text-yellow-700' :
               metrics.currentTier === 'verified' ? 'text-green-700' :
               metrics.currentTier === 'learning' ? 'text-blue-700' :
@@ -110,6 +112,7 @@ export const SpotterTierDisplay: React.FC<Props> = ({
             )}
           </div>
           <div className={`ml-1 w-2 h-2 rounded-full ${
+            metrics.currentTier === 'master' ? 'bg-purple-400 animate-pulse' :
             metrics.currentTier === 'elite' ? 'bg-yellow-400 animate-pulse' :
             metrics.currentTier === 'verified' ? 'bg-green-400' :
             metrics.currentTier === 'learning' ? 'bg-blue-400' :
@@ -144,6 +147,7 @@ export const SpotterTierDisplay: React.FC<Props> = ({
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className={`p-3 rounded-xl bg-gradient-to-br ${
+            metrics.currentTier === 'master' ? 'from-purple-500/20 to-pink-600/20' :
             metrics.currentTier === 'elite' ? 'from-yellow-500/20 to-orange-600/20' :
             metrics.currentTier === 'verified' ? 'from-green-500/20 to-emerald-600/20' :
             metrics.currentTier === 'learning' ? 'from-blue-500/20 to-sky-600/20' :
@@ -185,6 +189,7 @@ const SpotterPerformanceDetailsLight: React.FC<{
       <div className="flex items-center justify-between pb-3 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${
+            metrics.currentTier === 'master' ? 'bg-gradient-to-br from-purple-100 to-pink-100' :
             metrics.currentTier === 'elite' ? 'bg-gradient-to-br from-yellow-100 to-orange-100' :
             metrics.currentTier === 'verified' ? 'bg-gradient-to-br from-green-100 to-emerald-100' :
             metrics.currentTier === 'learning' ? 'bg-gradient-to-br from-blue-100 to-indigo-100' :
@@ -512,6 +517,7 @@ const CategoryExpertiseCard: React.FC<{ expertise: CategoryExpertise }> = ({ exp
 
 const formatTierName = (tier: SpotterTier): string => {
   const names = {
+    master: 'Master Spotter',
     elite: 'Elite Spotter',
     verified: 'Verified Spotter',
     learning: 'Learning Spotter',
