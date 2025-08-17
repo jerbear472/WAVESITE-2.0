@@ -347,6 +347,7 @@ export default function SmartTrendSubmission({
     categoryAnswers: {} as Record<string, string>,
     audienceAge: [] as string[],
     predictedPeak: '',
+    aiAngle: '' as 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai' | '',
     
     // Velocity & Size (HIGH VALUE DATA)
     trendVelocity: '' as 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining' | '',
@@ -667,6 +668,9 @@ export default function SmartTrendSubmission({
           timing: 'today',
           capturedAt: new Date().toISOString()
         },
+        // AI Signal Intelligence
+        aiAngle: formData.aiAngle || 'not_ai',
+        is_ai_generated: formData.aiAngle && formData.aiAngle !== 'not_ai',
         // Ensure wave_score is included
         wave_score: formData.sentiment || 50
       };
@@ -1099,6 +1103,37 @@ export default function SmartTrendSubmission({
                   </div>
                 )}
 
+                {/* AI Adoption Signal - HIGH VALUE */}
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    What's the AI angle here? 🤖
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: 'using_ai', label: 'People using AI to create', icon: '🎨' },
+                      { value: 'reacting_to_ai', label: 'People reacting to AI', icon: '😮' },
+                      { value: 'ai_tool_viral', label: 'AI tool going viral', icon: '🚀' },
+                      { value: 'ai_technique', label: 'AI technique/prompt sharing', icon: '💡' },
+                      { value: 'anti_ai', label: 'Anti-AI backlash', icon: '🚫' },
+                      { value: 'not_ai', label: 'Not AI-related', icon: '👤' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, aiAngle: option.value as any }))}
+                        className={`p-2.5 rounded-lg border text-sm transition-all flex items-center gap-2 ${
+                          formData.aiAngle === option.value
+                            ? 'border-purple-500 bg-purple-500/10 text-purple-300'
+                            : 'border-gray-700 text-gray-300 hover:border-gray-600'
+                        }`}
+                      >
+                        <span>{option.icon}</span>
+                        <span className="text-left flex-1">{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Audience age */}
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
@@ -1211,6 +1246,20 @@ export default function SmartTrendSubmission({
                       ))}
                     </div>
                   </div>
+
+                  {/* AI Signal if selected */}
+                  {formData.aiAngle && formData.aiAngle !== 'not_ai' && (
+                    <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-lg p-4 border border-purple-800/30">
+                      <h4 className="text-sm font-medium text-purple-400 mb-2">🤖 AI Signal</h4>
+                      <p className="text-white font-medium">
+                        {formData.aiAngle === 'using_ai' && 'People using AI to create content'}
+                        {formData.aiAngle === 'reacting_to_ai' && 'People reacting to AI content'}
+                        {formData.aiAngle === 'ai_tool_viral' && 'AI tool going viral'}
+                        {formData.aiAngle === 'ai_technique' && 'AI technique/prompt sharing'}
+                        {formData.aiAngle === 'anti_ai' && 'Anti-AI backlash'}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Stats */}
                   {(formData.views_count > 0 || formData.likes_count > 0) && (
