@@ -100,10 +100,6 @@ const CATEGORIES = [
         label: 'What kind of food trend?',
         options: ['Recipe hack', 'Restaurant trend', 'Cooking technique', 'Food challenge', 'Drink/cocktail']
       },
-      difficulty: {
-        label: 'How hard to make/get?',
-        options: ['Super easy', 'Need some skills', 'Pretty complex', 'Restaurant only']
-      },
       appeal: {
         label: 'Why are people into it?',
         options: ['Looks amazing', 'Tastes incredible', 'Health benefits', 'Just weird/fun', 'Nostalgic']
@@ -124,10 +120,6 @@ const CATEGORIES = [
         label: 'How are people using it?',
         options: ['Background for videos', 'Dance videos', 'Lip sync', 'Emotional videos', 'Comedy']
       },
-      origin: {
-        label: 'Where\'d it come from?',
-        options: ['New release', 'Old song revival', 'Remixed sound', 'Original creator', 'TV/Movie']
-      }
     }
   },
   { 
@@ -139,10 +131,6 @@ const CATEGORIES = [
       category: {
         label: 'What lifestyle area?',
         options: ['Morning routine', 'Productivity', 'Home decor', 'Wellness', 'Relationships', 'Money']
-      },
-      effort: {
-        label: 'How much effort required?',
-        options: ['Quick tip', 'Daily habit', 'Weekend project', 'Lifestyle change']
       },
       authenticity: {
         label: 'How real is this?',
@@ -164,10 +152,6 @@ const CATEGORIES = [
         label: 'Who can do this?',
         options: ['Anyone', 'Need the app/game', 'Need expensive stuff', 'Tech savvy only']
       },
-      staying: {
-        label: 'Is this here to stay?',
-        options: ['Quick fad', 'Few months', 'Changing how we do things', 'Revolutionary']
-      }
     }
   },
   { 
@@ -184,10 +168,6 @@ const CATEGORIES = [
         label: 'Risk level?',
         options: ['Safe tip', 'Some risk', 'High risk', 'Probably a scam']
       },
-      audience: {
-        label: 'Who\'s jumping on this?',
-        options: ['Everyone', 'Young investors', 'Crypto bros', 'Professionals', 'Influencers']
-      }
     }
   },
   { 
@@ -204,10 +184,6 @@ const CATEGORIES = [
         label: 'Fitness level needed?',
         options: ['Anyone can do it', 'Need some fitness', 'Pretty challenging', 'Athletes only']
       },
-      science: {
-        label: 'Is this legit?',
-        options: ['Science-backed', 'Makes sense', 'Questionable', 'Definitely bro-science']
-      }
     }
   },
   { 
@@ -224,10 +200,6 @@ const CATEGORIES = [
         label: 'How widespread?',
         options: ['Niche community', 'Growing awareness', 'Major discussion', 'Global movement']
       },
-      impact: {
-        label: 'Potential impact?',
-        options: ['Raising awareness', 'Changing minds', 'Real policy change', 'Just noise']
-      }
     }
   },
   { 
@@ -244,10 +216,6 @@ const CATEGORIES = [
         label: 'How accessible is this?',
         options: ['Anyone with a car', 'Need specific vehicle', 'Expensive mods', 'Professional only']
       },
-      appeal: {
-        label: 'Why is it trending?',
-        options: ['Looks amazing', 'Performance gains', 'Practical/useful', 'Just for fun', 'Status symbol']
-      }
     }
   },
   { 
@@ -264,10 +232,6 @@ const CATEGORIES = [
         label: 'What animal?',
         options: ['Dogs', 'Cats', 'Exotic pets', 'Farm animals', 'Wildlife']
       },
-      virality: {
-        label: 'Why is it viral?',
-        options: ['Incredibly cute', 'Funny behavior', 'Unusual/rare', 'Heartwarming', 'Educational']
-      }
     }
   },
   { 
@@ -284,10 +248,6 @@ const CATEGORIES = [
         label: 'Cost level?',
         options: ['Budget friendly', 'Mid-range', 'Luxury', 'Free/cheap hack']
       },
-      accessibility: {
-        label: 'How easy to do?',
-        options: ['Anyone can go', 'Need planning', 'Restricted access', 'Locals only']
-      }
     }
   },
   { 
@@ -387,14 +347,11 @@ export default function SmartTrendSubmission({
     categoryAnswers: {} as Record<string, string>,
     audienceAge: [] as string[],
     predictedPeak: '',
-    brandSafe: null as boolean | null,
-    is_ai_generated: false,  // New field for AI-generated content
     
     // Velocity & Size (HIGH VALUE DATA)
     trendVelocity: '' as 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining' | '',
     sentiment: 50,
     trendSize: '' as 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '',
-    firstSeen: '' as 'today' | 'yesterday' | 'this_week' | 'last_week' | 'older' | '',
     
     // Calculated
     wave_score: 50
@@ -555,10 +512,6 @@ export default function SmartTrendSubmission({
           setError('Please select the trend size');
           return false;
         }
-        if (!formData.firstSeen) {
-          setError('Please select when you first saw this');
-          return false;
-        }
         break;
       case 'category':
         if (!formData.category) {
@@ -697,7 +650,7 @@ export default function SmartTrendSubmission({
         ageRanges: formData.audienceAge,
         spreadSpeed: formData.trendVelocity || 'just_starting',
         categorySpecific: formData.categoryAnswers,
-        brandAdoption: formData.brandSafe || false,
+        brandAdoption: false,
         motivation: `Category: ${category?.label}, ${Object.entries(formData.categoryAnswers).map(([k, v]) => `${k}: ${v}`).join(', ')}`,
         firstSeen: formData.posted_at || new Date().toISOString(),
         moods: [],
@@ -707,11 +660,11 @@ export default function SmartTrendSubmission({
         // HIGH VALUE INTELLIGENCE DATA
         trendVelocity: formData.trendVelocity,
         trendSize: formData.trendSize,
-        firstSeenTiming: formData.firstSeen,
+        firstSeenTiming: 'today',
         velocityMetrics: {
           velocity: formData.trendVelocity,
           size: formData.trendSize,
-          timing: formData.firstSeen,
+          timing: 'today',
           capturedAt: new Date().toISOString()
         },
         // Ensure wave_score is included
@@ -1057,36 +1010,6 @@ export default function SmartTrendSubmission({
                   </div>
                 </div>
 
-                {/* When First Seen */}
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">When did you first see this?</h3>
-                  <p className="text-sm text-gray-400 mb-4">Timing is crucial for trend value</p>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {[
-                      { value: 'today', label: 'Today', icon: '🆕' },
-                      { value: 'yesterday', label: 'Yesterday', icon: '📅' },
-                      { value: 'this_week', label: 'This Week', icon: '📆' },
-                      { value: 'last_week', label: 'Last Week', icon: '📊' },
-                      { value: 'older', label: 'Older', icon: '📚' }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setFormData(prev => ({ ...prev, firstSeen: option.value as any }))}
-                        className={`p-3 rounded-lg border-2 transition-all ${
-                          formData.firstSeen === option.value
-                            ? 'border-purple-500 bg-purple-500/10'
-                            : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <div className="text-2xl mb-1">{option.icon}</div>
-                          <div className="font-medium text-white text-sm">{option.label}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -1206,36 +1129,6 @@ export default function SmartTrendSubmission({
                   </div>
                 </div>
 
-                {/* Brand Safety */}
-                <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Is this content brand-safe?
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, brandSafe: true }))}
-                      className={`flex-1 py-3 rounded-lg border text-sm transition-all ${
-                        formData.brandSafe === true
-                          ? 'border-green-500 bg-green-500/10 text-green-300'
-                          : 'border-gray-700 text-gray-300 hover:border-gray-600'
-                      }`}
-                    >
-                      ✅ Yes - Appropriate for all audiences
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, brandSafe: false }))}
-                      className={`flex-1 py-3 rounded-lg border text-sm transition-all ${
-                        formData.brandSafe === false
-                          ? 'border-red-500 bg-red-500/10 text-red-300'
-                          : 'border-gray-700 text-gray-300 hover:border-gray-600'
-                      }`}
-                    >
-                      ⚠️ No - Contains mature content
-                    </button>
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -1276,7 +1169,7 @@ export default function SmartTrendSubmission({
                   {/* Velocity & Timing (HIGH VALUE DATA) */}
                   <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 rounded-lg p-4 border border-green-800/30">
                     <h4 className="text-sm font-medium text-green-400 mb-2">📊 Market Intelligence</h4>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <p className="text-xs text-gray-400">Velocity</p>
                         <p className="text-sm font-medium text-white capitalize">
@@ -1297,12 +1190,6 @@ export default function SmartTrendSubmission({
                           {formData.trendSize === 'mega' && '💥 Mega'}
                           {formData.trendSize === 'global' && '🌍 Global'}
                           {!formData.trendSize && 'Not selected'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">First Seen</p>
-                        <p className="text-sm font-medium text-white capitalize">
-                          {formData.firstSeen.replace('_', ' ')}
                         </p>
                       </div>
                     </div>
@@ -1361,27 +1248,6 @@ export default function SmartTrendSubmission({
                     />
                   </div>
 
-                  {/* AI-Generated Content Disclosure */}
-                  <div className="bg-gray-800/50 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        id="ai-generated"
-                        checked={formData.is_ai_generated}
-                        onChange={(e) => setFormData(prev => ({ ...prev, is_ai_generated: e.target.checked }))}
-                        className="mt-1 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                      />
-                      <label htmlFor="ai-generated" className="flex-1 cursor-pointer">
-                        <div className="flex items-center gap-2 mb-1">
-                          <SparklesIcon className="w-4 h-4 text-yellow-400" />
-                          <h4 className="text-sm font-medium text-gray-300">AI-Generated Content</h4>
-                        </div>
-                        <p className="text-xs text-gray-400">
-                          Check this box if this trend involves AI-generated content (images, videos, text, music, etc.)
-                        </p>
-                      </label>
-                    </div>
-                  </div>
                 </div>
               </motion.div>
             )}
