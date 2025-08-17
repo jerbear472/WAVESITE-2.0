@@ -30,21 +30,15 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     console.log('📤 Submitting trend for user:', userId);
     
     // Get user profile for earnings calculation
-    // Try both column names since different schemas use different columns
-    let { data: profile, error: profileError } = await supabase
+    // Use 'id' column which matches auth.users.id
+    const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('performance_tier, current_streak, session_streak')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single();
     
-    // If user_id doesn't work, try id (for schemas where id = auth.users.id)
-    if (profileError?.message?.includes('column') || !profile) {
-      const result = await supabase
-        .from('user_profiles')
-        .select('performance_tier, current_streak, session_streak')
-        .eq('id', userId)
-        .single();
-      profile = result.data;
+    if (profileError) {
+      console.log('Profile lookup error:', profileError);
     }
     
     // Calculate earnings
