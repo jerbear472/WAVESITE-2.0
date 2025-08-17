@@ -588,10 +588,10 @@ export default function Dashboard() {
     if (details) {
       return details;
     }
-    // Fallback with cleaned category name
-    const cleanLabel = category && category !== '0' 
+    // Fallback with cleaned category name - never show '0'
+    const cleanLabel = category && category !== '0' && category !== 0
       ? category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) 
-      : 'Trending';
+      : '';
     return { emoji: '📊', color: 'from-gray-500 to-gray-600', label: cleanLabel };
   };
 
@@ -1080,7 +1080,7 @@ export default function Dashboard() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-2xl">{categoryDetails.emoji}</span>
-                              {categoryDetails.label && categoryDetails.label !== '0' && (
+                              {categoryDetails.label && categoryDetails.label !== '0' && categoryDetails.label !== '' && (
                                 <span className={`text-xs px-2.5 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white font-medium shadow-sm`}>
                                   {categoryDetails.label}
                                 </span>
