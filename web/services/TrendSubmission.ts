@@ -54,7 +54,7 @@ export class TrendSubmissionService {
         .from('captured_trends')
         .select('id')
         .eq('url', data.url)
-        .eq('validator_id', user.id)
+        .eq('user_id', user.id)
         .limit(1);
 
       if (existing && existing.length > 0) {
@@ -120,7 +120,7 @@ export class TrendSubmissionService {
       const { data: profile } = await this.supabase
         .from('user_profiles')
         .select('performance_tier')
-        .eq('validator_id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       // Preview earnings (actual is calculated by database)
@@ -182,7 +182,7 @@ export class TrendSubmissionService {
     const { data, error } = await this.supabase
       .from('captured_trends')
       .select('*')
-      .eq('validator_id', user.id)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -237,7 +237,7 @@ export class ValidationService {
       .from('trend_validations')
       .insert([{
         trend_id: trendId,
-        user_id: user.id,
+        validator_id: user.id,
         vote: vote,
       }])
       .select()

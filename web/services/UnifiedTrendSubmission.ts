@@ -189,7 +189,7 @@ export class UnifiedTrendSubmissionService {
       .from('captured_trends')
       .select('id')
       .eq('url', url)
-      .eq('validator_id', userId)
+      .eq('user_id', userId)
       .limit(1);
 
     return !error && data && data.length > 0;
@@ -349,7 +349,7 @@ export class UnifiedTrendSubmissionService {
           created_at
         )
       `)
-      .eq('validator_id', userId)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
 

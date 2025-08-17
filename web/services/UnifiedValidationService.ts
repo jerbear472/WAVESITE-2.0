@@ -65,7 +65,7 @@ export class UnifiedValidationService {
         .from('trend_validations')
         .insert([{
           trend_id: vote.trendId,
-          user_id: user.id,
+          validator_id: user.id,
           vote: vote.vote,
           feedback: vote.feedback,
           quality_score: vote.quality_score,
