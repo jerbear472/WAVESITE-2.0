@@ -374,7 +374,7 @@ export default function LegibleScrollPage() {
       const { data: profileData } = await supabase
         .from('user_profiles')
         .select('current_streak, session_streak, last_submission_at, performance_tier')
-        .eq('id', user.id)  // Primary key is 'id' in user_profiles table
+        .eq('id', user!.id)  // Primary key is 'id' in user_profiles table
         .single();
       
       // Build user profile for earnings calculation with streak data
@@ -423,7 +423,7 @@ export default function LegibleScrollPage() {
       
       // Prepare submission - use basic fields that exist in database
       const submissionData: any = {
-        spotter_id: user.id,
+        spotter_id: user!.id,
         category: getSafeCategory(formData.categories?.[0] || 'other'),
         description: formData.trendName || formData.explanation || 'Untitled Trend',
         title: formData.title || formData.trendName || 'Untitled Trend', // Add title column
@@ -588,7 +588,7 @@ export default function LegibleScrollPage() {
       // Note: Database trigger may also create one, but we need immediate visibility
       try {
         const earningsEntry = {
-          user_id: user.id,
+          user_id: user!.id,
           trend_id: (data as any).id, // Use trend_id field
           amount: finalPayment,
           transaction_type: 'trend_submission',  // Changed from 'type' to 'transaction_type'
@@ -677,7 +677,7 @@ export default function LegibleScrollPage() {
               session_streak: newSessionStreak,
               last_submission_at: now.toISOString()
             })
-            .eq('id', user.id);  // Primary key is 'id' not 'user_id'
+            .eq('id', user!.id);  // Primary key is 'id' not 'user_id'
             
           if (updateError) {
             console.error('❌ [SCROLL] Failed to update user_profiles:', updateError);
@@ -772,7 +772,7 @@ export default function LegibleScrollPage() {
         const { data: currentProfile } = await supabase
           .from('user_profiles')
           .select('pending_earnings, total_earned')
-          .eq('id', user.id)
+          .eq('id', user!.id)
           .single();
         
         const currentPending = currentProfile?.pending_earnings || 0;
@@ -785,7 +785,7 @@ export default function LegibleScrollPage() {
             pending_earnings: currentPending + finalPayment,
             total_earned: currentTotal + finalPayment
           })
-          .eq('id', user.id);
+          .eq('id', user!.id);
         
         if (updateError) {
           console.error('❌ [SCROLL] Failed to update earnings:', updateError);

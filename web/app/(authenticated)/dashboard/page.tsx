@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import StreakDisplay from '@/components/StreakDisplay';
+import NotificationsWindow from '@/components/NotificationsWindow';
+import { getDynamicGreeting, getTimeOfDay } from '@/lib/greetings';
 import { formatCurrency as formatCurrencyLib } from '@/lib/formatters';
 import { 
   SUSTAINABLE_EARNINGS,
@@ -843,7 +845,13 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Welcome back, <span className="text-gradient">{user?.email?.split('@')[0] || 'User'}</span>
+              {getDynamicGreeting({
+                isFirstTime: stats.trends_spotted === 0,
+                userName: user?.email?.split('@')[0] || 'User',
+                timeOfDay: getTimeOfDay(),
+                currentStreak: stats.current_streak,
+                performance_tier: user?.performance_tier || 'learning'
+              })}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Last updated: {formatTimeAgo(lastRefresh.toISOString())}
@@ -993,6 +1001,11 @@ export default function Dashboard() {
               Keep it going! 🚀
             </p>
           </motion.div>
+        </div>
+
+        {/* Notifications Window - Below metrics tiles */}
+        <div className="mb-8">
+          <NotificationsWindow />
         </div>
 
         {/* Main Content Grid */}
