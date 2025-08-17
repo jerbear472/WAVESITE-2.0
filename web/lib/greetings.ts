@@ -61,7 +61,7 @@ const TIME_GREETINGS = {
   ]
 };
 
-const TIER_GREETINGS = {
+const TIER_GREETINGS: Record<string, string[]> = {
   master: [
     "Master spotter",
     "Trend master",
