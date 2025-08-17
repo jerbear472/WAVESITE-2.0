@@ -161,7 +161,8 @@ export default function Earnings() {
             user_id: trend.spotter_id,
             trend_id: trend.id,
             amount: trend.payment_amount || 0.25,
-            type: 'trend_submission',
+            transaction_type: 'trend_submission',  // Use transaction_type
+            type: 'trend_submission',  // Include both for compatibility
             status: trend.status === 'approved' ? 'approved' : 
                     trend.status === 'rejected' ? 'rejected' : 'pending',
             description: `Trend: ${trend.description || 'Untitled'}`,
@@ -217,12 +218,12 @@ export default function Earnings() {
         console.log('📝 [EARNINGS PAGE] Sample transaction:', transactionsData[0]);
       }
       
-      // Map transaction types properly
+      // Map transaction types properly (handle both 'type' and 'transaction_type' fields)
       const mappedTransactions = (transactionsData || []).map(t => ({
         ...t,
-        earning_type: t.type === 'trend_submission' ? 'submission' : 
-                      t.type === 'validation' ? 'validation' : 
-                      t.type
+        earning_type: (t.transaction_type || t.type) === 'trend_submission' ? 'submission' : 
+                      (t.transaction_type || t.type) === 'validation' ? 'validation' : 
+                      t.transaction_type || t.type
       }));
       
       setTransactions(mappedTransactions);

@@ -519,7 +519,7 @@ export default function LegibleScrollPage() {
           user_id: user.id,
           trend_id: (data as any).id, // Use trend_id field
           amount: finalPayment,
-          type: 'trend_submission',
+          transaction_type: 'trend_submission',  // Changed from 'type' to 'transaction_type'
           status: 'pending',
           description: `Trend: ${formData.description || formData.trendName || 'Untitled'} - pending validation`,
           metadata: {
@@ -552,6 +552,10 @@ export default function LegibleScrollPage() {
             details: earningsError.details,
             hint: earningsError.hint
           });
+          // If it's a column error, log what columns we're trying to use
+          if (earningsError.message?.includes('column')) {
+            console.error('❌ [SCROLL] Entry structure:', Object.keys(earningsEntry));
+          }
         } else {
           console.log('✅ [SCROLL] Earnings ledger entry created successfully!', ledgerData);
           console.log('✅ [SCROLL] Amount added to ledger:', finalPayment, 'with multipliers');

@@ -7,7 +7,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     // Direct mappings from SmartTrendSubmission component IDs
     'meme': 'meme_format',
     'fashion': 'fashion',
-    'food': 'food_drink',
+    'food': 'behavior_pattern',  // Changed from 'food_drink' to 'behavior_pattern' as temp fix
     'music': 'audio_music',
     'lifestyle': 'behavior_pattern',
     'tech': 'gaming',  // Changed from 'technology' to 'gaming' which is valid
@@ -24,7 +24,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     // Label mappings (what user sees)
     'Meme/Humor': 'meme_format',
     'Fashion/Beauty': 'fashion',
-    'Food/Drink': 'food_drink',
+    'Food/Drink': 'behavior_pattern',  // Changed from 'food_drink' to 'behavior_pattern' as temp fix
     'Music/Dance': 'audio_music',
     'Lifestyle': 'behavior_pattern',
     'Tech/Gaming': 'gaming',  // Changed from 'technology' to 'gaming'
@@ -40,7 +40,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     
     // Legacy mappings (for backward compatibility)
     'Fashion & Beauty': 'fashion',
-    'Food & Drink': 'food_drink',
+    'Food & Drink': 'behavior_pattern',  // Changed from 'food_drink' to 'behavior_pattern' as temp fix
     'Humor & Memes': 'meme_format',
     'Politics & Social Issues': 'political',
     'Music & Dance': 'audio_music',
@@ -67,11 +67,12 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
   }
   
   // Check if it's already a valid enum (updated list from database)
+  // NOTE: 'food_drink' is NOT a valid enum - removed from list
   const validEnums = [
     'visual_style', 'audio_music', 'creator_technique', 'meme_format', 
     'product_brand', 'behavior_pattern', 'political', 'finance', 
     'news_events', 'education', 'relationship', 'animals_pets', 
-    'automotive', 'food_drink', 'sports', 'dance', 
+    'automotive', 'sports', 'dance', 
     'travel', 'fashion', 'gaming', 'health', 'diy_crafts'
   ];
   if (displayCategory && validEnums.includes(displayCategory)) {
