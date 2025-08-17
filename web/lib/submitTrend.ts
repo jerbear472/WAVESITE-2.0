@@ -26,16 +26,21 @@ export interface TrendSubmissionData {
 }
 
 export async function submitTrend(userId: string, data: TrendSubmissionData) {
+  const startTime = Date.now();
+  console.log('📤 [START] Submitting trend for user:', userId, 'at', new Date().toISOString());
+  
   try {
-    console.log('📤 Submitting trend for user:', userId);
     
     // Get user profile for earnings calculation
     // Use 'id' column which matches auth.users.id
+    console.log('📊 [1] Fetching user profile...');
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('performance_tier, current_streak, session_streak')
       .eq('id', userId)
       .single();
+    
+    console.log(`📊 [1] Profile fetch completed in ${Date.now() - startTime}ms`);
     
     if (profileError) {
       console.log('Profile lookup error:', profileError);
@@ -97,15 +102,27 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       }
     };
     
-    console.log('💾 Saving to database...');
-    console.log('Submission data:', JSON.stringify(submissionData, null, 2));
+    console.log(`💾 [2] Saving to database at ${Date.now() - startTime}ms...`);
+    console.log('Submission data keys:', Object.keys(submissionData));
     
-    // Insert the trend submission
-    const { data: submission, error: submitError } = await supabase
+    // Insert the trend submission with timeout
+    const insertPromise = supabase
       .from('trend_submissions')
       .insert(submissionData)
       .select()
       .single();
+    
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database insert timeout after 10 seconds')), 10000)
+    );
+    
+    const { data: submission, error: submitError } = await Promise.race([
+      insertPromise,
+      timeoutPromise
+    ]) as any;
+    
+    console.log(`💾 [2] Database insert completed in ${Date.now() - startTime}ms`);
     
     if (submitError) {
       console.error('❌ Submission error:', submitError);
@@ -118,7 +135,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       throw submitError;
     }
     
-    console.log('✅ Trend submitted:', submission.id);
+    console.log('✅ Trend submitted:', submission?.id);
     
     // Manually create earnings entry (in case trigger doesn't exist)
     try {
@@ -152,6 +169,8 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       console.warn('Earnings entry creation failed (may be handled by trigger)');
     }
     
+    console.log(`✅ [COMPLETE] Total time: ${Date.now() - startTime}ms`);
+    
     return {
       success: true,
       submission,
@@ -159,7 +178,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     };
     
   } catch (error: any) {
-    console.error('❌ Submit trend error:', error);
+    console.error(`❌ [ERROR] Submit trend error after ${Date.now() - startTime}ms:`, error);
     return {
       success: false,
       error: error.message || 'Failed to submit trend'
