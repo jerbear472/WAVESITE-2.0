@@ -625,7 +625,7 @@ export default function LegibleScrollPage() {
             hint: earningsError?.hint
           });
           // If it's a column error, log what columns we're trying to use
-          if (earningsError.message?.includes('column')) {
+          if (earningsError?.message?.includes('column')) {
             console.error('❌ [SCROLL] Entry structure:', Object.keys(earningsEntry));
           }
         } else {
