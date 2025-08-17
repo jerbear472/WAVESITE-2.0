@@ -297,11 +297,10 @@ export default function LegibleScrollPage() {
         
         // Show earnings animation
         const earningsAmount = result.earnings || 0.25;
-        showEarnings(
+        showEarningsAnimation(
           earningsAmount,
-          'submission',
-          'Trend submitted!',
-          [`Base: $0.25`]
+          [`Base: $0.25`, 'Trend submitted!'],
+          1
         );
         
         // Refresh stats
