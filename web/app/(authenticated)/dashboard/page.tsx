@@ -436,8 +436,16 @@ export default function Dashboard() {
         });
       }
 
-      // Limit to top 10 most recent
-      setRecentTrends(combinedTrends.slice(0, 10));
+      // Filter out invalid trends and limit to top 10 most recent
+      const validTrends = combinedTrends.filter(trend => {
+        // Filter out trends with invalid data
+        if (!trend.category || trend.category === '0' || trend.category === 0) return false;
+        if (trend.description === '0' || trend.description === 0) return false;
+        if (trend.title === '0' || trend.title === 0) return false;
+        return true;
+      });
+      
+      setRecentTrends(validTrends.slice(0, 10));
     } catch (error) {
       console.error('Error fetching trends:', error);
     }
@@ -1011,11 +1019,6 @@ export default function Dashboard() {
                   recentTrends.map((trend) => {
                     const categoryDetails = getCategoryDetails(trend.category);
                     
-                    // Skip trends with invalid data
-                    if (!trend.category || trend.category === '0' || 
-                        trend.description === '0' || categoryDetails.label === '0') {
-                      return null; // Skip rendering this trend card
-                    }
                     return (
                       <motion.div
                         key={trend.id}
