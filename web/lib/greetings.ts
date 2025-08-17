@@ -101,7 +101,7 @@ export function getDynamicGreeting(config: GreetingConfig = {}): string {
   
   // First time user
   if (isFirstTime) {
-    return `Welcome to WaveSight${userName ? `, ${userName}` : ''}! 🌊`;
+    return `Welcome to WaveSight${userName ? `, [[${userName}]]` : ''}! 🌊`;
   }
   
   // Build greeting parts
@@ -146,7 +146,7 @@ export function getDynamicGreeting(config: GreetingConfig = {}): string {
   // Ensure we have something
   if (!greeting || greeting.length < 5) {
     const fallback = WAVESIGHT_GREETINGS[Math.floor(Math.random() * WAVESIGHT_GREETINGS.length)];
-    greeting = `${fallback}${userName ? `, ${userName}` : ''}`;
+    greeting = `${fallback}${userName ? `, [[${userName}]]` : ''}`;
   }
   
   // Add wave emoji occasionally

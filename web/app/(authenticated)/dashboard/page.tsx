@@ -1014,29 +1014,58 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Second Row - Notifications and Additional Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2">
-            <NotificationsWindow />
-          </div>
+        {/* Second Row - Notifications and Performance Tier */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-6 shadow-sm text-white"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-white/20 backdrop-blur rounded-xl">
-                <Award className="w-6 h-6 text-white" />
+            <NotificationsWindow />
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm text-white h-fit"
+          >
+            <div className="p-4 border-b border-white/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
+                    <Award className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white">Performance Tier</h3>
+                    <p className="text-xs text-white/80">Your current level</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <p className="text-white/80 text-sm">Performance Tier</p>
-            <p className="text-2xl font-bold text-white mt-1 capitalize">
-              {user?.performance_tier || 'Learning'}
-            </p>
-            <p className="text-sm text-white/70 mt-2">
-              Next tier in {10 - stats.trends_spotted} trends
-            </p>
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-3xl font-bold text-white capitalize">
+                  {user?.performance_tier || 'Learning'}
+                </p>
+                <span className="text-2xl">📚</span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/80">Progress to Verified</span>
+                  <span className="text-white font-medium">{stats.trends_spotted}/10</span>
+                </div>
+                <div className="bg-white/20 rounded-full h-2">
+                  <div 
+                    className="bg-white h-2 rounded-full transition-all"
+                    style={{ width: `${Math.min((stats.trends_spotted / 10) * 100, 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-white/70 mt-2">
+                  Submit {Math.max(10 - stats.trends_spotted, 0)} more quality trends to level up
+                </p>
+              </div>
+            </div>
           </motion.div>
         </div>
 
