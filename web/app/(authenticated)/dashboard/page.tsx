@@ -350,6 +350,8 @@ export default function Dashboard() {
         .from('trend_submissions')
         .select(`
           *,
+          trend_velocity,
+          trend_size,
           evidence,
           spotter:profiles(username, email),
           earnings:earnings_ledger(amount)
@@ -375,6 +377,9 @@ export default function Dashboard() {
         .from('trend_submissions')
         .select(`
           *,
+          trend_velocity,
+          trend_size,
+          evidence,
           spotter:profiles(username, email)
         `)
         .order('created_at', { ascending: false });
@@ -537,8 +542,9 @@ export default function Dashboard() {
   const formatCurrency = formatCurrencyLib;
 
   const formatNumber = (num: number) => {
-    // Ensure num is a valid number
-    if (!num || isNaN(num) || num === 0) return '';
+    // Ensure num is a valid number and don't return empty string for 0
+    if (num === undefined || num === null || isNaN(num)) return '0';
+    if (num === 0) return '0';
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
     return num.toString();
@@ -583,15 +589,15 @@ export default function Dashboard() {
 
   const getTrendVelocity = (trend: RecentTrend) => {
     // First check if we have submitted velocity data from the form
-    // Check evidence field for velocity data
-    const submittedVelocity = trend.evidence?.velocityMetrics?.velocity || 
+    // Check multiple possible locations for velocity data
+    const submittedVelocity = trend.trend_velocity || 
+                             trend.evidence?.velocityMetrics?.velocity || 
                              trend.evidence?.trendVelocity ||
-                             trend.evidence?.velocityMetrics?.velocity ||
-                             trend.evidence?.trendVelocity;
-    const submittedSize = trend.evidence?.velocityMetrics?.size || 
+                             trend.evidence?.trend_velocity;
+    const submittedSize = trend.trend_size ||
+                         trend.evidence?.velocityMetrics?.size || 
                          trend.evidence?.trendSize ||
-                         trend.evidence?.velocityMetrics?.size ||
-                         trend.evidence?.trendSize;
+                         trend.evidence?.trend_size;
     
     // If we have submitted velocity data, use it to show what the spotter indicated
     if (submittedVelocity) {
@@ -604,6 +610,23 @@ export default function Dashboard() {
           label = '🌱 Just Starting';
           color = 'text-green-500';
           break;
+        case 'accelerating':
+          label = '🚀 Accelerating';
+          color = 'text-blue-500';
+          break;
+        case 'peaking':
+          label = '⚡ Peaking';
+          color = 'text-orange-500';
+          break;
+        case 'declining':
+          label = '📉 Declining';
+          color = 'text-yellow-600';
+          break;
+        case 'dead':
+          label = '💀 Dead';
+          color = 'text-gray-600';
+          break;
+        // Support old values
         case 'picking_up':
           label = '📈 Picking Up';
           color = 'text-blue-500';
@@ -612,13 +635,13 @@ export default function Dashboard() {
           label = '🔥 Going Viral';
           color = 'text-orange-500';
           break;
+        case 'viral':
+          label = '🔥 Going Viral';
+          color = 'text-orange-500';
+          break;
         case 'saturated':
           label = '⚡ Saturated';
           color = 'text-purple-500';
-          break;
-        case 'declining':
-          label = '📉 Declining';
-          color = 'text-yellow-600';
           break;
         default:
           label = '🆕 New';
@@ -628,6 +651,22 @@ export default function Dashboard() {
       // Add size context to metric
       if (submittedSize) {
         switch (submittedSize) {
+          case 'under_10k':
+            metric = '<10K reach';
+            break;
+          case '10k_100k':
+            metric = '10K-100K reach';
+            break;
+          case '100k_1m':
+            metric = '100K-1M reach';
+            break;
+          case '1m_10m':
+            metric = '1M-10M reach';
+            break;
+          case 'over_10m':
+            metric = '10M+ reach';
+            break;
+          // Support old values
           case 'micro':
             metric = '<10K reach';
             break;
@@ -972,16 +1011,10 @@ export default function Dashboard() {
                   recentTrends.map((trend) => {
                     const categoryDetails = getCategoryDetails(trend.category);
                     
-                    // Debug log to see what category value is causing the issue
+                    // Skip trends with invalid data
                     if (!trend.category || trend.category === '0' || 
                         trend.description === '0' || categoryDetails.label === '0') {
-                      console.log('DEBUG - Problem trend:', {
-                        category: trend.category,
-                        categoryLabel: categoryDetails.label,
-                        description: trend.description,
-                        earnings_amount: trend.earnings_amount,
-                        allFields: Object.keys(trend)
-                      });
+                      return null; // Skip rendering this trend card
                     }
                     return (
                       <motion.div
@@ -1071,25 +1104,48 @@ export default function Dashboard() {
                               </p>
                             )}
                             
-                            {/* Trend Velocity & Size Data */}
-                            {(trend.trend_velocity || trend.trend_size) && (
+                            {/* Trend Velocity & Size Data - Enhanced Display */}
+                            {(trend.trend_velocity || trend.trend_size || trend.evidence?.velocityMetrics || trend.evidence?.trendVelocity) && (
                               <div className="flex items-center gap-3 mt-2">
-                                {trend.trend_velocity && (
+                                {(trend.trend_velocity || trend.evidence?.velocityMetrics?.velocity || trend.evidence?.trendVelocity) && (
                                   <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-green-500/10 to-blue-500/10 text-green-400 border border-green-500/20">
-                                    {trend.trend_velocity === 'just_starting' && '🌱 Just Starting'}
-                                    {trend.trend_velocity === 'picking_up' && '📈 Picking Up'}
-                                    {trend.trend_velocity === 'viral' && '🚀 Going Viral'}
-                                    {trend.trend_velocity === 'saturated' && '⚡ Saturated'}
-                                    {trend.trend_velocity === 'declining' && '📉 Declining'}
+                                    {(() => {
+                                      const velocity = trend.trend_velocity || trend.evidence?.velocityMetrics?.velocity || trend.evidence?.trendVelocity;
+                                      switch(velocity) {
+                                        case 'just_starting': return '🌱 Just Starting';
+                                        case 'accelerating': return '🚀 Accelerating';
+                                        case 'peaking': return '⚡ Peaking';
+                                        case 'declining': return '📉 Declining';
+                                        case 'dead': return '💀 Dead';
+                                        // Support old values too
+                                        case 'picking_up': return '📈 Picking Up';
+                                        case 'going_viral': return '🚀 Going Viral';
+                                        case 'viral': return '🚀 Going Viral';
+                                        case 'saturated': return '⚡ Saturated';
+                                        default: return velocity ? `📊 ${velocity}` : null;
+                                      }
+                                    })()}
                                   </span>
                                 )}
-                                {trend.trend_size && (
+                                {(trend.trend_size || trend.evidence?.velocityMetrics?.size || trend.evidence?.trendSize) && (
                                   <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-400 border border-purple-500/20">
-                                    {trend.trend_size === 'micro' && '🔬 Micro'}
-                                    {trend.trend_size === 'niche' && '🎯 Niche'}
-                                    {trend.trend_size === 'viral' && '🔥 Viral'}
-                                    {trend.trend_size === 'mega' && '💥 Mega'}
-                                    {trend.trend_size === 'global' && '🌍 Global'}
+                                    {(() => {
+                                      const size = trend.trend_size || trend.evidence?.velocityMetrics?.size || trend.evidence?.trendSize;
+                                      switch(size) {
+                                        case 'under_10k': return '🔬 <10K reach';
+                                        case '10k_100k': return '🎯 10K-100K reach';
+                                        case '100k_1m': return '🔥 100K-1M reach';
+                                        case '1m_10m': return '💥 1M-10M reach';
+                                        case 'over_10m': return '🌍 10M+ reach';
+                                        // Support old values too
+                                        case 'micro': return '🔬 Micro (<10K)';
+                                        case 'niche': return '🎯 Niche (10K-100K)';
+                                        case 'viral': return '🔥 Viral (100K-1M)';
+                                        case 'mega': return '💥 Mega (1M-10M)';
+                                        case 'global': return '🌍 Global (10M+)';
+                                        default: return size ? `📏 ${size}` : null;
+                                      }
+                                    })()}
                                   </span>
                                 )}
                               </div>
@@ -1127,6 +1183,12 @@ export default function Dashboard() {
                               )}
                               {trend.views_count && trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
+                              )}
+                              {trend.shares_count && trend.shares_count > 0 && (
+                                <span>🔄 {formatNumber(trend.shares_count)}</span>
+                              )}
+                              {trend.comments_count && trend.comments_count > 0 && (
+                                <span>💬 {formatNumber(trend.comments_count)}</span>
                               )}
                               {((trend.approve_count || 0) > 0 || (trend.reject_count || 0) > 0) && (
                                 <span className="flex items-center gap-1">
