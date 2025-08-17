@@ -257,7 +257,7 @@ export default function LegibleScrollPage() {
   };
 
   const handleTrendSubmit = async (formData: any) => {
-    if (!user) {
+    if (!user || !user.id) {
       setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
       return;
     }
@@ -331,7 +331,7 @@ export default function LegibleScrollPage() {
       // Keep the old code below as fallback (but it won't be reached)
       // Handle screenshot upload
       let screenshotUrl = formData.thumbnail_url;
-      if (formData.screenshot && formData.screenshot instanceof File) {
+      if (formData.screenshot && formData.screenshot instanceof File && user) {
         try {
           const fileExt = formData.screenshot.name.split('.').pop();
           const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
