@@ -638,9 +638,9 @@ export default function Earnings() {
                                         <span className="text-gray-300 capitalize">{transaction.metadata.tier} Tier</span>
                                       </div>
                                       <span className={`font-bold text-sm ${
-                                        transaction.metadata.tier_multiplier > 2 ? 'text-yellow-400' :
-                                        transaction.metadata.tier_multiplier > 1.5 ? 'text-purple-400' :
-                                        transaction.metadata.tier_multiplier > 1 ? 'text-blue-400' :
+                                        (transaction.metadata.tier_multiplier || 0) > 2 ? 'text-yellow-400' :
+                                        (transaction.metadata.tier_multiplier || 0) > 1.5 ? 'text-purple-400' :
+                                        (transaction.metadata.tier_multiplier || 0) > 1 ? 'text-blue-400' :
                                         'text-gray-400'
                                       }`}>
                                         ×{transaction.metadata.tier_multiplier || 1.0}
@@ -660,7 +660,7 @@ export default function Earnings() {
                                         <span className="text-gray-300">Session Streak #{transaction.metadata.session_position}</span>
                                       </div>
                                       <span className={`font-bold text-sm ${
-                                        transaction.metadata.session_multiplier > 1 ? 'text-yellow-400' : 'text-gray-400'
+                                        (transaction.metadata.session_multiplier || 0) > 1 ? 'text-yellow-400' : 'text-gray-400'
                                       }`}>
                                         ×{transaction.metadata.session_multiplier || 1.0}
                                       </span>
@@ -678,7 +678,7 @@ export default function Earnings() {
                                         <span className="text-gray-300">Day Streak</span>
                                       </div>
                                       <span className={`font-bold text-sm ${
-                                        transaction.metadata.daily_multiplier > 1 ? 'text-orange-400' : 'text-gray-400'
+                                        (transaction.metadata.daily_multiplier || 0) > 1 ? 'text-orange-400' : 'text-gray-400'
                                       }`}>
                                         ×{transaction.metadata.daily_multiplier || 1.0}
                                       </span>

@@ -1090,11 +1090,11 @@ export default function Dashboard() {
                                   Your trend
                                 </span>
                               )}
-                              {trend.earnings_amount > 0 && (
+                              {trend.earnings_amount && trend.earnings_amount > 0 ? (
                                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">
                                   +{formatCurrency(trend.earnings_amount)}
                                 </span>
-                              )}
+                              ) : null}
                             </div>
                             
                             <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -1181,18 +1181,18 @@ export default function Dashboard() {
                             
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                               <span>{formatTimeAgo(trend.created_at)}</span>
-                              {trend.likes_count > 0 && (
+                              {trend.likes_count && trend.likes_count > 0 ? (
                                 <span>❤️ {formatNumber(trend.likes_count)}</span>
-                              )}
-                              {trend.views_count > 0 && (
+                              ) : null}
+                              {trend.views_count && trend.views_count > 0 ? (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
-                              )}
-                              {trend.shares_count > 0 && (
+                              ) : null}
+                              {trend.shares_count && trend.shares_count > 0 ? (
                                 <span>🔄 {formatNumber(trend.shares_count)}</span>
-                              )}
-                              {trend.comments_count > 0 && (
+                              ) : null}
+                              {trend.comments_count && trend.comments_count > 0 ? (
                                 <span>💬 {formatNumber(trend.comments_count)}</span>
-                              )}
+                              ) : null}
                               {((trend.approve_count || 0) > 0 || (trend.reject_count || 0) > 0) && (
                                 <span className="flex items-center gap-1">
                                   {(trend.approve_count || 0) > 0 && (
