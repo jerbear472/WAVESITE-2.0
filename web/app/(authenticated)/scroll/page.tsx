@@ -641,7 +641,7 @@ export default function LegibleScrollPage() {
           // Calculate if this continues a daily streak
           let newDailyStreak = 1; // Default to 1 for first submission
           if (lastSubmission !== null) {
-            const hoursSinceLast = (now.getTime() - lastSubmission.getTime()) / (1000 * 60 * 60);
+            const hoursSinceLast = (now.getTime() - lastSubmission!.getTime()) / (1000 * 60 * 60);
             if (hoursSinceLast < 24) {
               // Within 24 hours - continue or maintain streak
               newDailyStreak = (profileData?.current_streak || 0) + 1;
