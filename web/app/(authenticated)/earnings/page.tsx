@@ -138,11 +138,43 @@ export default function Earnings() {
       }
       
       // Fetch ALL earnings transactions - simplified query without join
-      const { data: transactionsData, error: transError } = await supabase
+      let { data: transactionsData, error: transError } = await supabase
         .from('earnings_ledger')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+      
+      // If table doesn't exist, try to get data from trend_submissions as fallback
+      if (transError && transError.message?.includes('relation "public.earnings_ledger" does not exist')) {
+        console.log('⚠️ [EARNINGS PAGE] earnings_ledger table not found, falling back to trend_submissions');
+        
+        const { data: trendsData, error: trendsError } = await supabase
+          .from('trend_submissions')
+          .select('*')
+          .eq('spotter_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (!trendsError && trendsData) {
+          // Convert trend submissions to earnings format
+          transactionsData = trendsData.map(trend => ({
+            id: trend.id,
+            user_id: trend.spotter_id,
+            trend_id: trend.id,
+            amount: trend.payment_amount || 0.25,
+            type: 'trend_submission',
+            status: trend.status === 'approved' ? 'approved' : 
+                    trend.status === 'rejected' ? 'rejected' : 'pending',
+            description: `Trend: ${trend.description || 'Untitled'}`,
+            created_at: trend.created_at,
+            metadata: {
+              category: trend.category,
+              quality_score: trend.quality_score
+            }
+          }));
+          transError = null;
+          console.log('✅ [EARNINGS PAGE] Converted', trendsData.length, 'trends to earnings format');
+        }
+      }
 
       if (transError) {
         console.error('❌ [EARNINGS PAGE] Error fetching transactions:', transError);
