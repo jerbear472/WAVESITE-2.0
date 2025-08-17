@@ -36,6 +36,7 @@ import WaveLogo from '@/components/WaveLogo';
 // formatCurrency now comes from SUSTAINABLE_EARNINGS
 import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
+import { submitTrend } from '@/lib/submitTrend';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EarningsAnimation, useEarningsAnimation } from '@/components/EarningsAnimation';
 import { 
@@ -265,6 +266,70 @@ export default function LegibleScrollPage() {
     setRetryStatus(''); // Clear any previous retry status
     
     try {
+      // Use the new submitTrend function
+      const result = await submitTrend(user.id, {
+        url: formData.url,
+        title: formData.trendName || formData.title,
+        description: formData.explanation || formData.trendName,
+        category: formData.categories?.[0] || formData.category,
+        platform: formData.platform,
+        trendVelocity: formData.trendVelocity,
+        trendSize: formData.trendSize,
+        sentiment: formData.sentiment || formData.wave_score,
+        audienceAge: formData.audienceAge,
+        categoryAnswers: formData.categoryAnswers,
+        velocityMetrics: formData.velocityMetrics,
+        aiAngle: formData.aiAngle,
+        screenshot_url: formData.screenshot_url,
+        thumbnail_url: formData.thumbnail_url,
+        creator_handle: formData.creator_handle,
+        views_count: formData.views_count,
+        likes_count: formData.likes_count,
+        comments_count: formData.comments_count,
+        hashtags: formData.hashtags,
+        wave_score: formData.wave_score || formData.sentiment
+      });
+      
+      if (result.success) {
+        // Success!
+        setShowSubmissionForm(false);
+        setTrendUrl('');
+        
+        // Show earnings animation
+        const earningsAmount = result.earnings || 0.25;
+        showEarnings(
+          earningsAmount,
+          'submission',
+          'Trend submitted!',
+          [`Base: $0.25`]
+        );
+        
+        // Refresh stats
+        await loadTodaysStats();
+        await refreshUser();
+        
+        // Log to session
+        if (session.isActive && scrollSessionRef.current) {
+          scrollSessionRef.current.addTrend({
+            id: result.submission?.id,
+            title: formData.trendName || 'Untitled',
+            earnings: earningsAmount
+          });
+        }
+        
+        setSubmitMessage({ 
+          type: 'success', 
+          text: `Trend submitted! You earned $${earningsAmount.toFixed(2)}` 
+        });
+      } else {
+        throw new Error(result.error || 'Submission failed');
+      }
+      
+      setIsSubmitting(false);
+      setRetryStatus(null);
+      return;
+      
+      // Keep the old code below as fallback (but it won't be reached)
       // Handle screenshot upload
       let screenshotUrl = formData.thumbnail_url;
       if (formData.screenshot && formData.screenshot instanceof File) {

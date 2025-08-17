@@ -515,37 +515,6 @@ export default function Earnings() {
           </motion.div>
         </div>
 
-        {/* Debug Info - Remove in production */}
-        {(
-          <div className="bg-yellow-900/20 border border-yellow-700 rounded-xl p-4 mb-4">
-            <h3 className="text-yellow-400 font-bold mb-2">Debug Info</h3>
-            <div className="text-xs text-gray-400 space-y-1">
-              <div>User ID: {user?.id || 'No user'}</div>
-              <div>Total transactions in state: {transactions.length}</div>
-              {transactions.length > 0 ? (
-                <>
-                  <div>First transaction ID: {transactions[0]?.id}</div>
-                  <div>First transaction amount: ${transactions[0]?.amount}</div>
-                  <div>First transaction status: {transactions[0]?.status}</div>
-                </>
-              ) : (
-                <div className="text-red-400">No transactions loaded</div>
-              )}
-              <div>Pending earnings: ${displayPending.toFixed(2)}</div>
-              <div>Total earnings: ${totalEarnings.toFixed(2)}</div>
-            </div>
-            <button
-              onClick={() => {
-                console.log('Manual refresh triggered');
-                fetchEarningsData();
-              }}
-              className="mt-2 px-3 py-1 bg-yellow-600 hover:bg-yellow-500 text-white rounded text-xs"
-            >
-              Manual Refresh
-            </button>
-          </div>
-        )}
-
         {/* Transaction History */}
         <div className="bg-gray-800 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
@@ -638,43 +607,108 @@ export default function Earnings() {
                         )}
                         {/* Show multiplier breakdown for trend submissions */}
                         {transaction.earning_type === 'submission' && transaction.metadata && (
-                          <div className="mt-2 p-2 bg-gray-800/50 rounded-lg">
-                            <div className="text-xs space-y-1">
-                              {/* Base amount */}
-                              <div className="flex items-center justify-between text-gray-400">
-                                <span>Base Amount:</span>
-                                <span className="text-white font-medium">${transaction.metadata.base_amount || 0.25}</span>
+                          <div className="mt-2 p-3 bg-gradient-to-r from-gray-800/70 to-gray-900/70 rounded-lg border border-gray-700/50">
+                            <div className="text-xs space-y-2">
+                              {/* Earnings calculation header */}
+                              <div className="text-gray-300 font-semibold mb-2 flex items-center gap-2">
+                                <span className="text-lg">💰</span>
+                                <span>Earnings Breakdown</span>
                               </div>
                               
-                              {/* Tier multiplier */}
-                              {transaction.metadata.tier && (
-                                <div className="flex items-center justify-between text-gray-400">
-                                  <span>Tier ({transaction.metadata.tier}):</span>
-                                  <span className="text-blue-400 font-medium">×{transaction.metadata.tier_multiplier || 1.0}</span>
+                              {/* Base amount */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-400">Base Amount</span>
+                                <span className="text-white font-bold text-sm">${transaction.metadata.base_amount || 0.25}</span>
+                              </div>
+                              
+                              {/* Multipliers section with visual indicators - Always show for transparency */}
+                              {(
+                                <div className="space-y-2 pt-1">
+                                  {/* Tier multiplier */}
+                                  {transaction.metadata.tier && (
+                                    <div className="flex items-center justify-between group">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${
+                                          transaction.metadata.tier === 'master' ? 'bg-yellow-400' :
+                                          transaction.metadata.tier === 'elite' ? 'bg-purple-400' :
+                                          transaction.metadata.tier === 'verified' ? 'bg-blue-400' :
+                                          transaction.metadata.tier === 'learning' ? 'bg-green-400' :
+                                          'bg-gray-400'
+                                        }`} />
+                                        <span className="text-gray-300 capitalize">{transaction.metadata.tier} Tier</span>
+                                      </div>
+                                      <span className={`font-bold text-sm ${
+                                        transaction.metadata.tier_multiplier > 2 ? 'text-yellow-400' :
+                                        transaction.metadata.tier_multiplier > 1.5 ? 'text-purple-400' :
+                                        transaction.metadata.tier_multiplier > 1 ? 'text-blue-400' :
+                                        'text-gray-400'
+                                      }`}>
+                                        ×{transaction.metadata.tier_multiplier || 1.0}
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Session streak multiplier - Always show */}
+                                  {transaction.metadata.session_position && (
+                                    <div className="flex items-center justify-between group">
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex -space-x-1">
+                                          {[...Array(Math.min(transaction.metadata.session_position, 5))].map((_, i) => (
+                                            <div key={i} className="w-2 h-2 rounded-full bg-yellow-400" />
+                                          ))}
+                                        </div>
+                                        <span className="text-gray-300">Session Streak #{transaction.metadata.session_position}</span>
+                                      </div>
+                                      <span className={`font-bold text-sm ${
+                                        transaction.metadata.session_multiplier > 1 ? 'text-yellow-400' : 'text-gray-400'
+                                      }`}>
+                                        ×{transaction.metadata.session_multiplier || 1.0}
+                                      </span>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Daily streak multiplier - Show if present */}
+                                  {transaction.metadata.daily_streak !== undefined && (
+                                    <div className="flex items-center justify-between group">
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex items-center">
+                                          <span className="text-orange-400 text-sm font-bold">{transaction.metadata.daily_streak}</span>
+                                          <span className="text-orange-400 text-xs ml-1">🔥</span>
+                                        </div>
+                                        <span className="text-gray-300">Day Streak</span>
+                                      </div>
+                                      <span className={`font-bold text-sm ${
+                                        transaction.metadata.daily_multiplier > 1 ? 'text-orange-400' : 'text-gray-400'
+                                      }`}>
+                                        ×{transaction.metadata.daily_multiplier || 1.0}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               
-                              {/* Session streak multiplier */}
-                              {transaction.metadata.session_position && transaction.metadata.session_position > 1 && (
-                                <div className="flex items-center justify-between text-gray-400">
-                                  <span>Session Streak (#{transaction.metadata.session_position}):</span>
-                                  <span className="text-yellow-400 font-medium">×{transaction.metadata.session_multiplier || 1.0}</span>
-                                </div>
-                              )}
-                              
-                              {/* Daily streak multiplier */}
-                              {transaction.metadata.daily_streak && transaction.metadata.daily_streak > 0 && (
-                                <div className="flex items-center justify-between text-gray-400">
-                                  <span>Daily Streak ({transaction.metadata.daily_streak} days):</span>
-                                  <span className="text-orange-400 font-medium">×{transaction.metadata.daily_multiplier || 1.0}</span>
-                                </div>
-                              )}
-                              
-                              {/* Total calculation */}
-                              <div className="pt-1 mt-1 border-t border-gray-700">
+                              {/* Total calculation with animation */}
+                              <div className="pt-2 mt-2 border-t border-gray-600">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-gray-300 font-medium">Total Earnings:</span>
-                                  <span className="text-green-400 font-bold">{formatCurrency(transaction.amount)}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-gray-300 font-medium">Total Earned</span>
+                                    {(() => {
+                                      const totalMultiplier = (transaction.metadata.tier_multiplier || 1) * 
+                                                             (transaction.metadata.session_multiplier || 1) * 
+                                                             (transaction.metadata.daily_multiplier || 1);
+                                      if (totalMultiplier > 1) {
+                                        return (
+                                          <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full font-medium">
+                                            {totalMultiplier.toFixed(1)}x boost
+                                          </span>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
+                                  </div>
+                                  <span className="text-green-400 font-bold text-base">
+                                    {formatCurrency(transaction.amount)}
+                                  </span>
                                 </div>
                               </div>
                             </div>

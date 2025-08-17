@@ -1090,7 +1090,7 @@ export default function Dashboard() {
                                   Your trend
                                 </span>
                               )}
-                              {trend.earnings_amount && trend.earnings_amount > 0 && (
+                              {trend.earnings_amount > 0 && (
                                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">
                                   +{formatCurrency(trend.earnings_amount)}
                                 </span>
@@ -1181,16 +1181,16 @@ export default function Dashboard() {
                             
                             <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                               <span>{formatTimeAgo(trend.created_at)}</span>
-                              {trend.likes_count && trend.likes_count > 0 && (
+                              {trend.likes_count > 0 && (
                                 <span>❤️ {formatNumber(trend.likes_count)}</span>
                               )}
-                              {trend.views_count && trend.views_count > 0 && (
+                              {trend.views_count > 0 && (
                                 <span>👁 {formatNumber(trend.views_count)}</span>
                               )}
-                              {trend.shares_count && trend.shares_count > 0 && (
+                              {trend.shares_count > 0 && (
                                 <span>🔄 {formatNumber(trend.shares_count)}</span>
                               )}
-                              {trend.comments_count && trend.comments_count > 0 && (
+                              {trend.comments_count > 0 && (
                                 <span>💬 {formatNumber(trend.comments_count)}</span>
                               )}
                               {((trend.approve_count || 0) > 0 || (trend.reject_count || 0) > 0) && (
