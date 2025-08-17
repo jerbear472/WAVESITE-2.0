@@ -362,25 +362,29 @@ export default function LegibleScrollPage() {
         spotter_id: user.id,
         category: getSafeCategory(formData.categories?.[0] || 'other'),
         description: formData.trendName || formData.explanation || 'Untitled Trend',
+        title: formData.title || formData.trendName || 'Untitled Trend', // Add title column
         status: getSafeStatus('submitted'),
+        // Add new intelligence columns directly
+        trend_velocity: formData.trendVelocity || 'just_starting',
+        trend_size: formData.trendSize || 'niche',
+        ai_angle: formData.aiAngle || 'not_ai',
+        sentiment: formData.sentiment || 50,
+        audience_age: formData.audienceAge || [],
+        category_answers: formData.categoryAnswers || {},
+        velocity_metrics: formData.velocityMetrics || {
+          velocity: formData.trendVelocity,
+          size: formData.trendSize,
+          timing: 'today',
+          capturedAt: new Date().toISOString()
+        },
+        // Keep evidence for backwards compatibility
         evidence: {
           ...formData,
           session_duration: session.duration,
           streak_count: session.isActive ? session.currentStreak + 1 : 0,
           streak_multiplier: session.isActive ? session.streakMultiplier : 1,
-          // Profile data can be added later when available
           user_profile: {},
-          payment_amount: finalPayment, // Store payment in evidence instead
-          // Store velocity data in evidence instead of follow_up_data
-          velocityMetrics: formData.velocityMetrics || {
-            velocity: formData.trendVelocity,
-            size: formData.trendSize,
-            timing: formData.firstSeen
-          },
-          trendVelocity: formData.trendVelocity,
-          trendSize: formData.trendSize,
-          firstSeenTiming: formData.firstSeenTiming || formData.firstSeen,
-          categoryAnswers: formData.categoryAnswers
+          payment_amount: finalPayment
         },
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
         quality_score: calculateQualityScore(formData), // Calculate actual quality score
@@ -404,6 +408,10 @@ export default function LegibleScrollPage() {
       if (screenshotUrl) submissionData.screenshot_url = screenshotUrl;
       if (formData.url) submissionData.post_url = formData.url; // Map URL to post_url
       if (formData.wave_score !== undefined) submissionData.wave_score = formData.wave_score;
+      // Set is_ai_generated based on ai_angle
+      if (formData.aiAngle && formData.aiAngle !== 'not_ai') {
+        submissionData.is_ai_generated = true;
+      }
       
       console.log('Submitting to Supabase:', submissionData);
       
