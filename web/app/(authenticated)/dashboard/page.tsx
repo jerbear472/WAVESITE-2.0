@@ -60,6 +60,21 @@ interface RecentTrend {
   hashtags?: string[];
   url?: string;  // Main trend URL
   post_url?: string;  // Alternative URL field
+  // New fields from SmartTrendSubmission
+  title?: string;
+  trend_headline?: string;
+  trendName?: string;
+  why_trending?: string;
+  explanation?: string;
+  trend_velocity?: string;
+  trend_size?: string;
+  first_seen_timing?: string;
+  platform?: string;
+  sentiment?: number;
+  is_ai_generated?: boolean;
+  brand_safe?: boolean;
+  audience_age?: string[];
+  category_answers?: any;
   // follow_up_data is now stored in evidence
   evidence?: {
     velocityMetrics?: {
@@ -1056,17 +1071,43 @@ export default function Dashboard() {
                               </p>
                             )}
                             
+                            {/* Trend Velocity & Size Data */}
+                            {(trend.trend_velocity || trend.trend_size) && (
+                              <div className="flex items-center gap-3 mt-2">
+                                {trend.trend_velocity && (
+                                  <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-green-500/10 to-blue-500/10 text-green-400 border border-green-500/20">
+                                    {trend.trend_velocity === 'just_starting' && '🌱 Just Starting'}
+                                    {trend.trend_velocity === 'picking_up' && '📈 Picking Up'}
+                                    {trend.trend_velocity === 'viral' && '🚀 Going Viral'}
+                                    {trend.trend_velocity === 'saturated' && '⚡ Saturated'}
+                                    {trend.trend_velocity === 'declining' && '📉 Declining'}
+                                  </span>
+                                )}
+                                {trend.trend_size && (
+                                  <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-400 border border-purple-500/20">
+                                    {trend.trend_size === 'micro' && '🔬 Micro'}
+                                    {trend.trend_size === 'niche' && '🎯 Niche'}
+                                    {trend.trend_size === 'viral' && '🔥 Viral'}
+                                    {trend.trend_size === 'mega' && '💥 Mega'}
+                                    {trend.trend_size === 'global' && '🌍 Global'}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            
                             {/* Platform indicator */}
-                            {(trend.url || trend.post_url || trend.evidence?.url) && (
+                            {(trend.url || trend.post_url || trend.evidence?.url || trend.platform) && (
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-blue-600 dark:text-blue-400">
                                   {(() => {
                                     const url = trend.url || trend.post_url || trend.evidence?.url || '';
-                                    if (url.includes('tiktok')) return '🎵 TikTok';
-                                    if (url.includes('instagram')) return '📸 Instagram';
-                                    if (url.includes('twitter') || url.includes('x.com')) return '𝕏 Twitter';
-                                    if (url.includes('youtube')) return '📺 YouTube';
-                                    if (url.includes('reddit')) return '🔥 Reddit';
+                                    const platform = trend.platform?.toLowerCase() || '';
+                                    if (url.includes('tiktok') || platform === 'tiktok') return '🎵 TikTok';
+                                    if (url.includes('instagram') || platform === 'instagram') return '📸 Instagram';
+                                    if (url.includes('twitter') || url.includes('x.com') || platform === 'twitter') return '𝕏 Twitter';
+                                    if (url.includes('youtube') || platform === 'youtube') return '📺 YouTube';
+                                    if (url.includes('reddit') || platform === 'reddit') return '🔥 Reddit';
+                                    if (platform) return `📱 ${platform}`;
                                     return '🔗 View Source';
                                   })()}
                                 </span>
