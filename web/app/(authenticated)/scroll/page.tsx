@@ -636,7 +636,7 @@ export default function LegibleScrollPage() {
           // Update user_profiles table (profiles is a VIEW, can't update it)
           // CRITICAL: Also update streaks!
           const now = new Date();
-          const lastSubmission = profileData?.last_submission_at ? new Date(profileData.last_submission_at) : null;
+          const lastSubmission = profileData?.last_submission_at ? new Date(profileData?.last_submission_at) : null;
           
           // Calculate if this continues a daily streak
           let newDailyStreak = 1; // Default to 1 for first submission
