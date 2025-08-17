@@ -439,9 +439,9 @@ export default function Dashboard() {
       // Filter out invalid trends and limit to top 10 most recent
       const validTrends = combinedTrends.filter(trend => {
         // Filter out trends with invalid data
-        if (!trend.category || trend.category === '0' || trend.category === 0) return false;
-        if (trend.description === '0' || trend.description === 0) return false;
-        if (trend.title === '0' || trend.title === 0) return false;
+        if (!trend.category || trend.category === '0' || String(trend.category) === '0') return false;
+        if (trend.description === '0' || String(trend.description) === '0') return false;
+        if (trend.title === '0' || String(trend.title) === '0') return false;
         return true;
       });
       
@@ -589,7 +589,7 @@ export default function Dashboard() {
       return details;
     }
     // Fallback with cleaned category name - never show '0'
-    const cleanLabel = category && category !== '0' && category !== 0
+    const cleanLabel = category && category !== '0' && String(category) !== '0'
       ? category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) 
       : '';
     return { emoji: '📊', color: 'from-gray-500 to-gray-600', label: cleanLabel };
