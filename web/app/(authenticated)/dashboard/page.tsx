@@ -845,13 +845,24 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {getDynamicGreeting({
-                isFirstTime: stats.trends_spotted === 0,
-                userName: user?.email?.split('@')[0] || 'User',
-                timeOfDay: getTimeOfDay(),
-                currentStreak: stats.current_streak,
-                performance_tier: user?.performance_tier || 'learning'
-              })}
+              {(() => {
+                const greeting = getDynamicGreeting({
+                  isFirstTime: stats.trends_spotted === 0,
+                  userName: user?.email?.split('@')[0] || 'User',
+                  timeOfDay: getTimeOfDay(),
+                  currentStreak: stats.current_streak,
+                  performance_tier: user?.performance_tier || 'learning'
+                });
+                // Parse greeting to style username
+                const parts = greeting.split(/\[\[|\]\]/);
+                return parts.map((part, index) => {
+                  // Every odd index is a username (between [[ and ]])
+                  if (index % 2 === 1) {
+                    return <span key={index} className="text-blue-600 dark:text-blue-400">{part}</span>;
+                  }
+                  return <span key={index}>{part}</span>;
+                });
+              })()}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Last updated: {formatTimeAgo(lastRefresh.toISOString())}
@@ -884,7 +895,7 @@ export default function Dashboard() {
           <StreakDisplay />
         </div>
 
-        {/* Enhanced Stats Grid */}
+        {/* Enhanced Stats Grid with Notifications */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1003,9 +1014,30 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Notifications Window - Below metrics tiles */}
-        <div className="mb-8">
-          <NotificationsWindow />
+        {/* Second Row - Notifications and Additional Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <NotificationsWindow />
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-6 shadow-sm text-white"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 backdrop-blur rounded-xl">
+                <Award className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <p className="text-white/80 text-sm">Performance Tier</p>
+            <p className="text-2xl font-bold text-white mt-1 capitalize">
+              {user?.performance_tier || 'Learning'}
+            </p>
+            <p className="text-sm text-white/70 mt-2">
+              Next tier in {10 - stats.trends_spotted} trends
+            </p>
+          </motion.div>
         </div>
 
         {/* Main Content Grid */}

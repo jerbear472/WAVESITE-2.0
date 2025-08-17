@@ -129,14 +129,15 @@ export function getDynamicGreeting(config: GreetingConfig = {}): string {
     }
   }
   
-  // Add user name
+  // Add user name with special marker for styling
   if (userName) {
     if (parts.length === 0) {
       // If no other parts, use a WaveSight greeting
       const waveGreeting = WAVESIGHT_GREETINGS[Math.floor(Math.random() * WAVESIGHT_GREETINGS.length)];
       parts.push(waveGreeting);
     }
-    parts.splice(1, 0, userName); // Insert name after first part
+    // Add special marker for the username so it can be styled
+    parts.splice(1, 0, `[[${userName}]]`); // Insert name after first part with markers
   }
   
   // Join parts
