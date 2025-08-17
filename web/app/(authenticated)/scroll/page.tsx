@@ -656,8 +656,8 @@ export default function LegibleScrollPage() {
           
           // Calculate session streak
           let newSessionStreak = 1;
-          if (lastSubmission) {
-            const minutesSinceLast = (now.getTime() - lastSubmission.getTime()) / (1000 * 60);
+          if (lastSubmission !== null) {
+            const minutesSinceLast = (now.getTime() - lastSubmission!.getTime()) / (1000 * 60);
             if (minutesSinceLast <= 5) {
               // Within 5 minutes - continue session
               newSessionStreak = Math.min((profileData?.session_streak || 0) + 1, 5);
