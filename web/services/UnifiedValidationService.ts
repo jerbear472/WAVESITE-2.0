@@ -121,7 +121,7 @@ export class UnifiedValidationService {
     const { data, error } = await this.supabase
       .from('trend_validations')
       .select('id')
-      .eq('user_id', userId)
+      .eq('validator_id', userId)
       .eq('trend_id', trendId)
       .limit(1);
 
@@ -222,7 +222,7 @@ export class UnifiedValidationService {
       const { data: userVotes } = await this.supabase
         .from('trend_validations')
         .select('trend_id')
-        .eq('user_id', userId);
+        .eq('validator_id', userId);
 
       const votedTrendIds = userVotes?.map(v => v.trend_id) || [];
 
@@ -278,7 +278,7 @@ export class UnifiedValidationService {
           thumbnail_url
         )
       `)
-      .eq('user_id', userId)
+      .eq('validator_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -307,7 +307,7 @@ export class UnifiedValidationService {
         vote,
         captured_trends(validation_status)
       `)
-      .eq('user_id', userId);
+      .eq('validator_id', userId);
 
     if (error || !validations) {
       return {

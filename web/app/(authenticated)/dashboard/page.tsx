@@ -890,10 +890,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Streak Display */}
-        <div className="mb-6">
-          <StreakDisplay />
-        </div>
 
         {/* Enhanced Stats Grid with Notifications */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -934,7 +930,7 @@ export default function Dashboard() {
                 )}
                 {stats.pending_earnings > 0 && (
                   <p className="text-xs text-yellow-600">
-                    {formatCurrency(stats.pending_earnings)} pending
+                    {formatCurrency(stats.pending_earnings)} pending approval
                   </p>
                 )}
               </div>
@@ -1014,62 +1010,8 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Second Row - Notifications and Performance Tier */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <NotificationsWindow />
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm text-white h-fit"
-          >
-            <div className="p-4 border-b border-white/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
-                    <Award className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white">Performance Tier</h3>
-                    <p className="text-xs text-white/80">Your current level</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-3xl font-bold text-white capitalize">
-                  {user?.performance_tier || 'Learning'}
-                </p>
-                <span className="text-2xl">📚</span>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/80">Progress to Verified</span>
-                  <span className="text-white font-medium">{stats.trends_spotted}/10</span>
-                </div>
-                <div className="bg-white/20 rounded-full h-2">
-                  <div 
-                    className="bg-white h-2 rounded-full transition-all"
-                    style={{ width: `${Math.min((stats.trends_spotted / 10) * 100, 100)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-white/70 mt-2">
-                  Submit {Math.max(10 - stats.trends_spotted, 0)} more quality trends to level up
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
 
-        {/* Main Content Grid */}
+        {/* Main Content Grid with Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Trends - Enhanced */}
           <div className="lg:col-span-2">
@@ -1381,23 +1323,58 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar with Streak, Notifications, and Tier */}
           <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-              <div className="space-y-3">
-                <Link href="/scroll" className="block w-full btn-primary text-center">
-                  Start Scrolling
-                </Link>
-                <Link href="/validate" className="block w-full btn-secondary text-center">
-                  Validate Trends
-                </Link>
-                <Link href="/profile" className="block w-full btn-ghost text-center">
-                  View Profile
-                </Link>
+            {/* Streak Display */}
+            <StreakDisplay />
+            
+            {/* Notifications */}
+            <NotificationsWindow />
+            
+            {/* Performance Tier */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm text-white"
+            >
+              <div className="p-4 border-b border-white/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
+                      <Award className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Performance Tier</h3>
+                      <p className="text-xs text-white/80">Your current level</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-3xl font-bold text-white capitalize">
+                    {user?.performance_tier || 'Learning'}
+                  </p>
+                  <span className="text-2xl">📚</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/80">Progress to Verified</span>
+                    <span className="text-white font-medium">{stats.trends_spotted}/10</span>
+                  </div>
+                  <div className="bg-white/20 rounded-full h-2">
+                    <div 
+                      className="bg-white h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min((stats.trends_spotted / 10) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-white/70 mt-2">
+                    Submit {Math.max(10 - stats.trends_spotted, 0)} more quality trends to level up
+                  </p>
+                </div>
+              </div>
+            </motion.div>
 
             {/* Activity Feed - Enhanced */}
             <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm">

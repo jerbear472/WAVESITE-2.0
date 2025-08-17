@@ -189,7 +189,7 @@ export class UnifiedTrendSubmissionService {
       .from('captured_trends')
       .select('id')
       .eq('url', url)
-      .eq('user_id', userId)
+      .eq('validator_id', userId)
       .limit(1);
 
     return !error && data && data.length > 0;
@@ -349,7 +349,7 @@ export class UnifiedTrendSubmissionService {
           created_at
         )
       `)
-      .eq('user_id', userId)
+      .eq('validator_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -386,7 +386,7 @@ export class UnifiedTrendSubmissionService {
     const { data: validations } = await this.supabase
       .from('trend_validations')
       .select('trend_id')
-      .eq('user_id', userId)
+      .eq('validator_id', userId)
       .in('trend_id', trendIds);
 
     const validatedIds = new Set(validations?.map(v => v.trend_id) || []);
