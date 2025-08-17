@@ -7,10 +7,10 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     // Direct mappings from SmartTrendSubmission component IDs
     'meme': 'meme_format',
     'fashion': 'fashion',
-    'food': 'behavior_pattern',  // Changed from 'food_drink' to 'behavior_pattern' as temp fix
+    'food': 'food_drink',
     'music': 'audio_music',
-    'lifestyle': 'behavior_pattern',
-    'tech': 'gaming',  // Changed from 'technology' to 'gaming' which is valid
+    'lifestyle': 'lifestyle',
+    'tech': 'gaming',
     'finance': 'finance',
     'sports': 'sports',
     'political': 'political',
@@ -19,15 +19,15 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'travel': 'travel',
     'education': 'education',
     'health': 'health',
-    'product': 'product_brand',  // Added for new product category
+    'product': 'product_brand',
     
-    // Label mappings (what user sees)
+    // Label mappings (what user sees in the UI)
     'Meme/Humor': 'meme_format',
     'Fashion/Beauty': 'fashion',
-    'Food/Drink': 'behavior_pattern',  // Changed from 'food_drink' to 'behavior_pattern' as temp fix
+    'Food/Drink': 'food_drink',
     'Music/Dance': 'audio_music',
-    'Lifestyle': 'behavior_pattern',
-    'Tech/Gaming': 'gaming',  // Changed from 'technology' to 'gaming'
+    'Lifestyle': 'lifestyle',
+    'Tech/Gaming': 'gaming',
     'Finance/Crypto': 'finance',
     'Sports/Fitness': 'sports',
     'Political/Social': 'political',
@@ -36,20 +36,20 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Travel & Places': 'travel',
     'Education & Learning': 'education',
     'Health & Wellness': 'health',
-    'Product/Shopping': 'product_brand',  // Added for new product category
+    'Product/Shopping': 'product_brand',
     
     // Legacy mappings (for backward compatibility)
     'Fashion & Beauty': 'fashion',
-    'Food & Drink': 'behavior_pattern',  // Changed from 'food_drink' to 'behavior_pattern' as temp fix
+    'Food & Drink': 'food_drink',
     'Humor & Memes': 'meme_format',
     'Politics & Social Issues': 'political',
     'Music & Dance': 'audio_music',
     'Sports & Fitness': 'sports',
-    'Tech & Gaming': 'gaming',  // Changed from 'technology' to 'gaming'
+    'Tech & Gaming': 'gaming',
     'Art & Creativity': 'visual_style',
     'Education & Science': 'education',
     
-    // Lowercase versions
+    // Lowercase versions (for flexible input handling)
     'cars & machines': 'automotive',
     'animals & pets': 'animals_pets',
     'travel & places': 'travel',
@@ -66,14 +66,13 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     return mapped;
   }
   
-  // Check if it's already a valid enum (updated list from database)
-  // NOTE: 'food_drink' is NOT a valid enum - removed from list
+  // Check if it's already a valid enum (complete list after adding missing ones)
   const validEnums = [
     'visual_style', 'audio_music', 'creator_technique', 'meme_format', 
     'product_brand', 'behavior_pattern', 'political', 'finance', 
-    'news_events', 'education', 'relationship', 'animals_pets', 
-    'automotive', 'sports', 'dance', 
-    'travel', 'fashion', 'gaming', 'health', 'diy_crafts'
+    'fashion', 'meme', 'gaming', 'lifestyle', 'health', 'music', 
+    'brand', 'social_cause', 'food_drink', 'sports', 'automotive',
+    'animals_pets', 'travel', 'education'
   ];
   if (displayCategory && validEnums.includes(displayCategory)) {
     console.log('[getSafeCategory] Already valid:', displayCategory);

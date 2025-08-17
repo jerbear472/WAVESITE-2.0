@@ -1047,7 +1047,7 @@ export default function Dashboard() {
                             </div>
                             
                             <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              {trend.evidence?.title || (trend.description && trend.description.split('\n')[0]) || 'Untitled Trend'}
+                              {trend.title || trend.trend_headline || trend.evidence?.title || trend.trendName || trend.why_trending || (trend.description && trend.description !== '0' && trend.description.split('\n')[0]) || 'Untitled Trend'}
                             </h3>
                             
                             {trend.creator_handle && (

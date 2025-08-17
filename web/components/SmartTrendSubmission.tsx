@@ -385,7 +385,6 @@ export default function SmartTrendSubmission({
     // User inputs
     category: '',
     categoryAnswers: {} as Record<string, string>,
-    whyTrending: '',
     audienceAge: [] as string[],
     predictedPeak: '',
     brandSafe: null as boolean | null,
@@ -578,10 +577,6 @@ export default function SmartTrendSubmission({
             return false;
           }
         }
-        if (!formData.whyTrending || formData.whyTrending.length < 10) {
-          setError('Please explain why this is trending (at least 10 characters)');
-          return false;
-        }
         if (formData.audienceAge.length === 0) {
           setError('Please select at least one age group');
           return false;
@@ -697,7 +692,7 @@ export default function SmartTrendSubmission({
         screenshot_url: thumbnailUrl,
         thumbnail_url: thumbnailUrl,
         trendName: formData.title,
-        explanation: formData.whyTrending,
+        explanation: formData.title || 'Trending content',
         categories: [formData.category],
         ageRanges: formData.audienceAge,
         spreadSpeed: formData.trendVelocity || 'just_starting',
@@ -1181,20 +1176,6 @@ export default function SmartTrendSubmission({
                   </div>
                 )}
 
-                {/* Why trending */}
-                <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Why is this trending? (Be specific)
-                  </label>
-                  <textarea
-                    value={formData.whyTrending}
-                    onChange={(e) => setFormData(prev => ({ ...prev, whyTrending: e.target.value }))}
-                    rows={3}
-                    placeholder="e.g., 'People are using this sound to show their morning routines but in a chaotic way'"
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none resize-none"
-                  />
-                </div>
-
                 {/* Audience age */}
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
@@ -1342,12 +1323,6 @@ export default function SmartTrendSubmission({
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Why trending */}
-                  <div className="bg-gray-800/50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-2">Why It's Trending</h4>
-                    <p className="text-gray-300 text-sm">{formData.whyTrending}</p>
                   </div>
 
                   {/* Stats */}
