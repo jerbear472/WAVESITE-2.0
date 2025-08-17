@@ -56,7 +56,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     // Prepare submission data - only include columns that exist
     const submissionData = {
       spotter_id: userId,  // Use spotter_id as that's what the table expects
-      category: data.category || 'other',
+      category: getSafeCategory(data.category),
       description: data.description || data.title || 'Untitled Trend',
       title: data.title || 'Untitled Trend',
       status: 'submitted',
@@ -127,7 +127,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
             tier_multiplier: earningsCalc.tierMultiplier || 1.0,
             session_multiplier: earningsCalc.sessionMultiplier || 1.0,
             daily_multiplier: earningsCalc.dailyMultiplier || 1.0,
-            category: data.category
+            category: getSafeCategory(data.category)
           }
         });
       
