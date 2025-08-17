@@ -225,7 +225,7 @@ export class ValidationService {
       .from('trend_validations')
       .select('id')
       .eq('trend_id', trendId)
-      .eq('user_id', user.id)
+      .eq('validator_id', user.id)
       .limit(1);
 
     if (existing && existing.length > 0) {
@@ -265,7 +265,7 @@ export class ValidationService {
     const { data: votes } = await this.supabase
       .from('trend_validations')
       .select('trend_id')
-      .eq('user_id', user.id);
+      .eq('validator_id', user.id);
 
     const votedIds = votes?.map(v => v.trend_id) || [];
 
