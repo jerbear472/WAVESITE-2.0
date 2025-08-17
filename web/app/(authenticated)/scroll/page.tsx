@@ -521,7 +521,7 @@ export default function LegibleScrollPage() {
           amount: finalPayment,
           type: 'trend_submission',
           status: 'pending',
-          description: `Trend: ${formData.trendName || 'Untitled'} - pending validation`,
+          description: `Trend: ${formData.description || formData.trendName || 'Untitled'} - pending validation`,
           metadata: {
             base_amount: earningsResult.base,
             tier: userTier,
@@ -537,16 +537,25 @@ export default function LegibleScrollPage() {
         console.log('💸 [SCROLL] Creating earnings ledger entry with amount:', earningsEntry.amount);
         console.log('💸 [SCROLL] Full earnings entry:', earningsEntry);
         
-        const { error: earningsError } = await supabase
+        const { data: ledgerData, error: earningsError } = await supabase
           .from('earnings_ledger')
-          .insert(earningsEntry);
+          .insert(earningsEntry)
+          .select()
+          .single();
           
         if (earningsError) {
           console.error('❌ [SCROLL] Failed to create earnings ledger entry:', earningsError);
           console.error('❌ [SCROLL] Entry that failed:', earningsEntry);
+          console.error('❌ [SCROLL] Error details:', {
+            message: earningsError.message,
+            code: earningsError.code,
+            details: earningsError.details,
+            hint: earningsError.hint
+          });
         } else {
-          console.log('✅ [SCROLL] Earnings ledger entry created successfully!');
+          console.log('✅ [SCROLL] Earnings ledger entry created successfully!', ledgerData);
           console.log('✅ [SCROLL] Amount added to ledger:', finalPayment, 'with multipliers');
+          console.log('✅ [SCROLL] Ledger entry ID:', ledgerData?.id);
           
           // Update user_profiles table (profiles is a VIEW, can't update it)
           // CRITICAL: Also update streaks!
