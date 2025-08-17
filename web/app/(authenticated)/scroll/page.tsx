@@ -310,7 +310,7 @@ export default function LegibleScrollPage() {
       const { data: profileData } = await supabase
         .from('user_profiles')
         .select('current_streak, session_streak, last_submission_at, performance_tier')
-        .eq('user_id', user.id)  // Column is 'user_id' in user_profiles table
+        .eq('id', user.id)  // Primary key is 'id' in user_profiles table
         .single();
       
       // Build user profile for earnings calculation with streak data
