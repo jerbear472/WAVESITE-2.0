@@ -137,37 +137,9 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     
     console.log('✅ Trend submitted:', submission?.id);
     
-    // Manually create earnings entry (in case trigger doesn't exist)
-    try {
-      const { error: earningsError } = await supabase
-        .from('earnings_ledger')
-        .insert({
-          user_id: userId,
-          amount: paymentAmount,
-          type: 'trend_submission',
-          transaction_type: 'trend_submission',
-          status: 'pending',
-          description: `Trend: ${data.title || 'Untitled'}`,
-          reference_id: submission.id,
-          reference_type: 'trend_submissions',
-          metadata: {
-            base_amount: 0.25,
-            tier: profile?.performance_tier || 'learning',
-            tier_multiplier: earningsCalc.tierMultiplier || 1.0,
-            session_multiplier: earningsCalc.sessionMultiplier || 1.0,
-            daily_multiplier: earningsCalc.dailyMultiplier || 1.0,
-            category: getSafeCategory(data.category)
-          }
-        });
-      
-      if (earningsError) {
-        console.warn('⚠️ Could not create earnings entry (trigger may handle it):', earningsError);
-      } else {
-        console.log('✅ Earnings entry created');
-      }
-    } catch (earnErr) {
-      console.warn('Earnings entry creation failed (may be handled by trigger)');
-    }
+    // NOTE: Earnings entry is now created by database trigger
+    // Removing manual creation to prevent duplicate entries
+    console.log('💰 Earnings will be created by database trigger');
     
     console.log(`✅ [COMPLETE] Total time: ${Date.now() - startTime}ms`);
     
