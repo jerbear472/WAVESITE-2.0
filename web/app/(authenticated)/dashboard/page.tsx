@@ -293,7 +293,7 @@ export default function Dashboard() {
       // Earnings today (include both approved AND pending from today)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todaysApproved = approvedEarnings
+      const todaysApproved = availableEarnings
         .filter(e => new Date(e.created_at) >= today)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
       const todaysPending = pendingEarnings
@@ -305,7 +305,7 @@ export default function Dashboard() {
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
-      const earningsThisWeek = approvedEarnings
+      const earningsThisWeek = availableEarnings
         .filter(e => new Date(e.created_at) >= weekStart)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
 
@@ -313,7 +313,7 @@ export default function Dashboard() {
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
-      const earningsThisMonth = approvedEarnings
+      const earningsThisMonth = availableEarnings
         .filter(e => new Date(e.created_at) >= monthStart)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
 
