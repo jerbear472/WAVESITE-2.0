@@ -334,7 +334,7 @@ export default function LegibleScrollPage() {
       if (formData.screenshot && formData.screenshot instanceof File && user?.id) {
         try {
           const fileExt = formData.screenshot.name.split('.').pop();
-          const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const fileName = `${user!.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('trend-images')
