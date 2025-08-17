@@ -226,7 +226,7 @@ export default function ImprovedSettingsPage() {
           notification_preferences: profile.notifications,
           privacy_settings: profile.privacy,
           theme: profile.theme,
-          language: profile.language,
+          // language: profile.language, // Removed - column doesn't exist in database
           updated_at: new Date().toISOString()
         })
         .eq('id', user?.id);
@@ -244,7 +244,7 @@ export default function ImprovedSettingsPage() {
             notification_preferences: profile.notifications,
             privacy_settings: profile.privacy,
             theme: profile.theme,
-            language: profile.language,
+            // language: profile.language, // Removed - column doesn't exist in database
             updated_at: new Date().toISOString()
           })
           .eq('id', user?.id);

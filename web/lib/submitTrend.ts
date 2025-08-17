@@ -30,11 +30,22 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     console.log('📤 Submitting trend for user:', userId);
     
     // Get user profile for earnings calculation
-    const { data: profile } = await supabase
+    // Try both column names since different schemas use different columns
+    let { data: profile, error: profileError } = await supabase
       .from('user_profiles')
       .select('performance_tier, current_streak, session_streak')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single();
+    
+    // If user_id doesn't work, try id (for schemas where id = auth.users.id)
+    if (profileError?.message?.includes('column') || !profile) {
+      const result = await supabase
+        .from('user_profiles')
+        .select('performance_tier, current_streak, session_streak')
+        .eq('id', userId)
+        .single();
+      profile = result.data;
+    }
     
     // Calculate earnings
     const userProfile = {
@@ -93,6 +104,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     };
     
     console.log('💾 Saving to database...');
+    console.log('Submission data:', JSON.stringify(submissionData, null, 2));
     
     // Insert the trend submission
     const { data: submission, error: submitError } = await supabase
@@ -103,6 +115,12 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     
     if (submitError) {
       console.error('❌ Submission error:', submitError);
+      console.error('❌ Error details:', {
+        message: submitError.message,
+        details: submitError.details,
+        hint: submitError.hint,
+        code: submitError.code
+      });
       throw submitError;
     }
     
