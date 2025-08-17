@@ -386,7 +386,7 @@ export class UnifiedTrendSubmissionService {
     const { data: validations } = await this.supabase
       .from('trend_validations')
       .select('trend_id')
-      .eq('validator_id', userId)
+      .eq('user_id', userId)
       .in('trend_id', trendIds);
 
     const validatedIds = new Set(validations?.map(v => v.trend_id) || []);
