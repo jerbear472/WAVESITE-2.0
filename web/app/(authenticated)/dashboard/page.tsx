@@ -282,11 +282,11 @@ export default function Dashboard() {
       const accuracyScore = totalTrends > 0 && !isNaN(totalTrends) && !isNaN(approvedTrends) ? ((approvedTrends / totalTrends) * 100) : 0;
 
       // Calculate other stats from earnings_ledger
-      const approvedEarnings = userEarnings?.filter(e => e.status === 'approved' || e.status === 'paid') || [];
+      const availableEarnings = userEarnings?.filter(e => e.status === 'approved') || [];
       const pendingEarnings = userEarnings?.filter(e => e.status === 'pending' || e.status === 'awaiting_validation') || [];
       const paidEarnings = userEarnings?.filter(e => e.status === 'paid') || [];
       
-      const totalApproved = approvedEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const totalAvailable = availableEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
       const pendingAmount = pendingEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
       const totalPaid = paidEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
 
@@ -324,7 +324,7 @@ export default function Dashboard() {
       const uniqueDays = new Set(recentTrends.map(t => new Date(t.created_at).toDateString())).size;
 
       setStats({
-        total_earnings: totalApproved,  // Available earnings
+        total_earnings: totalAvailable,  // Only approved (not paid) earnings are available
         pending_earnings: pendingAmount,
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
