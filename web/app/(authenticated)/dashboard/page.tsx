@@ -918,19 +918,19 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Total Earnings</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Available Balance</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(stats.total_earnings + stats.pending_earnings + stats.total_cashed_out)}
+                {formatCurrency(stats.total_earnings)}
               </p>
-              <div className="flex items-center gap-3 mt-2">
-                {stats.total_earnings > 0 && (
-                  <p className="text-xs text-green-600">
-                    {formatCurrency(stats.total_earnings)} available
-                  </p>
-                )}
+              <div className="flex flex-col gap-1 mt-2">
                 {stats.pending_earnings > 0 && (
                   <p className="text-xs text-yellow-600">
-                    {formatCurrency(stats.pending_earnings)} pending approval
+                    +{formatCurrency(stats.pending_earnings)} pending approval
+                  </p>
+                )}
+                {stats.total_cashed_out > 0 && (
+                  <p className="text-xs text-gray-500">
+                    {formatCurrency(stats.total_cashed_out)} withdrawn
                   </p>
                 )}
               </div>

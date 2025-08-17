@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { calculateTrendEarnings } from './SUSTAINABLE_EARNINGS';
+import { getSafeCategory } from './safeCategory';
 
 export interface TrendSubmissionData {
   url?: string;
