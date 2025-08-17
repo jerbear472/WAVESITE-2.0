@@ -619,10 +619,10 @@ export default function LegibleScrollPage() {
           console.error('❌ [SCROLL] Failed to create earnings ledger entry:', earningsError);
           console.error('❌ [SCROLL] Entry that failed:', earningsEntry);
           console.error('❌ [SCROLL] Error details:', {
-            message: earningsError.message,
-            code: earningsError.code,
-            details: earningsError.details,
-            hint: earningsError.hint
+            message: earningsError?.message || 'Unknown error',
+            code: earningsError?.code,
+            details: earningsError?.details,
+            hint: earningsError?.hint
           });
           // If it's a column error, log what columns we're trying to use
           if (earningsError.message?.includes('column')) {
