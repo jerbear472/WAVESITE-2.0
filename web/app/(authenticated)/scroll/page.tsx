@@ -501,7 +501,7 @@ export default function LegibleScrollPage() {
             timeoutPromise
           ]);
           
-          if (result && typeof result === 'object' && 'data' in result) {
+          if (result && typeof result === 'object' && 'data' in (result as any)) {
             data = (result as any).data;
             error = (result as any).error;
           }
