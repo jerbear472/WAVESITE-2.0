@@ -105,7 +105,7 @@ export default function LegibleScrollPage() {
           event: '*',
           schema: 'public',
           table: 'earnings_ledger',
-          filter: `user_id=eq.${user.id}`
+          filter: `user_id=eq.${user?.id}`
         },
         (payload) => {
           console.log('Earnings update on scroll page:', payload);
@@ -121,7 +121,7 @@ export default function LegibleScrollPage() {
   }, [user?.id]);
 
   const loadTodaysStats = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -331,7 +331,7 @@ export default function LegibleScrollPage() {
       // Keep the old code below as fallback (but it won't be reached)
       // Handle screenshot upload
       let screenshotUrl = formData.thumbnail_url;
-      if (formData.screenshot && formData.screenshot instanceof File && user) {
+      if (formData.screenshot && formData.screenshot instanceof File && user?.id) {
         try {
           const fileExt = formData.screenshot.name.split('.').pop();
           const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
