@@ -1131,13 +1131,13 @@ export default function Dashboard() {
                               {((trend.approve_count || 0) > 0 || (trend.reject_count || 0) > 0) && (
                                 <span className="flex items-center gap-1">
                                   {(trend.approve_count || 0) > 0 && (
-                                    <span className="text-green-500">👍 {trend.approve_count}</span>
+                                    <span className="text-green-500">👍 {trend.approve_count || 0}</span>
                                   )}
                                   {(trend.approve_count || 0) > 0 && (trend.reject_count || 0) > 0 && (
                                     <span className="text-gray-400">·</span>
                                   )}
                                   {(trend.reject_count || 0) > 0 && (
-                                    <span className="text-red-500">👎 {trend.reject_count}</span>
+                                    <span className="text-red-500">👎 {trend.reject_count || 0}</span>
                                   )}
                                 </span>
                               )}
@@ -1212,9 +1212,9 @@ export default function Dashboard() {
                             {/* Validation Count if available - only show if there are actual votes */}
                             {((trend.approve_count ?? 0) > 0 || (trend.reject_count ?? 0) > 0) && (
                               <div className="text-center text-xs text-gray-500">
-                                {(trend.approve_count ?? 0) > 0 && <span className="text-green-500">{trend.approve_count} 👍</span>}
+                                {(trend.approve_count ?? 0) > 0 && <span className="text-green-500">{trend.approve_count ?? 0} 👍</span>}
                                 {(trend.approve_count ?? 0) > 0 && (trend.reject_count ?? 0) > 0 && <span className="mx-1">·</span>}
-                                {(trend.reject_count ?? 0) > 0 && <span className="text-red-500">{trend.reject_count} 👎</span>}
+                                {(trend.reject_count ?? 0) > 0 && <span className="text-red-500">{trend.reject_count ?? 0} 👎</span>}
                               </div>
                             )}
                           </div>
