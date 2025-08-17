@@ -11,7 +11,7 @@ export const EARNINGS = {
   MINIMUM_CASHOUT: 5.00,        // Minimum approved earnings required to cash out
   
   // Verification requirements
-  MIN_VOTES_REQUIRED: 2,        // Minimum votes needed for trend verification (2 yes or 2 no)
+  MIN_VOTES_REQUIRED: 3,        // Minimum votes needed for trend verification (3 yes or 3 no)
   
   // Multipliers and bonuses
   STREAK_MULTIPLIER: 1.5,       // Multiplier for streak bonuses

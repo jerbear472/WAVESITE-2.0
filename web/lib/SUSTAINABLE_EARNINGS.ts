@@ -12,7 +12,7 @@ export const SUSTAINABLE_EARNINGS = {
   base: {
     trendSubmission: 0.25,  // Base payment per trend (PENDING until approved)
     validationVote: 0.02,   // Payment per validation (FIXED: was 0.10)
-    approvalBonus: 0.50,    // Bonus when trend gets approved (2+ YES votes)
+    approvalBonus: 0.50,    // Bonus when trend gets approved (3+ YES votes)
   },
 
   // Tier system with multipliers
@@ -140,10 +140,10 @@ export const SUSTAINABLE_EARNINGS = {
   // REMOVED: Achievements - no longer used
   achievements: {},
 
-  // Validation settings
+  // Validation settings - UPDATED TO 3 VOTES
   validation: {
-    votesToApprove: 3,
-    votesToReject: 3,
+    votesToApprove: 3,  // Changed from 2 to 3
+    votesToReject: 3,   // Changed from 2 to 3
     maxVotingHours: 72,
     selfVoteAllowed: true,
   },

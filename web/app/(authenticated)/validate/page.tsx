@@ -799,17 +799,17 @@ export default function ValidatePageFixed() {
                       <div className="flex gap-4 mb-2">
                         <div className="flex items-center gap-2">
                           <ThumbsUp className="w-4 h-4 text-green-600" />
-                          <span className="text-sm font-medium text-gray-700">{Number(currentTrend.approve_count) || 0}/2 Verified</span>
+                          <span className="text-sm font-medium text-gray-700">{Number(currentTrend.approve_count) || 0}/3 Verified</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <ThumbsDown className="w-4 h-4 text-red-600" />
-                          <span className="text-sm font-medium text-gray-700">{Number(currentTrend.reject_count) || 0}/2 Rejected</span>
+                          <span className="text-sm font-medium text-gray-700">{Number(currentTrend.reject_count) || 0}/3 Rejected</span>
                         </div>
                       </div>
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-300"
-                          style={{ width: `${Math.min((Number(currentTrend.approve_count) || 0) * 50, 100)}%` }}
+                          style={{ width: `${Math.min((Number(currentTrend.approve_count) || 0) * 33.33, 100)}%` }}
                         />
                       </div>
                     </div>
