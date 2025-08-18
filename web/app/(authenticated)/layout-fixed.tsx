@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import MobileNavigation from '@/components/MobileNavigation';
-import DesktopSidebar from '@/components/DesktopSidebar';
+import Navigation from '@/components/Navigation';
 
 export default function AuthenticatedLayout({
   children,
@@ -15,21 +14,10 @@ export default function AuthenticatedLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   // Ensure client-side rendering
   useEffect(() => {
     setIsClient(true);
-    
-    // Check if mobile
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Handle authentication redirect
@@ -79,19 +67,13 @@ export default function AuthenticatedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Desktop Sidebar */}
-      {!isMobile && <DesktopSidebar />}
-      
-      {/* Main Content */}
-      <div className={`${!isMobile ? 'lg:pl-64' : ''}`}>
-        <main className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <main className="flex-1 overflow-x-hidden">
+        <div className="min-h-full">
           {children}
-        </main>
-      </div>
-      
-      {/* Mobile Navigation */}
-      {isMobile && <MobileNavigation />}
+        </div>
+      </main>
     </div>
   );
 }
