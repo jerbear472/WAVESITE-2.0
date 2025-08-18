@@ -352,7 +352,7 @@ export default function Dashboard() {
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
         scroll_sessions_count: 0, // Would need scroll_sessions table
-        accuracy_score: !isNaN(accuracyScore) ? Math.round(accuracyScore * 100) / 100 : 0, // Round to 2 decimals
+        accuracy_score: !isNaN(accuracyScore) ? accuracyScore : 0, // Already in percentage
         current_streak: uniqueDays,
         earnings_today: earningsToday,
         earnings_today_pending: todaysPending,  // Add pending from today
@@ -362,7 +362,7 @@ export default function Dashboard() {
         total_cashed_out: totalPaid  // Amount already paid out
       });
 
-      console.log(`Calculated accuracy rate: ${!isNaN(accuracyScore) ? accuracyScore.toFixed(2) : '0'}% (${approvedTrends}/${totalTrends} trends approved)`);
+      console.log(`Calculated accuracy rate: ${!isNaN(accuracyScore) ? accuracyScore.toFixed(2) : '0'}% (${approvedTrends}/${decidedTrends} trends decided)`);
     } catch (error) {
       console.error('Error in manual stats calculation:', error);
     }
