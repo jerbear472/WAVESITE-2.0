@@ -77,10 +77,11 @@ export default function StreakDisplay() {
   };
 
   const getSessionMultiplier = () => {
-    if (session.currentStreak >= 15) return 3.0;
-    if (session.currentStreak >= 5) return 2.0;
-    if (session.currentStreak >= 2) return 1.2;
-    return 1.0;
+    if (session.currentStreak >= 5) return 2.5;  // 5+ submissions = 2.5x
+    if (session.currentStreak === 4) return 2.0; // 4th submission = 2.0x
+    if (session.currentStreak === 3) return 1.5; // 3rd submission = 1.5x
+    if (session.currentStreak === 2) return 1.2; // 2nd submission = 1.2x
+    return 1.0; // First submission = 1.0x
   };
 
   const getDailyMultiplier = () => {
