@@ -422,20 +422,33 @@ export default function ValidatePageFixed() {
       // Success! Now create earnings entry
       setSessionValidations(prev => prev + 1);
       
-      // Create earnings ledger entry for validation reward
+      // AGGRESSIVE FIX: Delete any existing validation earnings for this trend, then create the correct one
+      // This handles the case where database triggers create wrong amounts
+      await supabase
+        .from('earnings_ledger')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('trend_id', trendId)
+        .eq('type', 'validation');
+      
+      // Wait a moment to ensure deletion completes before recreating
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Now create the CORRECT earnings entry (exactly $0.02)
       const { error: earningsError } = await supabase
         .from('earnings_ledger')
         .insert({
           user_id: user.id,
           trend_id: trendId,
-          amount: rewardAmount,
+          amount: rewardAmount, // This is 0.02
           type: 'validation',
-          transaction_type: 'validation_vote', // Added required transaction_type field
-          status: 'approved', // Immediate payout for validations
-          description: `Validation: ${voteType === 'verify' ? 'Verified' : 'Rejected'} trend`,
+          transaction_type: 'validation_vote',
+          status: 'approved',
+          description: `Validation: Verified trend`,
           metadata: {
             vote: voteType,
-            validation_id: validationData.id
+            validation_id: validationData.id,
+            corrected: true // Flag to indicate this is the corrected amount
           }
         });
       
