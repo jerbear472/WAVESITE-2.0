@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import SentimentSlider from './SentimentSlider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from '@/contexts/SessionContext';
 import EarningsNotificationComponent, { useEarningsNotification } from './EarningsNotification';
 import { 
   calculateTrendEarnings, 
@@ -372,6 +373,7 @@ export default function SmartTrendSubmission({
   initialUrl = ''
 }: SmartTrendSubmissionProps) {
   const { user } = useAuth();
+  const { logTrendSubmission, isSessionActive } = useSession();
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState('');
@@ -834,6 +836,12 @@ export default function SmartTrendSubmission({
         `Trend "${formData.title}" submitted!`,
         earningsCalc.breakdown
       );
+      
+      // Log trend submission for session tracking (if session is active)
+      if (isSessionActive()) {
+        logTrendSubmission();
+        console.log('✅ Trend submission logged to session streak!');
+      }
       
       // Success - close immediately
       // Clear saved draft on successful submission
