@@ -134,7 +134,7 @@ export default function Timeline() {
           (payload) => {
             console.log('Validation update:', payload);
             // Only refresh if it's for one of our trends
-            if (payload.new?.trend_id || payload.old?.trend_id) {
+            if ((payload.new as any)?.trend_id || (payload.old as any)?.trend_id) {
               fetchUserTrends();
             }
           }
