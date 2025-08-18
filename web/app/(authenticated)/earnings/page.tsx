@@ -81,7 +81,6 @@ export default function Earnings() {
   const [loading, setLoading] = useState(true);
   const [showCashOutModal, setShowCashOutModal] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'paid'>('all');
-  const [todaysEarnings, setTodaysEarnings] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -228,18 +227,6 @@ export default function Earnings() {
       
       setTransactions(mappedTransactions);
       
-      // Calculate today's earnings using the fetched data
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayEarnings = mappedTransactions
-        .filter(t => {
-          const transactionDate = new Date(t.created_at);
-          return transactionDate >= today && (t.status === 'approved' || t.status === 'pending');
-        })
-        .reduce((sum, t) => sum + (t.amount || 0), 0);
-      
-      setTodaysEarnings(todayEarnings);
-      
       // Calculate earnings from transactions directly for accuracy
       const pendingTransactions = mappedTransactions
         .filter(t => t.status === 'pending' || t.status === 'awaiting_validation');
@@ -284,7 +271,6 @@ export default function Earnings() {
       
       console.log('📊 [EARNINGS PAGE] Final calculated earnings data:', {
         ...calculatedData,
-        todaysEarnings,
         totalTransactions: mappedTransactions.length,
         pendingCount: mappedTransactions.filter(t => t.status === 'pending' || t.status === 'awaiting_validation').length,
         approvedCount: mappedTransactions.filter(t => t.status === 'approved').length,
@@ -397,31 +383,7 @@ export default function Earnings() {
         </div>
 
         {/* Earnings Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          {/* Today's Earnings - NEW */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-6 text-white"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <Clock className="w-8 h-8 opacity-80" />
-              <div className="text-xs bg-white/20 px-2 py-1 rounded">Today</div>
-            </div>
-            <div className="text-3xl font-bold mb-1">
-              {formatCurrency(todaysEarnings)}
-            </div>
-            <div className="text-purple-100 text-sm">Today's Earnings</div>
-            <div className="mt-4 text-xs text-purple-200">
-              {transactions.filter(t => {
-                const transactionDate = new Date(t.created_at);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return transactionDate >= today;
-              }).length} transactions today
-            </div>
-          </motion.div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Available for Cash Out */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
