@@ -193,7 +193,8 @@ export default function Earnings() {
           earnings_approved: 0,
           earnings_paid: 0,
           total_submissions: 0,
-          verified_submissions: 0
+          verified_submissions: 0,
+          rejected_submissions: 0
         });
         setLoading(false);
         return;
