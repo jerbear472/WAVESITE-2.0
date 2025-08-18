@@ -481,7 +481,7 @@ export default function AnalyticsDashboard() {
             <div className="flex justify-between">
               <span className="text-gray-600">Earnings</span>
               <span className="font-bold text-green-600">
-                {formatCurrency(stats.validations_completed * 0.10)}
+                {formatCurrency(stats.validations_completed * 0.02)}
               </span>
             </div>
             <div className="flex justify-between">

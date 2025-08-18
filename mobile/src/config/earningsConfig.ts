@@ -137,14 +137,16 @@ export function calculateTrendEarnings(
 
 /**
  * Calculate validation earnings
+ * FIXED: Flat $0.02 per validation - NO tier multiplier
  */
 export function calculateValidationEarnings(
   userTier: UserTier = 'learning'
 ): number {
   const baseAmount = EARNINGS_CONFIG.BASE_RATES.VALIDATION_VOTE;
-  const tierMultiplier = EARNINGS_CONFIG.TIER_MULTIPLIERS[userTier] || 1.0;
+  // REMOVED: const tierMultiplier = EARNINGS_CONFIG.TIER_MULTIPLIERS[userTier] || 1.0;
+  // FIXED: Validations earn exactly $0.02, not multiplied by tier
   
-  return Math.round(baseAmount * tierMultiplier * 100) / 100;
+  return Math.round(baseAmount * 100) / 100;
 }
 
 /**
