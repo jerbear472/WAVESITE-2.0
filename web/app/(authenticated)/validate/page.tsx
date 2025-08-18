@@ -72,6 +72,12 @@ interface TrendToValidate {
   evidence?: any;
   wave_score?: number;
   quality_score?: number;
+  trend_velocity?: string;
+  trend_size?: string;
+  sentiment?: number;
+  ai_angle?: string;
+  audience_age?: string[];
+  is_ai_generated?: boolean;
 }
 
 interface QualityCriteria {
@@ -802,6 +808,145 @@ export default function ValidatePageFixed() {
                             #{tag}
                           </span>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Trend Intelligence Assessment */}
+                  {(currentTrend.trend_velocity || currentTrend.trend_size || currentTrend.sentiment || currentTrend.ai_angle || currentTrend.wave_score) && (
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4 mb-4">
+                      <h3 className="font-semibold text-gray-900 text-base mb-3 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-purple-600" />
+                        Trend Intelligence
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {currentTrend.trend_velocity && (
+                          <div className="bg-white/70 rounded-lg p-2">
+                            <span className="text-xs text-gray-600 block">Velocity:</span>
+                            <span className="text-sm font-medium text-gray-900 capitalize">
+                              {currentTrend.trend_velocity.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        )}
+                        {currentTrend.trend_size && (
+                          <div className="bg-white/70 rounded-lg p-2">
+                            <span className="text-xs text-gray-600 block">Size:</span>
+                            <span className="text-sm font-medium text-gray-900 capitalize">
+                              {currentTrend.trend_size.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        )}
+                        {currentTrend.sentiment !== undefined && (
+                          <div className="bg-white/70 rounded-lg p-2">
+                            <span className="text-xs text-gray-600 block">Sentiment:</span>
+                            <span className={`text-sm font-medium ${
+                              currentTrend.sentiment >= 70 ? 'text-green-600' :
+                              currentTrend.sentiment >= 40 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {currentTrend.sentiment}% positive
+                            </span>
+                          </div>
+                        )}
+                        {currentTrend.wave_score !== undefined && (
+                          <div className="bg-white/70 rounded-lg p-2">
+                            <span className="text-xs text-gray-600 block">Wave Score:</span>
+                            <div className="flex items-center gap-1">
+                              <Star className={`w-3 h-3 ${currentTrend.wave_score >= 70 ? 'text-yellow-500' : 'text-gray-400'}`} fill="currentColor" />
+                              <span className="text-sm font-medium text-gray-900">{currentTrend.wave_score}/100</span>
+                            </div>
+                          </div>
+                        )}
+                        {currentTrend.ai_angle && currentTrend.ai_angle !== 'not_ai' && (
+                          <div className="col-span-2 bg-orange-100 border border-orange-200 rounded-lg p-2">
+                            <span className="text-xs text-orange-700 block">AI Content Detected:</span>
+                            <span className="text-sm font-medium text-orange-800 capitalize">
+                              {currentTrend.ai_angle.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        )}
+                        {currentTrend.audience_age && currentTrend.audience_age.length > 0 && (
+                          <div className="col-span-2 bg-blue-100 border border-blue-200 rounded-lg p-2">
+                            <span className="text-xs text-blue-700 block">Target Audience:</span>
+                            <span className="text-sm font-medium text-blue-800">
+                              {currentTrend.audience_age.join(', ')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quality Assessment */}
+                  {(Number(currentTrend.views_count) > 0 || Number(currentTrend.likes_count) > 0 || currentTrend.quality_score) && (
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <h3 className="font-semibold text-gray-900 text-base mb-3 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-green-600" />
+                        Quality Metrics
+                      </h3>
+                      <div className="space-y-2">
+                        {/* Engagement Rate */}
+                        {Number(currentTrend.views_count) > 0 && (Number(currentTrend.likes_count) > 0 || Number(currentTrend.comments_count) > 0) && (() => {
+                          const views = Number(currentTrend.views_count) || 0;
+                          const likes = Number(currentTrend.likes_count) || 0;
+                          const comments = Number(currentTrend.comments_count) || 0;
+                          const shares = Number(currentTrend.shares_count) || 0;
+                          const engagementRate = views > 0 ? ((likes + comments + shares) / views * 100) : 0;
+                          
+                          return (
+                            <div className="flex items-center justify-between bg-white/70 rounded-lg p-2">
+                              <span className="text-sm text-gray-600">Engagement Rate:</span>
+                              <span className={`text-sm font-medium ${
+                                engagementRate >= 5 ? 'text-green-600' :
+                                engagementRate >= 2 ? 'text-yellow-600' : 'text-red-600'
+                              }`}>
+                                {engagementRate.toFixed(1)}%
+                              </span>
+                            </div>
+                          );
+                        })()}
+                        
+                        {/* Quality Score */}
+                        {currentTrend.quality_score !== undefined && (
+                          <div className="flex items-center justify-between bg-white/70 rounded-lg p-2">
+                            <span className="text-sm text-gray-600">Quality Score:</span>
+                            <span className={`text-sm font-medium ${
+                              currentTrend.quality_score >= 80 ? 'text-green-600' :
+                              currentTrend.quality_score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {currentTrend.quality_score}/100
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Virality Prediction */}
+                        {currentTrend.virality_prediction !== undefined && (
+                          <div className="flex items-center justify-between bg-white/70 rounded-lg p-2">
+                            <span className="text-sm text-gray-600">Viral Potential:</span>
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={`w-3 h-3 ${i < (currentTrend.virality_prediction || 0) / 2 ? 'text-yellow-500' : 'text-gray-300'}`} 
+                                  fill="currentColor" 
+                                />
+                              ))}
+                              <span className="text-xs text-gray-500 ml-1">({currentTrend.virality_prediction}/10)</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Submission Timing */}
+                        {currentTrend.hours_since_post !== undefined && (
+                          <div className="flex items-center justify-between bg-white/70 rounded-lg p-2">
+                            <span className="text-sm text-gray-600">Submission Timing:</span>
+                            <span className={`text-sm font-medium ${
+                              currentTrend.hours_since_post <= 2 ? 'text-green-600' :
+                              currentTrend.hours_since_post <= 24 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {currentTrend.hours_since_post}h after posting
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
