@@ -919,7 +919,7 @@ export default function SmartTrendSubmission({
                       clearSavedDraft();
                       // Reset form to initial state
                       setFormData({
-                        url: initialUrl,
+                        url: initialUrl || '',
                         platform: '',
                         title: '',
                         creator_handle: '',
@@ -939,6 +939,9 @@ export default function SmartTrendSubmission({
                         trendVelocity: '',
                         sentiment: 50,
                         trendSize: '',
+                        description: '',
+                        audience_demographic: '',
+                        behavior_insight: '',
                         wave_score: 50
                       });
                       setCurrentStep('url');
