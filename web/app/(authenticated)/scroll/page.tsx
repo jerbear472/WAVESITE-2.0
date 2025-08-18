@@ -1031,27 +1031,103 @@ export default function LegibleScrollPage() {
             {/* Streak Display - Top Right */}
             <StreakDisplay />
             
-            {/* Scroll Session Component - Bottom Right */}
-            <ScrollSession
-              streak={session.currentStreak}
-              streakMultiplier={session.streakMultiplier}
-              onSessionStateChange={(isActive) => {
-                if (isActive) {
-                  startSession();
-                } else {
-                  endSession();
-                }
-              }}
-              onTrendLogged={() => {
-                // This handles live trend capture during scroll session
-                console.log('Trend logged during scroll session!');
-                // The ScrollSession component handles its own state updates
-              }}
-              onStreakUpdate={(streakCount, multiplier) => {
-                console.log('Streak updated:', streakCount, 'multiplier:', multiplier);
-                // Update local session state if needed
-              }}
-            />
+            {/* Scroll Session Section - Bottom Right */}
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Scroll Session</h2>
+                  <p className="text-sm text-gray-500">
+                    {session.isActive ? 'Track your submission streak' : 'Optional: Track progress & streaks'}
+                  </p>
+                </div>
+                
+                <button
+                  onClick={session.isActive ? endSession : startSession}
+                  className={`px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm ${
+                    session.isActive 
+                      ? 'bg-red-500 hover:bg-red-600 text-white' 
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {session.isActive ? (
+                    <>
+                      <Pause className="w-4 h-4" />
+                      End
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4" />
+                      Start
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {session.isActive ? (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      <span className="text-xs text-gray-500">Duration</span>
+                    </div>
+                    <p className="text-xl font-bold text-gray-900">{formatTime(session.duration)}</p>
+                  </div>
+                  
+                  <div className="bg-purple-50 rounded-xl p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Flame className="w-4 h-4 text-purple-500" />
+                      <span className="text-xs text-purple-600">Streak</span>
+                    </div>
+                    <p className="text-xl font-bold text-purple-700">
+                      {session.currentStreak} {session.currentStreak > 0 && `(${session.streakMultiplier}x)`}
+                    </p>
+                  </div>
+                  
+                  {session.currentStreak > 0 && (
+                    <div className="bg-orange-50 rounded-xl p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Timer className="w-4 h-4 text-orange-500" />
+                        <span className="text-xs text-orange-600">Time Left</span>
+                      </div>
+                      <p className="text-xl font-bold text-orange-700">{formatTime(session.streakTimeRemaining)}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Zap className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 mb-2">Streak Multipliers & Benefits</h3>
+                      <ul className="text-sm text-gray-600 space-y-1.5">
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-500">⚡</span>
+                          <span><strong>2 trends:</strong> 1.2x multiplier unlocked</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-orange-500">🔥</span>
+                          <span><strong>5 trends:</strong> 2.0x multiplier (double rewards)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-purple-500">💎</span>
+                          <span><strong>15 trends:</strong> 3.0x multiplier (triple rewards)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-500">⏱️</span>
+                          <span><strong>30-min window:</strong> Submit within time to keep streak</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-green-500">📊</span>
+                          <span><strong>Live tracking:</strong> See timer, earnings & progress in real-time</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
