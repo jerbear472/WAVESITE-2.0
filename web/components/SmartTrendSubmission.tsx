@@ -439,6 +439,11 @@ export default function SmartTrendSubmission({
       sentiment: 50,
       trendSize: '' as 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '',
       
+      // User description fields
+      description: '',
+      audience_demographic: '',
+      behavior_insight: '',
+      
       // Calculated
       wave_score: 50
     };
