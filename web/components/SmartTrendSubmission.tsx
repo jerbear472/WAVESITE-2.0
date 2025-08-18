@@ -783,6 +783,38 @@ export default function SmartTrendSubmission({
       // Map the UI category to database-accepted category
       const dbCategory = mapCategoryToDatabase(formData.category);
       
+      // Calculate predicted peak date from user selection
+      let predictedPeakDate = null;
+      if (formData.predictedPeak) {
+        const now = new Date();
+        switch (formData.predictedPeak) {
+          case '24_hours':
+            predictedPeakDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            break;
+          case '3_days':
+            predictedPeakDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+            break;
+          case '1_week':
+            predictedPeakDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            break;
+          case '2_weeks':
+            predictedPeakDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+            break;
+          case '1_month':
+            predictedPeakDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+            break;
+          case '3_months':
+            predictedPeakDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+            break;
+          case '6_months':
+            predictedPeakDate = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+            break;
+          case 'already_peaked':
+            predictedPeakDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Yesterday
+            break;
+        }
+      }
+      
       const submissionData = {
         ...formData,
         category: dbCategory, // Use the mapped category for database
@@ -802,6 +834,7 @@ export default function SmartTrendSubmission({
         region: 'Global',
         audioOrCatchphrase: '',
         otherPlatforms: [],
+        predicted_peak_date: predictedPeakDate?.toISOString() || null, // Add the calculated date
         // HIGH VALUE INTELLIGENCE DATA
         trendVelocity: formData.trendVelocity,
         trendSize: formData.trendSize,
@@ -1229,6 +1262,64 @@ export default function SmartTrendSubmission({
                   </div>
                 </div>
 
+                {/* Peak Prediction */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">When will this trend peak? 📊</h3>
+                  <p className="text-sm text-gray-400 mb-4">Your prediction helps us track trend lifecycles</p>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: '24_hours', label: '⚡ Next 24 hours', desc: 'Viral flash trend' },
+                      { value: '3_days', label: '🔥 2-3 days', desc: 'Quick burn' },
+                      { value: '1_week', label: '📈 Within a week', desc: 'Standard cycle' },
+                      { value: '2_weeks', label: '🎯 1-2 weeks', desc: 'Building momentum' },
+                      { value: '1_month', label: '🚀 2-4 weeks', desc: 'Sustained growth' },
+                      { value: '3_months', label: '💫 1-3 months', desc: 'Long-term trend' },
+                      { value: '6_months', label: '🌊 3-6 months', desc: 'Cultural shift' },
+                      { value: 'already_peaked', label: '📉 Already peaked', desc: 'Past prime' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setFormData(prev => ({ ...prev, predictedPeak: option.value }))}
+                        className={`p-3 rounded-lg border-2 transition-all text-left ${
+                          formData.predictedPeak === option.value
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <div className="font-medium text-white text-sm">{option.label}</div>
+                          <div className="text-xs text-gray-400 mt-0.5">{option.desc}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Prediction confidence indicator */}
+                  {formData.predictedPeak && (
+                    <div className="mt-3 p-3 bg-purple-900/20 rounded-lg border border-purple-800/30">
+                      <div className="flex items-center gap-2">
+                        <ClockIcon className="w-4 h-4 text-purple-400" />
+                        <span className="text-sm text-purple-300">
+                          Peak prediction recorded: {
+                            formData.predictedPeak === '24_hours' ? 'Next 24 hours' :
+                            formData.predictedPeak === '3_days' ? '2-3 days' :
+                            formData.predictedPeak === '1_week' ? 'Within a week' :
+                            formData.predictedPeak === '2_weeks' ? '1-2 weeks' :
+                            formData.predictedPeak === '1_month' ? '2-4 weeks' :
+                            formData.predictedPeak === '3_months' ? '1-3 months' :
+                            formData.predictedPeak === '6_months' ? '3-6 months' :
+                            'Already peaked'
+                          }
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        We'll track this prediction and show your accuracy over time
+                      </p>
+                    </div>
+                  )}
+                </div>
+
               </motion.div>
             )}
 
@@ -1443,6 +1534,22 @@ export default function SmartTrendSubmission({
                         </p>
                       </div>
                     </div>
+                    {/* Peak Prediction */}
+                    {formData.predictedPeak && (
+                      <div className="mt-3 pt-3 border-t border-gray-700">
+                        <p className="text-xs text-gray-400">Peak Prediction</p>
+                        <p className="text-sm font-medium text-purple-400">
+                          {formData.predictedPeak === '24_hours' ? '⚡ Next 24 hours' :
+                           formData.predictedPeak === '3_days' ? '🔥 2-3 days' :
+                           formData.predictedPeak === '1_week' ? '📈 Within a week' :
+                           formData.predictedPeak === '2_weeks' ? '🎯 1-2 weeks' :
+                           formData.predictedPeak === '1_month' ? '🚀 2-4 weeks' :
+                           formData.predictedPeak === '3_months' ? '💫 1-3 months' :
+                           formData.predictedPeak === '6_months' ? '🌊 3-6 months' :
+                           '📉 Already peaked'}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Category & answers */}
