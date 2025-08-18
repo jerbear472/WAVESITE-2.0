@@ -42,11 +42,25 @@ export function useUserStats() {
       // Method 1: Try to call the RPC function
       const { data: rpcData, error: rpcError } = await supabase
         .rpc('get_user_stats', { p_user_id: user.id })
-        .single();
+        .single() as { data: UserStats | null, error: any };
 
       if (!rpcError && rpcData) {
         console.log('[STATS] Got stats from RPC:', rpcData);
-        setStats(rpcData);
+        // Ensure the RPC data matches our UserStats interface
+        const stats: UserStats = {
+          trends_submitted: rpcData.trends_submitted || 0,
+          trends_approved: rpcData.trends_approved || 0,
+          trends_rejected: rpcData.trends_rejected || 0,
+          trends_pending: rpcData.trends_pending || 0,
+          validations_completed: rpcData.validations_completed || 0,
+          accuracy_score: rpcData.accuracy_score || 0,
+          validation_score: rpcData.validation_score || 0,
+          approval_rate: rpcData.approval_rate || 0,
+          total_earned: rpcData.total_earned || 0,
+          pending_earnings: rpcData.pending_earnings || 0,
+          approved_earnings: rpcData.approved_earnings || 0
+        };
+        setStats(stats);
         return;
       }
 
