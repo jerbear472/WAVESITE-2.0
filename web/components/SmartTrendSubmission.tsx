@@ -734,7 +734,7 @@ export default function SmartTrendSubmission({
         trends_submitted: user?.trends_spotted || 0,
         approval_rate: user?.accuracy_score ? user.accuracy_score / 100 : 0,
         quality_score: user?.validation_score ? user.validation_score / 100 : 0.5,
-        current_streak: user?.daily_streak || 0,  // Daily streak from user
+        current_streak: user?.current_streak || 0,  // Daily streak from user
         session_streak: session.currentStreak,  // Current session streak
         last_submission_at: session.lastSubmissionTime?.toISOString()
       };
