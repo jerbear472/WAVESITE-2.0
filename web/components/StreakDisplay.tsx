@@ -93,7 +93,9 @@ export default function StreakDisplay() {
   };
 
   const getTotalMultiplier = () => {
-    return (getSessionMultiplier() * getDailyMultiplier()).toFixed(1);
+    // Cap the combined streak multiplier at 2.5x max
+    const combined = getSessionMultiplier() * getDailyMultiplier();
+    return Math.min(combined, 2.5).toFixed(1);
   };
 
   const formatTimeRemaining = (seconds: number) => {

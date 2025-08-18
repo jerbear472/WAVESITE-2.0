@@ -1108,15 +1108,11 @@ export default function LegibleScrollPage() {
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-orange-500">🔥</span>
-                          <span><strong>5 trends:</strong> 2.0x multiplier (double rewards)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-purple-500">💎</span>
-                          <span><strong>15 trends:</strong> 3.0x multiplier (triple rewards)</span>
+                          <span><strong>5+ trends:</strong> 2.5x multiplier (max reward)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-blue-500">⏱️</span>
-                          <span><strong>30-min window:</strong> Submit within time to keep streak</span>
+                          <span><strong>5-min window:</strong> Submit within time to keep streak</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-green-500">📊</span>
