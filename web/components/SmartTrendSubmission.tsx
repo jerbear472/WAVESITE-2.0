@@ -53,6 +53,33 @@ interface SmartTrendSubmissionProps {
   initialUrl?: string;
 }
 
+interface TrendFormData {
+  url: string;
+  platform: string;
+  title: string;
+  creator_handle: string;
+  creator_name: string;
+  post_caption: string;
+  likes_count: number;
+  comments_count: number;
+  views_count: number;
+  hashtags: string[];
+  thumbnail_url: string;
+  posted_at: string;
+  category: string;
+  categoryAnswers: Record<string, string>;
+  audienceAge: string[];
+  predictedPeak: string;
+  aiAngle: 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai' | '';
+  trendVelocity: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining' | '';
+  sentiment: number;
+  trendSize: 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '';
+  description: string;
+  audience_demographic: string;
+  behavior_insight: string;
+  wave_score: number;
+}
+
 // Map UI categories to database-accepted categories
 const mapCategoryToDatabase = (uiCategory: string): string => {
   const mapping: Record<string, string> = {
@@ -358,7 +385,7 @@ export default function SmartTrendSubmission({
   const AUTOSAVE_KEY = 'smart_trend_submission_draft';
   
   // Load saved data from localStorage
-  const loadSavedData = () => {
+  const loadSavedData = (): TrendFormData | null => {
     if (typeof window === 'undefined') return null;
     try {
       const saved = localStorage.getItem(AUTOSAVE_KEY);
@@ -375,7 +402,7 @@ export default function SmartTrendSubmission({
     return null;
   };
 
-  const [formData, setFormData] = useState(() => {
+  const [formData, setFormData] = useState<TrendFormData>(() => {
     const savedData = loadSavedData();
     // If we loaded saved data, show a notification
     if (savedData) {
@@ -387,7 +414,7 @@ export default function SmartTrendSubmission({
     }
     return savedData || {
       // URL & Metadata
-      url: initialUrl,
+      url: initialUrl || '',
       platform: '',
       title: '',
       creator_handle: '',
