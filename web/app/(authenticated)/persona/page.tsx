@@ -39,8 +39,17 @@ export default function PersonaPage() {
         }, 100);
       } else {
         console.error('Persona save returned false');
-        // Show completion screen but warn user
-        alert('Your persona was saved locally but may not have synced to the server. Please check your internet connection.');
+        // Show a more helpful error message
+        const errorMessage = `Your persona was saved locally but couldn't sync to the server. 
+
+This might be because:
+1. The database table doesn't exist yet
+2. You're not properly authenticated
+3. There's a network issue
+
+Your data is safe and will sync when the issue is resolved. Please contact support if this persists.`;
+        
+        alert(errorMessage);
         setPersonaSummary(newPersonaData);
         setIsComplete(true);
       }

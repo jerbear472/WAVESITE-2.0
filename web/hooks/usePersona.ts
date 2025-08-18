@@ -245,16 +245,25 @@ export function usePersona() {
       };
 
       // Save directly to database using Supabase client
+      console.log('Attempting database upsert with data:', dbData);
+      
       const { data: savedData, error: saveError } = await supabase
         .from('user_personas')
         .upsert(dbData, {
-          onConflict: 'user_id'
+          onConflict: 'user_id',
+          ignoreDuplicates: false
         })
         .select()
         .single();
 
       if (saveError) {
-        console.error('Database error saving persona:', saveError);
+        console.error('Database error saving persona:', {
+          error: saveError,
+          code: saveError.code,
+          message: saveError.message,
+          details: saveError.details,
+          hint: saveError.hint
+        });
         
         // Still save to localStorage as fallback
         localStorage.setItem(`persona_${user.id}`, JSON.stringify(data));
