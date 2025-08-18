@@ -489,15 +489,15 @@ export default function Timeline() {
                   <RefreshIcon className={`w-5 h-5 text-white ${refreshing ? 'animate-spin' : ''}`} />
                 </motion.button>
                 
-                <motion.button
+                <motion.a
+                  href="/scroll"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowSubmitForm(true)}
                   className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <PlusIcon className="w-5 h-5" />
                   <span>New Trend</span>
-                </motion.button>
+                </motion.a>
               </div>
             </div>
 
