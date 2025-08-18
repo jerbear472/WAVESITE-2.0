@@ -1,10 +1,11 @@
--- CREATE USER STATS FUNCTION
+-- CREATE USER STATS FUNCTION (FIXED)
 -- This function properly calculates user statistics from the database
 
 BEGIN;
 
 -- Drop existing function if it exists
 DROP FUNCTION IF EXISTS get_user_stats(UUID);
+DROP VIEW IF EXISTS user_stats_view CASCADE;
 
 -- Create comprehensive user stats function
 CREATE OR REPLACE FUNCTION get_user_stats(p_user_id UUID)
@@ -97,22 +98,30 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION get_user_stats(UUID) TO authenticated;
 
--- Test the function (replace with actual user ID)
--- SELECT * FROM get_user_stats('your-user-id-here');
-
 COMMIT;
 
--- Create a view for easier access
+-- Create a simplified view for easier access (without username since it doesn't exist in auth.users)
+BEGIN;
+
 CREATE OR REPLACE VIEW user_stats_view AS
 SELECT 
     u.id AS user_id,
     u.email,
+    -- Get username from profiles view if it exists
+    p.username,
     stats.*
 FROM auth.users u
+LEFT JOIN profiles p ON p.id = u.id
 CROSS JOIN LATERAL get_user_stats(u.id) stats;
 
 -- Grant access to the view
 GRANT SELECT ON user_stats_view TO authenticated;
 
--- Example usage:
+COMMIT;
+
+-- Test queries
+-- Get stats for current user:
+-- SELECT * FROM get_user_stats(auth.uid());
+
+-- Get stats from view for current user:
 -- SELECT * FROM user_stats_view WHERE user_id = auth.uid();
