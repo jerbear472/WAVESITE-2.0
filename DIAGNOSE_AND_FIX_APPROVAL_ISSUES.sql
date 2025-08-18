@@ -120,12 +120,13 @@ BEGIN
     AND vote = 'reject';
     
     -- Determine validation status (MUST BE 3 votes to approve/reject)
+    -- Using earning_status enum values for validation_status field
     IF v_approve_count >= 3 THEN
         v_status := 'approved';
     ELSIF v_reject_count >= 3 THEN
-        v_status := 'rejected';
+        v_status := 'cancelled';  -- Use 'cancelled' for rejected in earning_status enum
     ELSE
-        v_status := 'pending';
+        v_status := 'pending';  -- Use 'pending' for all in-progress states
     END IF;
     
     -- Update the trend_submissions table
@@ -138,10 +139,8 @@ BEGIN
         status = CASE 
             WHEN v_status = 'approved' AND v_approve_count >= 3 THEN 'approved'
             WHEN v_status = 'rejected' AND v_reject_count >= 3 THEN 'rejected'
-            ELSE CASE 
-                WHEN status IN ('approved', 'rejected') AND v_old_status = status THEN 'pending'
-                ELSE status
-            END
+            WHEN v_approve_count > 0 OR v_reject_count > 0 THEN 'validating'
+            ELSE 'submitted'
         END,
         updated_at = NOW()
     WHERE id = v_trend_id;
@@ -171,8 +170,8 @@ CREATE TRIGGER update_trend_counts_on_validation
 -- Reset trends that were approved with less than 3 votes
 UPDATE trend_submissions
 SET 
-    status = 'pending',
-    validation_status = 'pending'
+    status = 'submitted'::trend_status,  -- Cast to trend_status enum
+    validation_status = 'pending'::earning_status  -- Cast to earning_status enum
 WHERE status = 'approved'
 AND approve_count < 3;
 
@@ -312,17 +311,15 @@ SET
     approve_count = COALESCE(ac.approve_cnt, 0),
     reject_count = COALESCE(ac.reject_cnt, 0),
     validation_status = CASE
-        WHEN COALESCE(ac.approve_cnt, 0) >= 3 THEN 'approved'
-        WHEN COALESCE(ac.reject_cnt, 0) >= 3 THEN 'rejected'
-        ELSE 'pending'
+        WHEN COALESCE(ac.approve_cnt, 0) >= 3 THEN 'approved'::earning_status
+        WHEN COALESCE(ac.reject_cnt, 0) >= 3 THEN 'cancelled'::earning_status  -- Use 'cancelled' for rejected
+        ELSE 'pending'::earning_status  -- Use 'pending' for all other cases
     END,
     status = CASE
-        WHEN COALESCE(ac.approve_cnt, 0) >= 3 THEN 'approved'
-        WHEN COALESCE(ac.reject_cnt, 0) >= 3 THEN 'rejected'
-        ELSE CASE 
-            WHEN ts.status IN ('submitted', 'validating', 'pending') THEN ts.status
-            ELSE 'pending'
-        END
+        WHEN COALESCE(ac.approve_cnt, 0) >= 3 THEN 'approved'::trend_status
+        WHEN COALESCE(ac.reject_cnt, 0) >= 3 THEN 'rejected'::trend_status
+        WHEN COALESCE(ac.approve_cnt, 0) > 0 OR COALESCE(ac.reject_cnt, 0) > 0 THEN 'validating'::trend_status
+        ELSE 'submitted'::trend_status
     END
 FROM actual_counts ac
 WHERE ts.id = ac.trend_id;
@@ -332,7 +329,7 @@ UPDATE trend_submissions
 SET 
     approve_count = COALESCE(approve_count, 0),
     reject_count = COALESCE(reject_count, 0),
-    validation_status = COALESCE(validation_status, 'pending')
+    validation_status = COALESCE(validation_status, 'pending'::earning_status)  -- Cast to earning_status enum
 WHERE approve_count IS NULL OR reject_count IS NULL;
 
 COMMIT;
@@ -365,7 +362,8 @@ SELECT
     'Fix Summary' as report,
     COUNT(CASE WHEN status = 'approved' AND approve_count >= 3 THEN 1 END) as correctly_approved,
     COUNT(CASE WHEN status = 'approved' AND approve_count < 3 THEN 1 END) as still_incorrect,
-    COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_trends,
+    COUNT(CASE WHEN status = 'submitted' THEN 1 END) as submitted_trends,
+    COUNT(CASE WHEN status = 'validating' THEN 1 END) as validating_trends,
     COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_trends
 FROM trend_submissions;
 
