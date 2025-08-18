@@ -124,9 +124,10 @@ export function useUserStats() {
       const approved_earnings = earningsData?.filter(e => e.status === 'approved')
         .reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
 
-      // Calculate approval rate
-      const approval_rate = trends_submitted > 0 
-        ? Math.round((trends_approved / trends_submitted) * 100)
+      // Calculate approval rate: approved / (approved + rejected)
+      const decided_trends = trends_approved + trends_rejected;
+      const approval_rate = decided_trends > 0 
+        ? Math.round((trends_approved / decided_trends) * 100)
         : 0;
 
       const calculatedStats: UserStats = {

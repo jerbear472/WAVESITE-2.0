@@ -38,6 +38,7 @@ interface EarningsData {
   earnings_paid: number;
   total_submissions: number;
   verified_submissions: number;
+  rejected_submissions: number;
 }
 
 interface EarningTransaction {
@@ -75,7 +76,8 @@ export default function Earnings() {
     earnings_approved: 0,
     earnings_paid: 0,
     total_submissions: 0,
-    verified_submissions: 0
+    verified_submissions: 0,
+    rejected_submissions: 0
   });
   const [transactions, setTransactions] = useState<EarningTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -252,13 +254,15 @@ export default function Earnings() {
       console.log('💵 [EARNINGS PAGE] Paid transactions:', paidTransactions.length);
       console.log('💵 [EARNINGS PAGE] Paid earnings total:', paidEarnings);
       
-      const totalSubmissions = mappedTransactions
-        .filter(t => t.type === 'trend_submission')
-        .length;
+      // Get actual trend submission stats for accurate verification rate
+      const { data: trendsData } = await supabase
+        .from('trend_submissions')
+        .select('status')
+        .eq('spotter_id', user?.id);
       
-      const verifiedSubmissions = mappedTransactions
-        .filter(t => t.type === 'trend_submission' && t.status === 'approved')
-        .length;
+      const totalSubmissions = trendsData?.length || 0;
+      const verifiedSubmissions = trendsData?.filter(t => t.status === 'approved').length || 0;
+      const rejectedSubmissions = trendsData?.filter(t => t.status === 'rejected').length || 0;
       
       // Set earnings data calculated from ledger
       const calculatedData = {
@@ -266,7 +270,8 @@ export default function Earnings() {
         earnings_approved: approvedEarnings,
         earnings_paid: paidEarnings,
         total_submissions: totalSubmissions,
-        verified_submissions: verifiedSubmissions
+        verified_submissions: verifiedSubmissions,
+        rejected_submissions: rejectedSubmissions
       };
       
       console.log('📊 [EARNINGS PAGE] Final calculated earnings data:', {
@@ -289,7 +294,8 @@ export default function Earnings() {
         earnings_approved: 0,
         earnings_paid: 0,
         total_submissions: 0,
-        verified_submissions: 0
+        verified_submissions: 0,
+        rejected_submissions: 0
       });
     } finally {
       setLoading(false);
@@ -304,8 +310,10 @@ export default function Earnings() {
   const displayPending = totalPending;
   
   const totalEarnings = earningsData.earnings_approved + earningsData.earnings_paid;
-  const verificationRate = earningsData.total_submissions > 0 
-    ? (earningsData.verified_submissions / earningsData.total_submissions * 100).toFixed(1)
+  // Calculate verification rate: approved / (approved + rejected), not total
+  const decidedSubmissions = earningsData.verified_submissions + earningsData.rejected_submissions;
+  const verificationRate = decidedSubmissions > 0
+    ? ((earningsData.verified_submissions / decidedSubmissions) * 100).toFixed(1)
     : '0';
   
   // Calculate user tier
@@ -465,9 +473,9 @@ export default function Earnings() {
             <div className="text-3xl font-bold text-white mb-1">
               {verificationRate}%
             </div>
-            <div className="text-gray-400 text-sm">Verification Rate</div>
+            <div className="text-gray-400 text-sm">Approval Rate</div>
             <div className="mt-4 text-xs text-gray-500">
-              {earningsData.verified_submissions} of {earningsData.total_submissions} verified
+              {earningsData.verified_submissions} approved, {earningsData.rejected_submissions} rejected
             </div>
           </motion.div>
         </div>

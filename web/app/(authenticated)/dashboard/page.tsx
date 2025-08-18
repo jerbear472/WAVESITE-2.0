@@ -284,7 +284,7 @@ export default function Dashboard() {
       // Map to userEarnings format for compatibility
       const userEarnings = earningsLedger;
 
-      // Calculate accuracy rate: % of trends that get approved
+      // Calculate accuracy rate: approved / (approved + rejected)
       const totalTrends = userTrends?.length || 0;
       const approvedTrends = userTrends?.filter(trend => {
         // Check validation_status first, then fallback to status
@@ -293,7 +293,16 @@ export default function Dashboard() {
         return false;
       }).length || 0;
       
-      const accuracyScore = totalTrends > 0 && !isNaN(totalTrends) && !isNaN(approvedTrends) ? ((approvedTrends / totalTrends) * 100) : 0;
+      const rejectedTrends = userTrends?.filter(trend => {
+        // Check validation_status first, then fallback to status
+        if (trend.validation_status === 'rejected' || trend.validation_status === 'cancelled') return true;
+        if (trend.validation_status === null && trend.status === 'rejected') return true;
+        return false;
+      }).length || 0;
+      
+      // Accuracy is approved / (approved + rejected), not out of total
+      const decidedTrends = approvedTrends + rejectedTrends;
+      const accuracyScore = decidedTrends > 0 && !isNaN(decidedTrends) && !isNaN(approvedTrends) ? ((approvedTrends / decidedTrends) * 100) : 0;
 
       // Calculate other stats from earnings_ledger
       const availableEarnings = userEarnings?.filter(e => e.status === 'approved') || [];
