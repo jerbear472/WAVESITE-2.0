@@ -3,13 +3,13 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "WaveSight - Trend Intelligence",
-  description: "Spot trends before they break. AI-powered social media analytics.",
-  keywords: "trends, social media, analytics, AI, viral content",
+  title: "WaveSight - See Trends Before Algorithms Do",
+  description: "Human spotters catch cultural shifts 2 weeks early. Get paid to identify viral content before it trends.",
+  keywords: "trend spotting, viral content, cultural shifts, early trends, social media trends, human intelligence",
   authors: [{ name: "WaveSight" }],
   openGraph: {
-    title: "WaveSight - Trend Intelligence",
-    description: "Spot trends before they break. AI-powered social media analytics.",
+    title: "WaveSight - See Trends Before Algorithms Do",
+    description: "Human spotters catch cultural shifts 2 weeks early. Get paid to identify viral content before it trends.",
     type: "website",
   },
 };
