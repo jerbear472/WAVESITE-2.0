@@ -50,7 +50,7 @@ BEGIN
         UPDATE earnings_ledger
         SET 
             status = 'approved',
-            metadata = COALESCE(metadata, '{}'::jsonb) || 
+            metadata = COALESCE(earnings_ledger.metadata, '{}'::jsonb) || 
                       jsonb_build_object('approved_at', NOW())
         WHERE reference_id = NEW.id
         AND type = 'trend_submission'
@@ -80,7 +80,7 @@ BEGIN
         UPDATE earnings_ledger
         SET 
             status = 'rejected',
-            metadata = COALESCE(metadata, '{}'::jsonb) || 
+            metadata = COALESCE(earnings_ledger.metadata, '{}'::jsonb) || 
                       jsonb_build_object('rejected_at', NOW())
         WHERE reference_id = NEW.id
         AND type = 'trend_submission'
@@ -123,7 +123,7 @@ BEGIN
         UPDATE earnings_ledger el
         SET 
             status = 'approved',
-            metadata = COALESCE(metadata, '{}'::jsonb) || 
+            metadata = COALESCE(el.metadata, '{}'::jsonb) || 
                       jsonb_build_object(
                           'trend_outcome', NEW.status,
                           'finalized_at', NOW()
@@ -225,7 +225,7 @@ END $$;
 UPDATE earnings_ledger el
 SET 
     status = 'approved',
-    metadata = COALESCE(metadata, '{}'::jsonb) || 
+    metadata = COALESCE(el.metadata, '{}'::jsonb) || 
               jsonb_build_object('retroactive_approval', true)
 FROM trend_validations tv
 JOIN trend_submissions ts ON tv.trend_id = ts.id
@@ -238,7 +238,7 @@ AND ts.status IN ('approved', 'rejected');
 UPDATE earnings_ledger el
 SET 
     status = 'approved',
-    metadata = COALESCE(metadata, '{}'::jsonb) || 
+    metadata = COALESCE(el.metadata, '{}'::jsonb) || 
               jsonb_build_object('retroactive_approval', true)
 FROM trend_submissions ts
 WHERE el.reference_id = ts.id
