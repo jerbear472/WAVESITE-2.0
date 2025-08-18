@@ -2,59 +2,63 @@
 export function getSafeCategory(displayCategory: string | undefined | null): string {
   console.log('[getSafeCategory] Input:', displayCategory);
   
-  // Always return a valid enum no matter what
+  // Map UI categories to VALID database enum values only
+  // Valid enums: meme_format, visual_style, behavior_pattern, audio_music, 
+  // creator_technique, product_brand, cultural_reference, platform_mechanic,
+  // storytelling_format, editing_technique
   const mapping: Record<string, string> = {
     // Direct mappings from SmartTrendSubmission component IDs
     'meme': 'meme_format',
-    'fashion': 'fashion',
-    'food': 'food_drink',
+    'fashion': 'visual_style',  // Fashion is visual
+    'food': 'behavior_pattern',  // Food trends are behaviors
     'music': 'audio_music',
-    'lifestyle': 'lifestyle',
-    'tech': 'gaming',  // Maps to gaming for tech-related content
-    'finance': 'finance',
-    'sports': 'sports',
-    'political': 'political',
-    'cars': 'automotive',
-    'animals': 'animals_pets',
-    'travel': 'travel',
-    'education': 'education',
-    'health': 'health',
+    'lifestyle': 'behavior_pattern',
+    'tech': 'creator_technique',  // Tech is about creation techniques
+    'technology': 'creator_technique',  // Handle both tech and technology
+    'finance': 'behavior_pattern',  // Finance trends are behaviors
+    'sports': 'behavior_pattern',  // Sports trends are behaviors
+    'political': 'cultural_reference',  // Political is cultural
+    'cars': 'product_brand',  // Cars are products
+    'animals': 'behavior_pattern',  // Animal videos are behaviors
+    'travel': 'behavior_pattern',  // Travel trends are behaviors
+    'education': 'creator_technique',  // Education is technique
+    'health': 'behavior_pattern',  // Health trends are behaviors
     'product': 'product_brand',
     
     // Label mappings (what user sees in the UI)
     'Meme/Humor': 'meme_format',
-    'Fashion/Beauty': 'fashion',
-    'Food/Drink': 'food_drink',
+    'Fashion/Beauty': 'visual_style',
+    'Food/Drink': 'behavior_pattern',
     'Music/Dance': 'audio_music',
-    'Lifestyle': 'lifestyle',
-    'Tech/Gaming': 'gaming',  // Maps to gaming category
-    'Finance/Crypto': 'finance',
-    'Sports/Fitness': 'sports',
-    'Political/Social': 'political',
-    'Cars & Machines': 'automotive',
-    'Animals & Pets': 'animals_pets',
-    'Travel & Places': 'travel',
-    'Education & Learning': 'education',
-    'Health & Wellness': 'health',
+    'Lifestyle': 'behavior_pattern',
+    'Tech/Gaming': 'creator_technique',
+    'Finance/Crypto': 'behavior_pattern',
+    'Sports/Fitness': 'behavior_pattern',
+    'Political/Social': 'cultural_reference',
+    'Cars & Machines': 'product_brand',
+    'Animals & Pets': 'behavior_pattern',
+    'Travel & Places': 'behavior_pattern',
+    'Education & Learning': 'creator_technique',
+    'Health & Wellness': 'behavior_pattern',
     'Product/Shopping': 'product_brand',
     
     // Legacy mappings (for backward compatibility)
-    'Fashion & Beauty': 'fashion',
-    'Food & Drink': 'food_drink',
+    'Fashion & Beauty': 'visual_style',
+    'Food & Drink': 'behavior_pattern',
     'Humor & Memes': 'meme_format',
-    'Politics & Social Issues': 'political',
+    'Politics & Social Issues': 'cultural_reference',
     'Music & Dance': 'audio_music',
-    'Sports & Fitness': 'sports',
-    'Tech & Gaming': 'gaming',
+    'Sports & Fitness': 'behavior_pattern',
+    'Tech & Gaming': 'creator_technique',
     'Art & Creativity': 'visual_style',
-    'Education & Science': 'education',
+    'Education & Science': 'creator_technique',
     
     // Lowercase versions (for flexible input handling)
-    'cars & machines': 'automotive',
-    'animals & pets': 'animals_pets',
-    'travel & places': 'travel',
-    'education & learning': 'education',
-    'health & wellness': 'health'
+    'cars & machines': 'product_brand',
+    'animals & pets': 'behavior_pattern',
+    'travel & places': 'behavior_pattern',
+    'education & learning': 'creator_technique',
+    'health & wellness': 'behavior_pattern'
   };
   
   // Try to map the category
@@ -66,23 +70,20 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     return mapped;
   }
   
-  // Check if it's already a valid enum (complete list after adding missing ones)
+  // Check if it's already a valid enum (ONLY the actual valid database enums)
   const validEnums = [
-    'visual_style', 'audio_music', 'creator_technique', 'meme_format', 
-    'product_brand', 'behavior_pattern', 'political', 'finance', 
-    'fashion', 'meme', 'gaming', 'lifestyle', 'health', 'music', 
-    'brand', 'social_cause', 'food_drink', 'sports', 'automotive',
-    'animals_pets', 'travel', 'education', 'dance',
-    'diy_crafts', 'news_events', 'relationship'
+    'meme_format', 'visual_style', 'behavior_pattern', 'audio_music',
+    'creator_technique', 'product_brand', 'cultural_reference',
+    'platform_mechanic', 'storytelling_format', 'editing_technique'
   ];
   if (displayCategory && validEnums.includes(displayCategory)) {
     console.log('[getSafeCategory] Already valid:', displayCategory);
     return displayCategory;
   }
   
-  // Default fallback
-  console.log('[getSafeCategory] Fallback to: meme_format');
-  return 'meme_format';
+  // Default fallback - use behavior_pattern as it's the most general
+  console.log('[getSafeCategory] Fallback to: behavior_pattern');
+  return 'behavior_pattern';
 }
 
 // Safe status function to ensure we NEVER use 'pending'
