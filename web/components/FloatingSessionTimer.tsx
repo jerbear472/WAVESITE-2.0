@@ -150,7 +150,7 @@ export default function FloatingSessionTimer() {
                       className="h-full bg-gradient-to-r from-orange-500 to-red-500"
                       initial={{ width: '100%' }}
                       animate={{ 
-                        width: `${(session.streakTimeRemaining / (30 * 60)) * 100}%` 
+                        width: `${(session.streakTimeRemaining / (5 * 60)) * 100}%` 
                       }}
                       transition={{ duration: 1 }}
                     />
