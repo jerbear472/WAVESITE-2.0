@@ -73,15 +73,14 @@ const socialPlatforms: SocialPlatform[] = [
   },
 ];
 
+// Database only accepts these exact 6 categories
 const categories = [
-  { id: 'fashion', label: 'Fashion', icon: '👗' },
-  { id: 'food', label: 'Food', icon: '🍔' },
-  { id: 'tech', label: 'Tech', icon: '💻' },
-  { id: 'music', label: 'Music', icon: '🎵' },
-  { id: 'fitness', label: 'Fitness', icon: '💪' },
-  { id: 'gaming', label: 'Gaming', icon: '🎮' },
-  { id: 'travel', label: 'Travel', icon: '✈️' },
-  { id: 'other', label: 'Other', icon: '🌟' },
+  { id: 'meme_format', label: 'Meme/Humor', icon: '😂' },
+  { id: 'visual_style', label: 'Visual/Fashion', icon: '🎨' },
+  { id: 'audio_music', label: 'Music/Dance', icon: '🎵' },
+  { id: 'creator_technique', label: 'Creator/Tech', icon: '🎬' },
+  { id: 'product_brand', label: 'Product/Brand', icon: '🛍️' },
+  { id: 'behavior_pattern', label: 'Lifestyle/Other', icon: '📊' },
 ];
 
 export const CaptureScreenClean: React.FC = () => {

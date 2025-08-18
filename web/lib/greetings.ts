@@ -101,7 +101,7 @@ export function getDynamicGreeting(config: GreetingConfig = {}): string {
   
   // First time user
   if (isFirstTime) {
-    return `Welcome to WaveSight${userName ? `, [[${userName}]]` : ''}! 🌊`;
+    return `Welcome to WaveSight${userName ? `, [[${userName}]]` : ''}!`;
   }
   
   // Build greeting parts

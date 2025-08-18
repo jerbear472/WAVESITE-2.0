@@ -81,10 +81,10 @@ export const SUSTAINABLE_EARNINGS = {
   // Daily streak multipliers (consecutive days with submissions)
   dailyStreakMultipliers: [
     { minDays: 30, multiplier: 2.5 },  // 30+ days: 2.5x
-    { minDays: 14, multiplier: 2.0 },  // 14-29 days: 2x
-    { minDays: 7, multiplier: 1.5 },   // 7-13 days: 1.5x
-    { minDays: 2, multiplier: 1.2 },   // 2-6 days: 1.2x
-    { minDays: 0, multiplier: 1.0 },   // 0-1 days: 1x
+    { minDays: 7, multiplier: 2.0 },   // 7-29 days: 2x
+    { minDays: 3, multiplier: 1.5 },   // 3-6 days: 1.5x
+    { minDays: 1, multiplier: 1.2 },   // 1-2 days: 1.2x
+    { minDays: 0, multiplier: 1.0 },   // 0 days: 1x (no streak)
   ],
 
   // Tier requirements
@@ -294,15 +294,17 @@ export function calculateTrendEarnings(
 
 /**
  * Calculate validation earnings
- * Formula: $0.10 × tier_multiplier (no streak bonus for validations)
+ * FIXED: Flat $0.02 per validation - NO tier multiplier
  */
 export function calculateValidationEarnings(
   validationCount: number,
   userTier: Tier
 ): number {
+  // Validation earnings are FLAT $0.02 - no tier multiplier
   const base = SUSTAINABLE_EARNINGS.base.validationVote * validationCount;
-  const multiplier = SUSTAINABLE_EARNINGS.tiers[userTier].multiplier;
-  return Math.round(base * multiplier * 100) / 100;
+  // REMOVED: const multiplier = SUSTAINABLE_EARNINGS.tiers[userTier].multiplier;
+  // FIXED: Validations earn exactly $0.02, not multiplied by tier
+  return Math.round(base * 100) / 100;
 }
 
 /**

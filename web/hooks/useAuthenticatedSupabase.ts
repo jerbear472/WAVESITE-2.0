@@ -68,7 +68,7 @@ export async function fetchUserTrends(userId: string) {
       console.warn('User ID mismatch, using session user ID');
     }
 
-    // Query trends - columns should exist after FIX_CRITICAL_ERRORS.sql
+    // Query trends - first try simple query since we now have vote count columns
     const { data, error } = await supabaseClient
       .from('trend_submissions')
       .select('*')
@@ -78,29 +78,56 @@ export async function fetchUserTrends(userId: string) {
     if (error) {
       console.error('Query error:', error);
       
-      // If it's an RLS error, try a different approach
-      if (error.message?.includes('policy')) {
-        console.log('Attempting alternative query...');
-        
-        // Try without the eq filter to see if we can read anything
-        const { data: allData, error: allError } = await supabaseClient
-          .from('trend_submissions')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-        
-        if (!allError && allData) {
-          // Filter client-side
-          const filtered = allData.filter(trend => trend.spotter_id === queryUserId);
-          console.log(`Found ${filtered.length} trends via alternative method`);
-          return { data: filtered, error: null };
-        }
+      // If we can't query trends, try with a join to get vote counts
+      const { data: joinData, error: joinError } = await supabaseClient
+        .from('trend_submissions')
+        .select(`
+          *,
+          trend_validations!left (
+            vote
+          )
+        `)
+        .eq('spotter_id', queryUserId)
+        .order('created_at', { ascending: false });
+      
+      if (!joinError && joinData) {
+        // Process the joined data to calculate vote counts
+        const processedData = joinData.map(trend => {
+          const validations = trend.trend_validations || [];
+          const approve_count = validations.filter((v: any) => v.vote === 'verify' || v.vote === 'approve').length;
+          const reject_count = validations.filter((v: any) => v.vote === 'reject').length;
+          
+          // Determine validation status based on counts
+          let validation_status = 'pending';
+          if (approve_count >= 3) {
+            validation_status = 'approved';
+          } else if (reject_count >= 3) {
+            validation_status = 'rejected';
+          }
+          
+          return {
+            ...trend,
+            approve_count,
+            reject_count,
+            validation_status,
+            trend_validations: undefined // Remove raw data
+          };
+        });
+        return { data: processedData, error: null };
       }
       
       throw error;
     }
 
-    return { data, error: null };
+    // If columns exist, they'll be in the data. If not, ensure defaults
+    const processedData = data?.map(trend => ({
+      ...trend,
+      approve_count: trend.approve_count || 0,
+      reject_count: trend.reject_count || 0,
+      validation_status: trend.validation_status || 'pending'
+    }));
+
+    return { data: processedData, error: null };
     
   } catch (error) {
     console.error('fetchUserTrends error:', error);

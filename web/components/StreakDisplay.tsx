@@ -84,6 +84,7 @@ export default function StreakDisplay() {
   };
 
   const getDailyMultiplier = () => {
+    if (dailyStreak.current >= 30) return 2.5;
     if (dailyStreak.current >= 7) return 2.0;
     if (dailyStreak.current >= 3) return 1.5;
     if (dailyStreak.current >= 1) return 1.2;
@@ -193,19 +194,23 @@ export default function StreakDisplay() {
                 <Zap className="w-4 h-4 text-yellow-400" />
                 <p className="text-sm font-semibold text-yellow-400">Session Streak</p>
               </div>
-              <p className="text-xs text-gray-400 mb-2">Submit trends quickly to build momentum</p>
+              <p className="text-xs text-gray-400 mb-2">Submit trends within 5 minutes to build momentum</p>
               <div className="space-y-1">
                 <div className={`flex justify-between text-xs ${session.currentStreak >= 2 ? 'text-green-400' : 'text-gray-500'}`}>
-                  <span>2+ trends</span>
+                  <span>2nd trend</span>
                   <span>1.2x multiplier</span>
+                </div>
+                <div className={`flex justify-between text-xs ${session.currentStreak >= 3 ? 'text-green-400' : 'text-gray-500'}`}>
+                  <span>3rd trend</span>
+                  <span>1.5x multiplier</span>
+                </div>
+                <div className={`flex justify-between text-xs ${session.currentStreak >= 4 ? 'text-green-400' : 'text-gray-500'}`}>
+                  <span>4th trend</span>
+                  <span>2.0x multiplier</span>
                 </div>
                 <div className={`flex justify-between text-xs ${session.currentStreak >= 5 ? 'text-green-400' : 'text-gray-500'}`}>
                   <span>5+ trends</span>
-                  <span>2.0x multiplier</span>
-                </div>
-                <div className={`flex justify-between text-xs ${session.currentStreak >= 15 ? 'text-green-400' : 'text-gray-500'}`}>
-                  <span>15+ trends</span>
-                  <span>3.0x multiplier</span>
+                  <span>2.5x multiplier</span>
                 </div>
               </div>
             </div>
@@ -218,17 +223,21 @@ export default function StreakDisplay() {
               </div>
               <p className="text-xs text-gray-400 mb-2">Submit at least 1 trend daily</p>
               <div className="space-y-1">
-                <div className={`flex justify-between text-xs ${dailyStreak.current >= 1 ? 'text-green-400' : 'text-gray-500'}`}>
-                  <span>1+ days</span>
+                <div className={`flex justify-between text-xs ${dailyStreak.current >= 2 ? 'text-green-400' : 'text-gray-500'}`}>
+                  <span>2-6 days</span>
                   <span>1.2x multiplier</span>
                 </div>
-                <div className={`flex justify-between text-xs ${dailyStreak.current >= 3 ? 'text-green-400' : 'text-gray-500'}`}>
-                  <span>3+ days</span>
+                <div className={`flex justify-between text-xs ${dailyStreak.current >= 7 ? 'text-green-400' : 'text-gray-500'}`}>
+                  <span>7-13 days</span>
                   <span>1.5x multiplier</span>
                 </div>
-                <div className={`flex justify-between text-xs ${dailyStreak.current >= 7 ? 'text-green-400' : 'text-gray-500'}`}>
-                  <span>7+ days</span>
+                <div className={`flex justify-between text-xs ${dailyStreak.current >= 14 ? 'text-green-400' : 'text-gray-500'}`}>
+                  <span>14-29 days</span>
                   <span>2.0x multiplier</span>
+                </div>
+                <div className={`flex justify-between text-xs ${dailyStreak.current >= 30 ? 'text-green-400' : 'text-gray-500'}`}>
+                  <span>30+ days</span>
+                  <span>2.5x multiplier</span>
                 </div>
               </div>
             </div>

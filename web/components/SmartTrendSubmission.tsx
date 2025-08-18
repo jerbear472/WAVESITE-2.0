@@ -43,7 +43,8 @@ import {
   Scale as ScaleIcon,
   Trophy as TrophyIcon,
   Briefcase as BriefcaseIcon,
-  Heart as HealthIcon
+  Heart as HealthIcon,
+  Trash2 as TrashIcon
 } from 'lucide-react';
 
 interface SmartTrendSubmissionProps {
@@ -51,6 +52,32 @@ interface SmartTrendSubmissionProps {
   onSubmit?: (data: any) => Promise<void>;
   initialUrl?: string;
 }
+
+// Map UI categories to database-accepted categories
+const mapCategoryToDatabase = (uiCategory: string): string => {
+  const mapping: Record<string, string> = {
+    'meme': 'meme_format',
+    'fashion': 'visual_style',
+    'food': 'behavior_pattern',
+    'music': 'audio_music',
+    'lifestyle': 'behavior_pattern',
+    'tech': 'creator_technique',
+    'finance': 'behavior_pattern',
+    'sports': 'behavior_pattern',
+    'political': 'behavior_pattern',
+    'cars': 'product_brand',
+    'animals': 'behavior_pattern',
+    'travel': 'behavior_pattern',
+    'education': 'creator_technique',
+    'science': 'creator_technique',
+    'entertainment': 'visual_style',
+    'art': 'visual_style',
+    'relationships': 'behavior_pattern',
+    'health': 'behavior_pattern',
+  };
+  
+  return mapping[uiCategory] || 'behavior_pattern'; // Default to behavior_pattern
+};
 
 // Category configuration with icons and specific questions
 const CATEGORIES = [
@@ -327,40 +354,110 @@ export default function SmartTrendSubmission({
   
   // Form state
   const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'category' | 'details' | 'review'>('url');
-  const [formData, setFormData] = useState({
-    // URL & Metadata
-    url: initialUrl,
-    platform: '',
-    title: '',
-    creator_handle: '',
-    creator_name: '',
-    post_caption: '',
-    likes_count: 0,
-    comments_count: 0,
-    views_count: 0,
-    hashtags: [] as string[],
-    thumbnail_url: '',
-    posted_at: '',
-    
-    // User inputs
-    category: '',
-    categoryAnswers: {} as Record<string, string>,
-    audienceAge: [] as string[],
-    predictedPeak: '',
-    aiAngle: '' as 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai' | '',
-    
-    // Velocity & Size (HIGH VALUE DATA)
-    trendVelocity: '' as 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining' | '',
-    sentiment: 50,
-    trendSize: '' as 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '',
-    
-    // Calculated
-    wave_score: 50
+  // Autosave key
+  const AUTOSAVE_KEY = 'smart_trend_submission_draft';
+  
+  // Load saved data from localStorage
+  const loadSavedData = () => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only use saved data if it's less than 24 hours old
+        if (parsed.timestamp && Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+          return parsed.data;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load saved form data:', e);
+    }
+    return null;
+  };
+
+  const [formData, setFormData] = useState(() => {
+    const savedData = loadSavedData();
+    // If we loaded saved data, show a notification
+    if (savedData) {
+      setTimeout(() => {
+        setShowSavedNotification(true);
+        setLastSaved(new Date());
+        setTimeout(() => setShowSavedNotification(false), 3000);
+      }, 500);
+    }
+    return savedData || {
+      // URL & Metadata
+      url: initialUrl,
+      platform: '',
+      title: '',
+      creator_handle: '',
+      creator_name: '',
+      post_caption: '',
+      likes_count: 0,
+      comments_count: 0,
+      views_count: 0,
+      hashtags: [] as string[],
+      thumbnail_url: '',
+      posted_at: '',
+      
+      // User inputs
+      category: '',
+      categoryAnswers: {} as Record<string, string>,
+      audienceAge: [] as string[],
+      predictedPeak: '',
+      aiAngle: '' as 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai' | '',
+      
+      // Velocity & Size (HIGH VALUE DATA)
+      trendVelocity: '' as 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining' | '',
+      sentiment: 50,
+      trendSize: '' as 'micro' | 'niche' | 'viral' | 'mega' | 'global' | '',
+      
+      // Calculated
+      wave_score: 50
+    };
   });
   
   // Metadata display state
   const [metadata, setMetadata] = useState<any>(null);
   const [metadataError, setMetadataError] = useState('');
+  
+  // Autosave state
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showSavedNotification, setShowSavedNotification] = useState(false);
+  const autosaveTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Autosave effect - save form data to localStorage
+  useEffect(() => {
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+    }
+    
+    // Only autosave if there's meaningful data
+    if (formData.url || formData.title || formData.category) {
+      autosaveTimeoutRef.current = setTimeout(() => {
+        try {
+          const dataToSave = {
+            data: formData,
+            timestamp: Date.now()
+          };
+          localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(dataToSave));
+          setLastSaved(new Date());
+          setShowSavedNotification(true);
+          
+          // Hide notification after 2 seconds
+          setTimeout(() => setShowSavedNotification(false), 2000);
+        } catch (e) {
+          console.error('Failed to autosave:', e);
+        }
+      }, 2000); // Autosave after 2 seconds of no changes
+    }
+    
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+      }
+    };
+  }, [formData]);
 
   // Auto-extract metadata when URL changes (with debounce)
   useEffect(() => {
@@ -560,6 +657,15 @@ export default function SmartTrendSubmission({
     }
   };
 
+  const clearSavedDraft = () => {
+    try {
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setLastSaved(null);
+    } catch (e) {
+      console.error('Failed to clear saved draft:', e);
+    }
+  };
+
   const handleBack = () => {
     switch (currentStep) {
       case 'velocity':
@@ -640,14 +746,18 @@ export default function SmartTrendSubmission({
         }
       }
       
+      // Map the UI category to database-accepted category
+      const dbCategory = mapCategoryToDatabase(formData.category);
+      
       const submissionData = {
         ...formData,
+        category: dbCategory, // Use the mapped category for database
         url: formData.url.trim(),
         screenshot_url: thumbnailUrl,
         thumbnail_url: thumbnailUrl,
         trendName: formData.title,
         explanation: formData.title || 'Trending content',
-        categories: [formData.category],
+        categories: [dbCategory],
         ageRanges: formData.audienceAge,
         spreadSpeed: formData.trendVelocity || 'just_starting',
         categorySpecific: formData.categoryAnswers,
@@ -694,6 +804,8 @@ export default function SmartTrendSubmission({
       );
       
       // Success - close immediately
+      // Clear saved draft on successful submission
+      clearSavedDraft();
       setError('');
       setLoading(false);
       onClose();
@@ -747,12 +859,72 @@ export default function SmartTrendSubmission({
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <XIcon className="w-5 h-5 text-gray-400" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Autosave indicator */}
+              <AnimatePresence>
+                {showSavedNotification && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-lg"
+                  >
+                    <CheckIcon className="w-3 h-3 text-green-400" />
+                    <span className="text-xs text-green-400">Saved</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {lastSaved && !showSavedNotification && (
+                <span className="text-xs text-gray-500">
+                  Draft saved
+                </span>
+              )}
+              {/* Clear draft button if there's saved data */}
+              {lastSaved && (
+                <button
+                  onClick={() => {
+                    if (confirm('Clear all saved form data?')) {
+                      clearSavedDraft();
+                      // Reset form to initial state
+                      setFormData({
+                        url: initialUrl,
+                        platform: '',
+                        title: '',
+                        creator_handle: '',
+                        creator_name: '',
+                        post_caption: '',
+                        likes_count: 0,
+                        comments_count: 0,
+                        views_count: 0,
+                        hashtags: [],
+                        thumbnail_url: '',
+                        posted_at: '',
+                        category: '',
+                        categoryAnswers: {},
+                        audienceAge: [],
+                        predictedPeak: '',
+                        aiAngle: '',
+                        trendVelocity: '',
+                        sentiment: 50,
+                        trendSize: '',
+                        wave_score: 50
+                      });
+                      setCurrentStep('url');
+                    }
+                  }}
+                  className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group"
+                  title="Clear saved draft"
+                >
+                  <TrashIcon className="w-4 h-4 text-gray-400 group-hover:text-red-400" />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <XIcon className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
           </div>
         </div>
 

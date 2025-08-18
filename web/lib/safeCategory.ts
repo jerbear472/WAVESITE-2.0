@@ -10,7 +10,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'food': 'food_drink',
     'music': 'audio_music',
     'lifestyle': 'lifestyle',
-    'tech': 'technology',
+    'tech': 'gaming',  // Maps to gaming for tech-related content
     'finance': 'finance',
     'sports': 'sports',
     'political': 'political',
@@ -27,7 +27,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Food/Drink': 'food_drink',
     'Music/Dance': 'audio_music',
     'Lifestyle': 'lifestyle',
-    'Tech/Gaming': 'technology',
+    'Tech/Gaming': 'gaming',  // Maps to gaming category
     'Finance/Crypto': 'finance',
     'Sports/Fitness': 'sports',
     'Political/Social': 'political',
@@ -45,7 +45,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Politics & Social Issues': 'political',
     'Music & Dance': 'audio_music',
     'Sports & Fitness': 'sports',
-    'Tech & Gaming': 'technology',
+    'Tech & Gaming': 'gaming',
     'Art & Creativity': 'visual_style',
     'Education & Science': 'education',
     
@@ -72,7 +72,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'product_brand', 'behavior_pattern', 'political', 'finance', 
     'fashion', 'meme', 'gaming', 'lifestyle', 'health', 'music', 
     'brand', 'social_cause', 'food_drink', 'sports', 'automotive',
-    'animals_pets', 'travel', 'education', 'technology', 'dance',
+    'animals_pets', 'travel', 'education', 'dance',
     'diy_crafts', 'news_events', 'relationship'
   ];
   if (displayCategory && validEnums.includes(displayCategory)) {

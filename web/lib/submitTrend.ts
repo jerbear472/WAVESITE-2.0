@@ -137,6 +137,28 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     
     console.log('✅ Trend submitted:', submission?.id);
     
+    // Update scroll session tracking
+    if (submission?.id) {
+      console.log('📊 Updating scroll session...');
+      try {
+        // Call the database function to update session and apply multipliers
+        const { data: sessionData, error: sessionError } = await supabase
+          .rpc('update_session_on_trend_submission', {
+            p_user_id: userId,
+            p_trend_id: submission.id
+          });
+        
+        if (sessionError) {
+          console.warn('Failed to update scroll session:', sessionError);
+        } else {
+          console.log('✅ Scroll session updated');
+        }
+      } catch (error) {
+        console.warn('Session tracking error:', error);
+        // Don't fail the submission if session tracking fails
+      }
+    }
+    
     // NOTE: Earnings entry is now created by database trigger
     // Removing manual creation to prevent duplicate entries
     console.log('💰 Earnings will be created by database trigger');

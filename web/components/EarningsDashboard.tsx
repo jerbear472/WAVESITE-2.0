@@ -46,7 +46,8 @@ interface DailyEarnings {
 export const EarningsDashboard: React.FC = () => {
   const { user } = useAuth();
   const [timeframe, setTimeframe] = useState<'week' | 'month' | 'all'>('week');
-  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [approvedEarnings, setApprovedEarnings] = useState(0);
+  const [pendingEarnings, setPendingEarnings] = useState(0);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [dailyData, setDailyData] = useState<DailyEarnings[]>([]);
   const [stats, setStats] = useState({
@@ -65,8 +66,6 @@ export const EarningsDashboard: React.FC = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'venmo' | 'paypal' | null>(null);
   const [venmoUsername, setVenmoUsername] = useState('@username');
   const [paypalEmail, setPaypalEmail] = useState('email@example.com');
-  const [availableBalance, setAvailableBalance] = useState(0);
-  const [pendingAmount, setPendingAmount] = useState(0);
   const MINIMUM_CASHOUT = 10.00; // $10 minimum cashout
 
   // Fetch earnings data
@@ -85,6 +84,20 @@ export const EarningsDashboard: React.FC = () => {
         startDate.setDate(now.getDate() - 30);
       } else {
         startDate = new Date('2024-01-01'); // All time
+      }
+
+      // Fetch user's approved and pending earnings directly from user_profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('approved_earnings, pending_earnings')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile earnings:', profileError);
+      } else if (profileData) {
+        setApprovedEarnings(profileData.approved_earnings || 0);
+        setPendingEarnings(profileData.pending_earnings || 0);
       }
 
       // Fetch sessions
@@ -106,50 +119,13 @@ export const EarningsDashboard: React.FC = () => {
 
       if (verError) throw verError;
 
-      // Fetch pending trend submissions (for pending earnings)
-      const { data: pendingTrends, error: pendingError } = await supabase
-        .from('trend_submissions')
-        .select('base_amount, status')
-        .eq('spotter_id', user.id)
-        .in('status', ['submitted', 'validating'])
-        .gte('created_at', startDate.toISOString());
-
-      if (pendingError) console.error('Error fetching pending trends:', pendingError);
-
-      // Fetch approved trend submissions (for available earnings)
-      const { data: approvedTrends, error: approvedError } = await supabase
-        .from('trend_submissions')
-        .select('base_amount, status')
-        .eq('spotter_id', user.id)
-        .in('status', ['approved', 'viral'])
-        .gte('created_at', startDate.toISOString());
-
-      if (approvedError) console.error('Error fetching approved trends:', approvedError);
 
       // Process data
       const sessions = sessionsData || [];
       setSessions(sessions);
 
-      // Calculate pending earnings (from submitted/validating trends)
-      const pendingEarnings = (pendingTrends || []).reduce((sum, trend) => {
-        return sum + (trend.base_amount || 0.25); // Default 25 cents per submission
-      }, 0);
-      setPendingAmount(pendingEarnings);
-
-      // Calculate available earnings (from approved trends)
-      const approvedEarnings = (approvedTrends || []).reduce((sum, trend) => {
-        return sum + (trend.base_amount || 1.00);
-      }, 0);
-
-      // Calculate total earnings
+      // Calculate session earnings for stats
       const sessionEarnings = sessions.reduce((sum, s) => sum + s.total_earnings, 0);
-      // Calculate verification earnings using SUSTAINABLE_EARNINGS
-      const spotterTier = (user?.spotter_tier || 'learning') as SpotterTier;
-      const verificationEarnings = calculateValidationEarnings(verificationsCount || 0, spotterTier);
-      
-      const totalAvailable = sessionEarnings + verificationEarnings + approvedEarnings;
-      setAvailableBalance(totalAvailable);
-      setTotalEarnings(totalAvailable + pendingEarnings);
 
       // Calculate stats
       const totalBonus = sessions.reduce((sum, s) => sum + s.bonus_earnings, 0);
@@ -262,19 +238,19 @@ export const EarningsDashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="mb-6">
-              <p className="text-wave-300 text-sm font-medium mb-2">Available Balance</p>
-              <p className="text-5xl font-bold text-white mb-2">${availableBalance.toFixed(2)}</p>
+              <p className="text-wave-300 text-sm font-medium mb-2">Available Earnings</p>
+              <p className="text-5xl font-bold text-white mb-2">${approvedEarnings.toFixed(2)}</p>
               <div className="mt-4 pt-4 border-t border-wave-600/30">
-                <p className="text-wave-400 text-sm mb-1">Pending</p>
-                <p className="text-2xl font-semibold text-wave-200">${pendingAmount.toFixed(2)}</p>
+                <p className="text-yellow-400 text-sm mb-1">Pending Approval</p>
+                <p className="text-2xl font-semibold text-yellow-300">${pendingEarnings.toFixed(2)}</p>
               </div>
               <div className="mt-3 text-sm text-wave-400">
                 Total: <span className="text-wave-200 font-semibold">
-                  ${(availableBalance + pendingAmount).toFixed(2)}
+                  ${(approvedEarnings + pendingEarnings).toFixed(2)}
                 </span>
               </div>
             </div>
-            {availableBalance >= MINIMUM_CASHOUT ? (
+            {approvedEarnings >= MINIMUM_CASHOUT ? (
               <button
                 onClick={() => setShowPaymentModal(true)}
                 className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg"
@@ -293,7 +269,7 @@ export const EarningsDashboard: React.FC = () => {
                   Minimum cashout: ${MINIMUM_CASHOUT.toFixed(2)}
                 </p>
                 <p className="text-xs text-wave-400 mt-1">
-                  Need ${(MINIMUM_CASHOUT - availableBalance).toFixed(2)} more
+                  Need ${(MINIMUM_CASHOUT - approvedEarnings).toFixed(2)} more
                 </p>
               </div>
             )}
@@ -564,7 +540,7 @@ export const EarningsDashboard: React.FC = () => {
               <h3 className="text-2xl font-bold text-white text-center mb-4">Confirm Cash Out</h3>
               
               <p className="text-wave-300 text-center mb-8">
-                Send <span className="font-bold text-white">${availableBalance.toFixed(2)}</span> to{' '}
+                Send <span className="font-bold text-white">${approvedEarnings.toFixed(2)}</span> to{' '}
                 <span className="font-bold text-white">
                   {selectedPaymentMethod === 'venmo' ? venmoUsername : paypalEmail}
                 </span>?
@@ -627,14 +603,15 @@ export const EarningsDashboard: React.FC = () => {
               </p>
               
               <p className="text-wave-400 text-center text-sm mb-8">
-                ${availableBalance.toFixed(2)} sent to {selectedPaymentMethod === 'venmo' ? venmoUsername : paypalEmail}
+                ${approvedEarnings.toFixed(2)} sent to {selectedPaymentMethod === 'venmo' ? venmoUsername : paypalEmail}
               </p>
               
               <button
                 onClick={() => {
                   setShowSuccessModal(false);
                   // Reset balance after successful cashout
-                  setTotalEarnings(pendingAmount);
+                  setApprovedEarnings(0);
+                  // Pending stays the same
                 }}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-600 transition-all"
               >

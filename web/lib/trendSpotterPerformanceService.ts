@@ -89,7 +89,7 @@ export class TrendSpotterPerformanceService {
     const benefits: Record<SpotterTier, SpotterTierBenefits> = {
       master: {
         paymentMultiplier: 3.0,
-        basePaymentRange: { min: 0.20, max: 0.30 },
+        basePaymentRange: { min: 0.50, max: 1.00 },
         canAccessPremiumCategories: true,
         dailyTrendLimit: -1, // Unlimited
         qualityBonusEnabled: true,
@@ -98,7 +98,7 @@ export class TrendSpotterPerformanceService {
       },
       elite: {
         paymentMultiplier: 2.0,
-        basePaymentRange: { min: 0.12, max: 0.20 },
+        basePaymentRange: { min: 0.35, max: 0.60 },
         canAccessPremiumCategories: true,
         dailyTrendLimit: -1, // Unlimited
         qualityBonusEnabled: true,
@@ -107,7 +107,7 @@ export class TrendSpotterPerformanceService {
       },
       verified: {
         paymentMultiplier: 1.5,
-        basePaymentRange: { min: 0.08, max: 0.15 },
+        basePaymentRange: { min: 0.25, max: 0.40 },
         canAccessPremiumCategories: true,
         dailyTrendLimit: 100,
         qualityBonusEnabled: true,
@@ -116,7 +116,7 @@ export class TrendSpotterPerformanceService {
       },
       learning: {
         paymentMultiplier: 1.0,
-        basePaymentRange: { min: 0.05, max: 0.10 },
+        basePaymentRange: { min: 0.15, max: 0.25 },
         canAccessPremiumCategories: false,
         dailyTrendLimit: 50,
         qualityBonusEnabled: false,
@@ -125,7 +125,7 @@ export class TrendSpotterPerformanceService {
       },
       restricted: {
         paymentMultiplier: 0.5,
-        basePaymentRange: { min: 0.02, max: 0.05 },
+        basePaymentRange: { min: 0.05, max: 0.10 },
         canAccessPremiumCategories: false,
         dailyTrendLimit: 20,
         qualityBonusEnabled: false,

@@ -16,7 +16,7 @@ export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewSwitcherOpen, setViewSwitcherOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [totalEarnings, setTotalEarnings] = useState<number>(0);
+  const [approvedEarnings, setApprovedEarnings] = useState<number>(0);
   const [earningsLoaded, setEarningsLoaded] = useState(false);
 
   // Fetch correct total earnings
@@ -28,30 +28,23 @@ export default function Navigation() {
       
       try {
         const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('earnings_pending, earnings_approved, earnings_paid')
+          .from('user_profiles')
+          .select('approved_earnings')
           .eq('id', user.id)
           .single();
 
         if (!error && profile) {
-          // Calculate total earnings (all earnings ever earned)
-          const total = (profile.earnings_pending || 0) + 
-                       (profile.earnings_approved || 0) + 
-                       (profile.earnings_paid || 0);
-          console.log('Navigation earnings calculation:', {
-            pending: profile.earnings_pending || 0,
-            approved: profile.earnings_approved || 0,
-            paid: profile.earnings_paid || 0,
-            total
-          });
-          setTotalEarnings(total);
+          // Display only approved earnings (ready to cash out)
+          const approved = profile.approved_earnings || 0;
+          console.log('Navigation approved earnings:', approved);
+          setApprovedEarnings(approved);
           setEarningsLoaded(true);
         } else if (error) {
           console.error('Error fetching profile earnings:', error);
           // Fallback to user object if available
           if (user?.total_earnings !== undefined) {
             console.log('Using fallback user.total_earnings:', user.total_earnings);
-            setTotalEarnings(user.total_earnings);
+            setApprovedEarnings(user.total_earnings);
             setEarningsLoaded(true);
           }
         }
@@ -70,7 +63,7 @@ export default function Navigation() {
         {
           event: '*',
           schema: 'public',
-          table: 'profiles',
+          table: 'user_profiles',
           filter: `id=eq.${user?.id}`
         },
         (payload) => {
@@ -213,9 +206,9 @@ export default function Navigation() {
             {/* User info - visible on larger screens */}
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-800">
               <span className="max-w-[120px] xl:max-w-[200px] truncate">{user.email}</span>
-              {!isBusinessUser && (earningsLoaded ? totalEarnings > 0 : user?.total_earnings !== undefined) && (
-                <span className="font-medium text-green-600">
-                  {formatCurrency(earningsLoaded ? totalEarnings : (user?.total_earnings || 0))}
+              {!isBusinessUser && (earningsLoaded ? approvedEarnings > 0 : user?.total_earnings !== undefined) && (
+                <span className="font-semibold text-green-600">
+                  {formatCurrency(earningsLoaded ? approvedEarnings : (user?.total_earnings || 0))}
                 </span>
               )}
             </div>
@@ -279,9 +272,9 @@ export default function Navigation() {
             <div className="border-t border-gray-200 pt-2">
               <div className="px-3 py-2 text-sm text-gray-600">
                 <p className="truncate">{user.email}</p>
-                {!isBusinessUser && (earningsLoaded ? totalEarnings > 0 : user?.total_earnings !== undefined) && (
-                  <p className="font-medium text-green-600 mt-1">
-                    {formatCurrency(earningsLoaded ? totalEarnings : (user?.total_earnings || 0))}
+                {!isBusinessUser && (earningsLoaded ? approvedEarnings > 0 : user?.total_earnings !== undefined) && (
+                  <p className="font-semibold text-green-600 mt-1">
+                    {formatCurrency(earningsLoaded ? approvedEarnings : (user?.total_earnings || 0))}
                   </p>
                 )}
               </div>

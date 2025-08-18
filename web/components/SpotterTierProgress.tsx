@@ -50,7 +50,7 @@ export const SpotterTierProgress: React.FC<SpotterTierProgressProps> = ({
       textColor: 'text-red-600',
       bgColor: 'bg-red-50',
       icon: '⚠️',
-      multiplier: '0.3x',
+      multiplier: '0.5x',
       description: 'Limited earnings - improve performance'
     },
     {
@@ -60,7 +60,7 @@ export const SpotterTierProgress: React.FC<SpotterTierProgressProps> = ({
       textColor: 'text-blue-600',
       bgColor: 'bg-blue-50',
       icon: '📚',
-      multiplier: '0.7x',
+      multiplier: '1.0x',
       description: 'Building skills and reputation'
     },
     {
@@ -70,7 +70,7 @@ export const SpotterTierProgress: React.FC<SpotterTierProgressProps> = ({
       textColor: 'text-green-600',
       bgColor: 'bg-green-50',
       icon: '✅',
-      multiplier: '1.0x',
+      multiplier: '1.5x',
       description: 'Trusted trend spotter'
     },
     {
@@ -79,9 +79,19 @@ export const SpotterTierProgress: React.FC<SpotterTierProgressProps> = ({
       color: 'bg-yellow-500',
       textColor: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
-      icon: '🏆',
-      multiplier: '1.5x',
-      description: 'Top performer with maximum earnings'
+      icon: '⭐',
+      multiplier: '2.0x',
+      description: 'Top performer with high earnings'
+    },
+    {
+      name: 'master',
+      label: 'Master',
+      color: 'bg-purple-500',
+      textColor: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      icon: '👑',
+      multiplier: '3.0x',
+      description: 'Elite spotter with maximum earnings'
     }
   ];
 

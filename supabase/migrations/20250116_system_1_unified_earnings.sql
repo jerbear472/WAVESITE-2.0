@@ -51,10 +51,10 @@ RETURNS DECIMAL AS $$
 BEGIN
     RETURN CASE
         WHEN p_streak >= 30 THEN 2.5  -- 30+ days
-        WHEN p_streak >= 14 THEN 2.0  -- 14-29 days
-        WHEN p_streak >= 7 THEN 1.5   -- 7-13 days
-        WHEN p_streak >= 2 THEN 1.2   -- 2-6 days
-        ELSE 1.0                      -- 0-1 days
+        WHEN p_streak >= 7 THEN 2.0   -- 7-29 days
+        WHEN p_streak >= 3 THEN 1.5   -- 3-6 days
+        WHEN p_streak >= 1 THEN 1.2   -- 1-2 days
+        ELSE 1.0                      -- 0 days (no streak)
     END;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
@@ -65,7 +65,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 COMMENT ON FUNCTION get_tier_multiplier IS 'System 1 Tier Multipliers: Master(3x), Elite(2x), Verified(1.5x), Learning(1x), Restricted(0.5x)';
 COMMENT ON FUNCTION get_session_streak_multiplier IS 'System 1 Session Multipliers: 1.0x → 1.2x → 1.5x → 2.0x → 2.5x (5-min window)';
-COMMENT ON FUNCTION get_daily_streak_multiplier IS 'System 1 Daily Multipliers: 1.0x → 1.2x → 1.5x → 2.0x → 2.5x';
+COMMENT ON FUNCTION get_daily_streak_multiplier IS 'System 1 Daily Multipliers: 0 days=1.0x → 1-2 days=1.2x → 3-6 days=1.5x → 7-29 days=2.0x → 30+ days=2.5x';
 
 -- =====================================================
 -- GRANT PERMISSIONS
@@ -107,10 +107,10 @@ BEGIN
     ASSERT get_session_streak_multiplier(5) = 2.5, 'Session 5+ should be 2.5x';
     
     -- Test daily multipliers
-    ASSERT get_daily_streak_multiplier(0) = 1.0, 'Day 0-1 should be 1.0x';
-    ASSERT get_daily_streak_multiplier(2) = 1.2, 'Day 2-6 should be 1.2x';
-    ASSERT get_daily_streak_multiplier(7) = 1.5, 'Day 7-13 should be 1.5x';
-    ASSERT get_daily_streak_multiplier(14) = 2.0, 'Day 14-29 should be 2.0x';
+    ASSERT get_daily_streak_multiplier(0) = 1.0, 'Day 0 should be 1.0x';
+    ASSERT get_daily_streak_multiplier(1) = 1.2, 'Day 1-2 should be 1.2x';
+    ASSERT get_daily_streak_multiplier(3) = 1.5, 'Day 3-6 should be 1.5x';
+    ASSERT get_daily_streak_multiplier(7) = 2.0, 'Day 7-29 should be 2.0x';
     ASSERT get_daily_streak_multiplier(30) = 2.5, 'Day 30+ should be 2.5x';
     
     RAISE NOTICE '✅ SYSTEM 1 MULTIPLIERS VERIFIED';
@@ -119,7 +119,7 @@ BEGIN
     RAISE NOTICE '  Base: $0.25 per trend';
     RAISE NOTICE '  Tiers: Master(3x), Elite(2x), Verified(1.5x), Learning(1x), Restricted(0.5x)';
     RAISE NOTICE '  Session: 1x → 1.2x → 1.5x → 2x → 2.5x';
-    RAISE NOTICE '  Daily: 1x → 1.2x → 1.5x → 2x → 2.5x';
+    RAISE NOTICE '  Daily: 0d=1x → 1-2d=1.2x → 3-6d=1.5x → 7-29d=2x → 30+d=2.5x';
     RAISE NOTICE '';
     RAISE NOTICE '⚠️  All other multiplier systems have been removed.';
     RAISE NOTICE '    This is the ONLY active configuration.';

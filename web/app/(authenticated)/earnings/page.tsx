@@ -317,7 +317,7 @@ export default function Earnings() {
   // So we can trust the totalPending value
   const displayPending = totalPending;
   
-  const totalEarnings = displayPending + earningsData.earnings_approved + earningsData.earnings_paid;
+  const totalEarnings = earningsData.earnings_approved + earningsData.earnings_paid;
   const verificationRate = earningsData.total_submissions > 0 
     ? (earningsData.verified_submissions / earningsData.total_submissions * 100).toFixed(1)
     : '0';
@@ -463,14 +463,9 @@ export default function Earnings() {
             </div>
             <div className="text-yellow-300 text-sm font-medium">Pending Verification</div>
             <div className="mt-4">
-              <div className="text-xs text-yellow-400 mb-2">
+              <div className="text-xs text-yellow-400">
                 {transactions.filter(t => t.status === 'pending' || t.status === 'awaiting_validation').length} pending transactions
               </div>
-              {displayPending > 0 && (
-                <div className="text-xs text-gray-400 bg-gray-800/50 rounded p-2">
-                  💡 Earnings will be confirmed after community validation
-                </div>
-              )}
             </div>
           </motion.div>
 

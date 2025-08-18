@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import StreakDisplay from '@/components/StreakDisplay';
 import NotificationsWindow from '@/components/NotificationsWindow';
+import TierInfoModal from '@/components/TierInfoModal';
 import { getDynamicGreeting, getTimeOfDay } from '@/lib/greetings';
 import { formatCurrency as formatCurrencyLib } from '@/lib/formatters';
 import { 
@@ -23,11 +24,12 @@ import {
   ChevronRight,
   RefreshCw,
   Bell,
-  Award
+  Award,
+  Info
 } from 'lucide-react';
 
 interface DashboardStats {
-  total_earnings: number;
+  approved_earnings: number;
   pending_earnings: number;
   trends_spotted: number;
   trends_verified: number;
@@ -109,7 +111,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [stats, setStats] = useState<DashboardStats>({
-    total_earnings: 0,
+    approved_earnings: 0,
     pending_earnings: 0,
     trends_spotted: 0,
     trends_verified: 0,
@@ -124,6 +126,7 @@ export default function Dashboard() {
   const [recentTrends, setRecentTrends] = useState<RecentTrend[]>([]);
   const [activityFeed, setActivityFeed] = useState<any[]>([]);
   const [newNotifications, setNewNotifications] = useState(0);
+  const [showTierModal, setShowTierModal] = useState(false);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -245,6 +248,17 @@ export default function Dashboard() {
 
   const calculateStatsManually = async () => {
     try {
+      // Get user's approved and pending earnings directly from user_profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('approved_earnings, pending_earnings')
+        .eq('id', user?.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile earnings:', profileError);
+      }
+
       // Get user's trends for accuracy calculation
       const { data: userTrends, error: trendsError } = await supabase
         .from('trend_submissions')
@@ -324,8 +338,8 @@ export default function Dashboard() {
       const uniqueDays = new Set(recentTrends.map(t => new Date(t.created_at).toDateString())).size;
 
       setStats({
-        total_earnings: totalAvailable,  // Only approved (not paid) earnings are available
-        pending_earnings: pendingAmount,
+        approved_earnings: profileData?.approved_earnings || totalAvailable,  // Use profile data if available
+        pending_earnings: profileData?.pending_earnings || pendingAmount,
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
         scroll_sessions_count: 0, // Would need scroll_sessions table
@@ -918,13 +932,13 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Available Balance</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Available Earnings</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(stats.total_earnings)}
+                {formatCurrency(stats.approved_earnings)}
               </p>
               <div className="flex flex-col gap-1 mt-2">
                 {stats.pending_earnings > 0 && (
-                  <p className="text-xs text-yellow-600">
+                  <p className="text-xs text-yellow-500 font-medium">
                     +{formatCurrency(stats.pending_earnings)} pending approval
                   </p>
                 )}
@@ -1336,7 +1350,8 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm text-white"
+              className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm text-white cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+              onClick={() => setShowTierModal(true)}
             >
               <div className="p-4 border-b border-white/20">
                 <div className="flex items-center justify-between">
@@ -1346,9 +1361,10 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-white">Performance Tier</h3>
-                      <p className="text-xs text-white/80">Your current level</p>
+                      <p className="text-xs text-white/80">Click to view details</p>
                     </div>
                   </div>
+                  <Info className="w-4 h-4 text-white/60" />
                 </div>
               </div>
               <div className="p-4">
@@ -1496,7 +1512,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Available</span>
                     <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                      {formatCurrency(stats.total_earnings)}
+                      {formatCurrency(stats.approved_earnings)}
                     </span>
                   </div>
                   {(user?.pending_earnings || stats.pending_earnings) > 0 && (
@@ -1509,7 +1525,7 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              {stats.total_earnings >= 10 && (
+              {stats.approved_earnings >= 10 && (
                 <Link 
                   href="/earnings" 
                   className="mt-4 block w-full bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white py-2 px-4 rounded-lg text-center text-sm transition-colors"
@@ -1521,6 +1537,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Tier Info Modal */}
+      <TierInfoModal 
+        isOpen={showTierModal}
+        onClose={() => setShowTierModal(false)}
+        currentTier={user?.performance_tier}
+      />
     </div>
   );
 }

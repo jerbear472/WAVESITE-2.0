@@ -430,6 +430,7 @@ export default function ValidatePageFixed() {
           trend_id: trendId,
           amount: rewardAmount,
           type: 'validation',
+          transaction_type: 'validation_vote', // Added required transaction_type field
           status: 'approved', // Immediate payout for validations
           description: `Validation: ${voteType === 'verify' ? 'Verified' : 'Rejected'} trend`,
           metadata: {
@@ -444,12 +445,12 @@ export default function ValidatePageFixed() {
       } else {
         console.log('Earnings entry created for validation:', rewardAmount);
         
-        // Show earnings notification in bottom left
+        // Show subtle earnings notification
         showEarnings(
           rewardAmount,
           'validation',
-          `Validation submitted! You earned $${rewardAmount.toFixed(2)}`,
-          [`Immediate payout to approved earnings`]
+          `+$${rewardAmount.toFixed(2)}`,
+          [] // No breakdown needed for subtle notification
         );
         
         // Update user earnings immediately

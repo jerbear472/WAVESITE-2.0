@@ -39,6 +39,7 @@ import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { submitTrend } from '@/lib/submitTrend';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EarningsAnimation, useEarningsAnimation } from '@/components/EarningsAnimation';
+// Removed TrendSubmissionSuccess - using only earnings toast
 import { 
   SUSTAINABLE_EARNINGS,
   formatCurrency,
@@ -47,6 +48,7 @@ import {
   type Tier
 } from '@/lib/SUSTAINABLE_EARNINGS';
 import { calculateQualityScore } from '@/lib/calculateQualityScore';
+import { calculateAudienceSize } from '@/lib/calculateAudienceSize';
 
 // Primary platforms with better colors
 const PLATFORMS = [
@@ -71,6 +73,8 @@ export default function LegibleScrollPage() {
   const { session, startSession, endSession, logTrendSubmission } = useSession();
   const scrollSessionRef = useRef<any>();
   const { showEarnings, earningsData, showEarningsAnimation, hideEarningsAnimation } = useEarningsAnimation();
+  
+  // Removed success modal state - using only earnings toast
   
   // Core states
   const [trendUrl, setTrendUrl] = useState('');
@@ -295,11 +299,16 @@ export default function LegibleScrollPage() {
         setShowSubmissionForm(false);
         setTrendUrl('');
         
-        // Show earnings animation
+        // Show subtle earnings notification in bottom left
         const earningsAmount = result.earnings || 0.25;
+        
+        // Also show earnings animation
+        const audienceSizeDisplay = formData.trendSize ? 
+          `Audience: ${calculateAudienceSize(formData.trendSize)}` : 
+          'Audience: 0';
         showEarningsAnimation(
           earningsAmount,
-          [`Base: $0.25`, 'Trend submitted!'],
+          [`Base: $0.25`, audienceSizeDisplay],
           1
         );
         
@@ -316,9 +325,14 @@ export default function LegibleScrollPage() {
           });
         }
         
+        // Calculate audience size for display
+        const audienceSize = formData.trendSize ? 
+          calculateAudienceSize(formData.trendSize) : 
+          '0';
+        
         setSubmitMessage({ 
           type: 'success', 
-          text: `Trend submitted! You earned $${earningsAmount.toFixed(2)}` 
+          text: `Trend submitted! You earned $${earningsAmount.toFixed(2)} • Potential Audience: ${audienceSize}` 
         });
       } else {
         throw new Error(result.error || 'Submission failed');
@@ -1264,6 +1278,8 @@ export default function LegibleScrollPage() {
         multiplier={earningsData.multiplier}
         onComplete={hideEarningsAnimation}
       />
+      
+      {/* Success modal removed - using only earnings toast */}
     </div>
   );
 }

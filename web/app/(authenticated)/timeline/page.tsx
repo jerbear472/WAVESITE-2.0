@@ -11,6 +11,7 @@ import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
+import { useEarningsToast, EarningsToastContainer } from '@/components/EarningsToast';
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,
@@ -84,6 +85,7 @@ type ViewMode = 'grid' | 'list' | 'timeline';
 export default function Timeline() {
   const { user, loading: authLoading } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
+  const { toasts, showEarningsToast } = useEarningsToast();
   const [trends, setTrends] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,9 +107,9 @@ export default function Timeline() {
     if (user) {
       fetchUserTrends();
       
-      // Set up real-time subscription for new trends
+      // Set up real-time subscription for trends and validations
       const subscription = supabase
-        .channel('user-trends')
+        .channel('user-trends-and-votes')
         .on(
           'postgres_changes',
           {
@@ -117,8 +119,24 @@ export default function Timeline() {
             filter: `spotter_id=eq.${user.id}`
           },
           (payload) => {
-            console.log('Real-time update:', payload);
+            console.log('Trend update:', payload);
             fetchUserTrends();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'trend_validations'
+            // Note: Can't filter by trend owner, so we'll refresh all trends
+          },
+          (payload) => {
+            console.log('Validation update:', payload);
+            // Only refresh if it's for one of our trends
+            if (payload.new?.trend_id || payload.old?.trend_id) {
+              fetchUserTrends();
+            }
           }
         )
         .subscribe();
@@ -377,8 +395,8 @@ export default function Timeline() {
         setShowSubmitForm(false);
         await fetchUserTrends();
         
-        // Show success message
-        showSuccess('Trend submitted successfully!', 'Your trend is now being processed');
+        // Show subtle earnings notification
+        showEarningsToast(0.25, 'pending', 'Trend submitted - pending validation');
         setError('');
         return result.data;
       } else {
@@ -393,7 +411,7 @@ export default function Timeline() {
           if (fallbackResult.success) {
             setShowSubmitForm(false);
             await fetchUserTrends();
-            showSuccess('Trend submitted via backup!', 'Your trend was saved successfully');
+            showEarningsToast(0.25, 'pending', 'Trend submitted - pending validation');
             setError('');
             return fallbackResult.data;
           } else {
@@ -417,7 +435,7 @@ export default function Timeline() {
         if (fallbackResult.success) {
           setShowSubmitForm(false);
           await fetchUserTrends();
-          showSuccess('Trend submitted via backup!', 'Your trend was saved successfully');
+          showEarningsToast(0.25, 'pending', 'Trend submitted - pending validation');
           setError('');
           return fallbackResult.data;
         } else {
@@ -535,11 +553,18 @@ export default function Timeline() {
                 className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-sm">Avg Score</span>
-                  <BarChartIcon className="w-4 h-4 text-yellow-400" />
+                  <span className="text-gray-400 text-sm">Approval Rate</span>
+                  <AwardIcon className="w-4 h-4 text-yellow-400" />
                 </div>
                 <p className="text-2xl font-bold text-white">
-                  {trends.length > 0 ? (trends.reduce((sum, t) => sum + (t.virality_prediction || 0), 0) / trends.length).toFixed(1) : '0'}
+                  {trends.length > 0 
+                    ? `${Math.round((trends.filter(t => t.status === 'approved' || t.status === 'viral').length / trends.length) * 100)}%`
+                    : '0%'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {trends.length > 0 
+                    ? `${trends.filter(t => t.status === 'approved' || t.status === 'viral').length} of ${trends.length}`
+                    : 'No trends'}
                 </p>
               </motion.div>
             </div>
@@ -1358,6 +1383,9 @@ export default function Timeline() {
           onSubmit={handleTrendSubmit}
         />
       )}
+      
+      {/* Earnings Toast Notifications */}
+      <EarningsToastContainer toasts={toasts} />
     </div>
   );
 }

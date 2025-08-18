@@ -28,10 +28,10 @@ Earnings = Base × Tier Multiplier × Daily Streak × Session Streak
   - 1st submission: 1.0x
   - 2nd submission: 1.2x
   - 3rd submission: 1.5x
-  - 4th submission: 1.5x
+  - 4th submission: 2.0x
   - 5+ submissions: 2.5x
 
-Maximum possible earnings per trend: **$4.69** (Master tier + 30-day streak + 5th rapid submission)
+Maximum possible earnings per trend: **$5.00** (capped - theoretical would be $4.69: $0.25 × 3.0x × 2.5x × 2.5x)
 
 ### 2. Validation System
 - **Validation threshold**: Changed to require **3 approve votes** or **3 reject votes**

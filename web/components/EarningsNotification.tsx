@@ -27,10 +27,14 @@ export default function EarningsNotificationComponent({
   useEffect(() => {
     if (notification) {
       setIsVisible(true);
+      // Shorter duration for subtle validation notifications
+      const duration = notification.type === 'validation' && notification.message.startsWith('+$') 
+        ? 2000  // 2 seconds for validation
+        : 8000; // 8 seconds for others
       const timer = setTimeout(() => {
         setIsVisible(false);
         setTimeout(() => onDismiss?.(), 300);
-      }, 8000); // Show for 8 seconds
+      }, duration);
       return () => clearTimeout(timer);
     }
   }, [notification, onDismiss]);
@@ -76,6 +80,31 @@ export default function EarningsNotificationComponent({
     }).format(amount);
   };
 
+  // Subtle notification for validations
+  if (notification.type === 'validation' && notification.message.startsWith('+$')) {
+    return (
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+            className="fixed bottom-6 left-6 z-50"
+          >
+            <div className="bg-green-500 text-white rounded-full px-5 py-2.5 shadow-lg flex items-center gap-2">
+              <Check className="w-4 h-4" />
+              <span className="font-bold text-lg">
+                {notification.message}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // Original detailed notification for other types
   return (
     <AnimatePresence>
       {isVisible && (
