@@ -157,6 +157,32 @@ function EnterpriseLiveDashboard() {
     };
   }, []);
 
+  // Play sound effect
+  const playNotificationSound = useCallback(() => {
+    if (!soundEnabled) return;
+    
+    try {
+      // Create a simple beep sound using Web Audio API as fallback
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+      console.log('Audio playback not available');
+    }
+  }, [soundEnabled]);
+
   // Add new trends periodically
   useEffect(() => {
     if (!isClient) return;
@@ -228,32 +254,6 @@ function EnterpriseLiveDashboard() {
       default: return '🌐';
     }
   };
-
-  // Play sound effect
-  const playNotificationSound = useCallback(() => {
-    if (!soundEnabled) return;
-    
-    try {
-      // Create a simple beep sound using Web Audio API as fallback
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.1);
-    } catch (error) {
-      console.log('Audio playback not available');
-    }
-  }, [soundEnabled]);
 
   return (
     <div className="min-h-screen bg-[#0a0e27] text-white overflow-hidden">
