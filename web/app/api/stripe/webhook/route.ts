@@ -119,12 +119,13 @@ export async function POST(request: NextRequest) {
             .from('profiles')
             .update({
               subscription_status: subscription.status,
-              subscription_tier: subscription.metadata.plan_type || 'creator',
+              subscription_tier: subscription.metadata?.plan_type || 'creator',
               stripe_subscription_id: subscription.id,
-              subscription_current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              // Commenting out fields that may not exist in profiles table
+              // subscription_current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+              // subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             })
-            .eq('stripe_customer_id', session.customer);
+            .eq('stripe_customer_id', session.customer as string);
 
           console.log(`Checkout completed for subscription: ${subscription.id}`);
         }
