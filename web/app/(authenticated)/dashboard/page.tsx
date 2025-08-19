@@ -1057,45 +1057,6 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Learning Prompt for New Users */}
-        {stats.trends_spotted < 5 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur">
-                  <Award className="w-8 h-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">Think Like a Creator, Not a Viewer</h3>
-                  <p className="text-blue-100 mb-4">
-                    Learn to spot trends that creators actually need. Master the creator mindset and earn $0.25 for every approved trend!
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <Link
-                      href="/creator-training"
-                      className="inline-flex items-center px-4 py-2 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      <span className="mr-2">🚀</span>
-                      Start Creator Training
-                    </Link>
-                    <Link
-                      href="/learn"
-                      className="inline-flex items-center px-4 py-2 bg-white/20 text-white font-semibold rounded-lg hover:bg-white/30 transition-colors backdrop-blur"
-                    >
-                      <span className="mr-2">📚</span>
-                      Quick Examples
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
         {/* Main Content Grid with Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* Recent Trends - Enhanced */}
@@ -1430,7 +1391,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex-1">
                   <p className="text-white font-semibold text-sm">
-                    Think like a creator, not a viewer
+                    How to spot valuable trends
                   </p>
                   <p className="text-white/80 text-xs mt-1">
                     Focus on trends creators can use
