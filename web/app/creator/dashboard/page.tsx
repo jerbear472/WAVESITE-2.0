@@ -166,7 +166,7 @@ export default function CreatorDashboard() {
         example_url: trend.post_url,
         thumbnail_url: trend.thumbnail_url || trend.screenshot_url,
         created_at: trend.created_at,
-        audio_url: null, // No audio_url in current schema
+        audio_url: undefined, // No audio_url in current schema
         validation_count: trend.validation_count || 0,
         success_rate: Math.round(((trend.approve_count || 0) / Math.max(1, (trend.validation_count || 1))) * 100)
       }));
