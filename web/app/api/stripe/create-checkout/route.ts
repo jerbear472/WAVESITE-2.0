@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       customerId = profile.stripe_customer_id;
     } else {
       // Create new Stripe customer
-      const customer = await stripe.customers.create({
+      const customer = await stripe!.customers.create({
         email: session.user.email,
         metadata: {
           supabase_user_id: session.user.id,
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const checkoutSession = await stripe!.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
@@ -133,7 +133,7 @@ export async function PUT(request: NextRequest) {
 
     if (action === 'cancel') {
       // Cancel subscription at period end
-      const subscription = await stripe.subscriptions.update(
+      const subscription = await stripe!.subscriptions.update(
         profile.stripe_subscription_id,
         { cancel_at_period_end: true }
       );
@@ -150,7 +150,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ message: 'Subscription will be canceled at period end' });
     } else if (action === 'reactivate') {
       // Reactivate canceled subscription
-      const subscription = await stripe.subscriptions.update(
+      const subscription = await stripe!.subscriptions.update(
         profile.stripe_subscription_id,
         { cancel_at_period_end: false }
       );
