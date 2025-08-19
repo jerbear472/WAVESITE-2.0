@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 // Initialize Stripe (you'll need to add your key to .env.local)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-07-30.basil',
 });
 
 export async function POST(request: NextRequest) {
