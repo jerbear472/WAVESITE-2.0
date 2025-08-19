@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
-import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { 
   Filter, Search, Download, Settings, TrendingUp, Users, AlertCircle,
@@ -9,16 +9,6 @@ import {
   Sparkles, Volume2, VolumeX, Maximize2, RefreshCw, Bell
 } from 'lucide-react';
 import Link from 'next/link';
-
-// Dynamically import framer-motion to prevent SSR issues
-const motion = dynamic(() => import('framer-motion').then(mod => mod.motion), { 
-  ssr: false,
-  loading: () => <div className="animate-pulse bg-gray-800 rounded-lg h-32" />
-});
-
-const AnimatePresence = dynamic(() => import('framer-motion').then(mod => mod.AnimatePresence), { 
-  ssr: false 
-});
 
 interface TrendCard {
   id: string;
