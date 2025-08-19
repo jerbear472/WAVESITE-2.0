@@ -3,13 +3,27 @@ import Stripe from 'stripe';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil',
-});
+// Initialize Stripe only if environment variable is available
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+let stripe: Stripe | null = null;
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+if (stripeSecretKey) {
+  stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2025-07-30.basil',
+  });
+}
+
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 export async function POST(request: NextRequest) {
+  // Return early if Stripe is not configured
+  if (!stripe || !endpointSecret) {
+    console.error('Stripe webhook endpoint called but Stripe is not configured');
+    return NextResponse.json(
+      { error: 'Stripe is not configured' },
+      { status: 503 }
+    );
+  }
   const body = await request.text();
   const sig = request.headers.get('stripe-signature');
 

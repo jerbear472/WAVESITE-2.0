@@ -3,12 +3,25 @@ import Stripe from 'stripe';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
-// Initialize Stripe (you'll need to add your key to .env.local)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-  apiVersion: '2025-07-30.basil',
-});
+// Initialize Stripe only if environment variable is available
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+let stripe: Stripe | null = null;
+
+if (stripeSecretKey && stripeSecretKey !== '') {
+  stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2025-07-30.basil',
+  });
+}
 
 export async function POST(request: NextRequest) {
+  // Return early if Stripe is not configured
+  if (!stripe) {
+    console.error('Stripe checkout endpoint called but Stripe is not configured');
+    return NextResponse.json(
+      { error: 'Payment system is not configured. Please contact support.' },
+      { status: 503 }
+    );
+  }
   try {
     const supabase = createRouteHandlerClient({ cookies });
     
