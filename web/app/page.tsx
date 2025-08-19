@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import WaveSightLogo from '@/components/WaveSightLogo'
 import Header from '@/components/Header'
-import TrendingSection from '@/components/TrendingSection'
 
 export default function Home() {
   return (
@@ -12,7 +11,7 @@ export default function Home() {
         <div className="text-center max-w-4xl mx-auto animate-fade-in">
           {/* Title */}
           <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-8">
-            Wave<span className="text-blue-600 font-normal">Sight</span>
+            Wave<span className="text-gradient font-normal">Sight</span>
           </h1>
           
           {/* Tagline */}
@@ -78,9 +77,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Trending Section */}
-      <TrendingSection />
 
       {/* Two Modes Section */}
       <section className="py-20 bg-gray-50 dark:bg-neutral-900">
