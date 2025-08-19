@@ -253,7 +253,7 @@ const questions: Question[] = [
         description: "There's this recipe everyone's making. It looks good. People seem to like it.",
         category: "Food",
         quality: 'poor',
-        feedback: "This would get rejected. No specifics that validators can verify."
+        feedback: "This would get rejected. No specifics that validators can verify.",
         tips: ["No recipe name", "No metrics", "Too vague", "Can't verify"]
       }
     ],
