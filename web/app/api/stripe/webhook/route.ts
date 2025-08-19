@@ -38,13 +38,14 @@ export async function POST(request: NextRequest) {
           .from('profiles')
           .update({
             subscription_status: subscription.status,
-            subscription_tier: subscription.metadata.plan_type || 'creator',
+            subscription_tier: subscription.metadata?.plan_type || 'creator',
             stripe_subscription_id: subscription.id,
-            subscription_current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            subscription_cancel_at_period_end: subscription.cancel_at_period_end,
+            // These fields may not exist in the profiles table, commenting out for now
+            // subscription_current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
+            // subscription_current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+            // subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
           })
-          .eq('stripe_customer_id', subscription.customer);
+          .eq('stripe_customer_id', subscription.customer as string);
 
         console.log(`Subscription ${subscription.status}: ${subscription.id}`);
         break;
@@ -58,9 +59,9 @@ export async function POST(request: NextRequest) {
           .from('profiles')
           .update({
             subscription_status: 'canceled',
-            subscription_cancel_at_period_end: false,
+            // subscription_cancel_at_period_end: false,
           })
-          .eq('stripe_customer_id', subscription.customer);
+          .eq('stripe_customer_id', subscription.customer as string);
 
         console.log(`Subscription canceled: ${subscription.id}`);
         break;
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
               subscription_status: 'active',
               last_payment_date: new Date().toISOString(),
             })
-            .eq('stripe_subscription_id', invoice.subscription);
+            .eq('stripe_subscription_id', invoice.subscription as string);
 
           console.log(`Payment succeeded for subscription: ${invoice.subscription}`);
         }
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
             .update({
               subscription_status: 'past_due',
             })
-            .eq('stripe_subscription_id', invoice.subscription);
+            .eq('stripe_subscription_id', invoice.subscription as string);
 
           console.log(`Payment failed for subscription: ${invoice.subscription}`);
         }
