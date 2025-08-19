@@ -1035,12 +1035,12 @@ export default function Dashboard() {
 
 
         {/* Main Content Grid with Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* Recent Trends - Enhanced */}
-          <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Platform Trends</h2>
+          <div className="lg:col-span-2 order-2 lg:order-1">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-4 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Recent Platform Trends</h2>
                 <select 
                   value={timeframe} 
                   onChange={(e) => setTimeframe(e.target.value)}
@@ -1094,7 +1094,7 @@ export default function Dashboard() {
                             }
                           }
                         }}
-                        className="p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-all cursor-pointer group relative"
+                        className="p-3 sm:p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-all cursor-pointer group relative"
                       >
                         {/* External link indicator */}
                         {(trend.url || trend.post_url || trend.evidence?.url) && (
@@ -1104,10 +1104,10 @@ export default function Dashboard() {
                             </svg>
                           </div>
                         )}
-                        <div className="flex items-start gap-4">
+                        <div className="flex flex-col sm:flex-row items-start gap-4">
                           {/* Thumbnail */}
                           {(trend.thumbnail_url || trend.screenshot_url) && (
-                            <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                            <div className="w-full sm:w-20 h-32 sm:h-20 rounded-lg overflow-hidden flex-shrink-0">
                               <img 
                                 src={trend.thumbnail_url || trend.screenshot_url} 
                                 alt="Trend"
@@ -1116,8 +1116,8 @@ export default function Dashboard() {
                             </div>
                           )}
                           
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className="text-2xl">{categoryDetails.emoji}</span>
                               {categoryDetails.label && categoryDetails.label !== '0' && categoryDetails.label !== '' && (
                                 <span className={`text-xs px-2.5 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white font-medium shadow-sm`}>
@@ -1136,7 +1136,7 @@ export default function Dashboard() {
                               ) : null}
                             </div>
                             
-                            <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                               {trend.title || trend.trend_headline || trend.evidence?.title || trend.trendName || trend.why_trending || (trend.description && trend.description !== '0' && trend.description.split('\n')[0]) || 'Untitled Trend'}
                             </h3>
                             
@@ -1218,19 +1218,19 @@ export default function Dashboard() {
                               </p>
                             )}
                             
-                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                              <span>{formatTimeAgo(trend.created_at)}</span>
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500">
+                              <span className="whitespace-nowrap">{formatTimeAgo(trend.created_at)}</span>
                               {trend.likes_count && trend.likes_count > 0 ? (
-                                <span>❤️ {formatNumber(trend.likes_count)}</span>
+                                <span className="whitespace-nowrap">❤️ {formatNumber(trend.likes_count)}</span>
                               ) : null}
                               {trend.views_count && trend.views_count > 0 ? (
-                                <span>👁 {formatNumber(trend.views_count)}</span>
+                                <span className="whitespace-nowrap">👁 {formatNumber(trend.views_count)}</span>
                               ) : null}
                               {trend.shares_count && trend.shares_count > 0 ? (
-                                <span>🔄 {formatNumber(trend.shares_count)}</span>
+                                <span className="whitespace-nowrap">🔄 {formatNumber(trend.shares_count)}</span>
                               ) : null}
                               {trend.comments_count && trend.comments_count > 0 ? (
-                                <span>💬 {formatNumber(trend.comments_count)}</span>
+                                <span className="whitespace-nowrap">💬 {formatNumber(trend.comments_count)}</span>
                               ) : null}
                               {((trend.approve_count || 0) > 0 || (trend.reject_count || 0) > 0) && (
                                 <span className="flex items-center gap-1">
@@ -1259,7 +1259,8 @@ export default function Dashboard() {
                             </div>
                           </div>
                           
-                          <div className="flex flex-col gap-2 min-w-[140px]">
+                          {/* Velocity Indicator - Hidden on mobile, shown on desktop */}
+                          <div className="hidden sm:flex flex-col gap-2 min-w-[140px]">
                             {/* Velocity Indicator - Enhanced */}
                             <div className="text-center bg-gradient-to-br from-gray-100 to-gray-50 dark:from-neutral-800 dark:to-neutral-900 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-shadow">
                               <div className={`text-sm font-bold ${getTrendVelocity(trend).color}`}>
@@ -1347,7 +1348,7 @@ export default function Dashboard() {
           </div>
 
           {/* Sidebar with Streak, Notifications, and Tier */}
-          <div className="space-y-6">
+          <div className="space-y-6 order-1 lg:order-2">
             {/* Streak Display */}
             <StreakDisplay />
             
