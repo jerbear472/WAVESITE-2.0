@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CheckCircle, XCircle, TrendingUp, Award, ChevronRight, RotateCcw } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import * as confetti from 'canvas-confetti';
 
 interface TrendOption {
   id: string;

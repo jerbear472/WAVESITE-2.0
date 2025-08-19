@@ -144,8 +144,6 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
         })
         
         if (response.ok) {
-          // Close modal and let parent refresh
-          setShowAddContentModal(false)
           // Trigger a refresh without full page reload if parent has a refresh function
           if (typeof window !== 'undefined' && window.dispatchEvent) {
             window.dispatchEvent(new CustomEvent('trend-updated'))
