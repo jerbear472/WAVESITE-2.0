@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { safeLogin, ensureValidSession, getCurrentUser } from '@/lib/authHelpers';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -210,44 +211,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[AUTH] Attempting login for:', email);
       setLoading(true);
       
-      // Clear any existing session first
-      await supabase.auth.signOut();
+      // Use the safer login helper with retries
+      const { user, session } = await safeLogin(email.trim().toLowerCase(), password);
       
-      // Sign in with Supabase
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-      if (authError) {
-        console.error('[AUTH] Login error:', authError);
-        
-        // Provide specific error messages
-        if (authError.message.includes('Invalid login credentials')) {
-          throw new Error('Invalid email or password. Please check your credentials and try again.');
-        } else if (authError.message.includes('Email not confirmed')) {
-          throw new Error('Please confirm your email address before logging in. Check your inbox for the confirmation link.');
-        } else if (authError.message.includes('Too many requests')) {
-          throw new Error('Too many login attempts. Please wait a few minutes and try again.');
-        } else if (authError.message.includes('User not found')) {
-          throw new Error('No account found with this email. Please check your email or sign up.');
-        }
-        
-        throw new Error(authError.message || 'Login failed. Please try again.');
+      if (!user || !session) {
+        throw new Error('Login failed - invalid response');
       }
 
-      if (!authData.session) {
-        throw new Error('Login failed - no session created');
-      }
-
-      // Fetch user profile
-      const userData = await fetchUserProfile(authData.user.id);
+      // Fetch user profile with retry logic
+      const userData = await fetchUserProfile(user.id);
       if (!userData) {
-        throw new Error('Failed to load user profile');
+        // Try once more after a delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const retryData = await fetchUserProfile(user.id);
+        if (!retryData) {
+          throw new Error('Failed to load user profile after retries');
+        }
+        setUser(retryData);
+        console.log('[AUTH] Login successful with retry');
+      } else {
+        setUser(userData);
+        console.log('[AUTH] Login successful');
       }
-
-      setUser(userData);
-      console.log('[AUTH] Login successful');
       
       // Navigate to dashboard
       router.push('/dashboard');

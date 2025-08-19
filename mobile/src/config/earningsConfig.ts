@@ -15,6 +15,14 @@ export const EARNINGS_CONFIG = {
     TREND_SUBMISSION: 0.25,  // Base payment per trend (PENDING until 2+ YES votes)
     VALIDATION_VOTE: 0.02,   // Payment per validation (FIXED from 0.10)
     APPROVAL_BONUS: 0.50,    // Bonus when trend gets approved (2+ YES votes)
+    BOUNTY_BASE: 1.00,       // Base bounty submission (overridden by bounty price)
+  },
+
+  // Bounty multipliers (applied on top of bounty price)
+  BOUNTY_MULTIPLIERS: {
+    lightning: 1.5,   // 50% bonus for lightning bounties
+    rapid: 1.2,       // 20% bonus for rapid bounties
+    standard: 1.0,    // No bonus for standard bounties
   },
 
   // Tier multipliers
@@ -169,6 +177,30 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
+ * Calculate bounty earnings with multipliers
+ */
+export function calculateBountyEarnings(
+  basePricePerSpot: number,
+  urgencyLevel: 'lightning' | 'rapid' | 'standard',
+  userTier: UserTier = 'learning',
+  isFirstBountySubmission: boolean = false
+): number {
+  // Get urgency multiplier
+  const urgencyMultiplier = EARNINGS_CONFIG.BOUNTY_MULTIPLIERS[urgencyLevel] || 1.0;
+  
+  // Get tier multiplier (smaller than regular to keep bounties balanced)
+  const tierMultiplier = Math.min(EARNINGS_CONFIG.TIER_MULTIPLIERS[userTier] * 0.5, 1.5);
+  
+  // First bounty submission bonus
+  const firstSubmissionBonus = isFirstBountySubmission ? 1.2 : 1.0;
+  
+  // Calculate final amount
+  const finalAmount = basePricePerSpot * urgencyMultiplier * tierMultiplier * firstSubmissionBonus;
+  
+  return Math.round(finalAmount * 100) / 100;
+}
+
+/**
  * Get earning potential examples
  */
 export function getEarningExamples(): string[] {
@@ -178,5 +210,7 @@ export function getEarningExamples(): string[] {
     `Verified tier, 5th rapid + 7-day streak: ${formatCurrency(calculateTrendEarnings('verified', 5, 7).finalAmount)}`,
     `Elite tier, 5th rapid + 30-day streak: ${formatCurrency(calculateTrendEarnings('elite', 5, 30).finalAmount)}`,
     `Master tier, 5th rapid + 30-day streak: ${formatCurrency(calculateTrendEarnings('master', 5, 30).finalAmount)}`,
+    `Bounty: Lightning $3 spot (learning): ${formatCurrency(calculateBountyEarnings(3, 'lightning', 'learning'))}`,
+    `Bounty: Lightning $3 spot (elite): ${formatCurrency(calculateBountyEarnings(3, 'lightning', 'elite'))}`,
   ];
 }

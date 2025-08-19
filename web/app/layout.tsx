@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
 
 export const metadata: Metadata = {
   title: "WaveSight - Get Paid to Spot Viral Trends",
@@ -25,11 +26,13 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
       <body className="h-full antialiased bg-white dark:bg-neutral-950 text-gray-900 dark:text-gray-100 responsive-container">
-        <Providers>
-          <div className="min-h-full dynamic-vh">
-            {children}
-          </div>
-        </Providers>
+        <GlobalErrorBoundary>
+          <Providers>
+            <div className="min-h-full dynamic-vh">
+              {children}
+            </div>
+          </Providers>
+        </GlobalErrorBoundary>
         <script
           dangerouslySetInnerHTML={{
             __html: `

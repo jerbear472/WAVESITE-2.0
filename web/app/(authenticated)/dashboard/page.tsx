@@ -25,7 +25,8 @@ import {
   RefreshCw,
   Bell,
   Award,
-  Info
+  Info,
+  Sparkles
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -229,16 +230,21 @@ export default function Dashboard() {
   };
 
   const fetchDashboardStats = async () => {
+    if (!user?.id) return;
+    
     try {
       // Try the RPC function first, but fallback to manual calculation if it fails
       const { data: statsData, error: statsError } = await supabase
-        .rpc('get_user_dashboard_stats', { p_user_id: user?.id });
+        .rpc('get_user_dashboard_stats', { p_user_id: user.id });
 
       if (statsError) {
         console.log('RPC function failed, calculating stats manually:', statsError.message);
         await calculateStatsManually();
       } else if (statsData && statsData.length > 0) {
         setStats(statsData[0]);
+      } else {
+        // No data returned, calculate manually
+        await calculateStatsManually();
       }
     } catch (error) {
       console.error('Error fetching stats, falling back to manual calculation:', error);
@@ -247,12 +253,14 @@ export default function Dashboard() {
   };
 
   const calculateStatsManually = async () => {
+    if (!user?.id) return;
+    
     try {
       // Get user's approved and pending earnings directly from user_profiles
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('approved_earnings, pending_earnings')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
       if (profileError) {
@@ -263,7 +271,7 @@ export default function Dashboard() {
       const { data: userTrends, error: trendsError } = await supabase
         .from('trend_submissions')
         .select('*')
-        .eq('spotter_id', user?.id);
+        .eq('spotter_id', user.id);
 
       if (trendsError) {
         console.error('Error fetching user trends:', trendsError);
@@ -274,7 +282,7 @@ export default function Dashboard() {
       const { data: earningsLedger, error: earningsError } = await supabase
         .from('earnings_ledger')
         .select('*')
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
       if (earningsError) {
         console.error('Error fetching user earnings:', earningsError);
@@ -381,8 +389,12 @@ export default function Dashboard() {
           spotter:profiles(username, email),
           earnings:earnings_ledger(amount)
         `)
-        .eq('spotter_id', user?.id)
         .order('created_at', { ascending: false });
+      
+      // Only filter by user if we have a user
+      if (user?.id) {
+        userTrendsQuery = userTrendsQuery.eq('spotter_id', user.id);
+      }
 
       if (timeframe !== 'all') {
         const dateFilter = getDateFilter(timeframe);
@@ -477,11 +489,13 @@ export default function Dashboard() {
   };
 
   const fetchActivityFeed = async () => {
+    if (!user?.id) return;
+    
     try {
       const { data: earnings } = await supabase
         .from('earnings_ledger')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -907,6 +921,16 @@ export default function Dashboard() {
             >
               <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
+            {/* Enterprise Dashboard - Only for jeremyuys@gmail.com */}
+            {user?.email === 'jeremyuys@gmail.com' && (
+              <Link 
+                href="/enterprise/live" 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
+              >
+                <Sparkles className="w-4 h-4" />
+                Enterprise Live
+              </Link>
+            )}
             <Link href="/scroll" className="btn-primary">
               Submit New Trend
             </Link>
@@ -1392,6 +1416,28 @@ export default function Dashboard() {
             
             {/* Notifications */}
             <NotificationsWindow />
+            
+            {/* Creator Mindset Reminder */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-lg p-4 hover:shadow-xl transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
+                  <span className="text-2xl">💡</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-semibold text-sm">
+                    Think like a creator, not a viewer
+                  </p>
+                  <p className="text-white/80 text-xs mt-1">
+                    Focus on trends creators can use
+                  </p>
+                </div>
+              </div>
+            </motion.div>
             
             {/* Performance Tier */}
             <motion.div
