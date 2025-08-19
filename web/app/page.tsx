@@ -16,7 +16,7 @@ export default function Home() {
           
           {/* Tagline */}
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-4">
-            See what's trending before algorithms do
+            Get paid to spot viral trends
           </p>
           
           <p className="text-lg text-gray-500 dark:text-gray-500 mb-8 max-w-2xl mx-auto">
