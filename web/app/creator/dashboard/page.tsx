@@ -9,7 +9,7 @@ import {
   CheckCircle, AlertCircle, Sparkles, Crown, Flame,
   BarChart3, Eye, Heart, MessageCircle, Send,
   ChevronRight, Timer, Trophy, Gauge, TrendingDown, X,
-  Search, Filter, Settings, Menu, Home, Waves, Trending,
+  Search, Filter, Settings, Menu, Home, Waves,
   MoreHorizontal, ExternalLink, Download, RefreshCw
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
