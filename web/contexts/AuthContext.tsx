@@ -1,9 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api } from '@/lib/api';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { clearAllAuthState } from '@/lib/auth-utils';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -28,12 +27,10 @@ interface User {
   performance_tier?: string;
   current_streak?: number;
   session_streak?: number;
-  // Business user fields
   is_business?: boolean;
   business_id?: string;
   business_name?: string;
   business_role?: 'admin' | 'analyst' | 'viewer';
-  // Admin fields
   is_admin?: boolean;
   account_type?: 'user' | 'enterprise';
 }
@@ -61,353 +58,205 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    // Check for existing session on mount
-    checkUser();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
+  // Fetch user profile data
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    try {
+      console.log('[AUTH] Fetching profile for user:', userId);
       
-      // Skip auto-login if user just registered and needs email confirmation
+      // Get user profile from profiles view
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (profileError) {
+        console.error('[AUTH] Profile fetch error:', profileError);
+        return null;
+      }
+
+      // Get earnings data from user_profiles table
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      // Get pending earnings from earnings_ledger
+      const { data: pendingData } = await supabase
+        .from('earnings_ledger')
+        .select('amount')
+        .eq('user_id', userId)
+        .in('status', ['pending', 'awaiting_validation']);
+      
+      const pendingEarnings = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+
+      // Combine all data
+      const userData: User = {
+        id: profile.id,
+        email: profile.email,
+        username: profile.username || profile.email.split('@')[0],
+        role: 'participant',
+        total_earnings: userProfile?.total_earned || 0,
+        pending_earnings: userProfile?.pending_earnings || pendingEarnings || 0,
+        trends_spotted: userProfile?.trends_spotted || 0,
+        accuracy_score: 0,
+        validation_score: 0,
+        performance_tier: userProfile?.performance_tier || 'learning',
+        current_streak: userProfile?.current_streak || 0,
+        session_streak: userProfile?.session_streak || 0,
+        view_mode: 'user',
+        subscription_tier: profile.subscription_tier || 'starter',
+        spotter_tier: profile.spotter_tier || 'learning',
+        is_admin: profile.is_admin === true,
+        account_type: profile.is_admin ? 'enterprise' : 'user',
+        permissions: profile.is_admin ? {
+          can_manage_users: true,
+          can_switch_views: true,
+          can_access_all_data: true,
+          can_manage_permissions: true
+        } : {}
+      };
+
+      console.log('[AUTH] User data compiled:', userData.username);
+      return userData;
+    } catch (error) {
+      console.error('[AUTH] Error fetching user profile:', error);
+      return null;
+    }
+  }, []);
+
+  // Initialize auth state
+  const initializeAuth = useCallback(async () => {
+    try {
+      console.log('[AUTH] Initializing auth state...');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('[AUTH] Session error:', error);
+        setLoading(false);
+        setIsInitialized(true);
+        return;
+      }
+
+      if (session?.user) {
+        const userData = await fetchUserProfile(session.user.id);
+        if (userData) {
+          setUser(userData);
+        }
+      }
+      
+      setLoading(false);
+      setIsInitialized(true);
+    } catch (error) {
+      console.error('[AUTH] Initialization error:', error);
+      setLoading(false);
+      setIsInitialized(true);
+    }
+  }, [fetchUserProfile]);
+
+  // Initialize on mount
+  useEffect(() => {
+    if (!isInitialized) {
+      initializeAuth();
+    }
+  }, [isInitialized, initializeAuth]);
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AUTH] Auth state changed:', event);
+      
       if (event === 'SIGNED_IN' && session) {
-        // Check if this is a new registration that needs confirmation
-        const isNewRegistration = session.user?.email_confirmed_at === null;
-        if (isNewRegistration) {
-          console.log('New registration detected, skipping auto-login until email confirmed');
-          // Sign out to prevent auto-login before email confirmation
+        // Skip if this is a new registration needing email confirmation
+        if (session.user?.email_confirmed_at === null) {
+          console.log('[AUTH] New registration, awaiting email confirmation');
           await supabase.auth.signOut();
           return;
         }
         
-        // Fetch user profile when signed in (profiles is a VIEW)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, email, username, is_admin, subscription_tier, spotter_tier, created_at, updated_at')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profile) {
-          // Fetch user stats including earnings - handle missing RPC
-          let userStats: any = {};
-          try {
-            const { data: stats } = await supabase
-              .rpc('get_user_dashboard_stats', { p_user_id: session.user.id });
-            userStats = stats?.[0] || {};
-          } catch (rpcError) {
-            console.warn('Dashboard stats RPC not available:', rpcError);
-            userStats = {};
-          }
-          
-          // Also fetch pending earnings directly from earnings_ledger
-          const { data: pendingData } = await supabase
-            .from('earnings_ledger')
-            .select('amount')
-            .eq('user_id', session.user.id)
-            .in('status', ['pending', 'awaiting_validation'])
-            .not('amount', 'is', null);
-          
-          const actualPendingEarnings = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-          
-          // Check if user is admin from database field
-          const isAdmin = profile.is_admin === true;
-          
-          // Get account type
-          const { data: accountSettings } = await supabase
-            .from('user_account_settings')
-            .select('account_type')
-            .eq('user_id', session.user.id)
-            .single();
-
-          // Get ALL earnings and performance data from user_profiles TABLE
-          const { data: userProfile } = await supabase
-            .from('user_profiles')
-            .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
-            .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
-            .single();
-
-          // Map profile to user format expected by app
-          setUser({
-            ...profile,
-            role: 'participant',
-            // Use userProfile (from table) as primary source
-            total_earnings: userProfile?.total_earned || userStats.total_earnings || 0,
-            pending_earnings: userProfile?.pending_earnings || actualPendingEarnings || userStats.pending_earnings || 0,
-            trends_spotted: userProfile?.trends_spotted || userStats.trends_spotted || 0,
-            accuracy_score: userStats.accuracy_score || 0,
-            validation_score: userStats.validation_score || 0,
-            view_mode: 'user',
-            subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
-            spotter_tier: profile.spotter_tier || 'learning',
-            performance_tier: userProfile?.performance_tier || 'learning',
-            current_streak: userProfile?.current_streak || 0,
-            session_streak: userProfile?.session_streak || 0,
-            is_admin: isAdmin,
-            account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
-            permissions: isAdmin ? {
-              can_manage_users: true,
-              can_switch_views: true,
-              can_access_all_data: true,
-              can_manage_permissions: true
-            } : {}
-          });
+        const userData = await fetchUserProfile(session.user.id);
+        if (userData) {
+          setUser(userData);
+          // No need to refresh - React will re-render automatically
         }
       } else if (event === 'SIGNED_OUT') {
-        console.log('User signed out, clearing state');
         setUser(null);
-        localStorage.removeItem('access_token');
+        localStorage.clear();
+        // Navigate to login without refresh
+        router.push('/login');
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('[AUTH] Token refreshed');
+        // Refresh user data when token is refreshed
+        if (session?.user) {
+          const userData = await fetchUserProfile(session.user.id);
+          if (userData) {
+            setUser(userData);
+          }
+        }
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
-
-  // Subscribe to earnings_ledger changes for real-time updates
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const earningsSubscription = supabase
-      .channel('earnings-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'earnings_ledger',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Earnings update received:', payload);
-          // Refresh user data when earnings change
-          refreshUser();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      earningsSubscription.unsubscribe();
-    };
-  }, [user?.id]);
-
-  const checkUser = async () => {
-    try {
-      console.log('Checking user session...');
-      // Check Supabase auth session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        setLoading(false);
-        return;
-      }
-      
-      console.log('Session found:', !!session);
-      
-      if (session?.user) {
-        console.log('User ID from session:', session.user.id);
-        // Get user profile from database (profiles is a VIEW, no earnings there)
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, email, username, is_admin, subscription_tier, spotter_tier, created_at, updated_at')
-          .eq('id', session.user.id)
-          .single();
-          
-        // Get ALL earnings and performance data from user_profiles (the actual table)
-        console.log('🔍 [AUTH] Fetching user_profiles for user:', session.user.id);
-        const { data: userProfile, error: userProfileError } = await supabase
-          .from('user_profiles')
-          .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
-          .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
-          .single();
-        
-        console.log('📊 [AUTH] user_profiles data:', userProfile);
-        if (userProfileError) {
-          console.error('❌ [AUTH] user_profiles error:', userProfileError);
-        }
-
-        if (profileError) {
-          console.error('Profile fetch error:', profileError);
-        }
-        
-        if (profile) {
-          console.log('Profile found:', profile.username);
-          // Fetch user stats including earnings - handle missing RPC
-          let userStats: any = {};
-          try {
-            const { data: stats } = await supabase
-              .rpc('get_user_dashboard_stats', { p_user_id: session.user.id });
-            userStats = stats?.[0] || {};
-          } catch (rpcError) {
-            console.warn('Dashboard stats RPC not available:', rpcError);
-            userStats = {};
-          }
-          
-          // Also fetch pending earnings directly from earnings_ledger
-          const { data: pendingData } = await supabase
-            .from('earnings_ledger')
-            .select('amount')
-            .eq('user_id', session.user.id)
-            .in('status', ['pending', 'awaiting_validation'])
-            .not('amount', 'is', null);
-          
-          const actualPendingEarnings = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-          
-          // Check if user is admin from database field
-          const isAdmin = profile.is_admin === true;
-          
-          // Get account type
-          const { data: accountSettings } = await supabase
-            .from('user_account_settings')
-            .select('account_type')
-            .eq('user_id', session.user.id)
-            .single();
-
-          // Also get performance tier and earnings from user_profiles
-          const { data: userProfile } = await supabase
-            .from('user_profiles')
-            .select('performance_tier, current_streak, session_streak, pending_earnings, approved_earnings, total_earned, trends_spotted')
-            .eq('id', session.user.id)  // Primary key is 'id' not 'user_id'
-            .single();
-            
-          console.log('💰 [AUTH] Building user data with earnings:', {
-            from_userProfile: userProfile?.pending_earnings,
-            from_ledger: actualPendingEarnings,
-            from_stats: userStats.pending_earnings
-          });
-          
-          // Map profile to user format (combine profiles VIEW with user_profiles TABLE)
-          const userData = {
-            ...profile,
-            role: 'participant',
-            // Use userProfile data (from table) as primary source for earnings
-            total_earnings: userProfile?.total_earned || userStats.total_earnings || 0,
-            pending_earnings: userProfile?.pending_earnings || actualPendingEarnings || userStats.pending_earnings || 0,
-            trends_spotted: userProfile?.trends_spotted || userStats.trends_spotted || 0,
-            accuracy_score: userStats.accuracy_score || 0,
-            validation_score: userStats.validation_score || 0,
-            performance_tier: userProfile?.performance_tier || 'learning',
-            current_streak: userProfile?.current_streak || 0,
-            session_streak: userProfile?.session_streak || 0,
-            view_mode: 'user' as const,
-            subscription_tier: isAdmin ? 'enterprise' as const : (profile.subscription_tier || 'starter') as any,
-            spotter_tier: profile.spotter_tier || 'learning',
-            is_admin: isAdmin,
-            account_type: isAdmin ? 'enterprise' as const : (accountSettings?.account_type || 'user') as any,
-            permissions: isAdmin ? {
-              can_manage_users: true,
-              can_switch_views: true,
-              can_access_all_data: true,
-              can_manage_permissions: true
-            } : {}
-          };
-          
-          console.log('Setting user data:', userData.username);
-          console.log('🎯 [AUTH] Final user data with earnings:', {
-            pending: userData.pending_earnings,
-            total: userData.total_earnings,
-            spotted: userData.trends_spotted
-          });
-          setUser(userData);
-        } else {
-          console.log('No profile found for user');
-        }
-      }
-    } catch (error) {
-      console.error('Error checking user:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchUserProfile, router]);
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Attempting login for:', email);
+      console.log('[AUTH] Attempting login for:', email);
+      setLoading(true);
       
-      // Use Supabase auth directly
+      // Clear any existing session first
+      await supabase.auth.signOut();
+      
+      // Sign in with Supabase
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (authError) {
-        console.error('Supabase auth error:', authError);
+        console.error('[AUTH] Login error:', authError);
         
-        // Provide more specific error messages
+        // Provide specific error messages
         if (authError.message.includes('Invalid login credentials')) {
           throw new Error('Invalid email or password. Please check your credentials and try again.');
-        } else if (authError.message.includes('Email not confirmed') || authError.message.includes('email_not_confirmed')) {
+        } else if (authError.message.includes('Email not confirmed')) {
           throw new Error('Please confirm your email address before logging in. Check your inbox for the confirmation link.');
         } else if (authError.message.includes('Too many requests')) {
           throw new Error('Too many login attempts. Please wait a few minutes and try again.');
+        } else if (authError.message.includes('User not found')) {
+          throw new Error('No account found with this email. Please check your email or sign up.');
         }
         
-        throw authError;
+        throw new Error(authError.message || 'Login failed. Please try again.');
       }
+
+      if (!authData.session) {
+        throw new Error('Login failed - no session created');
+      }
+
+      // Fetch user profile
+      const userData = await fetchUserProfile(authData.user.id);
+      if (!userData) {
+        throw new Error('Failed to load user profile');
+      }
+
+      setUser(userData);
+      console.log('[AUTH] Login successful');
       
-      // Additional check: if we get a user but no session, email might not be confirmed
-      if (authData.user && !authData.session) {
-        throw new Error('Please confirm your email address before logging in. Check your inbox for the confirmation link.');
-      }
-
-      console.log('Login successful, user:', authData.user?.id);
-
-      // Get user profile from database
-      if (authData.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, email, username, is_admin, total_earnings, pending_earnings, subscription_tier, spotter_tier, created_at, updated_at')
-          .eq('id', authData.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Profile fetch error:', profileError);
-        }
-
-        if (profile) {
-          console.log('User profile found:', profile);
-          
-          // Check if user is admin from database field
-          const isAdmin = profile.is_admin === true;
-          
-          // Get account type
-          const { data: accountSettings } = await supabase
-            .from('user_account_settings')
-            .select('account_type')
-            .eq('user_id', authData.user.id)
-            .single();
-
-          // Map profile to user format
-          setUser({
-            ...profile,
-            role: 'participant',
-            total_earnings: profile.total_earnings || 0,
-            pending_earnings: profile.pending_earnings || 0,
-            trends_spotted: 0,
-            accuracy_score: 0,
-            validation_score: 0,
-            view_mode: 'user',
-            subscription_tier: isAdmin ? 'enterprise' : (profile.subscription_tier || 'starter'),
-            spotter_tier: profile.spotter_tier || 'learning',
-            is_admin: isAdmin,
-            account_type: isAdmin ? 'enterprise' : (accountSettings?.account_type || 'user'),
-            permissions: isAdmin ? {
-              can_manage_users: true,
-              can_switch_views: true,
-              can_access_all_data: true,
-              can_manage_permissions: true
-            } : {}
-          });
-        }
-      }
+      // Navigate to dashboard
+      router.push('/dashboard');
       
-      // Return success - the caller will handle redirect
-      return;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('[AUTH] Login error:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -420,158 +269,106 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     interests?: any;
   }) => {
     try {
-      console.log('Starting registration for:', userData.email);
+      console.log('[AUTH] Registering new user:', userData.email);
       
-      // Use Supabase auth directly
+      // Sign up with Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: userData.email,
+        email: userData.email.trim().toLowerCase(),
         password: userData.password,
         options: {
           data: {
             username: userData.username,
             birthday: userData.birthday,
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       });
 
       if (authError) {
-        console.error('Supabase auth error:', authError);
+        console.error('[AUTH] Registration error:', authError);
         throw authError;
       }
-      
-      console.log('Auth signup successful:', authData);
 
       // Check if email confirmation is required
-      const needsEmailConfirmation: boolean = !!(authData.user && !authData.session) || 
-                                               !!(authData.user && !authData.user.email_confirmed_at);
-
-      // If a session was created but email not confirmed, sign out to show confirmation message
-      if (authData.session && !authData.user?.email_confirmed_at) {
-        await supabase.auth.signOut();
-      }
-
-      // Create user profile in database (if not created by trigger)
-      if (authData.user) {
-        // Wait a moment for trigger to execute
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // First check if profile already exists
-        const { data: existingProfile } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single();
-
-        if (!existingProfile) {
-          // Use the helper function to complete registration
-          const { data: registrationResult, error: registrationError } = await supabase
-            .rpc('complete_user_registration', {
-              p_user_id: authData.user.id,
-              p_email: userData.email,
-              p_username: userData.username,
-              p_birthday: userData.birthday || null
-            });
-          
-          if (registrationError) {
-            console.error('Registration helper error:', registrationError);
-            
-            // Last resort: try direct insert into user_profiles
-            const { error: directError } = await supabase
-              .from('user_profiles')
-              .insert({
-                id: authData.user.id,
-                email: userData.email,
-                username: userData.username,
-                birthday: userData.birthday || null,
-                age_verified: !!userData.birthday
-              });
-              
-            if (directError) {
-              console.error('Direct profile insert error:', directError);
-              // Still don't throw - user is created in auth
-            }
-          } else {
-            console.log('Registration completed:', registrationResult);
-          }
-        }
-
-        // Note: user_settings table doesn't exist in our schema
-        // Account settings are created by the trigger or helper function
-      }
-
-      // If session exists (email confirmation disabled), auto-login
-      if (authData.session) {
-        await checkUser();
-      }
+      const needsEmailConfirmation = authData.user?.identities?.length === 0;
       
       return { needsEmailConfirmation };
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('[AUTH] Registration error:', error);
       throw error;
     }
   };
 
   const logout = async () => {
     try {
+      console.log('[AUTH] Logging out...');
+      setLoading(true);
+      
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('[AUTH] Logout error:', error);
+        return { success: false, error };
+      }
+      
+      // Clear all state
       setUser(null);
-      await clearAllAuthState();
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Navigate to login
+      router.push('/login');
+      
       return { success: true };
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('[AUTH] Logout error:', error);
       return { success: false, error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const refreshUser = async () => {
-    console.log('🔄 [AUTH] RefreshUser called - fetching latest data...');
-    await checkUser();
-    console.log('✅ [AUTH] RefreshUser complete, current pending:', user?.pending_earnings);
+    if (!user?.id) return;
+    
+    try {
+      const userData = await fetchUserProfile(user.id);
+      if (userData) {
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('[AUTH] Error refreshing user:', error);
+    }
   };
 
   const switchViewMode = async (mode: 'user' | 'professional') => {
-    if (!user) return;
-    
-    try {
+    if (user) {
       setUser({ ...user, view_mode: mode });
-    } catch (error) {
-      console.error('Error switching view mode:', error);
-      throw error;
     }
   };
 
   const updateUserEarnings = async (amount: number) => {
-    if (!user) return;
-    
-    // Update local state immediately for UI feedback
-    const newPendingEarnings = (user.pending_earnings || 0) + amount;
-    const newTrendsSpotted = (user.trends_spotted || 0) + 1;
-    
-    setUser({
-      ...user,
-      pending_earnings: newPendingEarnings,
-      trends_spotted: newTrendsSpotted
-    });
-
-    // Refresh full user data to get accurate earnings from earnings_ledger
-    // Use a slightly longer delay to ensure database has updated
-    setTimeout(() => {
-      refreshUser();
-    }, 1000);
+    if (user) {
+      setUser({
+        ...user,
+        pending_earnings: user.pending_earnings + amount
+      });
+      // Refresh from database
+      await refreshUser();
+    }
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        logout,
-        refreshUser,
-        switchViewMode,
-        updateUserEarnings,
-      }}
-    >
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      register,
+      logout,
+      refreshUser,
+      switchViewMode,
+      updateUserEarnings,
+    }}>
       {children}
     </AuthContext.Provider>
   );

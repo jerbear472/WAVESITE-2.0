@@ -1,9 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 export default function AuthenticatedLayout({
   children,
@@ -12,23 +12,48 @@ export default function AuthenticatedLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
 
+  // Ensure client-side rendering
   useEffect(() => {
-    if (!loading && !user) {
+    setIsClient(true);
+  }, []);
+
+  // Handle authentication redirect
+  useEffect(() => {
+    if (!loading && !user && isClient) {
+      console.log('[LAYOUT] No user, redirecting to login');
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isClient]);
 
-  if (loading) {
+  // Removed force refresh - not needed with proper React state management
+
+  // Show loading state while checking auth
+  if (!isClient || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative w-16 h-16 mx-auto">
+            <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-gray-600 mt-4 font-medium">Loading...</p>
+        </div>
       </div>
     );
   }
 
+  // Show login redirect if not authenticated
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 font-medium">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

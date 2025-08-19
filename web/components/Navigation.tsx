@@ -101,7 +101,7 @@ export default function Navigation() {
   const handleViewSwitch = async (mode: 'user' | 'professional') => {
     await switchViewMode(mode);
     setViewSwitcherOpen(false);
-    router.refresh();
+    // No need to refresh - React will re-render
   };
 
   // Different navigation items based on user type and view mode

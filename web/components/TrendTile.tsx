@@ -144,8 +144,12 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
         })
         
         if (response.ok) {
-          // Refresh the parent component
-          window.location.reload()
+          // Close modal and let parent refresh
+          setShowAddContentModal(false)
+          // Trigger a refresh without full page reload if parent has a refresh function
+          if (typeof window !== 'undefined' && window.dispatchEvent) {
+            window.dispatchEvent(new CustomEvent('trend-updated'))
+          }
         } else {
           console.error('Failed to add content to trend')
         }
