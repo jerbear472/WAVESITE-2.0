@@ -26,7 +26,7 @@ interface Question {
 const questions: Question[] = [
   {
     id: 1,
-    instruction: "Which trend submission would earn you $0.10?",
+    instruction: "Which trend submission would get APPROVED and earn you $0.25?",
     options: [
       {
         id: 'q1_a',
@@ -35,7 +35,7 @@ const questions: Question[] = [
         description: "Stanley tumblers becoming status symbols in middle schools. Videos of collections getting 10M+ views. Target selling out weekly. Parents spending $200+ on limited editions. #StanleyTumbler at 2.3B views.",
         category: "Consumer Goods",
         quality: 'excellent',
-        feedback: "Perfect! This has specific metrics, clear demographic, viral evidence, and business impact.",
+        feedback: "Perfect! This would get approved. It has specific metrics, clear demographic, viral evidence, and business impact.",
         tips: ["Specific brand and product", "Measurable engagement (2.3B views)", "Clear trend behavior", "Business opportunity identified"]
       },
       {
@@ -45,7 +45,7 @@ const questions: Question[] = [
         description: "People are buying water bottles. They're trendy now. Everyone wants one.",
         category: "Products",
         quality: 'terrible',
-        feedback: "Too vague! No specific brand, metrics, or unique insight.",
+        feedback: "This would get rejected! Too vague with no specific brand, metrics, or unique insight.",
         tips: ["Missing specific brands", "No engagement metrics", "Too generic", "Not actionable"]
       },
       {
@@ -55,7 +55,7 @@ const questions: Question[] = [
         description: "Influencers talking about drinking more water. Health coaches promoting hydration. Wellness trend growing.",
         category: "Health",
         quality: 'poor',
-        feedback: "This is evergreen content, not a trending topic. Too broad and not time-sensitive.",
+        feedback: "This would get rejected. It's evergreen content, not a trending topic. Too broad and not time-sensitive.",
         tips: ["Not a new trend", "No specific angle", "Missing metrics", "Too general"]
       },
       {
@@ -65,7 +65,7 @@ const questions: Question[] = [
         description: "Seeing lots of aesthetic cup videos. They look nice. Might buy one.",
         category: "Lifestyle",
         quality: 'poor',
-        feedback: "Personal observation without data. Not useful for validation.",
+        feedback: "This would get rejected. Personal observation without data that validators can't verify.",
         tips: ["No objective data", "Personal opinion only", "Missing specifics", "Not verifiable"]
       }
     ],
@@ -73,7 +73,7 @@ const questions: Question[] = [
   },
   {
     id: 2,
-    instruction: "Select the trend with the best evidence and metrics:",
+    instruction: "Which trend would validators APPROVE for having the best evidence?",
     options: [
       {
         id: 'q2_a',
@@ -82,7 +82,7 @@ const questions: Question[] = [
         description: "Fashion videos are getting views. Lots of outfit posts. Fashion is big right now.",
         category: "Fashion",
         quality: 'terrible',
-        feedback: "Fashion is always on TikTok. This provides no unique or timely insight.",
+        feedback: "This would get rejected. Fashion is always on TikTok - no unique or timely insight.",
         tips: ["Too broad", "No specific trend", "Missing data", "Not newsworthy"]
       },
       {
@@ -92,7 +92,7 @@ const questions: Question[] = [
         description: "Mob wife aesthetic exploding with 89M views in 2 weeks. Vintage fur coats selling out on Depop. Searches for 'leopard print coat' up 340%. Major brands launching collections.",
         category: "Fashion",
         quality: 'excellent',
-        feedback: "Excellent! Specific trend with growth metrics, platform data, and market impact.",
+        feedback: "Excellent! This would get approved. Specific trend with growth metrics, platform data, and market impact.",
         tips: ["Clear trend name", "Specific metrics (89M views)", "Search data included", "Market validation"]
       },
       {
@@ -102,7 +102,7 @@ const questions: Question[] = [
         description: "There's a new style everyone's wearing. It's really cool. You should check it out.",
         category: "Fashion",
         quality: 'terrible',
-        feedback: "No specific information. What style? What evidence? Not useful.",
+        feedback: "This would get rejected. No specific information that validators can verify.",
         tips: ["No specifics", "No data", "Not descriptive", "Can't verify"]
       },
       {
@@ -112,7 +112,7 @@ const questions: Question[] = [
         description: "People are shopping vintage again. Thrift stores are busier. Sustainable fashion growing.",
         category: "Fashion",
         quality: 'poor',
-        feedback: "Too general and this has been a trend for years. Need specific angle.",
+        feedback: "This would get rejected. Too general and not a new trend.",
         tips: ["Not new", "Too broad", "Missing metrics", "No unique insight"]
       }
     ],
@@ -120,7 +120,7 @@ const questions: Question[] = [
   },
   {
     id: 3,
-    instruction: "Which trend is most actionable for businesses?",
+    instruction: "Which trend would get APPROVED for being most valuable to businesses?",
     options: [
       {
         id: 'q3_a',
@@ -129,7 +129,7 @@ const questions: Question[] = [
         description: "This meme is hilarious. Everyone's sharing it. It's about cats. Really funny stuff.",
         category: "Memes",
         quality: 'terrible',
-        feedback: "Memes are fleeting and rarely actionable for businesses. No specifics provided.",
+        feedback: "This would get rejected. Memes are fleeting and not actionable for businesses.",
         tips: ["Not business relevant", "Too vague", "Short lifespan", "No metrics"]
       },
       {
@@ -139,7 +139,7 @@ const questions: Question[] = [
         description: "Major celebrity feud happening right now. Fans are taking sides. Lots of tweets about it.",
         category: "Celebrity",
         quality: 'poor',
-        feedback: "Celebrity gossip isn't a trend. Not useful for business decisions.",
+        feedback: "This would get rejected. Celebrity gossip isn't a trend validators approve.",
         tips: ["Not a trend", "Not actionable", "Temporary news", "No business value"]
       },
       {
@@ -149,7 +149,7 @@ const questions: Question[] = [
         description: "De-influencing videos getting 50M+ views weekly. Creators telling followers NOT to buy products. Amazon returns up 12% in beauty category. Brands pivoting to 'honest marketing' campaigns.",
         category: "Marketing",
         quality: 'excellent',
-        feedback: "Perfect! Clear consumer behavior shift with measurable impact on business.",
+        feedback: "Perfect! This would get approved. Clear consumer behavior shift with measurable business impact.",
         tips: ["Clear trend behavior", "Business impact shown", "Metrics provided", "Strategic insight"]
       },
       {
@@ -159,7 +159,7 @@ const questions: Question[] = [
         description: "Users are skipping ads more. Ad blockers are popular. People prefer organic content.",
         category: "Marketing",
         quality: 'poor',
-        feedback: "This is a known, long-term trend. Not new or specific enough.",
+        feedback: "This would get rejected. Known for years, not a new trend.",
         tips: ["Not new information", "Too general", "No recent data", "Not actionable"]
       }
     ],
@@ -167,7 +167,7 @@ const questions: Question[] = [
   },
   {
     id: 4,
-    instruction: "Pick the trend that's emerging (not already mainstream):",
+    instruction: "Which trend would get APPROVED as a fresh, emerging trend?",
     options: [
       {
         id: 'q4_a',
@@ -176,7 +176,7 @@ const questions: Question[] = [
         description: "ChatGPT and AI assistants are being used by many people. AI is changing how we work.",
         category: "Technology",
         quality: 'poor',
-        feedback: "This is already mainstream news, not an emerging trend.",
+        feedback: "This would get rejected. Already mainstream, not emerging.",
         tips: ["Already mainstream", "Not emerging", "Too general", "Old news"]
       },
       {
@@ -186,7 +186,7 @@ const questions: Question[] = [
         description: "Young people love TikTok. They spend hours on the app. It's their favorite platform.",
         category: "Social Media",
         quality: 'terrible',
-        feedback: "This has been true for years. Not a new or emerging trend.",
+        feedback: "This would get rejected. Common knowledge for years.",
         tips: ["Years old", "Common knowledge", "Not newsworthy", "No new angle"]
       },
       {
@@ -196,7 +196,7 @@ const questions: Question[] = [
         description: "Loud budgeting trend at 4M views in 5 days. Gen Z openly declining plans due to budget. Brands creating 'budget-friendly' campaign responses. Financial apps seeing 30% signup increase.",
         category: "Finance",
         quality: 'excellent',
-        feedback: "Great! Early-stage trend with clear growth trajectory and market response.",
+        feedback: "Great! This would get approved. Early-stage trend with clear growth trajectory and market response.",
         tips: ["Early stage (5 days)", "Clear metrics", "Market responding", "Behavioral shift"]
       },
       {
@@ -206,7 +206,7 @@ const questions: Question[] = [
         description: "More people shopping online. E-commerce growing. Retail stores struggling.",
         category: "Retail",
         quality: 'poor',
-        feedback: "This is a multi-year trend, not something emerging.",
+        feedback: "This would get rejected. Multi-year trend, not emerging.",
         tips: ["Years-old trend", "Not emerging", "Too broad", "No new insight"]
       }
     ],
@@ -214,7 +214,7 @@ const questions: Question[] = [
   },
   {
     id: 5,
-    instruction: "Which submission has the best specificity and detail?",
+    instruction: "Which trend would validators APPROVE for best specificity and detail?",
     options: [
       {
         id: 'q5_a',
@@ -223,7 +223,7 @@ const questions: Question[] = [
         description: "Food videos getting lots of views. People like watching cooking content. Food influencers growing.",
         category: "Food",
         quality: 'terrible',
-        feedback: "Too generic. Food content is always popular on social media.",
+        feedback: "This would get rejected. Too generic - food content is always popular.",
         tips: ["Too broad", "Always true", "No specifics", "Not unique"]
       },
       {
@@ -233,7 +233,7 @@ const questions: Question[] = [
         description: "Logan the cucumber guy's recipes at 500M+ views. Grocery stores reporting 400% increase in cucumber sales. 'Cucumber salad' searches up 2000%. Influencers creating variations daily.",
         category: "Food",
         quality: 'excellent',
-        feedback: "Perfect specificity! Named creator, exact metrics, market impact, search data.",
+        feedback: "Perfect! This would get approved. Named creator, exact metrics, market impact, search data.",
         tips: ["Named influencer", "Specific product", "Sales data", "Search trends"]
       },
       {
@@ -243,7 +243,7 @@ const questions: Question[] = [
         description: "People want to eat healthier. Lots of healthy recipes online. Wellness is important to people.",
         category: "Health",
         quality: 'poor',
-        feedback: "Evergreen topic, not a specific trend. Too general.",
+        feedback: "This would get rejected. Evergreen topic, not a specific trend.",
         tips: ["Always relevant", "Not specific", "No data", "Not timely"]
       },
       {
@@ -253,7 +253,7 @@ const questions: Question[] = [
         description: "There's this recipe everyone's making. It looks good. People seem to like it.",
         category: "Food",
         quality: 'poor',
-        feedback: "What recipe? No specifics, metrics, or useful information.",
+        feedback: "This would get rejected. No specifics that validators can verify."
         tips: ["No recipe name", "No metrics", "Too vague", "Can't verify"]
       }
     ],
@@ -357,7 +357,7 @@ export default function TrendQuizPage() {
                   🎉 Excellent Work!
                 </h2>
                 <p className="text-green-700">
-                  You understand what makes a quality trend submission. You're ready to start earning!
+                  You understand what gets trends approved by validators. You're ready to start earning $0.25 per approved trend!
                 </p>
               </div>
             ) : (
@@ -366,7 +366,7 @@ export default function TrendQuizPage() {
                   📚 Keep Learning!
                 </h2>
                 <p className="text-yellow-700">
-                  Review the examples again to better understand quality trends. You've got this!
+                  Review the examples again to better understand what validators approve. You've got this!
                 </p>
               </div>
             )}

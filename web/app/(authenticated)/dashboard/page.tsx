@@ -1046,10 +1046,10 @@ export default function Dashboard() {
                   <Award className="w-8 h-8 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">Learn to Spot Quality Trends</h3>
+                  <h3 className="text-xl font-bold mb-2">Learn What Gets Trends Approved</h3>
                   <p className="text-blue-100 mb-4">
-                    Master what makes a trend valuable and earn more with high-quality submissions. 
-                    Take our interactive training to boost your earnings!
+                    Master what validators look for and earn $0.25 for every approved trend. 
+                    Take our interactive training to maximize your approval rate!
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Link

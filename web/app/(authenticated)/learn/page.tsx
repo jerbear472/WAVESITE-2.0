@@ -28,7 +28,7 @@ const goodExamples: TrendExample[] = [
       "Clear value proposition (price comparison)",
       "Actionable for businesses"
     ],
-    earnings: "$0.10"
+    earnings: "$0.25 (Approved)"
   },
   {
     title: "Silent walking trend replacing podcast walks",
@@ -76,7 +76,7 @@ const badExamples: TrendExample[] = [
       "No actionable insights",
       "Missing specific brands or styles"
     ],
-    earnings: "$0.00"
+    earnings: "$0.00 (Rejected)"
   },
   {
     title: "New meme format",
@@ -91,7 +91,7 @@ const badExamples: TrendExample[] = [
       "Too early/uncertain",
       "Not useful for businesses"
     ],
-    earnings: "$0.00"
+    earnings: "$0.00 (Rejected)"
   },
   {
     title: "Taylor Swift",
@@ -106,7 +106,7 @@ const badExamples: TrendExample[] = [
       "No business application",
       "Missing context and metrics"
     ],
-    earnings: "$0.00"
+    earnings: "$0.00 (Rejected)"
   }
 ];
 
@@ -123,10 +123,10 @@ export default function LearnPage() {
             <Award className="w-8 h-8 text-blue-600" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Learn to Spot Quality Trends
+            Learn to Submit Trends That Get Approved
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Master the art of trend spotting and earn more with high-quality submissions
+            Master what the community values and earn $0.25 for every approved trend
           </p>
         </div>
 
@@ -134,7 +134,7 @@ export default function LearnPage() {
         <div className="bg-white rounded-2xl shadow-sm p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
             <Target className="w-6 h-6 mr-2 text-blue-600" />
-            The 5 Pillars of Quality Trends
+            The 5 Pillars of Trends That Get Approved
           </h2>
           <div className="grid md:grid-cols-5 gap-4">
             {[
@@ -255,7 +255,7 @@ export default function LearnPage() {
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-sm p-8 mb-8 text-white">
           <h2 className="text-2xl font-bold mb-6 flex items-center">
             <Zap className="w-6 h-6 mr-2" />
-            Pro Tips for Maximum Earnings
+            Pro Tips to Get Your Trends Approved
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
