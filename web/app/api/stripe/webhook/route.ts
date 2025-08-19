@@ -68,9 +68,12 @@ export async function POST(request: NextRequest) {
       }
 
       case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object as any; // Type assertion to bypass strict typing
         
-        if (invoice.subscription) {
+        // Check if invoice has a subscription
+        const subscriptionId = invoice.subscription;
+          
+        if (subscriptionId) {
           // Update payment status
           await supabase
             .from('profiles')
@@ -78,26 +81,29 @@ export async function POST(request: NextRequest) {
               subscription_status: 'active',
               last_payment_date: new Date().toISOString(),
             })
-            .eq('stripe_subscription_id', invoice.subscription as string);
+            .eq('stripe_subscription_id', subscriptionId);
 
-          console.log(`Payment succeeded for subscription: ${invoice.subscription}`);
+          console.log(`Payment succeeded for subscription: ${subscriptionId}`);
         }
         break;
       }
 
       case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice;
+        const invoice = event.data.object as any; // Type assertion to bypass strict typing
         
-        if (invoice.subscription) {
+        // Check if invoice has a subscription
+        const subscriptionId = invoice.subscription;
+          
+        if (subscriptionId) {
           // Update payment status
           await supabase
             .from('profiles')
             .update({
               subscription_status: 'past_due',
             })
-            .eq('stripe_subscription_id', invoice.subscription as string);
+            .eq('stripe_subscription_id', subscriptionId);
 
-          console.log(`Payment failed for subscription: ${invoice.subscription}`);
+          console.log(`Payment failed for subscription: ${subscriptionId}`);
         }
         break;
       }
