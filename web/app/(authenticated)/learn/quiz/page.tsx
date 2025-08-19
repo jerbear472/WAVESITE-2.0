@@ -3,7 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CheckCircle, XCircle, TrendingUp, Award, ChevronRight, RotateCcw } from 'lucide-react';
-import * as confetti from 'canvas-confetti';
+// Dynamic import to avoid build issues
+let confetti: any;
+if (typeof window !== 'undefined') {
+  import('canvas-confetti').then(module => {
+    confetti = module.default;
+  });
+}
 
 interface TrendOption {
   id: string;
@@ -288,11 +294,13 @@ export default function TrendQuizPage() {
     if (correct) {
       setScore(score + 1);
       // Small confetti for correct answer
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.8 }
-      });
+      if (confetti) {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.8 }
+        });
+      }
     }
   };
 
@@ -303,7 +311,7 @@ export default function TrendQuizPage() {
       setShowFeedback(false);
     } else {
       setQuizComplete(true);
-      if (score >= 4) {
+      if (score >= 4 && confetti) {
         // Big confetti for good score
         confetti({
           particleCount: 100,
