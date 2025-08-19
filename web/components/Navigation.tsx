@@ -111,7 +111,7 @@ export default function Navigation() {
 
   const userNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/learn', label: 'Learn', icon: '🎓' },
+    { href: '/creator-training', label: 'Training', icon: '🚀' },
     { href: '/scroll', label: 'Scroll & Earn', icon: '📱' },
     { href: '/timeline', label: 'My Timeline', icon: '📈' },
     { href: '/validate', label: 'Validate', icon: '✅' },

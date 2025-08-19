@@ -1046,25 +1046,24 @@ export default function Dashboard() {
                   <Award className="w-8 h-8 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">Learn What Gets Trends Approved</h3>
+                  <h3 className="text-xl font-bold mb-2">Think Like a Creator, Not a Viewer</h3>
                   <p className="text-blue-100 mb-4">
-                    Master what validators look for and earn $0.25 for every approved trend. 
-                    Take our interactive training to maximize your approval rate!
+                    Learn to spot trends that creators actually need. Master the creator mindset and earn $0.25 for every approved trend!
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Link
-                      href="/learn"
+                      href="/creator-training"
                       className="inline-flex items-center px-4 py-2 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
                     >
-                      <span className="mr-2">🎓</span>
-                      View Examples
+                      <span className="mr-2">🚀</span>
+                      Start Creator Training
                     </Link>
                     <Link
-                      href="/learn/quiz"
+                      href="/learn"
                       className="inline-flex items-center px-4 py-2 bg-white/20 text-white font-semibold rounded-lg hover:bg-white/30 transition-colors backdrop-blur"
                     >
-                      <span className="mr-2">🎯</span>
-                      Take the Quiz
+                      <span className="mr-2">📚</span>
+                      Quick Examples
                     </Link>
                   </div>
                 </div>
