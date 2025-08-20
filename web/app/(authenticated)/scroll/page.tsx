@@ -399,11 +399,16 @@ export default function LegibleScrollPage() {
       const qualityMultiplier = 1 + (userProfileForEarnings.quality_score * 0.5);
       const calculatedXP = Math.round(baseXP * streakMultiplier * qualityMultiplier);
       
+      const sessionMultiplier = 1 + (userProfileForEarnings.session_streak * 0.05);
+      const dailyMultiplier = streakMultiplier; // Daily multiplier is the same as streak multiplier
+      
       const earningsResult = {
         amount: calculatedXP,
         finalAmount: calculatedXP,
         base: baseXP,
         tierMultiplier: streakMultiplier,
+        sessionMultiplier: sessionMultiplier,
+        dailyMultiplier: dailyMultiplier,
         total: calculatedXP,
         capped: false,
         breakdown: {
