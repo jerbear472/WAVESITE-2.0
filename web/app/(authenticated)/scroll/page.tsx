@@ -39,13 +39,7 @@ import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { submitTrend } from '@/lib/submitTrend';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 // Removed TrendSubmissionSuccess - using only earnings toast
-import { 
-  SUSTAINABLE_EARNINGS,
-  formatCurrency,
-  calculateUserTier,
-  calculateTrendEarnings,
-  type Tier
-} from '@/lib/SUSTAINABLE_EARNINGS';
+// XP system - removed old earnings imports
 import { calculateQualityScore } from '@/lib/calculateQualityScore';
 import { calculateAudienceSize } from '@/lib/calculateAudienceSize';
 
@@ -63,12 +57,13 @@ export default function LegibleScrollPage() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
   
-  // Default tier info for display
-  const tierInfo = user ? calculateUserTier({
-    trends_submitted: user.trends_spotted || 0,
-    approval_rate: user.accuracy_score || 0,  // Use accuracy_score instead
-    quality_score: user.validation_score || 50  // Use validation_score instead
-  }) : SUSTAINABLE_EARNINGS.tiers.learning;
+  // Default tier info for display (XP-based)
+  const tierInfo = {
+    name: 'Observer',
+    level: 1,
+    color: 'blue',
+    baseXP: 100
+  };
   const { session, startSession, endSession, logTrendSubmission } = useSession();
   const scrollSessionRef = useRef<any>();
   
@@ -211,7 +206,7 @@ export default function LegibleScrollPage() {
 
   // Streak multipliers - NOT part of base earnings, just for display/gamification
   const getStreakMultiplier = (streakCount: number): number => {
-    // Session streak multipliers - must match SUSTAINABLE_EARNINGS.sessionStreakMultipliers
+    // Session streak multipliers for XP calculation
     if (streakCount >= 5) return 2.5;  // 5+ submissions within 5 min
     if (streakCount === 4) return 2.0; // 4th submission within 5 min
     if (streakCount === 3) return 1.5; // 3rd submission within 5 min
@@ -388,8 +383,8 @@ export default function LegibleScrollPage() {
       const userProfileForEarnings = {
         user_id: user?.id || '',
         performance_tier: profileData?.performance_tier || user?.performance_tier || 'learning',
-        current_balance: user?.total_earnings || 0,
-        total_earned: user?.total_earnings || 0,
+        current_balance: 0,
+        total_earned: 0,
         trends_submitted: (user as any)?.trends_spotted || 0,
         approval_rate: user?.accuracy_score || 0.5,
         quality_score: user?.validation_score || 0.5,
@@ -398,11 +393,26 @@ export default function LegibleScrollPage() {
         last_submission_at: profileData?.last_submission_at
       };
       
-      // Calculate earnings with SUSTAINABLE_EARNINGS (expects trend, userProfile)
-      const earningsResult = calculateTrendEarnings(
-        null, // trend data not used in calculation
-        userProfileForEarnings
-      );
+      // Calculate XP with streak multipliers
+      const baseXP = 100; // Base XP for trend submission
+      const streakMultiplier = 1 + (userProfileForEarnings.current_streak * 0.1);
+      const qualityMultiplier = 1 + (userProfileForEarnings.quality_score * 0.5);
+      const calculatedXP = Math.round(baseXP * streakMultiplier * qualityMultiplier);
+      
+      const earningsResult = {
+        amount: calculatedXP,
+        finalAmount: calculatedXP,
+        base: baseXP,
+        tierMultiplier: streakMultiplier,
+        total: calculatedXP,
+        capped: false,
+        breakdown: {
+          base: baseXP,
+          streakBonus: Math.round(baseXP * (streakMultiplier - 1)),
+          qualityBonus: Math.round(baseXP * (qualityMultiplier - 1)),
+          total: calculatedXP
+        }
+      };
       
       console.log('💰 [SCROLL] Earnings calculation result:', {
         base: earningsResult.base,
