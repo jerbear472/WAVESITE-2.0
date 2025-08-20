@@ -735,8 +735,8 @@ export default function SmartTrendSubmission({
       const userProfile = {
         user_id: user?.id || '',
         performance_tier: (user?.performance_tier || user?.spotter_tier || 'learning') as any,
-        current_balance: user?.total_earnings || 0,
-        total_earned: user?.total_earnings || 0,
+        current_balance: 0, // XP system - no longer tracking earnings
+        total_earned: 0, // XP system - no longer tracking earnings
         trends_submitted: user?.trends_spotted || 0,
         approval_rate: user?.accuracy_score ? user.accuracy_score / 100 : 0,
         quality_score: user?.validation_score ? user.validation_score / 100 : 0.5,
