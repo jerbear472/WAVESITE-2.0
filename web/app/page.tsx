@@ -16,23 +16,23 @@ export default function Home() {
           
           {/* Tagline */}
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-4">
-            Get paid to spot viral trends
+            The Community of Cultural Spotters
           </p>
           
           <p className="text-lg text-gray-500 dark:text-gray-500 mb-8 max-w-2xl mx-auto">
-            Human spotters catch cultural shifts 2 weeks early
+            Spot trends before they explode. Earn XP. Build your reputation.
           </p>
           
-          {/* Earning Highlight Box */}
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-2xl p-6 mb-10 max-w-2xl mx-auto border border-green-200 dark:border-green-800">
+          {/* Community Highlight Box */}
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-6 mb-10 max-w-2xl mx-auto border border-purple-200 dark:border-purple-800">
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="text-4xl">💰</div>
+              <div className="text-4xl">🌊</div>
               <div className="text-center sm:text-left">
                 <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Earn Money Spotting Trends
+                  Join the Wave Spotters
                 </p>
                 <p className="text-gray-700 dark:text-gray-300">
-                  Get paid for accurately predicting viral content • Join thousands earning daily
+                  Track cultural movements • Predict viral content • Level up your spotting skills
                 </p>
               </div>
             </div>
@@ -44,7 +44,7 @@ export default function Home() {
               href="/register"
               className="btn-primary px-8 py-4 text-lg hover-lift inline-flex items-center gap-2"
             >
-              Create Account & Start Earning
+              Join the Community
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -71,106 +71,163 @@ export default function Home() {
             </div>
             <div className="hidden sm:block w-px h-8 bg-gray-300 dark:bg-gray-700"></div>
             <div className="text-center">
-              <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">$0.25-5</div>
-              <div>Per Trend</div>
+              <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">100K+</div>
+              <div>XP Earned</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Two Modes Section */}
+      {/* How It Works Section */}
       <section className="py-20 bg-gray-50 dark:bg-neutral-900">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            Two Ways to Use Wave<span className="text-gradient font-normal">Sight</span>
+            How Wave<span className="text-gradient font-normal">Sight</span> Works
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="card card-hover">
-              <div className="p-6">
-                <div className="text-4xl mb-4 text-center">💰</div>
-                <h3 className="text-xl font-semibold mb-3 text-center">User Mode</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-center mb-4">Earn money by spotting trends</p>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Submit trending content you discover
+              <div className="p-6 text-center">
+                <div className="text-4xl mb-4">👁️</div>
+                <h3 className="text-xl font-semibold mb-3">Spot Trends</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Find emerging content across social platforms
+                </p>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2 text-left">
+                  <li className="flex items-start">
+                    <span className="text-purple-500 mr-2 mt-0.5">•</span>
+                    <span>Identify viral potential early</span>
                   </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Validate other users' submissions
+                  <li className="flex items-start">
+                    <span className="text-purple-500 mr-2 mt-0.5">•</span>
+                    <span>Track lifecycle stages</span>
                   </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Get paid for accurate predictions
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-green-500 mr-2">✓</span>
-                    Track your earnings & performance
+                  <li className="flex items-start">
+                    <span className="text-purple-500 mr-2 mt-0.5">•</span>
+                    <span>Predict peak timing</span>
                   </li>
                 </ul>
               </div>
             </div>
             
             <div className="card card-hover">
-              <div className="p-6">
-                <div className="text-4xl mb-4 text-center">📊</div>
-                <h3 className="text-xl font-semibold mb-3 text-center">Enterprise Dashboard</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-center mb-4">Business analytics & insights</p>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <li className="flex items-center">
-                    <span className="text-cyan-500 mr-2">✓</span>
-                    View validated trend analytics
+              <div className="p-6 text-center">
+                <div className="text-4xl mb-4">✅</div>
+                <h3 className="text-xl font-semibold mb-3">Validate Together</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Community validates trend predictions
+                </p>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2 text-left">
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2 mt-0.5">•</span>
+                    <span>Vote on trend potential</span>
                   </li>
-                  <li className="flex items-center">
-                    <span className="text-cyan-500 mr-2">✓</span>
-                    Access industry-specific insights
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2 mt-0.5">•</span>
+                    <span>Build sentiment scores</span>
                   </li>
-                  <li className="flex items-center">
-                    <span className="text-cyan-500 mr-2">✓</span>
-                    Export data & generate reports
-                  </li>
-                  <li className="flex items-center">
-                    <span className="text-cyan-500 mr-2">✓</span>
-                    API access for integration
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2 mt-0.5">•</span>
+                    <span>Track trend evolution</span>
                   </li>
                 </ul>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-4 text-center">
-                  *Requires enterprise access via account settings
+              </div>
+            </div>
+            
+            <div className="card card-hover">
+              <div className="p-6 text-center">
+                <div className="text-4xl mb-4">🏆</div>
+                <h3 className="text-xl font-semibold mb-3">Earn Recognition</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Build your reputation as a spotter
                 </p>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-2 text-left">
+                  <li className="flex items-start">
+                    <span className="text-yellow-500 mr-2 mt-0.5">•</span>
+                    <span>Earn XP for accuracy</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-yellow-500 mr-2 mt-0.5">•</span>
+                    <span>Unlock achievement levels</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-yellow-500 mr-2 mt-0.5">•</span>
+                    <span>Climb the leaderboard</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Simple CTA Section */}
+      {/* Features Section */}
       <section className="py-20">
+        <div className="container-custom">
+          <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
+            Built for Cultural Intelligence
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <div className="text-center">
+              <div className="text-3xl mb-3">📈</div>
+              <h3 className="font-semibold mb-2">Trend Life Tracking</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Monitor trends from emergence to peak
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-3xl mb-3">🎯</div>
+              <h3 className="font-semibold mb-2">Peak Predictions</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Forecast when trends will reach maximum viral potential
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-3xl mb-3">🔗</div>
+              <h3 className="font-semibold mb-2">Evolution Chains</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Track how trends mutate and spread across platforms
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="text-3xl mb-3">💫</div>
+              <h3 className="font-semibold mb-2">XP & Achievements</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Earn experience points and unlock spotter titles
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Simple CTA Section */}
+      <section className="py-20 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/10 dark:to-indigo-900/10">
         <div className="container-custom text-center">
           <h2 className="text-3xl md:text-4xl font-light mb-6">
             Ready to ride the wave?
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-            Join thousands of trend spotters and enterprises using WaveSight
+            Join the community catching tomorrow's trends today
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link 
               href="/register"
               className="btn-primary px-8 py-4 text-lg hover-lift inline-flex items-center gap-2"
             >
-              Start Spotting Trends
+              Start Spotting
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
             <Link 
-              href="/register?enterprise=true"
-              className="btn-secondary px-8 py-4 text-lg inline-flex items-center gap-2"
+              href="/about"
+              className="btn-secondary px-8 py-4 text-lg"
             >
-              Enterprise Access
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
+              Learn More
             </Link>
           </div>
         </div>

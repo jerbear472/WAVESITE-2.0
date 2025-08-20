@@ -425,18 +425,18 @@ export default function LegibleScrollPage() {
         sessionStreak: userProfileForEarnings.session_streak
       });
       
-      const basePayment = earningsResult.base || 0.25;
-      let finalPayment = earningsResult.capped || earningsResult.total || basePayment;
+      const baseXP = earningsResult.base || 100;
+      let finalXP = earningsResult.total || baseXP;
       
-      // Ensure we have a valid payment amount
-      if (!finalPayment || finalPayment <= 0 || isNaN(finalPayment)) {
-        console.error('Invalid payment amount calculated:', finalPayment);
-        // Default to base payment if calculation fails
-        finalPayment = 0.25; // Base amount
-        console.log('Using fallback payment:', finalPayment);
+      // Ensure we have a valid XP amount
+      if (!finalXP || finalXP <= 0 || isNaN(finalXP)) {
+        console.error('Invalid XP amount calculated:', finalXP);
+        // Default to base XP if calculation fails
+        finalXP = 100; // Base XP amount
+        console.log('Using fallback XP:', finalXP);
       }
       
-      console.log('Final payment amount to be used:', finalPayment);
+      console.log('Final XP amount to be used:', finalXP);
       
       // Prepare submission - use basic fields that exist in database
       const submissionData: any = {
@@ -465,13 +465,13 @@ export default function LegibleScrollPage() {
           streak_count: session.isActive ? session.currentStreak + 1 : 0,
           streak_multiplier: session.isActive ? session.streakMultiplier : 1,
           user_profile: {},
-          payment_amount: finalPayment
+          payment_amount: finalXP
         },
         virality_prediction: mapSpreadSpeedToScore(formData.spreadSpeed),
         quality_score: calculateQualityScore(formData), // Calculate actual quality score
         validation_count: 0,
         // Store the calculated payment amount
-        payment_amount: finalPayment
+        payment_amount: finalXP
         // Remove created_at - let database handle it
       };
       
@@ -607,7 +607,7 @@ export default function LegibleScrollPage() {
         const earningsEntry = {
           user_id: user!.id,
           trend_id: (data as any).id, // Use trend_id field
-          amount: finalPayment,
+          amount: finalXP,
           transaction_type: 'trend_submission',  // Changed from 'type' to 'transaction_type'
           status: 'pending',
           description: `Trend: ${formData.description || formData.trendName || 'Untitled'} - pending validation`,
@@ -647,7 +647,7 @@ export default function LegibleScrollPage() {
           }
         } else {
           console.log('✅ [SCROLL] Earnings ledger entry created successfully!', ledgerData);
-          console.log('✅ [SCROLL] Amount added to ledger:', finalPayment, 'with multipliers');
+          console.log('✅ [SCROLL] Amount added to ledger:', finalXP, 'with multipliers');
           console.log('✅ [SCROLL] Ledger entry ID:', ledgerData?.id);
           
           // Update user_profiles table (profiles is a VIEW, can't update it)
@@ -687,8 +687,8 @@ export default function LegibleScrollPage() {
           const { error: updateError } = await supabase
             .from('user_profiles')
             .update({ 
-              pending_earnings: ((user as any)?.pending_earnings || 0) + finalPayment,
-              total_earned: ((user as any)?.total_earned || 0) + finalPayment,
+              pending_earnings: ((user as any)?.pending_earnings || 0) + finalXP,
+              total_earned: ((user as any)?.total_earned || 0) + finalXP,
               trends_spotted: ((user as any)?.trends_spotted || 0) + 1,
               current_streak: newDailyStreak,
               session_streak: newSessionStreak,
@@ -700,7 +700,7 @@ export default function LegibleScrollPage() {
             console.error('❌ [SCROLL] Failed to update user_profiles:', updateError);
           } else {
             console.log('✅ [SCROLL] user_profiles updated successfully with:');
-            console.log('  - Earnings:', finalPayment);
+            console.log('  - Earnings:', finalXP);
             console.log('  - Daily streak:', newDailyStreak);
             console.log('  - Session streak:', newSessionStreak);
           }
@@ -717,7 +717,7 @@ export default function LegibleScrollPage() {
       
       // Stats will be updated when user context refreshes
       
-      console.log('Trend submitted with earnings:', finalPayment);
+      console.log('Trend submitted with earnings:', finalXP);
       
       // Reset form and close modal FIRST
       setShowSubmissionForm(false);
@@ -748,7 +748,7 @@ export default function LegibleScrollPage() {
       const animationBreakdown = earningsResult.breakdown || [];
       
       // Log for debugging
-      console.log('🎯 [SCROLL] XP award amount:', finalPayment);
+      console.log('🎯 [SCROLL] XP award amount:', finalXP);
       console.log('🎯 [SCROLL] Breakdown:', animationBreakdown);
       
       // Calculate total multiplier for display
@@ -761,7 +761,7 @@ export default function LegibleScrollPage() {
       // Show success message with pending verification note and multipliers
       setSubmitMessage({ 
         type: 'success', 
-        text: `Trend submitted! Earning $${finalPayment.toFixed(2)}${multiplierText} - pending validation` 
+        text: `Trend submitted! Earning ${Math.round(finalXP)} XP${multiplierText} - pending validation` 
       });
       
       // Close the submission form on success
@@ -772,13 +772,13 @@ export default function LegibleScrollPage() {
       setTimeout(() => setSubmitMessage(null), 5000);
       
       // Update local earnings immediately (optimistic update)
-      setTodaysPendingEarnings(prev => prev + finalPayment);
+      setTodaysPendingEarnings(prev => prev + finalXP);
       setTrendsLoggedToday(prev => prev + 1);
       
       // Update user earnings - Direct update is WORKING!
       // Skip the RPC since it's failing due to missing columns
       try {
-        console.log('💰 [SCROLL] Directly updating user_profiles with earnings:', finalPayment);
+        console.log('💰 [SCROLL] Directly updating user_profiles with earnings:', finalXP);
         
         // Get current earnings first
         const { data: currentProfile } = await supabase
@@ -794,8 +794,8 @@ export default function LegibleScrollPage() {
         const { error: updateError } = await supabase
           .from('user_profiles')
           .update({
-            pending_earnings: currentPending + finalPayment,
-            total_earned: currentTotal + finalPayment
+            pending_earnings: currentPending + finalXP,
+            total_earned: currentTotal + finalXP
           })
           .eq('id', user!.id);
         
@@ -803,7 +803,7 @@ export default function LegibleScrollPage() {
           console.error('❌ [SCROLL] Failed to update earnings:', updateError);
         } else {
           console.log('✅ [SCROLL] Earnings updated successfully!');
-          console.log('✅ [SCROLL] New pending:', currentPending + finalPayment);
+          console.log('✅ [SCROLL] New pending:', currentPending + finalXP);
         }
       } catch (error) {
         console.error('❌ [SCROLL] Exception updating earnings:', error);
@@ -1137,7 +1137,7 @@ export default function LegibleScrollPage() {
               <Clock className="w-5 h-5 text-yellow-600" />
               <span className="text-xs text-gray-500">Pending</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(todaysPendingEarnings || user?.pending_earnings || 0)}</p>
+            <p className="text-2xl font-bold text-gray-900">{Math.round(todaysPendingEarnings || 0)} XP</p>
             <p className="text-xs text-gray-500">Verification</p>
           </div>
           
