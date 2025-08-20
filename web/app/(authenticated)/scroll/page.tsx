@@ -425,8 +425,7 @@ export default function LegibleScrollPage() {
         sessionStreak: userProfileForEarnings.session_streak
       });
       
-      const baseXP = earningsResult.base || 100;
-      let finalXP = earningsResult.total || baseXP;
+      let finalXP = earningsResult.total || earningsResult.base || 100;
       
       // Ensure we have a valid XP amount
       if (!finalXP || finalXP <= 0 || isNaN(finalXP)) {
