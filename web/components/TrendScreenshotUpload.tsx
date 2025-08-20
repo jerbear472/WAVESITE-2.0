@@ -42,7 +42,7 @@ const platforms = [
 ];
 
 export default function TrendScreenshotUpload({ onClose, onSubmit }: TrendScreenshotUploadProps) {
-  const { user, updateUserEarnings } = useAuth();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<TrendScreenshotData>({
     screenshot: null,
     platform: '',
@@ -213,12 +213,11 @@ export default function TrendScreenshotUpload({ onClose, onSubmit }: TrendScreen
 
       if (error) throw error;
 
-      // Update earnings
-      const earnedAmount = 0.25;
-      updateUserEarnings(earnedAmount);
+      // Award XP for trend submission
+      const xpAmount = 100;
+      // XP is now handled by the database automatically
       
-      const { formatCurrency } = await import('@/lib/SUSTAINABLE_EARNINGS');
-      setSuccess(`Trend submitted! You earned ${formatCurrency(earnedAmount)}`);
+      setSuccess(`Trend submitted! You earned ${xpAmount} XP`);
       
       // Clear form and close after success
       setTimeout(() => {
