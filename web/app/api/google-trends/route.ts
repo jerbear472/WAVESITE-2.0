@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import googleTrends from 'google-trends-api';
+
+// Dynamic import to handle missing module gracefully
+let googleTrends: any;
+try {
+  googleTrends = require('google-trends-api');
+} catch (error) {
+  console.warn('google-trends-api not available, using mock data');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,6 +35,25 @@ export async function POST(request: NextRequest) {
         break;
       default:
         startTime.setMonth(startTime.getMonth() - 3);
+    }
+
+    // Check if googleTrends is available
+    if (!googleTrends) {
+      // Return mock data if google-trends-api is not available
+      const mockData = generateMockTrendData();
+      return NextResponse.json({
+        success: true,
+        trendData: mockData,
+        relatedQueries: [],
+        metadata: {
+          keyword,
+          geo,
+          timeRange,
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          mock: true
+        }
+      });
     }
 
     // Fetch interest over time
