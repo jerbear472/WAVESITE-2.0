@@ -1565,7 +1565,7 @@ export default function Dashboard() {
       <TierInfoModal 
         isOpen={showTierModal}
         onClose={() => setShowTierModal(false)}
-        currentTier={user?.performance_tier}
+        currentXP={stats.approved_xp + stats.pending_xp}
       />
     </div>
   );
