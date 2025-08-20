@@ -725,6 +725,12 @@ export default function SmartTrendSubmission({
   };
 
   const handleSubmit = async () => {
+    // Prevent double submission
+    if (loading) {
+      console.log('Already submitting, ignoring duplicate click');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
@@ -879,7 +885,7 @@ export default function SmartTrendSubmission({
         // Call the submit handler with timeout to prevent infinite hanging
         const submitPromise = customSubmit(submissionData);
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Submission timed out. Please try again.')), 15000)
+          setTimeout(() => reject(new Error('Submission timed out. Please try again.')), 30000) // Increased to 30 seconds
         );
         
         await Promise.race([submitPromise, timeoutPromise]);
@@ -1279,24 +1285,7 @@ export default function SmartTrendSubmission({
                 {/* Peak Prediction */}
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-1">When will this trend peak? 📊</h3>
-                  <p className="text-sm text-gray-400 mb-2">Your prediction helps us track trend lifecycles</p>
-                  
-                  {/* Peak Explanation Box */}
-                  <div className="mb-4 p-3 bg-blue-900/20 rounded-lg border border-blue-800/30">
-                    <div className="flex items-start gap-2">
-                      <AlertCircleIcon className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                      <div className="text-xs text-blue-300 space-y-1">
-                        <p className="font-medium">How to identify a trend's peak:</p>
-                        <ul className="space-y-0.5 ml-3">
-                          <li>• <span className="text-blue-200">Maximum engagement</span> - Likes/shares hit highest rate</li>
-                          <li>• <span className="text-blue-200">Mainstream adoption</span> - Brands & celebrities join in</li>
-                          <li>• <span className="text-blue-200">Saturation signals</span> - "Everyone's doing it" feeling</li>
-                          <li>• <span className="text-blue-200">Derivative content</span> - Parodies & "over it" posts appear</li>
-                        </ul>
-                        <p className="text-blue-400 mt-1">💡 Tip: Trends peak when creators start saying "this trend is dead"</p>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-sm text-gray-400 mb-4">Your prediction helps us track trend lifecycles</p>
                   
                   <div className="grid grid-cols-2 gap-2">
                     {[
@@ -1520,20 +1509,20 @@ export default function SmartTrendSubmission({
                   {/* Basic info with thumbnail */}
                   <div className="bg-gray-800/50 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-gray-400 mb-2">Trend Info</h4>
-                    <div className="flex gap-4">
-                      <div className="flex-1 space-y-1">
-                        <p className="text-white font-medium">{formData.title}</p>
-                        <p className="text-sm text-gray-400">{formData.url}</p>
-                        {formData.creator_handle && (
-                          <p className="text-sm text-gray-400">by {formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</p>
-                        )}
-                      </div>
+                    <div className="space-y-2">
+                      <p className="text-white font-medium">{formData.title}</p>
+                      <p className="text-sm text-gray-400 break-all">{formData.url}</p>
+                      {formData.creator_handle && (
+                        <p className="text-sm text-gray-400">by {formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</p>
+                      )}
                       {formData.thumbnail_url && (
-                        <img 
-                          src={formData.thumbnail_url} 
-                          alt="Trend thumbnail"
-                          className="w-20 h-20 object-cover rounded-lg border border-gray-700"
-                        />
+                        <div className="mt-3 flex justify-center">
+                          <img 
+                            src={formData.thumbnail_url} 
+                            alt="Trend thumbnail"
+                            className="max-w-full h-auto max-h-60 object-contain rounded-lg border border-gray-700"
+                          />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1670,6 +1659,18 @@ export default function SmartTrendSubmission({
 
         {/* Footer */}
         <div className="p-5 border-t border-gray-800 bg-gray-900/50">
+          {/* Error display */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-900/20 border border-red-800/30 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircleIcon className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-red-300">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="flex justify-between items-center">
             {currentStep !== 'url' ? (
               <button
