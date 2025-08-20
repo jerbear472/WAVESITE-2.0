@@ -25,7 +25,7 @@ import {
   Play,
   Pause
 } from 'lucide-react';
-import { ScrollSession } from '@/components/ScrollSession';
+// ScrollSession component removed - using session context directly
 import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
 import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import StreakDisplay from '@/components/StreakDisplay';
@@ -61,7 +61,6 @@ export default function SpotPage() {
     baseXP: 100
   };
   const { session, startSession, endSession, logTrendSubmission } = useSession();
-  const scrollSessionRef = useRef<any>();
   
   // Core states
   const [trendUrl, setTrendUrl] = useState('');
@@ -282,8 +281,9 @@ export default function SpotPage() {
         await loadTodaysStats();
         await refreshUser();
         
-        if (session.isActive && scrollSessionRef.current) {
-          scrollSessionRef.current.addTrend({
+        // Session tracking handled by context
+        if (session.isActive) {
+          logTrendSubmission({
             id: result.submission?.id,
             title: formData.trendName || 'Untitled',
             earnings: xpAmount

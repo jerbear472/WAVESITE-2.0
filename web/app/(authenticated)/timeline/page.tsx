@@ -10,7 +10,7 @@ import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
-import { formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
+// Removed formatCurrency import - using XP display instead
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,
@@ -525,7 +525,7 @@ export default function Timeline() {
                   <DollarSignIcon className="w-4 h-4 text-green-400" />
                 </div>
                 <p className="text-2xl font-bold text-white">
-                  {formatCurrency(totalEarnings)}
+                  {totalEarnings} XP
                 </p>
               </motion.div>
 
@@ -924,7 +924,7 @@ export default function Timeline() {
                                     : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
                                   <DollarSignIcon className="w-3 h-3" />
-                                  <span>{formatCurrency(trend.bounty_amount || 0)}</span>
+                                  <span>{trend.bounty_amount || 0} XP</span>
                                 </div>
                               )}
                             </div>
@@ -1107,7 +1107,7 @@ export default function Timeline() {
                                     : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
                                   <DollarSignIcon className="w-4 h-4" />
-                                  <span>{formatCurrency(trend.bounty_amount || 0)}</span>
+                                  <span>{trend.bounty_amount || 0} XP</span>
                                 </div>
                               )}
                             </div>
@@ -1348,7 +1348,7 @@ export default function Timeline() {
                                                         ? 'bg-green-500/20 text-green-400' 
                                                         : 'bg-yellow-500/20 text-yellow-400'
                                                     }`}>
-                                                      {formatCurrency(trend.bounty_amount)}
+                                                      {trend.bounty_amount} XP
                                                     </div>
                                                   )}
                                                 </div>
