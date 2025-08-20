@@ -26,7 +26,7 @@ import {
   Pause
 } from 'lucide-react';
 // ScrollSession component removed - using session context directly
-import { SpotterTierDisplay } from '@/components/SpotterTierDisplay';
+import { XPLevelDisplay } from '@/components/XPLevelDisplay';
 import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import StreakDisplay from '@/components/StreakDisplay';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,13 +54,7 @@ export default function SpotPage() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
   
-  // Default tier info for display (XP-based)
-  const tierInfo = {
-    name: 'Observer',
-    level: 1,
-    color: 'blue',
-    baseXP: 100
-  };
+  // Using XP-based 15-level cultural anthropologist system
   const { session, startSession, endSession, logTrendSubmission } = useSession();
   
   // Core states
@@ -346,7 +340,7 @@ export default function SpotPage() {
             
             <div className="w-40 flex justify-end min-h-[44px] items-center">
               {user && (
-                <SpotterTierDisplay userId={user.id} compact={true} />
+                <XPLevelDisplay userId={user.id} compact={true} />
               )}
             </div>
           </div>
