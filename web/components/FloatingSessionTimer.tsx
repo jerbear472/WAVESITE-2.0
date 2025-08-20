@@ -17,20 +17,57 @@ import {
 export default function FloatingSessionTimer() {
   const { session, startSession, endSession, isSessionActive } = useSession();
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isHidden, setIsHidden] = useState(false);
+  const [isHidden, setIsHidden] = useState(() => {
+    // Check localStorage to persist hidden state
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('floatingTimerHidden') === 'true';
+    }
+    return false;
+  });
 
   // Safety check for session
   if (!session) {
     return null;
   }
 
-  // Don't render if no session and no streak
-  if (!session.isActive && session.currentStreak === 0) {
-    return null;
-  }
+  // Always show the timer if we're on a page where sessions matter
+  // (Don't hide it completely when session is inactive)
 
+  // Handle hiding/showing
+  const handleHide = () => {
+    setIsHidden(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('floatingTimerHidden', 'true');
+    }
+  };
+
+  const handleShow = () => {
+    setIsHidden(false);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('floatingTimerHidden');
+    }
+  };
+
+  // Show restore button if hidden
   if (isHidden) {
-    return null;
+    return (
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.05 }}
+        onClick={handleShow}
+        className="fixed bottom-6 right-6 z-50 p-3 bg-gray-900/95 backdrop-blur-xl rounded-full border border-gray-700 shadow-2xl hover:bg-gray-800/95 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-blue-400" />
+          {session.isActive && (
+            <span className="font-mono text-sm font-bold text-white">
+              {formatTime(session.duration)}
+            </span>
+          )}
+        </div>
+      </motion.button>
+    );
   }
 
   const formatTime = (seconds: number): string => {
@@ -92,7 +129,7 @@ export default function FloatingSessionTimer() {
                 )}
               </button>
               <button
-                onClick={() => setIsHidden(true)}
+                onClick={handleHide}
                 className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
               >
                 <X className="w-3 h-3 text-gray-400" />
@@ -211,6 +248,21 @@ export default function FloatingSessionTimer() {
                   </div>
                 )}
               </div>
+              {/* Add control button in minimized view */}
+              <button
+                onClick={session.isActive ? endSession : startSession}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  session.isActive
+                    ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400'
+                    : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400'
+                }`}
+              >
+                {session.isActive ? (
+                  <Pause className="w-3 h-3" />
+                ) : (
+                  <Play className="w-3 h-3" />
+                )}
+              </button>
             </div>
           )}
         </div>
