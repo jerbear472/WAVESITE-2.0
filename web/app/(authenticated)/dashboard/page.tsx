@@ -1018,13 +1018,13 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Recent Trends - Enhanced */}
           <div className="lg:col-span-2 order-2 lg:order-1">
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 sm:p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-6 sm:mb-8">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Recent Platform Trends</h2>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">Recent Platform Trends</h2>
                 <select 
                   value={timeframe} 
                   onChange={(e) => setTimeframe(e.target.value)}
-                  className="text-sm border border-gray-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 bg-white dark:bg-neutral-900"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white"
                 >
                   <option value="all">All Time</option>
                   <option value="day">Last 24h</option>
@@ -1074,7 +1074,7 @@ export default function Dashboard() {
                             }
                           }
                         }}
-                        className="p-4 sm:p-6 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-all cursor-pointer group relative"
+                        className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all cursor-pointer group"
                       >
                         {/* External link indicator */}
                         {(trend.url || trend.post_url || trend.evidence?.url) && (
@@ -1097,26 +1097,19 @@ export default function Dashboard() {
                           )}
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <span className="text-2xl">{categoryDetails.emoji}</span>
-                              {categoryDetails.label && categoryDetails.label !== '0' && categoryDetails.label !== '' && (
-                                <span className={`text-xs px-2.5 py-1 rounded-full bg-gradient-to-r {categoryDetails.color} text-white font-medium shadow-sm`}>
-                                  {categoryDetails.label}
-                                </span>
-                              )}
-                              {trend.isUserTrend && (
-                                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded-full">
-                                  Your trend
-                                </span>
-                              )}
-                              {trend.xp_amount && trend.xp_amount > 0 ? (
-                                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-lg">{categoryDetails.emoji}</span>
+                              <span className="text-sm font-medium text-gray-600">
+                                {categoryDetails.label}
+                              </span>
+                              {trend.xp_amount && trend.xp_amount > 0 && (
+                                <span className="text-sm text-green-600 font-medium ml-auto">
                                   +{trend.xp_amount} XP
                                 </span>
-                              ) : null}
+                              )}
                             </div>
                             
-                            <h3 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+                            <h3 className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                               {trend.title || trend.trend_headline || trend.evidence?.title || trend.trendName || trend.why_trending || (trend.description && trend.description !== '0' && trend.description.split('\n')[0]) || 'Untitled Trend'}
                             </h3>
                             

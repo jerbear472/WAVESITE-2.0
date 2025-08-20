@@ -71,7 +71,7 @@ export default function Navigation() {
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
     { href: '/spot', label: 'Spot', icon: '👁️' },
     { href: '/predictions', label: 'Predictions', icon: '🔮' },
-    { href: '/timeline', label: 'My Timeline', icon: '📅' },
+    { href: '/timeline', label: 'My Timeline', icon: '📈' },
     { href: '/validate', label: 'Validate', icon: '✅' },
     { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
     { href: '/profile', label: 'Profile', icon: '👤' },
@@ -82,9 +82,8 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-8">
-            <Link href="/dashboard" className="flex items-center space-x-2">
+            <Link href="/dashboard" className="flex items-center">
               <WaveSightLogo className="h-8 w-auto" />
-              <span className="text-xl font-semibold text-gray-900">WaveSight</span>
             </Link>
 
             <div className="hidden md:flex items-center space-x-1">
@@ -105,31 +104,32 @@ export default function Navigation() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* XP Display */}
-            <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-yellow-50 rounded-lg">
-              <span>⚡</span>
-              <span className="text-sm font-semibold text-yellow-700">{userXP.toLocaleString()} XP</span>
+            <div className="flex items-center space-x-1">
+              <span className="text-yellow-500">⚡</span>
+              <span className="text-sm font-medium text-gray-700">{userXP.toLocaleString()}</span>
+              <span className="text-sm text-gray-500">XP</span>
             </div>
 
             {/* Level Badge */}
             {userLevel !== 'Observer' && (
-              <div className="px-3 py-1.5 bg-purple-50 rounded-lg">
-                <span className="text-sm font-semibold text-purple-700">{userLevel}</span>
+              <div className="text-sm font-medium text-purple-600">
+                {userLevel}
               </div>
             )}
 
             {/* Rank Display */}
             {globalRank && globalRank <= 100 && (
-              <div className="flex items-center space-x-1 px-3 py-1.5 bg-green-50 rounded-lg">
-                <span>🏅</span>
-                <span className="text-sm font-semibold text-green-700">#{globalRank}</span>
+              <div className="flex items-center space-x-1">
+                <span className="text-sm">🏅</span>
+                <span className="text-sm font-medium text-green-600">#{globalRank}</span>
               </div>
             )}
 
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-200"
+              className="text-sm font-medium text-gray-600 hover:text-gray-900"
             >
               Logout
             </button>
