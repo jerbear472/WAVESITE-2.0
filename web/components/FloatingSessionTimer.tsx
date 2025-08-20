@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function FloatingSessionTimer() {
-  const { session, startSession, endSession, isSessionActive } = useSession();
+  const { session, startSession, pauseSession, resumeSession, endSession, isSessionActive } = useSession();
   const [isMinimized, setIsMinimized] = useState(false);
   const [isHidden, setIsHidden] = useState(() => {
     // Check localStorage to persist hidden state
@@ -205,27 +205,48 @@ export default function FloatingSessionTimer() {
                 </div>
               )}
 
-              {/* Control Button */}
-              <button
-                onClick={session.isActive ? endSession : startSession}
-                className={`w-full py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
-                  session.isActive
-                    ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30'
-                    : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
-                }`}
-              >
+              {/* Control Buttons */}
+              <div className="flex gap-2">
                 {session.isActive ? (
                   <>
-                    <Pause className="w-4 h-4" />
-                    End Session
+                    <button
+                      onClick={session.isPaused ? resumeSession : pauseSession}
+                      className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                        session.isPaused
+                          ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30'
+                          : 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30'
+                      }`}
+                    >
+                      {session.isPaused ? (
+                        <>
+                          <Play className="w-4 h-4" />
+                          Resume
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="w-4 h-4" />
+                          Pause
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={async () => await endSession()}
+                      className="px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30"
+                    >
+                      <X className="w-3 h-3" />
+                      End
+                    </button>
                   </>
                 ) : (
-                  <>
+                  <button
+                    onClick={startSession}
+                    className="w-full py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30"
+                  >
                     <Play className="w-4 h-4" />
                     Start Session
-                  </>
+                  </button>
                 )}
-              </button>
+              </div>
             </>
           )}
 
@@ -251,7 +272,13 @@ export default function FloatingSessionTimer() {
               </div>
               {/* Add control button in minimized view */}
               <button
-                onClick={session.isActive ? endSession : startSession}
+                onClick={async () => {
+                  if (session.isActive) {
+                    await endSession();
+                  } else {
+                    startSession();
+                  }
+                }}
                 className={`p-1.5 rounded-lg transition-colors ${
                   session.isActive
                     ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400'

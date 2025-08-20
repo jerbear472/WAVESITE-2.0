@@ -477,7 +477,13 @@ export default function SpotPage() {
                 </div>
                 
                 <button
-                  onClick={session.isActive ? endSession : startSession}
+                  onClick={async () => {
+                    if (session.isActive) {
+                      await endSession();
+                    } else {
+                      startSession();
+                    }
+                  }}
                   className={`px-4 py-2 rounded-xl font-semibold transition-all flex items-center gap-2 text-sm ${
                     session.isActive 
                       ? 'bg-red-500 hover:bg-red-600 text-white' 

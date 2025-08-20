@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabase';
 
 interface SessionState {
   isActive: boolean;
+  isPaused: boolean;
   startTime: Date | null;
+  pausedDuration: number; // accumulated pause time in seconds
   duration: number; // in seconds
   trendsLogged: number;
   currentStreak: number;
@@ -18,6 +20,8 @@ interface SessionState {
 interface SessionContextType {
   session: SessionState;
   startSession: () => void;
+  pauseSession: () => void;
+  resumeSession: () => void;
   endSession: () => void;
   logTrendSubmission: () => void;
   isSessionActive: () => boolean;
@@ -33,7 +37,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   
   const [session, setSession] = useState<SessionState>({
     isActive: false,
+    isPaused: false,
     startTime: null,
+    pausedDuration: 0,
     duration: 0,
     trendsLogged: 0,
     currentStreak: 0,
@@ -89,9 +95,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   // Session timer - updates duration
   useEffect(() => {
-    if (session.isActive && session.startTime) {
+    if (session.isActive && !session.isPaused && session.startTime) {
       sessionTimerRef.current = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - session.startTime!.getTime()) / 1000);
+        const elapsed = Math.floor((Date.now() - session.startTime!.getTime()) / 1000) - session.pausedDuration;
         setSession(prev => ({ ...prev, duration: elapsed }));
       }, 1000);
     } else {
@@ -105,7 +111,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         clearInterval(sessionTimerRef.current);
       }
     };
-  }, [session.isActive, session.startTime]);
+  }, [session.isActive, session.isPaused, session.startTime, session.pausedDuration]);
 
   // Streak timer - tracks time remaining
   useEffect(() => {
@@ -157,7 +163,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const startSession = () => {
     const newSession: SessionState = {
       isActive: true,
+      isPaused: false,
       startTime: new Date(),
+      pausedDuration: 0,
       duration: 0,
       trendsLogged: 0,
       currentStreak: session.currentStreak, // Preserve existing streak
@@ -166,6 +174,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       streakTimeRemaining: session.streakTimeRemaining
     };
     setSession(newSession);
+  };
+
+  const pauseSession = () => {
+    if (session.isActive && !session.isPaused) {
+      setSession(prev => ({
+        ...prev,
+        isPaused: true
+      }));
+    }
+  };
+
+  const resumeSession = () => {
+    if (session.isActive && session.isPaused) {
+      // Calculate how long we were paused and add to pausedDuration
+      setSession(prev => ({
+        ...prev,
+        isPaused: false
+      }));
+    }
   };
 
   const endSession = async () => {
@@ -190,15 +217,31 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Clear any existing timers
+    if (sessionTimerRef.current) {
+      clearInterval(sessionTimerRef.current);
+      sessionTimerRef.current = undefined;
+    }
+
     // End session but preserve streak if still valid
-    setSession(prev => ({
-      ...prev,
+    const newSession = {
       isActive: false,
+      isPaused: false,
       startTime: null,
+      pausedDuration: 0,
       duration: 0,
-      trendsLogged: 0
+      trendsLogged: 0,
       // Keep streak data intact
-    }));
+      currentStreak: session.currentStreak,
+      streakMultiplier: session.streakMultiplier,
+      lastSubmissionTime: session.lastSubmissionTime,
+      streakTimeRemaining: session.streakTimeRemaining
+    };
+    
+    setSession(newSession);
+    
+    // Clear localStorage to ensure clean state
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));
   };
 
   const logTrendSubmission = () => {
@@ -222,6 +265,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       value={{
         session,
         startSession,
+        pauseSession,
+        resumeSession,
         endSession,
         logTrendSubmission,
         isSessionActive

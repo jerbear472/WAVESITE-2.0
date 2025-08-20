@@ -30,7 +30,7 @@ export default function TestSessionPage() {
           </button>
           
           <button
-            onClick={endSession}
+            onClick={async () => await endSession()}
             className="px-4 py-2 bg-red-500 text-white rounded"
             disabled={!session.isActive}
           >
