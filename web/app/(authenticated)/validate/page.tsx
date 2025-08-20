@@ -34,7 +34,7 @@ import {
   Star
 } from 'lucide-react';
 // XP system - removed old earnings imports
-import XPDisplay from '@/components/XPDisplay';
+// XPDisplay removed - using inline notification
 import { BountyTrendCard } from '@/components/BountyTrendCard';
 
 interface TrendToValidate {
@@ -666,11 +666,24 @@ export default function ValidatePageFixed() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
       {/* XP Notification */}
-      {notification && (
-        <XPDisplay 
-          notification={notification} 
-          onDismiss={dismissNotification} 
-        />
+      {notification && notification.show && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="fixed top-4 right-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-lg shadow-lg z-50"
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5" />
+            <span className="font-bold">+{notification.xp} XP</span>
+            <button
+              onClick={dismissNotification}
+              className="ml-2 hover:opacity-80"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </motion.div>
       )}
       {/* Elegant Header */}
       <div className="max-w-5xl mx-auto mb-6">
