@@ -68,23 +68,23 @@ export default function Navigation() {
   };
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/spot', label: 'Spot' },
-    { href: '/predictions', label: 'Predictions' },
-    { href: '/timeline', label: 'My Timeline' },
-    { href: '/validate', label: 'Validate' },
-    { href: '/leaderboard', label: 'Leaderboard' },
-    { href: '/profile', label: 'Profile' },
+    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/spot', label: 'Spot', icon: '👁️' },
+    { href: '/predictions', label: 'Predictions', icon: '🔮' },
+    { href: '/timeline', label: 'My Timeline', icon: '📅' },
+    { href: '/validate', label: 'Validate', icon: '✅' },
+    { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
+    { href: '/profile', label: 'Profile', icon: '👤' },
   ];
 
   return (
-    <nav className="bg-gradient-to-r from-purple-900 to-indigo-900 text-white shadow-lg">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/dashboard" className="flex items-center">
               <WaveSightLogo className="h-8 w-auto" />
-              <span className="ml-2 text-xl font-bold">Cultural Wave Tracker</span>
+              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white">WaveSight</span>
             </Link>
           </div>
 
@@ -93,22 +93,23 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1 ${
                   pathname === item.href
-                    ? 'bg-white/20 text-white'
-                    : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
-                {item.label}
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
               </Link>
             ))}
           </div>
 
           <div className="flex items-center space-x-4">
             {/* XP Display */}
-            <div className="bg-white/10 rounded-lg px-3 py-1 flex items-center space-x-2">
-              <Trophy className="h-4 w-4 text-yellow-400" />
-              <span className="text-sm font-bold">{userXP.toLocaleString()} XP</span>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-1 flex items-center space-x-2">
+              <span className="text-yellow-500">⚡</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-white">{userXP.toLocaleString()} XP</span>
             </div>
 
             {/* Level Display */}
@@ -119,14 +120,14 @@ export default function Navigation() {
             {/* Rank Display */}
             {globalRank && globalRank <= 100 && (
               <div className="bg-green-500 rounded-lg px-3 py-1 flex items-center space-x-1">
-                <Award className="h-4 w-4" />
-                <span className="text-sm font-bold">#{globalRank}</span>
+                <span className="text-white">🏅</span>
+                <span className="text-sm font-bold text-white">#{globalRank}</span>
               </div>
             )}
 
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Logout
             </button>
@@ -148,16 +149,17 @@ export default function Navigation() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-purple-800">
+        <div className="md:hidden bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {item.label}
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
               </Link>
             ))}
           </div>

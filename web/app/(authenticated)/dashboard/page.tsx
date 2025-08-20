@@ -921,17 +921,7 @@ export default function Dashboard() {
             >
               <RefreshCw className={`w-5 h-5 {refreshing ? 'animate-spin' : ''}`} />
             </button>
-            {/* Enterprise Dashboard - Only for jeremyuys@gmail.com */}
-            {user?.email === 'jeremyuys@gmail.com' && (
-              <Link 
-                href="/enterprise/live" 
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
-              >
-                <Sparkles className="w-4 h-4" />
-                Enterprise Live
-              </Link>
-            )}
-            <Link href="/scroll" className="btn-primary whitespace-nowrap">
+            <Link href="/spot" className="btn-primary whitespace-nowrap">
               Submit New Trend
             </Link>
           </div>
@@ -967,12 +957,12 @@ export default function Dashboard() {
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">Available XP</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(stats.approved_xp)}
+                {stats.approved_xp.toLocaleString()} XP
               </p>
               <div className="flex flex-col gap-1 mt-2">
                 {stats.pending_xp > 0 && (
                   <p className="text-xs text-yellow-500 font-medium">
-                    +{formatCurrency(stats.pending_xp)} pending approval
+                    +{stats.pending_xp.toLocaleString()} XP pending approval
                   </p>
                 )}
                 {stats.total_cashed_out > 0 && (
