@@ -844,6 +844,7 @@ export default function SmartTrendSubmission({
         audioOrCatchphrase: '',
         otherPlatforms: [],
         predicted_peak_date: predictedPeakDate?.toISOString() || null, // Add the calculated date
+        predicted_peak_timeframe: formData.predictedPeak, // Store the timeframe for reference
         // HIGH VALUE INTELLIGENCE DATA
         trendVelocity: formData.trendVelocity,
         trendSize: formData.trendSize,
@@ -853,6 +854,19 @@ export default function SmartTrendSubmission({
           size: formData.trendSize,
           timing: 'today',
           capturedAt: new Date().toISOString()
+        },
+        // Prediction metadata for verification
+        predictionMetadata: {
+          timeframe: formData.predictedPeak,
+          predictedDate: predictedPeakDate?.toISOString() || null,
+          trendIdentifiers: {
+            name: formData.title,
+            keywords: [formData.title, ...formData.hashtags].filter(Boolean),
+            platform: formData.platform,
+            category: dbCategory,
+            url: formData.url
+          },
+          submittedAt: new Date().toISOString()
         },
         // AI Signal Intelligence
         aiAngle: formData.aiAngle || 'not_ai',
