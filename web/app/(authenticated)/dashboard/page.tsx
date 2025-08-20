@@ -365,7 +365,7 @@ export default function Dashboard() {
         total_cashed_out: totalPaid  // Amount already paid out
       });
 
-      console.log(`Calculated accuracy rate: {!isNaN(accuracyScore) ? accuracyScore.toFixed(2) : '0'}% ({approvedTrends}/{decidedTrends} trends decided)`);
+      console.log(`Calculated accuracy rate: ${!isNaN(accuracyScore) ? accuracyScore.toFixed(2) : '0'}% (${approvedTrends}/${decidedTrends} trends decided)`);
     } catch (error) {
       console.error('Error in manual stats calculation:', error);
     }
@@ -575,9 +575,9 @@ export default function Dashboard() {
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 1) return 'just now';
-    if (minutes < 60) return `{minutes}m ago`;
-    if (hours < 24) return `{hours}h ago`;
-    if (days < 7) return `{days}d ago`;
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
     return time.toLocaleDateString();
   };
 
@@ -1332,32 +1332,7 @@ export default function Dashboard() {
               <NotificationsWindow />
             </div>
             
-            {/* Cultural Analyst Training Reminder */}
-            <Link href="/cultural-analyst-training" className="block">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl shadow-sm p-6 hover:shadow-xl transition-shadow cursor-pointer hover:scale-[1.02]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
-                    <span className="text-2xl">🎓</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-white font-semibold text-sm">
-                      Cultural Analyst Training
-                    </p>
-                    <p className="text-white/80 text-xs mt-1">
-                      Learn to earn up to 4.69 per trend
-                    </p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-white/80" />
-                </div>
-              </motion.div>
-            </Link>
-            
-            {/* Performance Tier */}
+            {/* XP Level Tier */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1372,8 +1347,8 @@ export default function Dashboard() {
                       <Award className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white">Performance Tier</h3>
-                      <p className="text-xs text-white/80">Click to view details</p>
+                      <h3 className="font-semibold text-white">Your Level</h3>
+                      <p className="text-xs text-white/80">Click to view progression</p>
                     </div>
                   </div>
                   <Info className="w-4 h-4 text-white/60" />
@@ -1381,24 +1356,60 @@ export default function Dashboard() {
               </div>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-3xl font-bold text-white capitalize">
-                    {user?.performance_tier || 'Lxp'}
+                  <p className="text-2xl font-bold text-white">
+                    {(() => {
+                      const totalXP = stats.approved_xp + stats.pending_xp;
+                      if (totalXP < 100) return '🌱 Novice';
+                      if (totalXP < 500) return '⚡ Scout';
+                      if (totalXP < 1000) return '🔍 Tracker';
+                      if (totalXP < 2500) return '📊 Analyst';
+                      if (totalXP < 5000) return '🎯 Expert';
+                      if (totalXP < 10000) return '🏆 Master';
+                      if (totalXP < 25000) return '💎 Elite';
+                      return '👑 Legend';
+                    })()}
                   </p>
-                  <span className="text-2xl">📚</span>
+                  <span className="text-2xl">⚡</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/80">Progress to Verified</span>
-                    <span className="text-white font-medium">{stats.trends_spotted}/10</span>
+                    <span className="text-white/80">Total XP</span>
+                    <span className="text-white font-medium">{(stats.approved_xp + stats.pending_xp).toLocaleString()}</span>
                   </div>
                   <div className="bg-white/20 rounded-full h-2">
                     <div 
                       className="bg-white h-2 rounded-full transition-all"
-                      style={{ width: `{Math.min((stats.trends_spotted / 10) * 100, 100)}%` }}
+                      style={{ 
+                        width: `${(() => {
+                          const totalXP = stats.approved_xp + stats.pending_xp;
+                          const levels = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000];
+                          const currentLevel = levels.findIndex(l => totalXP < l);
+                          if (currentLevel === -1) return 100;
+                          const prevThreshold = currentLevel === 0 ? 0 : levels[currentLevel - 1];
+                          const nextThreshold = levels[currentLevel];
+                          const progress = ((totalXP - prevThreshold) / (nextThreshold - prevThreshold)) * 100;
+                          return Math.min(progress, 100);
+                        })()}%` 
+                      }}
                     />
                   </div>
                   <p className="text-xs text-white/70 mt-2">
-                    Submit {Math.max(10 - stats.trends_spotted, 0)} more quality trends to level up
+                    {(() => {
+                      const totalXP = stats.approved_xp + stats.pending_xp;
+                      const levels = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000];
+                      const nextLevel = levels.find(l => totalXP < l);
+                      if (!nextLevel) return 'Maximum level reached! 🎉';
+                      const xpNeeded = nextLevel - totalXP;
+                      const nextLevelName = 
+                        nextLevel === 100 ? 'Scout' :
+                        nextLevel === 500 ? 'Tracker' :
+                        nextLevel === 1000 ? 'Analyst' :
+                        nextLevel === 2500 ? 'Expert' :
+                        nextLevel === 5000 ? 'Master' :
+                        nextLevel === 10000 ? 'Elite' :
+                        nextLevel === 25000 ? 'Legend' : 'Max';
+                      return `${xpNeeded.toLocaleString()} XP to ${nextLevelName}`;
+                    })()}
                   </p>
                 </div>
               </div>

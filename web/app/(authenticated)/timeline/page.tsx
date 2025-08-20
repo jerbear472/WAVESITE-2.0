@@ -473,7 +473,7 @@ export default function Timeline() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent">
                   Trend Timeline
                 </h1>
-                <p className="text-gray-400 mt-1">Track your spotted trends and earnings</p>
+                <p className="text-gray-400 mt-1">Track your spotted trends and XP</p>
               </div>
               
               <div className="flex items-center gap-3">
@@ -521,7 +521,7 @@ export default function Timeline() {
                 className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-400 text-sm">Total Earnings</span>
+                  <span className="text-gray-400 text-sm">Total XP</span>
                   <DollarSignIcon className="w-4 h-4 text-green-400" />
                 </div>
                 <p className="text-2xl font-bold text-white">
