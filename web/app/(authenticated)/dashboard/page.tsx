@@ -19,7 +19,22 @@ import {
   Users,
   CheckCircle,
   XCircle,
-  Flame
+  Flame,
+  Eye,
+  BookOpen,
+  Search,
+  MapPin,
+  BarChart,
+  Microscope,
+  Crown,
+  Brain,
+  GraduationCap,
+  Telescope,
+  Star,
+  Rocket,
+  Lightbulb,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface XPStats {
@@ -45,6 +60,25 @@ interface XPEvent {
   created_at: string;
 }
 
+// 15-level cultural anthropologist progression system
+const XP_LEVELS = [
+  { level: 1, title: 'Observer', emoji: '👁️', threshold: 0, color: 'text-gray-600', benefit: 'Begin your journey as a cultural observer' },
+  { level: 2, title: 'Recorder', emoji: '📝', threshold: 100, color: 'text-blue-600', benefit: 'Document emerging cultural patterns' },
+  { level: 3, title: 'Tracker', emoji: '🔍', threshold: 300, color: 'text-blue-700', benefit: 'Track trends across multiple platforms' },
+  { level: 4, title: 'Spotter', emoji: '📍', threshold: 600, color: 'text-green-600', benefit: 'Spot trends before they peak' },
+  { level: 5, title: 'Analyst', emoji: '📊', threshold: 1000, color: 'text-green-700', benefit: 'Analyze cultural movement patterns' },
+  { level: 6, title: 'Interpreter', emoji: '🔬', threshold: 1500, color: 'text-purple-600', benefit: 'Interpret deeper cultural meanings' },
+  { level: 7, title: 'Specialist', emoji: '🎯', threshold: 2100, color: 'text-purple-700', benefit: 'Specialize in trend prediction' },
+  { level: 8, title: 'Expert', emoji: '🧠', threshold: 2800, color: 'text-orange-600', benefit: 'Expert in cultural wave mechanics' },
+  { level: 9, title: 'Scholar', emoji: '📚', threshold: 3600, color: 'text-orange-700', benefit: 'Scholar of cultural anthropology' },
+  { level: 10, title: 'Researcher', emoji: '🔬', threshold: 4500, color: 'text-red-600', benefit: 'Lead cultural research initiatives' },
+  { level: 11, title: 'Authority', emoji: '👑', threshold: 5500, color: 'text-red-700', benefit: 'Recognized cultural authority' },
+  { level: 12, title: 'Pioneer', emoji: '🚀', threshold: 6600, color: 'text-yellow-600', benefit: 'Pioneer new cultural territories' },
+  { level: 13, title: 'Visionary', emoji: '✨', threshold: 8000, color: 'text-yellow-700', benefit: 'Visionary cultural insights' },
+  { level: 14, title: 'Master', emoji: '🏆', threshold: 10000, color: 'text-amber-600', benefit: 'Master of cultural wave science' },
+  { level: 15, title: 'Legend', emoji: '⭐', threshold: 12500, color: 'text-amber-700', benefit: 'Legendary cultural anthropologist' }
+];
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<XPStats>({
@@ -63,6 +97,7 @@ export default function Dashboard() {
   });
   const [recentEvents, setRecentEvents] = useState<XPEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllLevels, setShowAllLevels] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -296,11 +331,15 @@ export default function Dashboard() {
             </div>
             
             <div className="space-y-4">
+              {/* Current Level Display */}
               <div className="flex items-center gap-3">
-                <Trophy className="w-6 h-6 text-yellow-500" />
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">{XP_LEVELS.find(l => l.level === stats.current_level)?.emoji || '👁️'}</span>
+                </div>
                 <div>
                   <h4 className="text-xl font-bold text-gray-900">{stats.total_xp.toLocaleString()} XP</h4>
                   <p className="text-sm text-gray-600">Level {stats.current_level}: {stats.level_title}</p>
+                  <p className="text-xs text-gray-500">{XP_LEVELS.find(l => l.level === stats.current_level)?.benefit}</p>
                 </div>
               </div>
               
@@ -311,21 +350,105 @@ export default function Dashboard() {
                 </div>
               )}
               
-              {/* Level Progress */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Level {stats.current_level + 1}</span>
-                  <span className="text-gray-900 font-medium">{levelProgress.xpToNext.toLocaleString()} XP</span>
+              {/* Current Level Progress */}
+              {stats.current_level < 15 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Progress to {XP_LEVELS.find(l => l.level === stats.current_level + 1)?.title}</span>
+                    <span className="text-gray-900 font-medium">{levelProgress.xpToNext.toLocaleString()} XP to go</span>
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${levelProgress.progress}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${levelProgress.progress}%` }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </div>
-              </div>
+              )}
+              
+              {/* Toggle All Levels View */}
+              <button
+                onClick={() => setShowAllLevels(!showAllLevels)}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium mt-4"
+              >
+                {showAllLevels ? 'Hide' : 'View'} All 15 Levels
+                {showAllLevels ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              
+              {/* All Levels Display */}
+              {showAllLevels && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-4 space-y-2 max-h-80 overflow-y-auto border-t border-gray-200 pt-4"
+                >
+                  {XP_LEVELS.map((level) => {
+                    const isCompleted = stats.current_level > level.level;
+                    const isCurrent = stats.current_level === level.level;
+                    const progress = isCurrent ? levelProgress.progress : (isCompleted ? 100 : 0);
+                    
+                    return (
+                      <div
+                        key={level.level}
+                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                          isCurrent 
+                            ? 'bg-blue-50 border border-blue-200' 
+                            : isCompleted 
+                            ? 'bg-green-50 border border-green-200'
+                            : 'bg-gray-50 border border-gray-200'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          isCurrent
+                            ? 'bg-blue-100'
+                            : isCompleted
+                            ? 'bg-green-100'
+                            : 'bg-gray-100'
+                        }`}>
+                          <span className="text-lg">{level.emoji}</span>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className={`text-sm font-medium ${
+                              isCurrent ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-700'
+                            }`}>
+                              Level {level.level}: {level.title}
+                            </p>
+                            {isCompleted && <CheckCircle className="w-4 h-4 text-green-500" />}
+                            {isCurrent && <Zap className="w-4 h-4 text-blue-500" />}
+                          </div>
+                          <p className="text-xs text-gray-600 mb-1">{level.benefit}</p>
+                          
+                          {/* Progress bar for current level */}
+                          {isCurrent && progress < 100 && (
+                            <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                              <div 
+                                className="bg-gradient-to-r from-purple-500 to-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="text-right">
+                          <p className={`text-xs font-medium ${
+                            isCurrent ? 'text-blue-700' : isCompleted ? 'text-green-700' : 'text-gray-500'
+                          }`}>
+                            {level.threshold.toLocaleString()} XP
+                          </p>
+                          {isCurrent && levelProgress.xpToNext > 0 && (
+                            <p className="text-xs text-gray-500">+{levelProgress.xpToNext.toLocaleString()}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              )}
             </div>
           </div>
 
