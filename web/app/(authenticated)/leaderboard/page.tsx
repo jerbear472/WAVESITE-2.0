@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Trophy, Medal, Award, TrendingUp, Target, Crown, Flame, Star } from 'lucide-react';
+import { Trophy, Medal, Award, TrendingUp, Target, Crown, Flame, Star, Waves, Activity, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface LeaderboardEntry {
@@ -76,76 +76,126 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <motion.h1 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-bold text-gray-900 mb-2"
-          >
-            WaveSight Leaderboard
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="text-gray-600"
-          >
-            Top cultural spotters compete for recognition and rewards
-          </motion.p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Background Wave Pattern */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <svg className="absolute -top-20 -right-20 w-96 h-96 text-blue-100/30" viewBox="0 0 100 100">
+          <path d="M10,50 Q30,20 50,50 T90,50" stroke="currentColor" strokeWidth="0.5" fill="none" />
+          <path d="M10,60 Q30,30 50,60 T90,60" stroke="currentColor" strokeWidth="0.5" fill="none" />
+          <path d="M10,70 Q30,40 50,70 T90,70" stroke="currentColor" strokeWidth="0.5" fill="none" />
+        </svg>
+        <svg className="absolute -bottom-20 -left-20 w-96 h-96 text-purple-100/20" viewBox="0 0 100 100">
+          <path d="M10,30 Q30,10 50,30 T90,30" stroke="currentColor" strokeWidth="0.5" fill="none" />
+          <path d="M10,40 Q30,20 50,40 T90,40" stroke="currentColor" strokeWidth="0.5" fill="none" />
+        </svg>
+      </div>
+      
+      <div className="relative z-10 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-center gap-4 mb-6"
+            >
+              <div className="relative">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Waves className="w-8 h-8 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
+                  <Crown className="w-3 h-3 text-yellow-900" />
+                </div>
+              </div>
+              <div className="text-left">
+                <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-700 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+                  WaveSight
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <Activity className="w-4 h-4 text-blue-600" />
+                  <span className="text-xl font-semibold text-gray-700">Leaderboard</span>
+                </div>
+              </div>
+            </motion.div>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg text-gray-600 max-w-2xl mx-auto"
+            >
+              Elite cultural anthropologists competing to spot the next wave
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-4 inline-flex items-center gap-2 px-6 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-blue-200/50 shadow-sm"
+            >
+              <Zap className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium text-gray-700">Live Competition Active</span>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            </motion.div>
+          </div>
 
-        {/* Stats Summary */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
-        >
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">🔥</span>
-              <span className="text-sm text-gray-500">Active Competition</span>
+          {/* Stats Summary */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+          >
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
+                  <Flame className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Competition</span>
+              </div>
+              <p className="text-3xl font-bold text-gray-900 mb-1">Monthly</p>
+              <p className="text-sm text-gray-600">7 days remaining</p>
             </div>
-            <p className="text-2xl font-bold text-gray-900">Monthly</p>
-            <p className="text-sm text-gray-600 mt-1">7 days remaining</p>
-          </div>
           
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">👥</span>
-              <span className="text-sm text-gray-500">Total Spotters</span>
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Active</span>
+              </div>
+              <p className="text-3xl font-bold text-gray-900 mb-1">{leaderboard.length}</p>
+              <p className="text-sm text-gray-600">Anthropologists</p>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{leaderboard.length}</p>
-            <p className="text-sm text-gray-600 mt-1">Active this period</p>
-          </div>
           
           {userRank && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-sm border border-blue-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">🎯</span>
-                <span className="text-sm text-purple-600 font-medium">Your Rank</span>
+            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-purple-200/50">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-medium text-purple-700 bg-purple-100 px-3 py-1 rounded-full">Your Rank</span>
               </div>
-              <p className="text-2xl font-bold text-purple-700">#{userRank}</p>
+              <p className="text-3xl font-bold text-purple-700 mb-1">#{userRank}</p>
               {userRank <= 100 && (
-                <p className="text-sm text-green-600 font-medium mt-1">Prize Eligible! ✨</p>
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-yellow-500" />
+                  <p className="text-sm text-green-700 font-medium">Prize Eligible!</p>
+                </div>
               )}
             </div>
           )}
         </motion.div>
 
-        {/* Timeframe Selector */}
-        <div className="flex justify-center mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-1 flex space-x-1">
+          {/* Timeframe Selector */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-1.5 flex space-x-1 border border-white/20">
             {(['all', 'monthly', 'weekly'] as const).map((period) => (
               <button
                 key={period}
                 onClick={() => setTimeframe(period)}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
                   timeframe === period
-                    ? 'bg-blue-500 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                 }`}
               >
                 {period === 'all' ? 'All Time' : period.charAt(0).toUpperCase() + period.slice(1)}
@@ -154,24 +204,24 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* Leaderboard Table */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl shadow-sm overflow-hidden"
-        >
+          {/* Leaderboard Table */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-white/20"
+          >
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-blue-100">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spotter</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
-                  <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">XP</th>
-                  <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Waves</th>
-                  <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Accuracy</th>
-                  <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Badges</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Rank</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Anthropologist</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Level</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">XP</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Waves</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Accuracy</th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Achievements</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -199,8 +249,8 @@ export default function LeaderboardPage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.02 }}
-                        className={`hover:bg-gray-50 transition-colors ${
-                          entry.global_rank <= 3 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''
+                        className={`hover:bg-blue-50/50 transition-all duration-200 ${
+                          entry.global_rank <= 3 ? 'bg-gradient-to-r from-yellow-50 via-orange-50 to-transparent' : ''
                         }`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -257,17 +307,20 @@ export default function LeaderboardPage() {
           </div>
         </motion.div>
 
-        {/* Prize Information */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
-          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200">
-            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">🥇</span> Top 10 Rewards
-            </h3>
+          {/* Prize Information */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
+            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200/50 shadow-lg">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-white" />
+                </div>
+                <span>Elite Tier Rewards</span>
+              </h3>
             <ul className="text-sm text-gray-700 space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-green-500">✓</span>
@@ -284,10 +337,13 @@ export default function LeaderboardPage() {
             </ul>
           </div>
           
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
-            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">🥈</span> Top 50 Rewards
-            </h3>
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200/50 shadow-lg">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <Award className="w-5 h-5 text-white" />
+                </div>
+                <span>Expert Tier Rewards</span>
+              </h3>
             <ul className="text-sm text-gray-700 space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-green-500">✓</span>
@@ -304,10 +360,13 @@ export default function LeaderboardPage() {
             </ul>
           </div>
           
-          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
-            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <span className="text-2xl">🥉</span> Top 100 Rewards
-            </h3>
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-200/50 shadow-lg">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                  <Medal className="w-5 h-5 text-white" />
+                </div>
+                <span>Rising Star Rewards</span>
+              </h3>
             <ul className="text-sm text-gray-700 space-y-2">
               <li className="flex items-start gap-2">
                 <span className="text-green-500">✓</span>
@@ -323,7 +382,8 @@ export default function LeaderboardPage() {
               </li>
             </ul>
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
