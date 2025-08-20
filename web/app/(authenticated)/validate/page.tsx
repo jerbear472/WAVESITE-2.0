@@ -33,12 +33,7 @@ import {
   ExternalLink,
   Star
 } from 'lucide-react';
-import { 
-  SUSTAINABLE_EARNINGS,
-  formatCurrency,
-  calculateUserTier,
-  type Tier
-} from '@/lib/SUSTAINABLE_EARNINGS';
+// XP system - removed old earnings imports
 import XPDisplay from '@/components/XPDisplay';
 import { BountyTrendCard } from '@/components/BountyTrendCard';
 
@@ -359,10 +354,10 @@ export default function ValidatePageFixed() {
         .select('*')
         .eq('validator_id', user?.id);
 
-      // Calculate xp using EARNINGS_STANDARD
-      const spotterTier = (user?.spotter_tier || 'lxp') as Tier;
-      const todayXP = calculateValidationXP(todayValidations?.length || 0, spotterTier);
-      const totalXP = calculateValidationXP(allValidations?.length || 0, spotterTier);
+      // Calculate XP for validations (20 XP per validation)
+      const xpPerValidation = 20;
+      const todayXP = (todayValidations?.length || 0) * xpPerValidation;
+      const totalXP = (allValidations?.length || 0) * xpPerValidation;
       
       setStats({
         validated_today: todayValidations?.length || 0,
@@ -1138,7 +1133,7 @@ export default function ValidatePageFixed() {
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600">Session XP</p>
-                <p className="text-xl font-bold text-green-600">+{formatCurrency(calculateValidationXP(sessionValidations, (user?.spotter_tier || 'lxp') as Tier))}</p>
+                <p className="text-xl font-bold text-green-600">+{sessionValidations * 20} XP</p>
               </div>
             </div>
           </motion.div>
