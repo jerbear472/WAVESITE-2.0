@@ -283,11 +283,7 @@ export default function SpotPage() {
         
         // Session tracking handled by context
         if (session.isActive) {
-          logTrendSubmission({
-            id: result.submission?.id,
-            title: formData.trendName || 'Untitled',
-            earnings: xpAmount
-          });
+          logTrendSubmission();
         }
         
         const audienceSize = formData.trendSize ? 
