@@ -313,7 +313,7 @@ export default function LearnPage() {
             Take the Trend Quiz
           </Link>
           <Link
-            href="/scroll"
+            href="/spot"
             className="inline-flex items-center justify-center px-8 py-4 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl"
           >
             <TrendingUp className="w-5 h-5 mr-2" />

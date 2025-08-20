@@ -35,7 +35,7 @@ export async function middleware(req: NextRequest) {
     '/validate',
     '/submit',
     '/timeline',
-    '/scroll',
+    '/spot',
     '/earnings',
     '/admin',
     '/persona'

@@ -227,53 +227,15 @@ export default function Dashboard() {
   const fetchDashboardStats = async () => {
     if (!user?.id) return;
     
-    try {
-      // Try the RPC function first, but fallback to manual calculation if it fails
-      const { data: statsData, error: statsError } = await supabase
-        .rpc('get_user_dashboard_stats', { p_user_id: user.id });
-
-      if (statsError) {
-        console.log('RPC function failed, calculating stats manually:', statsError.message);
-        await calculateStatsManually();
-      } else if (statsData && statsData.length > 0) {
-        setStats(statsData[0]);
-      } else {
-        // No data returned, calculate manually
-        await calculateStatsManually();
-      }
-    } catch (error) {
-      console.error('Error fetching stats, falling back to manual calculation:', error);
-      await calculateStatsManually();
-    }
+    // Always use manual calculation for now since RPC might not exist
+    await calculateStatsManually();
   };
 
   const calculateStatsManually = async () => {
     if (!user?.id) return;
     
     try {
-      // Get user's approved and pending xp directly from user_profiles
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('approved_xp, pending_xp')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching profile xp:', profileError);
-      }
-
-      // Get user's trends for accuracy calculation
-      const { data: userTrends, error: trendsError } = await supabase
-        .from('trend_submissions')
-        .select('*')
-        .eq('spotter_id', user.id);
-
-      if (trendsError) {
-        console.error('Error fetching user trends:', trendsError);
-        return;
-      }
-
-      // Get user's xp from xp_ledger for accuracy
+      // Get user's xp from xp_ledger - this is the source of truth
       const { data: xpLedger, error: xpError } = await supabase
         .from('xp_ledger')
         .select('*')
@@ -285,7 +247,18 @@ export default function Dashboard() {
       }
       
       // Map to userXP format for compatibility
-      const userXP = xpLedger;
+      const userXP = xpLedger || [];
+
+      // Get user's trends for accuracy calculation
+      const { data: userTrends, error: trendsError } = await supabase
+        .from('trend_submissions')
+        .select('*')
+        .eq('spotter_id', user.id);
+
+      if (trendsError) {
+        console.error('Error fetching user trends:', trendsError);
+        return;
+      }
 
       // Calculate accuracy rate: approved / (approved + rejected)
       const totalTrends = userTrends?.length || 0;
@@ -308,23 +281,24 @@ export default function Dashboard() {
       const accuracyScore = decidedTrends > 0 && !isNaN(decidedTrends) && !isNaN(approvedTrends) ? ((approvedTrends / decidedTrends) * 100) : 0;
 
       // Calculate other stats from xp_ledger
-      const availableXP = userXP?.filter(e => e.status === 'approved') || [];
-      const pendingXP = userXP?.filter(e => e.status === 'pending' || e.status === 'awaiting_validation') || [];
-      const paidXP = userXP?.filter(e => e.status === 'paid') || [];
+      const availableXP = userXP.filter(e => e.status === 'approved') || [];
+      const pendingXP = userXP.filter(e => e.status === 'pending' || e.status === 'awaiting_validation') || [];
+      const paidXP = userXP.filter(e => e.status === 'paid') || [];
       
-      const totalAvailable = availableXP.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const pendingAmount = pendingXP.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const totalPaid = paidXP.reduce((sum, e) => sum + (e.amount || 0), 0);
+      // Use xp_amount field instead of amount
+      const totalAvailable = availableXP.reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
+      const pendingAmount = pendingXP.reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
+      const totalPaid = paidXP.reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
 
       // XP today (include both approved AND pending from today)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todaysApproved = availableXP
         .filter(e => new Date(e.created_at) >= today)
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
+        .reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
       const todaysPending = pendingXP
         .filter(e => new Date(e.created_at) >= today)
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
+        .reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
       const xpToday = todaysApproved + todaysPending;
 
       // XP this week  
@@ -333,7 +307,7 @@ export default function Dashboard() {
       weekStart.setHours(0, 0, 0, 0);
       const xpThisWeek = availableXP
         .filter(e => new Date(e.created_at) >= weekStart)
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
+        .reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
 
       // XP this month
       const monthStart = new Date();
@@ -341,7 +315,7 @@ export default function Dashboard() {
       monthStart.setHours(0, 0, 0, 0);
       const xpThisMonth = availableXP
         .filter(e => new Date(e.created_at) >= monthStart)
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
+        .reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
 
       // Current streak (simplified)
       const last7Days = new Date();
@@ -349,9 +323,18 @@ export default function Dashboard() {
       const recentTrends = userTrends?.filter(t => new Date(t.created_at) >= last7Days) || [];
       const uniqueDays = new Set(recentTrends.map(t => new Date(t.created_at).toDateString())).size;
 
+      console.log('XP Ledger data:', {
+        totalEntries: userXP.length,
+        availableEntries: availableXP.length,
+        pendingEntries: pendingXP.length,
+        totalAvailable,
+        pendingAmount,
+        sample: userXP[0]
+      });
+
       setStats({
-        approved_xp: profileData?.approved_xp || totalAvailable,  // Use profile data if available
-        pending_xp: profileData?.pending_xp || pendingAmount,
+        approved_xp: totalAvailable,  // Available XP from xp_ledger
+        pending_xp: pendingAmount,     // Pending XP from xp_ledger
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
         scroll_sessions_count: 0, // Would need scroll_sessions table
@@ -365,7 +348,7 @@ export default function Dashboard() {
         total_cashed_out: totalPaid  // Amount already paid out
       });
 
-      console.log(`Calculated accuracy rate: ${!isNaN(accuracyScore) ? accuracyScore.toFixed(2) : '0'}% (${approvedTrends}/${decidedTrends} trends decided)`);
+      console.log(`Calculated XP: Available=${totalAvailable}, Pending=${pendingAmount}`);
     } catch (error) {
       console.error('Error in manual stats calculation:', error);
     }

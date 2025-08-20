@@ -1265,7 +1265,24 @@ export default function SmartTrendSubmission({
                 {/* Peak Prediction */}
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-1">When will this trend peak? 📊</h3>
-                  <p className="text-sm text-gray-400 mb-4">Your prediction helps us track trend lifecycles</p>
+                  <p className="text-sm text-gray-400 mb-2">Your prediction helps us track trend lifecycles</p>
+                  
+                  {/* Peak Explanation Box */}
+                  <div className="mb-4 p-3 bg-blue-900/20 rounded-lg border border-blue-800/30">
+                    <div className="flex items-start gap-2">
+                      <AlertCircleIcon className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-xs text-blue-300 space-y-1">
+                        <p className="font-medium">How to identify a trend's peak:</p>
+                        <ul className="space-y-0.5 ml-3">
+                          <li>• <span className="text-blue-200">Maximum engagement</span> - Likes/shares hit highest rate</li>
+                          <li>• <span className="text-blue-200">Mainstream adoption</span> - Brands & celebrities join in</li>
+                          <li>• <span className="text-blue-200">Saturation signals</span> - "Everyone's doing it" feeling</li>
+                          <li>• <span className="text-blue-200">Derivative content</span> - Parodies & "over it" posts appear</li>
+                        </ul>
+                        <p className="text-blue-400 mt-1">💡 Tip: Trends peak when creators start saying "this trend is dead"</p>
+                      </div>
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-2 gap-2">
                     {[

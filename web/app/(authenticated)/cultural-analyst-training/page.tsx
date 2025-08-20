@@ -122,7 +122,7 @@ export default function CulturalAnalystTraining() {
   };
 
   const handleStartEarning = () => {
-    router.push('/scroll');
+    router.push('/spot');
   };
 
   const handleSkipToQuiz = () => {
