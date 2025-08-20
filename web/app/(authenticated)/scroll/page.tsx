@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { 
   TrendingUp, 
-  DollarSign, 
+  Trophy,
   ArrowLeft,
   Link,
   Send,
@@ -1129,10 +1129,10 @@ export default function LegibleScrollPage() {
         <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
+              <Trophy className="w-5 h-5 text-yellow-600" />
               <span className="text-xs text-gray-500">Today</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(todaysEarnings)}</p>
+            <p className="text-2xl font-bold text-gray-900">{Math.round(todaysEarnings || 0)} XP</p>
             <p className="text-xs text-gray-500">Confirmed</p>
           </div>
           

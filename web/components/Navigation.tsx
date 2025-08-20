@@ -70,6 +70,7 @@ export default function Navigation() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/spot', label: 'Spot' },
+    { href: '/predictions', label: 'Predictions' },
     { href: '/timeline', label: 'My Timeline' },
     { href: '/validate', label: 'Validate' },
     { href: '/leaderboard', label: 'Leaderboard' },
