@@ -70,8 +70,7 @@ export default function Navigation() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/spot', label: 'Spot' },
-    { href: '/stash', label: 'My Stash' },
-    { href: '/timeline', label: 'Timeline' },
+    { href: '/timeline', label: 'My Timeline' },
     { href: '/validate', label: 'Validate' },
     { href: '/leaderboard', label: 'Leaderboard' },
     { href: '/profile', label: 'Profile' },

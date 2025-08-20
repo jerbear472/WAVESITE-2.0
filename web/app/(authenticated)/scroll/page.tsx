@@ -38,7 +38,6 @@ import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { submitTrend } from '@/lib/submitTrend';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { EarningsAnimation, useEarningsAnimation } from '@/components/EarningsAnimation';
 // Removed TrendSubmissionSuccess - using only earnings toast
 import { 
   SUSTAINABLE_EARNINGS,
@@ -72,7 +71,6 @@ export default function LegibleScrollPage() {
   }) : SUSTAINABLE_EARNINGS.tiers.learning;
   const { session, startSession, endSession, logTrendSubmission } = useSession();
   const scrollSessionRef = useRef<any>();
-  const { showEarnings, earningsData, showEarningsAnimation, hideEarningsAnimation } = useEarningsAnimation();
   
   // Removed success modal state - using only earnings toast
   
@@ -302,15 +300,10 @@ export default function LegibleScrollPage() {
         // Show subtle earnings notification in bottom left
         const earningsAmount = result.earnings || 0.25;
         
-        // Also show earnings animation
+        // Show success message
         const audienceSizeDisplay = formData.trendSize ? 
           `Audience: ${calculateAudienceSize(formData.trendSize)}` : 
           'Audience: 0';
-        showEarningsAnimation(
-          earningsAmount,
-          [`Base: $0.25`, audienceSizeDisplay],
-          1
-        );
         
         // Refresh stats
         await loadTodaysStats();
@@ -744,21 +737,16 @@ export default function LegibleScrollPage() {
       // Show earnings animation in bottom left corner
       const animationBreakdown = earningsResult.breakdown || [];
       
-      // Trigger the earnings animation
-      console.log('🎯 [SCROLL] Triggering earnings animation with amount:', finalPayment);
-      console.log('🎯 [SCROLL] Animation breakdown:', animationBreakdown);
+      // Log for debugging
+      console.log('🎯 [SCROLL] XP award amount:', finalPayment);
+      console.log('🎯 [SCROLL] Breakdown:', animationBreakdown);
       
       // Calculate total multiplier for display
       const totalMultiplier = earningsResult.tierMultiplier * 
         earningsResult.sessionMultiplier * 
         earningsResult.dailyMultiplier;
       
-      console.log('🎯 [SCROLL] Total multiplier for animation:', totalMultiplier);
-      
-      // This should show the animation in the bottom left corner
-      showEarningsAnimation(finalPayment, animationBreakdown, totalMultiplier);
-      
-      console.log('🎯 [SCROLL] Animation function called successfully');
+      console.log('🎯 [SCROLL] Total multiplier:', totalMultiplier);
       
       // Show success message with pending verification note and multipliers
       setSubmitMessage({ 
@@ -1267,13 +1255,6 @@ export default function LegibleScrollPage() {
       )}
       
       {/* Earnings Animation */}
-      <EarningsAnimation
-        amount={earningsData.amount}
-        show={showEarnings}
-        bonuses={earningsData.bonuses}
-        multiplier={earningsData.multiplier}
-        onComplete={hideEarningsAnimation}
-      />
       
       {/* Success modal removed - using only earnings toast */}
     </div>

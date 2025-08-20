@@ -11,7 +11,6 @@ import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { formatCurrency } from '@/lib/SUSTAINABLE_EARNINGS';
-import { useEarningsToast, EarningsToastContainer } from '@/components/EarningsToast';
 import { 
   TrendingUp as TrendingUpIcon,
   Clock as ClockIcon,
@@ -85,7 +84,7 @@ type ViewMode = 'grid' | 'list' | 'timeline';
 export default function Timeline() {
   const { user, loading: authLoading } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
-  const { toasts, showEarningsToast } = useEarningsToast();
+  // Removed earnings toast - using XP system now
   const [trends, setTrends] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -395,8 +394,7 @@ export default function Timeline() {
         setShowSubmitForm(false);
         await fetchUserTrends();
         
-        // Show subtle earnings notification
-        showEarningsToast(0.25, 'pending', 'Trend submitted - pending validation');
+        // XP will be awarded automatically
         setError('');
         return result.data;
       } else {
@@ -411,7 +409,7 @@ export default function Timeline() {
           if (fallbackResult.success) {
             setShowSubmitForm(false);
             await fetchUserTrends();
-            showEarningsToast(0.25, 'pending', 'Trend submitted - pending validation');
+            // XP will be awarded automatically
             setError('');
             return fallbackResult.data;
           } else {
@@ -435,7 +433,7 @@ export default function Timeline() {
         if (fallbackResult.success) {
           setShowSubmitForm(false);
           await fetchUserTrends();
-          showEarningsToast(0.25, 'pending', 'Trend submitted - pending validation');
+          // XP will be shown in UI automatically
           setError('');
           return fallbackResult.data;
         } else {
@@ -1384,8 +1382,7 @@ export default function Timeline() {
         />
       )}
       
-      {/* Earnings Toast Notifications */}
-      <EarningsToastContainer toasts={toasts} />
+      {/* XP notifications handled by global system */}
     </div>
   );
 }

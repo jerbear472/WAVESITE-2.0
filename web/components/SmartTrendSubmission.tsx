@@ -5,7 +5,6 @@ import SentimentSlider from './SentimentSlider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
-import EarningsNotificationComponent, { useEarningsNotification } from './EarningsNotification';
 import { 
   calculateTrendEarnings, 
   SUSTAINABLE_EARNINGS,
@@ -903,10 +902,6 @@ export default function SmartTrendSubmission({
   return (
     <>
       {/* Earnings Notification - shows in bottom-left corner */}
-      <EarningsNotificationComponent 
-        notification={notification} 
-        onDismiss={dismissNotification} 
-      />
       
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <motion.div 
