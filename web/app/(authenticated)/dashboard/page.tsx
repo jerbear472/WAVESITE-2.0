@@ -191,50 +191,6 @@ export default function Dashboard() {
           <p className="text-gray-600">Track your journey in spotting cultural waves</p>
         </div>
 
-        {/* XP & Level Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Trophy className="w-8 h-8 text-yellow-500" />
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900">{stats.total_xp.toLocaleString()} XP</h2>
-                  <p className="text-sm text-gray-600">Level {stats.current_level}: {stats.level_title}</p>
-                </div>
-              </div>
-              {stats.global_rank && stats.global_rank <= 100 && (
-                <div className="inline-flex items-center gap-2 mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full">
-                  <Award className="w-4 h-4" />
-                  <span className="text-sm font-medium">Global Rank #{stats.global_rank}</span>
-                </div>
-              )}
-            </div>
-            
-            <Link
-              href="/leaderboard"
-              className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              View Leaderboard
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {/* Level Progress */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Progress to Level {stats.current_level + 1}</span>
-              <span className="text-gray-900 font-medium">{levelProgress.xpToNext.toLocaleString()} XP to go</span>
-            </div>
-            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
-                initial={{ width: 0 }}
-                animate={{ width: `${levelProgress.progress}%` }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-          </div>
-        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -324,6 +280,53 @@ export default function Dashboard() {
               View All Activity
               <ChevronRight className="w-4 h-4" />
             </Link>
+          </div>
+
+          {/* XP & Level Progress */}
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Your Progress</h3>
+              <Link
+                href="/leaderboard"
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                Leaderboard
+                <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Trophy className="w-6 h-6 text-yellow-500" />
+                <div>
+                  <h4 className="text-xl font-bold text-gray-900">{stats.total_xp.toLocaleString()} XP</h4>
+                  <p className="text-sm text-gray-600">Level {stats.current_level}: {stats.level_title}</p>
+                </div>
+              </div>
+              
+              {stats.global_rank && stats.global_rank <= 100 && (
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full">
+                  <Award className="w-3 h-3" />
+                  <span className="text-xs font-medium">Global Rank #{stats.global_rank}</span>
+                </div>
+              )}
+              
+              {/* Level Progress */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Level {stats.current_level + 1}</span>
+                  <span className="text-gray-900 font-medium">{levelProgress.xpToNext.toLocaleString()} XP</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${levelProgress.progress}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Quick Actions */}
