@@ -507,15 +507,8 @@ export default function ValidatePageFixed() {
         console.log('XP entry created for validation:', rewardAmount);
         
         // Show subtle xp notification
-        const notificationMessage = isBountySubmission 
-          ? `+{rewardAmount.toFixed(2)} (3x Bounty Bonus!)` 
-          : `+{rewardAmount.toFixed(2)}`;
-        showXP(
-          rewardAmount,
-          'validation',
-          notificationMessage,
-          [] // No breakdown needed for subtle notification
-        );
+        // Show XP notification with just the amount
+        showXP(rewardAmount);
         
         // Update user xp immediately
         refreshUser();
