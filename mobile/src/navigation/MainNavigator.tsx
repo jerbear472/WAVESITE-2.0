@@ -7,13 +7,12 @@ import {
   Platform,
 } from 'react-native';
 import ScrollScreen from '../screens/ScrollScreen';
-import PerformanceEarningsScreen from '../screens/PerformanceEarningsScreen';
 import { ValidationScreen } from '../screens/ValidationScreen';
 import { TrendRadar } from '../screens/TrendRadar';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import AchievementsScreen from '../components/QualityGamification/AchievementsScreen';
 
-type TabType = 'scroll' | 'earnings' | 'validate' | 'radar' | 'profile';
+type TabType = 'scroll' | 'achievements' | 'validate' | 'radar' | 'profile';
 type ScreenType = TabType;
 
 const MainNavigator: React.FC = () => {
@@ -24,8 +23,8 @@ const MainNavigator: React.FC = () => {
     switch (activeTab) {
       case 'scroll':
         return <ScrollScreen />;
-      case 'earnings':
-        return <PerformanceEarningsScreen />;
+      case 'achievements':
+        return <AchievementsScreen />;
       case 'validate':
         return <ValidationScreen />;
       case 'radar':
@@ -60,14 +59,14 @@ const MainNavigator: React.FC = () => {
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => {
-            setActiveTab('earnings');
-            setCurrentScreen('earnings');
+            setActiveTab('achievements');
+            setCurrentScreen('achievements');
           }}>
-          <View style={[styles.navIcon, activeTab === 'earnings' && styles.activeNavIcon]}>
-            <Text style={styles.navIconText}>💰</Text>
+          <View style={[styles.navIcon, activeTab === 'achievements' && styles.activeNavIcon]}>
+            <Text style={styles.navIconText}>🏆</Text>
           </View>
-          <Text style={[styles.navLabel, activeTab === 'earnings' && styles.activeNavLabel]}>
-            Earnings
+          <Text style={[styles.navLabel, activeTab === 'achievements' && styles.activeNavLabel]}>
+            XP & Awards
           </Text>
         </TouchableOpacity>
 
