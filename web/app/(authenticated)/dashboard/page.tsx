@@ -923,72 +923,44 @@ export default function Dashboard() {
         </div>
 
 
-        {/* Enhanced Stats Grid with Notifications */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all"
           >
-            {/* Animated background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 animate-pulse" />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
-                  <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                {stats.xp_today > 0 && (
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full animate-pulse">
-                      +{stats.xp_today} XP today
-                    </span>
-                    {(stats.xp_today_pending ?? 0) > 0 && (
-                      <span className="text-xs text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
-                        {stats.xp_today_pending ?? 0} XP pending
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Available XP</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.approved_xp.toLocaleString()} XP
-              </p>
-              <div className="flex flex-col gap-1 mt-2">
-                {stats.pending_xp > 0 && (
-                  <p className="text-xs text-yellow-500 font-medium">
-                    +{stats.pending_xp.toLocaleString()} XP pending approval
-                  </p>
-                )}
-                {stats.total_cashed_out > 0 && (
-                  <p className="text-xs text-gray-500">
-                    {stats.total_cashed_out} XP earned total
-                  </p>
-                )}
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-yellow-500 text-2xl">⚡</span>
+              <span className="text-xs text-gray-500">XP</span>
             </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {(stats.approved_xp || 0).toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">Available XP</p>
+            {(stats.pending_xp || 0) > 0 && (
+              <p className="text-xs text-yellow-600 mt-2">
+                +{(stats.pending_xp || 0).toLocaleString()} pending
+              </p>
+            )}
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all"
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-xl">
-                <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <span className={`text-2xl {stats.current_streak > 0 ? 'animate-pulse' : ''}`}>
-                {stats.current_streak > 0 ? '🔥' : '❄️'}
-              </span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-blue-500 text-2xl">📈</span>
+              <span className="text-xs text-gray-500">Trends</span>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Trends Spotted</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-              {stats.trends_spotted}
+            <p className="text-2xl font-bold text-gray-900">
+              {stats.trends_spotted || 0}
             </p>
-            <p className="text-sm text-gray-500 mt-2">
-              {stats.trends_verified} verified
+            <p className="text-sm text-gray-500 mt-1">Spotted</p>
+            <p className="text-xs text-green-600 mt-2">
+              {stats.trends_verified || 0} verified
             </p>
           </motion.div>
 
@@ -1008,12 +980,12 @@ export default function Dashboard() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Accuracy Rate</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-              {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `{Math.round(stats.accuracy_score)}%` : 'N/A'}
+              {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `${Math.round(stats.accuracy_score)}%` : 'N/A'}
             </p>
             <div className="mt-2 bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
               <div 
                 className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all"
-                style={{ width: `{!isNaN(stats.accuracy_score) ? Math.min(stats.accuracy_score, 100) : 0}%` }}
+                style={{ width: `${!isNaN(stats.accuracy_score) ? Math.min(stats.accuracy_score, 100) : 0}%` }}
               />
             </div>
           </motion.div>
@@ -1495,7 +1467,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-3">
                     <span className="text-gray-600 dark:text-gray-400">Accuracy Rate</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `{Math.round(stats.accuracy_score)}%` : 'N/A'}
+                      {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `${Math.round(stats.accuracy_score)}%` : 'N/A'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-3">
