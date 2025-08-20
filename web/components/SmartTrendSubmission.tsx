@@ -376,9 +376,16 @@ export default function SmartTrendSubmission({
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState('');
-  const { notification, showEarnings, dismissNotification } = useEarningsNotification();
+  const [notification, setNotification] = useState<{ show: boolean; xp: number } | null>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
   const extractionTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  const showEarnings = (xp: number) => {
+    setNotification({ show: true, xp });
+    setTimeout(() => setNotification(null), 3000);
+  };
+  
+  const dismissNotification = () => setNotification(null);
   
   // Form state
   const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'category' | 'details' | 'review'>('url');
@@ -738,7 +745,10 @@ export default function SmartTrendSubmission({
         last_submission_at: session.lastSubmissionTime?.toISOString()
       };
       
-      const earningsCalc = calculateTrendEarnings(null, userProfile);
+      // Calculate XP for trend submission
+      const baseXP = 100;
+      const streakMultiplier = 1 + (userProfile.current_streak * 0.1);
+      const xpAmount = Math.round(baseXP * streakMultiplier);
       
       // Get thumbnail if not already captured
       let thumbnailUrl = formData.thumbnail_url;
@@ -861,13 +871,8 @@ export default function SmartTrendSubmission({
         await Promise.race([submitPromise, timeoutPromise]);
       }
 
-      // Show earnings notification in bottom-left corner
-      showEarnings(
-        earningsCalc.capped,
-        'submission',
-        `Trend "${formData.title}" submitted!`,
-        earningsCalc.breakdown
-      );
+      // Show XP notification
+      showEarnings(xpAmount);
       
       // Log trend submission for session tracking (if session is active)
       if (isSessionActive()) {
