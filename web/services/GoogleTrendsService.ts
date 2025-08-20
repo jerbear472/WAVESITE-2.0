@@ -239,13 +239,20 @@ export class GoogleTrendsService {
 
       if (!trend) return;
 
+      // Get current user data first
+      const { data: userData } = await supabase
+        .from('user_profiles')
+        .select('total_xp, predictions_verified, prediction_accuracy_xp')
+        .eq('id', trend.spotter_id)
+        .single();
+
       // Update user's total XP
       const { error } = await supabase
         .from('user_profiles')
         .update({
-          total_xp: supabase.raw('total_xp + ?', [xpEarned]),
-          predictions_verified: supabase.raw('predictions_verified + 1'),
-          prediction_accuracy_xp: supabase.raw('prediction_accuracy_xp + ?', [xpEarned])
+          total_xp: (userData?.total_xp || 0) + xpEarned,
+          predictions_verified: (userData?.predictions_verified || 0) + 1,
+          prediction_accuracy_xp: (userData?.prediction_accuracy_xp || 0) + xpEarned
         })
         .eq('id', trend.spotter_id);
 

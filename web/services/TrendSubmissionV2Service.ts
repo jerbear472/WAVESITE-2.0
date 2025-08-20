@@ -160,12 +160,19 @@ export class TrendSubmissionV2Service {
    */
   static async trackUserActivity(userId: string, trendId: string, xp: number) {
     try {
+      // Get current user data first
+      const { data: userData } = await supabase
+        .from('user_profiles')
+        .select('total_xp, trends_submitted')
+        .eq('id', userId)
+        .single();
+
       // Update user's total XP
       const { error: profileError } = await supabase
         .from('user_profiles')
         .update({
-          total_xp: supabase.raw('total_xp + ?', [xp]),
-          trends_submitted: supabase.raw('trends_submitted + 1'),
+          total_xp: (userData?.total_xp || 0) + xp,
+          trends_submitted: (userData?.trends_submitted || 0) + 1,
           last_submission_at: new Date().toISOString()
         })
         .eq('id', userId);

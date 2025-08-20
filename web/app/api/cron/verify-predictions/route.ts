@@ -146,12 +146,18 @@ export async function GET(request: NextRequest) {
           results.errors.push(`Failed to update ${prediction.id}`);
         }
 
-        // Update user stats
+        // Update user stats for perfect predictions
         if (daysDifference === 0) {
+          const { data: userData } = await supabase
+            .from('user_profiles')
+            .select('perfect_predictions')
+            .eq('id', prediction.spotter_id)
+            .single();
+
           await supabase
             .from('user_profiles')
             .update({
-              perfect_predictions: supabase.raw('perfect_predictions + 1')
+              perfect_predictions: (userData?.perfect_predictions || 0) + 1
             })
             .eq('id', prediction.spotter_id);
         }
