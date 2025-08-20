@@ -297,7 +297,7 @@ export default function SpotPage() {
         
         setTimeout(() => setSubmitMessage(null), 5000);
         
-        setTodaysPendingEarnings(prev => prev + xpAmount);
+        setTodaysXP(prev => prev + xpAmount);
         setTrendsLoggedToday(prev => prev + 1);
         
         if (refreshUser) {
