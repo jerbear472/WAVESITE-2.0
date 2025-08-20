@@ -61,7 +61,7 @@ const PLATFORMS = [
 
 export default function LegibleScrollPage() {
   const router = useRouter();
-  const { user, refreshUser, updateUserEarnings } = useAuth();
+  const { user, refreshUser } = useAuth();
   
   // Default tier info for display
   const tierInfo = user ? calculateUserTier({
@@ -799,11 +799,7 @@ export default function LegibleScrollPage() {
         console.error('❌ [SCROLL] Exception updating earnings:', error);
       }
       
-      // Update auth context for immediate UI update
-      if (updateUserEarnings) {
-        console.log('💰 [SCROLL] Updating auth context with:', finalPayment);
-        await updateUserEarnings(finalPayment);
-      }
+      // XP will be updated through the database triggers
       
       // FORCE IMMEDIATE REFRESH of user data
       console.log('🔄 [SCROLL] Force refreshing user data...');

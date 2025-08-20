@@ -13,8 +13,7 @@ import {
   Check,
   AlertCircle,
   Zap,
-  TrendingUp,
-  DollarSign
+  TrendingUp
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,8 +53,10 @@ export default function BountyHuntPage() {
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
-    fetchBounty();
-  }, [params.id]);
+    if (params?.id) {
+      fetchBounty();
+    }
+  }, [params?.id]);
 
   useEffect(() => {
     if (bounty?.expires_at) {
@@ -80,6 +81,8 @@ export default function BountyHuntPage() {
   }, [bounty]);
 
   const fetchBounty = async () => {
+    if (!params?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from('bounties')
@@ -196,8 +199,8 @@ export default function BountyHuntPage() {
                 <Zap className="w-4 h-4 inline mr-1" />
                 {timeLeft}
               </div>
-              <div className="text-lg font-bold text-green-600">
-                ${bounty.price_per_spot}
+              <div className="text-lg font-bold text-purple-600">
+                {bounty.price_per_spot} XP
               </div>
             </div>
           </div>
@@ -391,7 +394,7 @@ export default function BountyHuntPage() {
               disabled={submitting}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Submitting...' : `Submit for $${bounty.price_per_spot}`}
+              {submitting ? 'Submitting...' : `Submit for ${bounty.price_per_spot} XP`}
             </button>
           </form>
         </motion.div>
