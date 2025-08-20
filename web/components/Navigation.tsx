@@ -4,245 +4,142 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
-import { formatCurrency } from '@/lib/formatters';
 import { supabase } from '@/lib/supabase';
 import WaveSightLogo from '@/components/WaveSightLogo';
-import EnterpriseViewSwitcher from '@/components/EnterpriseViewSwitcher';
+import { Trophy, TrendingUp, Award } from 'lucide-react';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, switchViewMode } = useAuth();
+  const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [viewSwitcherOpen, setViewSwitcherOpen] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [approvedEarnings, setApprovedEarnings] = useState<number>(0);
-  const [earningsLoaded, setEarningsLoaded] = useState(false);
+  const [userXP, setUserXP] = useState<number>(0);
+  const [userLevel, setUserLevel] = useState<string>('Observer');
+  const [globalRank, setGlobalRank] = useState<number | null>(null);
 
-  // Fetch correct total earnings
   useEffect(() => {
-    const fetchEarnings = async () => {
+    const fetchXPData = async () => {
       if (!user) return;
       
-      console.log('Navigation: Starting earnings fetch for user:', user.id);
-      
       try {
-        const { data: profile, error } = await supabase
-          .from('user_profiles')
-          .select('approved_earnings')
-          .eq('id', user.id)
+        // Fetch XP and level
+        const { data: xpData } = await supabase
+          .from('user_xp')
+          .select('total_xp, current_level')
+          .eq('user_id', user.id)
           .single();
 
-        if (!error && profile) {
-          // Display only approved earnings (ready to cash out)
-          const approved = profile.approved_earnings || 0;
-          console.log('Navigation approved earnings:', approved);
-          setApprovedEarnings(approved);
-          setEarningsLoaded(true);
-        } else if (error) {
-          console.error('Error fetching profile earnings:', error);
-          // Fallback to user object if available
-          if (user?.total_earnings !== undefined) {
-            console.log('Using fallback user.total_earnings:', user.total_earnings);
-            setApprovedEarnings(user.total_earnings);
-            setEarningsLoaded(true);
+        if (xpData) {
+          setUserXP(xpData.total_xp || 0);
+          
+          // Fetch level title
+          const { data: levelData } = await supabase
+            .from('xp_levels')
+            .select('title')
+            .eq('level', xpData.current_level)
+            .single();
+            
+          if (levelData) {
+            setUserLevel(levelData.title);
           }
         }
+
+        // Fetch leaderboard rank
+        const { data: leaderboard } = await supabase
+          .from('xp_leaderboard')
+          .select('global_rank')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (leaderboard) {
+          setGlobalRank(leaderboard.global_rank);
+        }
       } catch (error) {
-        console.error('Error fetching earnings:', error);
+        console.error('Error fetching XP data:', error);
       }
     };
 
-    fetchEarnings();
-
-    // Subscribe to earnings changes
-    const subscription = supabase
-      .channel('nav-earnings')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_profiles',
-          filter: `id=eq.${user?.id}`
-        },
-        (payload) => {
-          // Re-fetch earnings when profile changes
-          fetchEarnings();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    fetchXPData();
   }, [user]);
 
   const handleLogout = async () => {
-    if (isLoggingOut) return; // Prevent multiple clicks
-    
-    setIsLoggingOut(true);
-    try {
-      const result = await logout();
-      if (result.success) {
-        router.push('/');
-      } else {
-        console.error('Logout failed:', result.error);
-        alert('Failed to logout. Please try again.');
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-      alert('An error occurred during logout. Please try again.');
-    } finally {
-      setIsLoggingOut(false);
-    }
+    await logout();
+    router.push('/');
   };
 
-  const handleViewSwitch = async (mode: 'user' | 'professional') => {
-    await switchViewMode(mode);
-    setViewSwitcherOpen(false);
-    // No need to refresh - React will re-render
-  };
-
-  // Different navigation items based on user type and view mode
-  const isBusinessUser = user?.is_business;
-  const isProfessionalView = user?.view_mode === 'professional';
-  const isAdmin = user?.role === 'admin' || user?.is_admin || user?.email === 'jeremyuys@gmail.com';
-
-  const userNavItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/bounties', label: 'Bounties', icon: '🎯' },
-    { href: '/creator-training', label: 'Training', icon: '🚀' },
-    { href: '/scroll', label: 'Scroll & Earn', icon: '📱' },
-    { href: '/timeline', label: 'My Timeline', icon: '📈' },
-    { href: '/validate', label: 'Validate', icon: '✅' },
-    { href: '/earnings', label: 'Earnings', icon: '💰' },
-    { href: '/profile', label: 'Profile', icon: '👤' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' },
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/spot', label: 'Spot' },
+    { href: '/stash', label: 'My Stash' },
+    { href: '/timeline', label: 'Timeline' },
+    { href: '/validate', label: 'Validate' },
+    { href: '/leaderboard', label: 'Leaderboard' },
+    { href: '/profile', label: 'Profile' },
   ];
-
-  const professionalNavItems = [
-    { href: '/professional/dashboard', label: 'Analytics', icon: '📊' },
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/bounties', label: 'Bounties', icon: '🎯' },
-    { href: '/timeline', label: 'Timeline', icon: '📈' },
-    { href: '/validate', label: 'Validate', icon: '✅' },
-    { href: '/earnings', label: 'Earnings', icon: '💰' },
-    { href: '/profile', label: 'Profile', icon: '👤' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' },
-  ];
-
-  const businessNavItems = [
-    { href: '/business/dashboard', label: 'Analytics', icon: '📊' },
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/bounties', label: 'Bounties', icon: '🎯' },
-    { href: '/timeline', label: 'Timeline', icon: '📈' },
-    { href: '/validate', label: 'Validate', icon: '✅' },
-    { href: '/earnings', label: 'Earnings', icon: '💰' },
-    { href: '/profile', label: 'Profile', icon: '👤' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' },
-  ];
-
-  const adminNavItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/admin/bank', label: 'Bank', icon: '🏦' },
-    { href: '/admin/cashout', label: 'Cashouts', icon: '💸' },
-    { href: '/admin/payments', label: 'Payments', icon: '💰' },
-    { href: '/validate', label: 'Validate', icon: '✅' },
-    { href: '/earnings', label: 'Earnings', icon: '💰' },
-    { href: '/profile', label: 'Profile', icon: '👤' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' },
-  ];
-
-  let navItems = userNavItems;
-  if (isProfessionalView) {
-    navItems = professionalNavItems;
-  } else if (isBusinessUser) {
-    navItems = businessNavItems;
-  }
-
-  const isActive = (href: string) => pathname === href;
-
-  if (!user) return null;
 
   return (
-    <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 safe-area-top">
+    <nav className="bg-gradient-to-r from-purple-900 to-indigo-900 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between min-h-14 sm:min-h-16 py-2">
-          <div className="flex flex-1 min-w-0">
-            {/* Logo */}
-            <div className="flex items-center flex-shrink-0">
-              <WaveSightLogo 
-                size="sm" 
-                linkTo={isBusinessUser ? '/business/dashboard' : '/dashboard'}
-                className="mr-2 sm:mr-4"
-              />
-              {isBusinessUser && <span className="text-xs sm:text-sm text-gray-500 ml-1 sm:ml-2">Business</span>}
-            </div>
-
-            {/* Desktop Navigation - Responsive with horizontal scroll */}
-            <div className="hidden sm:ml-2 md:ml-8 sm:flex flex-1 min-w-0 overflow-x-auto overflow-y-visible scrollbar-hide">
-              <div className="flex space-x-1 md:space-x-2 pr-4">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`inline-flex items-center justify-center px-2 md:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors whitespace-nowrap flex-shrink-0 relative z-10 ${
-                      isActive(item.href)
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                    title={item.label}
-                  >
-                    <span className="text-base">{item.icon}</span>
-                    <span className="hidden xl:inline ml-2 text-sm">{item.label}</span>
-                    <span className="hidden lg:inline xl:hidden ml-1 text-xs font-medium">
-                      {item.label.split(' ')[0]}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link href="/dashboard" className="flex items-center">
+              <WaveSightLogo className="h-8 w-auto" />
+              <span className="ml-2 text-xl font-bold">Cultural Wave Tracker</span>
+            </Link>
           </div>
 
-          {/* User Menu */}
-          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-            {/* User info - visible on larger screens */}
-            <div className="hidden md:flex items-center space-x-2 text-sm text-gray-800">
-              <span className="max-w-[120px] xl:max-w-[200px] truncate">{user.email}</span>
-              {!isBusinessUser && (earningsLoaded ? approvedEarnings > 0 : user?.total_earnings !== undefined) && (
-                <span className="font-semibold text-green-600">
-                  {formatCurrency(earningsLoaded ? approvedEarnings : (user?.total_earnings || 0))}
-                </span>
-              )}
+          <div className="hidden md:flex items-center space-x-4">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pathname === item.href
+                    ? 'bg-white/20 text-white'
+                    : 'text-gray-200 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {/* XP Display */}
+            <div className="bg-white/10 rounded-lg px-3 py-1 flex items-center space-x-2">
+              <Trophy className="h-4 w-4 text-yellow-400" />
+              <span className="text-sm font-bold">{userXP.toLocaleString()} XP</span>
             </div>
-            
-            {/* Enterprise View Switcher */}
-            <EnterpriseViewSwitcher className="hidden lg:block relative" />
-            
-            {/* Logout button - always visible */}
+
+            {/* Level Display */}
+            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg px-3 py-1">
+              <span className="text-sm font-bold text-gray-900">{userLevel}</span>
+            </div>
+
+            {/* Rank Display */}
+            {globalRank && globalRank <= 100 && (
+              <div className="bg-green-500 rounded-lg px-3 py-1 flex items-center space-x-1">
+                <Award className="h-4 w-4" />
+                <span className="text-sm font-bold">#{globalRank}</span>
+              </div>
+            )}
+
             <button
               onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="inline-flex items-center justify-center px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-800 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-target min-w-[44px] min-h-[44px]"
-              title="Logout"
+              className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
-              <span className="block sm:hidden text-lg">🚪</span>
-              <span className="hidden sm:inline">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+              Logout
             </button>
+          </div>
 
-            {/* Mobile menu button */}
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-800 hover:text-gray-900 hover:bg-gray-100 touch-target min-w-[44px] min-h-[44px]"
+              className="p-2 rounded-md hover:bg-white/10"
             >
-              <span className="sr-only">Open main menu</span>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
@@ -251,47 +148,19 @@ export default function Navigation() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="sm:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-          <div className="px-4 pt-3 pb-3 space-y-1">
+        <div className="md:hidden bg-purple-800">
+          <div className="px-2 pt-2 pb-3 space-y-1">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
+                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center px-3 py-3 rounded-md text-base font-medium transition-colors touch-target ${
-                  isActive(item.href)
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                }`}
               >
-                <span className="mr-2">{item.icon}</span>
                 {item.label}
               </Link>
             ))}
-            
-            {/* Enterprise View Switcher Mobile */}
-            <EnterpriseViewSwitcher mobile className="border-t border-gray-200 pt-2" />
-            
-            {/* Mobile user info */}
-            <div className="border-t border-gray-200 pt-2">
-              <div className="px-3 py-2 text-sm text-gray-600">
-                <p className="truncate">{user.email}</p>
-                {!isBusinessUser && (earningsLoaded ? approvedEarnings > 0 : user?.total_earnings !== undefined) && (
-                  <p className="font-semibold text-green-600 mt-1">
-                    {formatCurrency(earningsLoaded ? approvedEarnings : (user?.total_earnings || 0))}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="block w-full text-left px-3 py-3 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed touch-target border-t border-gray-200 mt-2 pt-3"
-              >
-                🚪 {isLoggingOut ? 'Logging out...' : 'Logout'}
-              </button>
-            </div>
           </div>
-          <div className="safe-area-bottom"></div>
         </div>
       )}
     </nav>

@@ -130,7 +130,7 @@ export function BountyHuntScreen() {
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
     
-    setTimeRemaining(`{hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}`);
+    setTimeRemaining(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
   };
   
   const selectImage = () => {
@@ -176,7 +176,7 @@ export function BountyHuntScreen() {
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('bounty-screenshots')
-          .upload(`{user.id}/{Date.now()}.jpg`, formData);
+          .upload(`${user.id}/${Date.now()}.jpg`, formData);
         
         if (uploadData) {
           screenshotUrl = uploadData.path;
@@ -224,7 +224,7 @@ export function BountyHuntScreen() {
       
       Alert.alert(
         'Spot Submitted!',
-        `Your spot has been submitted. You'll earn {bounty.price_per_spot.toFixed(2)} once validated.`,
+        `Your spot has been submitted. You'll earn $${bounty.price_per_spot.toFixed(2)} once validated.`,
         [{ text: 'Keep Hunting', style: 'default' }]
       );
       
@@ -310,8 +310,8 @@ export function BountyHuntScreen() {
               <Text style={styles.statLabel}>Approved</Text>
             </View>
             <View style={styles.stat}>
-              <Text style={[styles.statValue, styles.xpValue]}>
-                {huntStats.earned_total.toFixed(2)}
+              <Text style={[styles.statValue, styles.earningsValue]}>
+                ${huntStats.earned_total.toFixed(2)}
               </Text>
               <Text style={styles.statLabel}>Earned</Text>
             </View>
@@ -334,7 +334,7 @@ export function BountyHuntScreen() {
               Progress: {bounty.filled_spots}/{bounty.total_spots} spots filled
             </Text>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `{progress}%` }]} />
+              <View style={[styles.progressFill, { width: `${progress}%` }]} />
             </View>
           </View>
           
@@ -396,7 +396,7 @@ export function BountyHuntScreen() {
                 <ActivityIndicator color="#000" />
               ) : (
                 <Text style={styles.submitButtonText}>
-                  SUBMIT SPOT (+{bounty.price_per_spot.toFixed(2)})
+                  SUBMIT SPOT (+${bounty.price_per_spot.toFixed(2)})
                 </Text>
               )}
             </TouchableOpacity>
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   approvedValue: {
     color: '#4AE54A',
   },
-  xpValue: {
+  earningsValue: {
     color: '#FFD700',
   },
   statLabel: {

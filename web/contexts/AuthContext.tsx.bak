@@ -12,7 +12,7 @@ interface User {
   role: string;
   view_mode?: 'user' | 'professional';
   subscription_tier?: 'starter' | 'professional' | 'enterprise' | 'hedge_fund';
-  spotter_tier?: 'elite' | 'verified' | 'lxp' | 'restricted';
+  spotter_tier?: 'elite' | 'verified' | 'learning' | 'restricted';
   permissions?: {
     can_manage_users?: boolean;
     can_switch_views?: boolean;
@@ -20,8 +20,8 @@ interface User {
     can_manage_permissions?: boolean;
     [key: string]: boolean | undefined;
   };
-  total_xp: number;
-  pending_xp: number;
+  total_earnings: number;
+  pending_earnings: number;
   trends_spotted: number;
   accuracy_score: number;
   validation_score: number;
@@ -51,7 +51,7 @@ interface AuthContextType {
   logout: () => Promise<{ success: boolean; error?: any }>;
   refreshUser: () => Promise<void>;
   switchViewMode: (mode: 'user' | 'professional') => Promise<void>;
-  updateUserXP: (amount: number) => Promise<void>;
+  updateUserEarnings: (amount: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,21 +79,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       }
 
-      // Get xp data from user_profiles table
+      // Get earnings data from user_profiles table
       const { data: userProfile } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      // Get pending xp from xp_ledger
+      // Get pending earnings from earnings_ledger
       const { data: pendingData } = await supabase
-        .from('xp_ledger')
+        .from('earnings_ledger')
         .select('amount')
         .eq('user_id', userId)
         .in('status', ['pending', 'awaiting_validation']);
       
-      const pendingXP = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+      const pendingEarnings = pendingData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
 
       // Combine all data
       const userData: User = {
@@ -101,17 +101,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: profile.email,
         username: profile.username || profile.email.split('@')[0],
         role: 'participant',
-        total_xp: userProfile?.total_earned || 0,
-        pending_xp: userProfile?.pending_xp || pendingXP || 0,
+        total_earnings: userProfile?.total_earned || 0,
+        pending_earnings: userProfile?.pending_earnings || pendingEarnings || 0,
         trends_spotted: userProfile?.trends_spotted || 0,
         accuracy_score: 0,
         validation_score: 0,
-        performance_tier: userProfile?.performance_tier || 'lxp',
+        performance_tier: userProfile?.performance_tier || 'learning',
         current_streak: userProfile?.current_streak || 0,
         session_streak: userProfile?.session_streak || 0,
         view_mode: 'user',
         subscription_tier: profile.subscription_tier || 'starter',
-        spotter_tier: profile.spotter_tier || 'lxp',
+        spotter_tier: profile.spotter_tier || 'learning',
         is_admin: profile.is_admin === true,
         account_type: profile.is_admin ? 'enterprise' : 'user',
         permissions: profile.is_admin ? {
@@ -265,7 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             username: userData.username,
             birthday: userData.birthday,
           },
-          emailRedirectTo: `{window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       });
 
@@ -332,11 +332,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateUserXP = async (amount: number) => {
+  const updateUserEarnings = async (amount: number) => {
     if (user) {
       setUser({
         ...user,
-        pending_xp: user.pending_xp + amount
+        pending_earnings: user.pending_earnings + amount
       });
       // Refresh from database
       await refreshUser();
@@ -352,7 +352,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       refreshUser,
       switchViewMode,
-      updateUserXP,
+      updateUserEarnings,
     }}>
       {children}
     </AuthContext.Provider>

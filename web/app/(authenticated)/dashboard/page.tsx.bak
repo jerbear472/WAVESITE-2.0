@@ -30,18 +30,18 @@ import {
 } from 'lucide-react';
 
 interface DashboardStats {
-  approved_xp: number;
-  pending_xp: number;
+  approved_earnings: number;
+  pending_earnings: number;
   trends_spotted: number;
   trends_verified: number;
   scroll_sessions_count: number;
   accuracy_score: number;
   current_streak: number;
-  xp_today: number;
-  xp_today_pending?: number;
-  xp_today_approved?: number;
-  xp_this_week: number;
-  xp_this_month: number;
+  earnings_today: number;
+  earnings_today_pending?: number;
+  earnings_today_approved?: number;
+  earnings_this_week: number;
+  earnings_this_month: number;
   total_cashed_out: number;
 }
 
@@ -94,7 +94,7 @@ interface RecentTrend {
     [key: string]: any; // Allow other properties
   };
   posted_at?: string;
-  xp_amount?: number;
+  earnings_amount?: number;
   isUserTrend?: boolean;
   wave_score?: number; // This holds the sentiment value
   approve_count?: number;
@@ -112,16 +112,16 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [stats, setStats] = useState<DashboardStats>({
-    approved_xp: 0,
-    pending_xp: 0,
+    approved_earnings: 0,
+    pending_earnings: 0,
     trends_spotted: 0,
     trends_verified: 0,
     scroll_sessions_count: 0,
     accuracy_score: 0,
     current_streak: 0,
-    xp_today: 0,
-    xp_this_week: 0,
-    xp_this_month: 0,
+    earnings_today: 0,
+    earnings_this_week: 0,
+    earnings_this_month: 0,
     total_cashed_out: 0,
   });
   const [recentTrends, setRecentTrends] = useState<RecentTrend[]>([]);
@@ -142,7 +142,7 @@ export default function Dashboard() {
           event: '*',
           schema: 'public',
           table: 'trend_submissions',
-          filter: `spotter_id=eq.{user.id}`
+          filter: `spotter_id=eq.${user.id}`
         },
         (payload) => {
           console.log('Trend change:', payload);
@@ -153,19 +153,19 @@ export default function Dashboard() {
       )
       .subscribe();
 
-    // Subscribe to xp updates
-    const xpSubscription = supabase
-      .channel('dashboard-xp')
+    // Subscribe to earnings updates
+    const earningsSubscription = supabase
+      .channel('dashboard-earnings')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'xp_ledger',
-          filter: `user_id=eq.{user.id}`
+          table: 'earnings_ledger',
+          filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('XP change:', payload);
+          console.log('Earnings change:', payload);
           // Refresh stats and activity feed
           fetchDashboardStats();
           fetchActivityFeed();
@@ -176,7 +176,7 @@ export default function Dashboard() {
 
     return () => {
       supabase.removeChannel(trendsSubscription);
-      supabase.removeChannel(xpSubscription);
+      supabase.removeChannel(earningsSubscription);
     };
   }, [user]);
 
@@ -186,23 +186,23 @@ export default function Dashboard() {
     }
   }, [user, timeframe]);
 
-  // Subscribe to real-time xp updates
+  // Subscribe to real-time earnings updates
   useEffect(() => {
     if (!user?.id) return;
 
     const subscription = supabase
-      .channel('dashboard-xp-updates')
+      .channel('dashboard-earnings-updates')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'xp_ledger',
-          filter: `user_id=eq.{user.id}`
+          table: 'earnings_ledger',
+          filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('XP update on dashboard:', payload);
-          // Refresh dashboard data when xp change
+          console.log('Earnings update on dashboard:', payload);
+          // Refresh dashboard data when earnings change
           fetchDashboardData();
         }
       )
@@ -256,15 +256,15 @@ export default function Dashboard() {
     if (!user?.id) return;
     
     try {
-      // Get user's approved and pending xp directly from user_profiles
+      // Get user's approved and pending earnings directly from user_profiles
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
-        .select('approved_xp, pending_xp')
+        .select('approved_earnings, pending_earnings')
         .eq('id', user.id)
         .single();
 
       if (profileError) {
-        console.error('Error fetching profile xp:', profileError);
+        console.error('Error fetching profile earnings:', profileError);
       }
 
       // Get user's trends for accuracy calculation
@@ -278,19 +278,19 @@ export default function Dashboard() {
         return;
       }
 
-      // Get user's xp from xp_ledger for accuracy
-      const { data: xpLedger, error: xpError } = await supabase
-        .from('xp_ledger')
+      // Get user's earnings from earnings_ledger for accuracy
+      const { data: earningsLedger, error: earningsError } = await supabase
+        .from('earnings_ledger')
         .select('*')
         .eq('user_id', user.id);
 
-      if (xpError) {
-        console.error('Error fetching user xp:', xpError);
+      if (earningsError) {
+        console.error('Error fetching user earnings:', earningsError);
         return;
       }
       
-      // Map to userXP format for compatibility
-      const userXP = xpLedger;
+      // Map to userEarnings format for compatibility
+      const userEarnings = earningsLedger;
 
       // Calculate accuracy rate: approved / (approved + rejected)
       const totalTrends = userTrends?.length || 0;
@@ -312,39 +312,39 @@ export default function Dashboard() {
       const decidedTrends = approvedTrends + rejectedTrends;
       const accuracyScore = decidedTrends > 0 && !isNaN(decidedTrends) && !isNaN(approvedTrends) ? ((approvedTrends / decidedTrends) * 100) : 0;
 
-      // Calculate other stats from xp_ledger
-      const availableXP = userXP?.filter(e => e.status === 'approved') || [];
-      const pendingXP = userXP?.filter(e => e.status === 'pending' || e.status === 'awaiting_validation') || [];
-      const paidXP = userXP?.filter(e => e.status === 'paid') || [];
+      // Calculate other stats from earnings_ledger
+      const availableEarnings = userEarnings?.filter(e => e.status === 'approved') || [];
+      const pendingEarnings = userEarnings?.filter(e => e.status === 'pending' || e.status === 'awaiting_validation') || [];
+      const paidEarnings = userEarnings?.filter(e => e.status === 'paid') || [];
       
-      const totalAvailable = availableXP.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const pendingAmount = pendingXP.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const totalPaid = paidXP.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const totalAvailable = availableEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const pendingAmount = pendingEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const totalPaid = paidEarnings.reduce((sum, e) => sum + (e.amount || 0), 0);
 
-      // XP today (include both approved AND pending from today)
+      // Earnings today (include both approved AND pending from today)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todaysApproved = availableXP
+      const todaysApproved = availableEarnings
         .filter(e => new Date(e.created_at) >= today)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
-      const todaysPending = pendingXP
+      const todaysPending = pendingEarnings
         .filter(e => new Date(e.created_at) >= today)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
-      const xpToday = todaysApproved + todaysPending;
+      const earningsToday = todaysApproved + todaysPending;
 
-      // XP this week  
+      // Earnings this week  
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
-      const xpThisWeek = availableXP
+      const earningsThisWeek = availableEarnings
         .filter(e => new Date(e.created_at) >= weekStart)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-      // XP this month
+      // Earnings this month
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
-      const xpThisMonth = availableXP
+      const earningsThisMonth = availableEarnings
         .filter(e => new Date(e.created_at) >= monthStart)
         .reduce((sum, e) => sum + (e.amount || 0), 0);
 
@@ -355,22 +355,22 @@ export default function Dashboard() {
       const uniqueDays = new Set(recentTrends.map(t => new Date(t.created_at).toDateString())).size;
 
       setStats({
-        approved_xp: profileData?.approved_xp || totalAvailable,  // Use profile data if available
-        pending_xp: profileData?.pending_xp || pendingAmount,
+        approved_earnings: profileData?.approved_earnings || totalAvailable,  // Use profile data if available
+        pending_earnings: profileData?.pending_earnings || pendingAmount,
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
         scroll_sessions_count: 0, // Would need scroll_sessions table
         accuracy_score: !isNaN(accuracyScore) ? accuracyScore : 0, // Already in percentage
         current_streak: uniqueDays,
-        xp_today: xpToday,
-        xp_today_pending: todaysPending,  // Add pending from today
-        xp_today_approved: todaysApproved,  // Add approved from today
-        xp_this_week: xpThisWeek,
-        xp_this_month: xpThisMonth,
+        earnings_today: earningsToday,
+        earnings_today_pending: todaysPending,  // Add pending from today
+        earnings_today_approved: todaysApproved,  // Add approved from today
+        earnings_this_week: earningsThisWeek,
+        earnings_this_month: earningsThisMonth,
         total_cashed_out: totalPaid  // Amount already paid out
       });
 
-      console.log(`Calculated accuracy rate: {!isNaN(accuracyScore) ? accuracyScore.toFixed(2) : '0'}% ({approvedTrends}/{decidedTrends} trends decided)`);
+      console.log(`Calculated accuracy rate: ${!isNaN(accuracyScore) ? accuracyScore.toFixed(2) : '0'}% (${approvedTrends}/${decidedTrends} trends decided)`);
     } catch (error) {
       console.error('Error in manual stats calculation:', error);
     }
@@ -387,7 +387,7 @@ export default function Dashboard() {
           trend_size,
           evidence,
           spotter:profiles(username, email),
-          xp:xp_ledger(amount)
+          earnings:earnings_ledger(amount)
         `)
         .order('created_at', { ascending: false });
       
@@ -450,7 +450,7 @@ export default function Dashboard() {
         userTrends.forEach(trend => {
           combinedTrends.push({
             ...trend,
-            xp_amount: trend.xp?.[0]?.amount || 0,
+            earnings_amount: trend.earnings?.[0]?.amount || 0,
             isUserTrend: true
           });
         });
@@ -466,7 +466,7 @@ export default function Dashboard() {
           if (!combinedTrends.find(t => t.id === trend.id)) {
             combinedTrends.push({
               ...trend,
-              xp_amount: 0,
+              earnings_amount: 0,
               isUserTrend: false
             });
           }
@@ -492,8 +492,8 @@ export default function Dashboard() {
     if (!user?.id) return;
     
     try {
-      const { data: xp } = await supabase
-        .from('xp_ledger')
+      const { data: earnings } = await supabase
+        .from('earnings_ledger')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -501,12 +501,12 @@ export default function Dashboard() {
 
       const activities: any[] = [];
 
-      if (xp) {
-        xp.forEach(xp => {
+      if (earnings) {
+        earnings.forEach(earning => {
           let message = '';
           let icon = '💰';
           
-          switch (xp.type) {
+          switch (earning.type) {
             case 'trend_submission':
               message = 'Earned for submitting a trend';
               icon = '📈';
@@ -524,21 +524,21 @@ export default function Dashboard() {
               icon = '🎯';
               break;
             case 'milestone':
-              message = xp.description || 'Milestone achievement';
+              message = earning.description || 'Milestone achievement';
               icon = '🏆';
               break;
             default:
-              message = xp.description || 'Earned rewards';
+              message = earning.description || 'Earned rewards';
           }
 
           activities.push({
-            id: xp.id,
+            id: earning.id,
             message,
             icon,
-            amount: xp.amount,
-            time: xp.created_at,
-            type: xp.type,
-            status: xp.status
+            amount: earning.amount,
+            time: earning.created_at,
+            type: earning.type,
+            status: earning.status
           });
         });
       }
@@ -580,9 +580,9 @@ export default function Dashboard() {
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 1) return 'just now';
-    if (minutes < 60) return `{minutes}m ago`;
-    if (hours < 24) return `{hours}h ago`;
-    if (days < 7) return `{days}d ago`;
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
     return time.toLocaleDateString();
   };
 
@@ -592,8 +592,8 @@ export default function Dashboard() {
     // Ensure num is a valid number and don't return empty string for 0
     if (num === undefined || num === null || isNaN(num)) return '0';
     if (num === 0) return '0';
-    if (num >= 1000000) return `{(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `{(num / 1000).toFixed(1)}k`;
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
     return num.toString();
   };
 
@@ -736,7 +736,7 @@ export default function Dashboard() {
         // Fallback to engagement metrics
         const totalEngagement = (trend.likes_count || 0) + (trend.shares_count || 0) + (trend.comments_count || 0);
         if (totalEngagement > 0) {
-          metric = `{totalEngagement} engagements`;
+          metric = `${totalEngagement} engagements`;
         } else {
           metric = 'Just spotted';
         }
@@ -766,19 +766,19 @@ export default function Dashboard() {
     
     if (engagementVelocity > 100) {
       label = '🚀 Explosive';
-      metric = `+{(engagementVelocity * 24).toFixed(0)}/day`;
+      metric = `+${(engagementVelocity * 24).toFixed(0)}/day`;
       color = 'text-red-500';
     } else if (engagementVelocity > 10) {
       label = '⚡ Trending';
-      metric = `+{engagementVelocity.toFixed(0)}/hr`;
+      metric = `+${engagementVelocity.toFixed(0)}/hr`;
       color = 'text-orange-500';
     } else if (engagementVelocity > 1) {
       label = '📈 Rising';
-      metric = `+{engagementVelocity.toFixed(1)}/hr`;
+      metric = `+${engagementVelocity.toFixed(1)}/hr`;
       color = 'text-green-500';
     } else if (totalEngagement > 0) {
       label = '🌱 Growing';
-      metric = `{totalEngagement} total`;
+      metric = `${totalEngagement} total`;
       color = 'text-blue-500';
     } else {
       label = '🆕 New Submission';
@@ -807,10 +807,10 @@ export default function Dashboard() {
     let growthIndicator = '';
     
     if (views >= 1000000) {
-      sizeDisplay = `{(views / 1000000).toFixed(1)}M`;
+      sizeDisplay = `${(views / 1000000).toFixed(1)}M`;
       growthIndicator = 'views';
     } else if (views >= 1000) {
-      sizeDisplay = `{(views / 1000).toFixed(1)}K`;
+      sizeDisplay = `${(views / 1000).toFixed(1)}K`;
       growthIndicator = 'views';
     } else if (views >= 100) {
       sizeDisplay = views.toString();
@@ -840,15 +840,15 @@ export default function Dashboard() {
     // Create growth label based on rate
     let growthLabel = '';
     if (viewsPerHour > 10000) {
-      growthLabel = `+{!isNaN(viewsPerHour) ? (viewsPerHour / 1000).toFixed(0) : '—'}K/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? (viewsPerHour / 1000).toFixed(0) : '—'}K/hr`;
     } else if (viewsPerHour > 1000) {
-      growthLabel = `+{!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '—'}/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '—'}/hr`;
     } else if (viewsPerHour > 100) {
-      growthLabel = `+{!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '—'}/hr`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? viewsPerHour.toFixed(0) : '—'}/hr`;
     } else if (viewsPerHour > 10) {
-      growthLabel = `+{!isNaN(viewsPerHour) ? (viewsPerHour * 24).toFixed(0) : '—'}/day`;
+      growthLabel = `+${!isNaN(viewsPerHour) ? (viewsPerHour * 24).toFixed(0) : '—'}/day`;
     } else if (views > 0) {
-      growthLabel = `{!isNaN(engagementRate) ? engagementRate.toFixed(1) : '—'}% engagement`;
+      growthLabel = `${!isNaN(engagementRate) ? engagementRate.toFixed(1) : '—'}% engagement`;
     } else {
       growthLabel = '';  // Don't show redundant text for new submissions
     }
@@ -888,7 +888,7 @@ export default function Dashboard() {
                   userName: user?.email?.split('@')[0] || 'User',
                   timeOfDay: getTimeOfDay(),
                   currentStreak: stats.current_streak,
-                  performance_tier: user?.performance_tier || 'lxp'
+                  performance_tier: user?.performance_tier || 'learning'
                 });
                 // Parse greeting to style username
                 const parts = greeting.split(/\[\[|\]\]/);
@@ -919,7 +919,7 @@ export default function Dashboard() {
               disabled={refreshing}
               className="p-2 rounded-lg bg-white dark:bg-neutral-900 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
             >
-              <RefreshCw className={`w-5 h-5 {refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
             {/* Enterprise Dashboard - Only for jeremyuys@gmail.com */}
             {user?.email === 'jeremyuys@gmail.com' && (
@@ -952,27 +952,27 @@ export default function Dashboard() {
                 <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-xl">
                   <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
-                {stats.xp_today > 0 && (
+                {stats.earnings_today > 0 && (
                   <div className="flex flex-col items-end gap-1">
                     <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full animate-pulse">
-                      +{formatCurrency(stats.xp_today)} today
+                      +{formatCurrency(stats.earnings_today)} today
                     </span>
-                    {(stats.xp_today_pending ?? 0) > 0 && (
+                    {(stats.earnings_today_pending ?? 0) > 0 && (
                       <span className="text-xs text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
-                        {formatCurrency(stats.xp_today_pending ?? 0)} pending
+                        {formatCurrency(stats.earnings_today_pending ?? 0)} pending
                       </span>
                     )}
                   </div>
                 )}
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Available XP</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Available Earnings</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(stats.approved_xp)}
+                {formatCurrency(stats.approved_earnings)}
               </p>
               <div className="flex flex-col gap-1 mt-2">
-                {stats.pending_xp > 0 && (
+                {stats.pending_earnings > 0 && (
                   <p className="text-xs text-yellow-500 font-medium">
-                    +{formatCurrency(stats.pending_xp)} pending approval
+                    +{formatCurrency(stats.pending_earnings)} pending approval
                   </p>
                 )}
                 {stats.total_cashed_out > 0 && (
@@ -994,7 +994,7 @@ export default function Dashboard() {
               <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-xl">
                 <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <span className={`text-2xl {stats.current_streak > 0 ? 'animate-pulse' : ''}`}>
+              <span className={`text-2xl ${stats.current_streak > 0 ? 'animate-pulse' : ''}`}>
                 {stats.current_streak > 0 ? '🔥' : '❄️'}
               </span>
             </div>
@@ -1023,12 +1023,12 @@ export default function Dashboard() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Accuracy Rate</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-              {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `{Math.round(stats.accuracy_score)}%` : 'N/A'}
+              {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `${Math.round(stats.accuracy_score)}%` : 'N/A'}
             </p>
             <div className="mt-2 bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
               <div 
                 className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all"
-                style={{ width: `{!isNaN(stats.accuracy_score) ? Math.min(stats.accuracy_score, 100) : 0}%` }}
+                style={{ width: `${!isNaN(stats.accuracy_score) ? Math.min(stats.accuracy_score, 100) : 0}%` }}
               />
             </div>
           </motion.div>
@@ -1143,7 +1143,7 @@ export default function Dashboard() {
                             <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className="text-2xl">{categoryDetails.emoji}</span>
                               {categoryDetails.label && categoryDetails.label !== '0' && categoryDetails.label !== '' && (
-                                <span className={`text-xs px-2.5 py-1 rounded-full bg-gradient-to-r {categoryDetails.color} text-white font-medium shadow-sm`}>
+                                <span className={`text-xs px-2.5 py-1 rounded-full bg-gradient-to-r ${categoryDetails.color} text-white font-medium shadow-sm`}>
                                   {categoryDetails.label}
                                 </span>
                               )}
@@ -1152,9 +1152,9 @@ export default function Dashboard() {
                                   Your trend
                                 </span>
                               )}
-                              {trend.xp_amount && trend.xp_amount > 0 ? (
+                              {trend.earnings_amount && trend.earnings_amount > 0 ? (
                                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                                  +{formatCurrency(trend.xp_amount)}
+                                  +{formatCurrency(trend.earnings_amount)}
                                 </span>
                               ) : null}
                             </div>
@@ -1187,7 +1187,7 @@ export default function Dashboard() {
                                         case 'going_viral': return '🚀 Going Viral';
                                         case 'viral': return '🚀 Going Viral';
                                         case 'saturated': return '⚡ Saturated';
-                                        default: return velocity ? `📊 {velocity}` : null;
+                                        default: return velocity ? `📊 ${velocity}` : null;
                                       }
                                     })()}
                                   </span>
@@ -1208,7 +1208,7 @@ export default function Dashboard() {
                                         case 'viral': return '🔥 Viral (100K-1M)';
                                         case 'mega': return '💥 Mega (1M-10M)';
                                         case 'global': return '🌍 Global (10M+)';
-                                        default: return size ? `📏 {size}` : null;
+                                        default: return size ? `📏 ${size}` : null;
                                       }
                                     })()}
                                   </span>
@@ -1228,7 +1228,7 @@ export default function Dashboard() {
                                     if (url.includes('twitter') || url.includes('x.com') || platform === 'twitter') return '𝕏 Twitter';
                                     if (url.includes('youtube') || platform === 'youtube') return '📺 YouTube';
                                     if (url.includes('reddit') || platform === 'reddit') return '🔥 Reddit';
-                                    if (platform) return `📱 {platform}`;
+                                    if (platform) return `📱 ${platform}`;
                                     return '🔗 View Source';
                                   })()}
                                 </span>
@@ -1269,7 +1269,7 @@ export default function Dashboard() {
                                 </span>
                               )}
                               <span className={`
-                                {trend.status === 'viral' ? 'text-red-600' :
+                                ${trend.status === 'viral' ? 'text-red-600' :
                                   trend.status === 'approved' ? 'text-green-600' :
                                   trend.status === 'validating' ? 'text-yellow-600' :
                                   'text-gray-600'}
@@ -1286,7 +1286,7 @@ export default function Dashboard() {
                           <div className="hidden sm:flex flex-col gap-2 min-w-[140px]">
                             {/* Velocity Indicator - Enhanced */}
                             <div className="text-center bg-gradient-to-br from-gray-100 to-gray-50 dark:from-neutral-800 dark:to-neutral-900 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-shadow">
-                              <div className={`text-sm font-bold {getTrendVelocity(trend).color}`}>
+                              <div className={`text-sm font-bold ${getTrendVelocity(trend).color}`}>
                                 {getTrendVelocity(trend).label}
                               </div>
                               <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mt-0.5">
@@ -1399,7 +1399,7 @@ export default function Dashboard() {
                       Cultural Analyst Training
                     </p>
                     <p className="text-white/80 text-xs mt-1">
-                      Learn to earn up to 4.69 per trend
+                      Learn to earn up to $4.69 per trend
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/80" />
@@ -1432,7 +1432,7 @@ export default function Dashboard() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-3xl font-bold text-white capitalize">
-                    {user?.performance_tier || 'Lxp'}
+                    {user?.performance_tier || 'Learning'}
                   </p>
                   <span className="text-2xl">📚</span>
                 </div>
@@ -1444,7 +1444,7 @@ export default function Dashboard() {
                   <div className="bg-white/20 rounded-full h-2">
                     <div 
                       className="bg-white h-2 rounded-full transition-all"
-                      style={{ width: `{Math.min((stats.trends_spotted / 10) * 100, 100)}%` }}
+                      style={{ width: `${Math.min((stats.trends_spotted / 10) * 100, 100)}%` }}
                     />
                   </div>
                   <p className="text-xs text-white/70 mt-2">
@@ -1464,7 +1464,7 @@ export default function Dashboard() {
                       key={activity.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className={`flex items-start gap-4 p-4 rounded-lg {
+                      className={`flex items-start gap-4 p-4 rounded-lg ${
                         activity.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/10' : 'bg-gray-50 dark:bg-neutral-800'
                       }`}
                     >
@@ -1472,7 +1472,7 @@ export default function Dashboard() {
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-900 dark:text-white">{activity.message}</p>
-                          <span className={`text-sm font-semibold {
+                          <span className={`text-sm font-semibold ${
                             activity.status === 'pending' ? 'text-yellow-600' : 'text-green-600'
                           }`}>
                             +{formatCurrency(activity.amount)}
@@ -1510,7 +1510,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-3">
                     <span className="text-gray-600 dark:text-gray-400">Accuracy Rate</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `{Math.round(stats.accuracy_score)}%` : 'N/A'}
+                      {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `${Math.round(stats.accuracy_score)}%` : 'N/A'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-3">
@@ -1522,7 +1522,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-3">
                     <span className="text-gray-600 dark:text-gray-400">Success Rate</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {stats.trends_spotted > 0 && !isNaN(stats.trends_verified) && !isNaN(stats.trends_spotted) ? `{Math.round((stats.trends_verified / stats.trends_spotted) * 100)}%` : 'N/A'}
+                      {stats.trends_spotted > 0 && !isNaN(stats.trends_verified) && !isNaN(stats.trends_spotted) ? `${Math.round((stats.trends_verified / stats.trends_spotted) * 100)}%` : 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -1547,26 +1547,26 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Recent XP */}
+            {/* Recent Earnings */}
             <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Recent XP</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Recent Earnings</h2>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Today</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(stats.xp_today)}
+                    {formatCurrency(stats.earnings_today)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">This Week</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(stats.xp_this_week)}
+                    {formatCurrency(stats.earnings_this_week)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">This Month</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(stats.xp_this_month)}
+                    {formatCurrency(stats.earnings_this_month)}
                   </span>
                 </div>
                 
@@ -1574,25 +1574,25 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Available</span>
                     <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                      {formatCurrency(stats.approved_xp)}
+                      {formatCurrency(stats.approved_earnings)}
                     </span>
                   </div>
-                  {(user?.pending_xp || stats.pending_xp) > 0 && (
+                  {(user?.pending_earnings || stats.pending_earnings) > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">Pending</span>
                       <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                        {formatCurrency(user?.pending_xp || stats.pending_xp)}
+                        {formatCurrency(user?.pending_earnings || stats.pending_earnings)}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
-              {stats.approved_xp >= 10 && (
+              {stats.approved_earnings >= 10 && (
                 <Link 
-                  href="/xp" 
+                  href="/earnings" 
                   className="mt-4 block w-full bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white py-2 px-4 rounded-lg text-center text-sm transition-colors"
                 >
-                  View XP Details
+                  View Earnings Details
                 </Link>
               )}
             </div>

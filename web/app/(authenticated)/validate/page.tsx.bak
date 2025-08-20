@@ -35,12 +35,12 @@ import {
 } from 'lucide-react';
 import { 
   SUSTAINABLE_EARNINGS,
-  calculateValidationXP,
+  calculateValidationEarnings,
   formatCurrency,
   calculateUserTier,
   type Tier
 } from '@/lib/SUSTAINABLE_EARNINGS';
-import XPNotificationComponent, { useXPNotification } from '@/components/XPNotification';
+import EarningsNotificationComponent, { useEarningsNotification } from '@/components/EarningsNotification';
 import { BountyTrendCard } from '@/components/BountyTrendCard';
 
 interface TrendToValidate {
@@ -103,16 +103,16 @@ interface QualityCriteria {
 
 export default function ValidatePageFixed() {
   const { user, refreshUser } = useAuth();
-  const { notification, showXP, dismissNotification } = useXPNotification();
+  const { notification, showEarnings, dismissNotification } = useEarningsNotification();
   const [trends, setTrends] = useState<TrendToValidate[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(false);
   const [stats, setStats] = useState({
     validated_today: 0,
-    xp_today: 0,
+    earnings_today: 0,
     validated_total: 0,
-    xp_total: 0
+    earnings_total: 0
   });
   const [sessionValidations, setSessionValidations] = useState(0);
   const [qualityCriteria, setQualityCriteria] = useState<QualityCriteria[]>([]);
@@ -136,8 +136,8 @@ export default function ValidatePageFixed() {
       return '0';
     }
     
-    if (numCount >= 1000000) return `{(numCount / 1000000).toFixed(1)}M`;
-    if (numCount >= 1000) return `{(numCount / 1000).toFixed(1)}K`;
+    if (numCount >= 1000000) return `${(numCount / 1000000).toFixed(1)}M`;
+    if (numCount >= 1000) return `${(numCount / 1000).toFixed(1)}K`;
     return Math.floor(numCount).toString();
   };
 
@@ -267,14 +267,14 @@ export default function ValidatePageFixed() {
         !validatedIds.includes(trend.id)
       );
       
-      console.log(`After filtering out validated trends: {filteredTrends.length} trends available`);
+      console.log(`After filtering out validated trends: ${filteredTrends.length} trends available`);
       
       // Debug: Show which trends were filtered out
       const filteredOutTrends = (trendsData || []).filter(trend => 
         validatedIds.includes(trend.id)
       );
       if (filteredOutTrends.length > 0) {
-        console.log(`🚫 Filtered out {filteredOutTrends.length} already validated trends:`, 
+        console.log(`🚫 Filtered out ${filteredOutTrends.length} already validated trends:`, 
           filteredOutTrends.map(t => ({ id: t.id.substring(0, 8), desc: t.description.substring(0, 30) }))
         );
       }
@@ -353,16 +353,16 @@ export default function ValidatePageFixed() {
         .select('*')
         .eq('validator_id', user?.id);
 
-      // Calculate xp using EARNINGS_STANDARD
-      const spotterTier = (user?.spotter_tier || 'lxp') as Tier;
-      const todayXP = calculateValidationXP(todayValidations?.length || 0, spotterTier);
-      const totalXP = calculateValidationXP(allValidations?.length || 0, spotterTier);
+      // Calculate earnings using EARNINGS_STANDARD
+      const spotterTier = (user?.spotter_tier || 'learning') as Tier;
+      const todayEarnings = calculateValidationEarnings(todayValidations?.length || 0, spotterTier);
+      const totalEarnings = calculateValidationEarnings(allValidations?.length || 0, spotterTier);
       
       setStats({
         validated_today: todayValidations?.length || 0,
-        xp_today: parseFloat(todayXP.toFixed(2)),
+        earnings_today: parseFloat(todayEarnings.toFixed(2)),
         validated_total: allValidations?.length || 0,
-        xp_total: parseFloat(totalXP.toFixed(2))
+        earnings_total: parseFloat(totalEarnings.toFixed(2))
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -461,18 +461,18 @@ export default function ValidatePageFixed() {
           nextTrend();
         } else {
           // Show the actual error for debugging
-          setLastError(`Validation error: {validationError.message || 'Unknown error'}`);
+          setLastError(`Validation error: ${validationError.message || 'Unknown error'}`);
         }
         return;
       }
 
-      // Success! Now create xp entry
+      // Success! Now create earnings entry
       setSessionValidations(prev => prev + 1);
       
-      // AGGRESSIVE FIX: Delete any existing validation xp for this trend, then create the correct one
+      // AGGRESSIVE FIX: Delete any existing validation earnings for this trend, then create the correct one
       // This handles the case where database triggers create wrong amounts
       await supabase
-        .from('xp_ledger')
+        .from('earnings_ledger')
         .delete()
         .eq('user_id', user.id)
         .eq('trend_id', trendId)
@@ -481,9 +481,9 @@ export default function ValidatePageFixed() {
       // Wait a moment to ensure deletion completes before recreating
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Now create the CORRECT xp entry (exactly 0.02)
-      const { error: xpError } = await supabase
-        .from('xp_ledger')
+      // Now create the CORRECT earnings entry (exactly $0.02)
+      const { error: earningsError } = await supabase
+        .from('earnings_ledger')
         .insert({
           user_id: user.id,
           trend_id: trendId,
@@ -499,24 +499,24 @@ export default function ValidatePageFixed() {
           }
         });
       
-      if (xpError) {
-        console.error('Failed to create xp entry:', xpError);
+      if (earningsError) {
+        console.error('Failed to create earnings entry:', earningsError);
         // Don't fail the validation, just log the error
       } else {
-        console.log('XP entry created for validation:', rewardAmount);
+        console.log('Earnings entry created for validation:', rewardAmount);
         
-        // Show subtle xp notification
+        // Show subtle earnings notification
         const notificationMessage = isBountySubmission 
-          ? `+{rewardAmount.toFixed(2)} (3x Bounty Bonus!)` 
-          : `+{rewardAmount.toFixed(2)}`;
-        showXP(
+          ? `+$${rewardAmount.toFixed(2)} (3x Bounty Bonus!)` 
+          : `+$${rewardAmount.toFixed(2)}`;
+        showEarnings(
           rewardAmount,
           'validation',
           notificationMessage,
           [] // No breakdown needed for subtle notification
         );
         
-        // Update user xp immediately
+        // Update user earnings immediately
         refreshUser();
       }
       
@@ -611,7 +611,7 @@ export default function ValidatePageFixed() {
             <Shield className="w-12 h-12 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-3">Sign In Required</h2>
-          <p className="text-gray-600 mb-8">Join our community of trend validators and start xp rewards.</p>
+          <p className="text-gray-600 mb-8">Join our community of trend validators and start earning rewards.</p>
           <a href="/login" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all transform hover:scale-105">
             Sign In to Continue
             <ArrowRight className="w-5 h-5" />
@@ -645,7 +645,7 @@ export default function ValidatePageFixed() {
                 <p className="text-sm text-gray-500 mt-1">Trends Validated</p>
               </div>
               <div className="text-center">
-                <p className="text-4xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 bg-clip-text text-transparent">{stats.xp_today.toFixed(2)}</p>
+                <p className="text-4xl font-bold bg-gradient-to-br from-green-600 to-emerald-600 bg-clip-text text-transparent">${stats.earnings_today.toFixed(2)}</p>
                 <p className="text-sm text-gray-500 mt-1">Earned Today</p>
               </div>
             </div>
@@ -671,8 +671,8 @@ export default function ValidatePageFixed() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4">
-      {/* XP Notification */}
-      <XPNotificationComponent 
+      {/* Earnings Notification */}
+      <EarningsNotificationComponent 
         notification={notification} 
         onDismiss={dismissNotification} 
       />
@@ -702,12 +702,12 @@ export default function ValidatePageFixed() {
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50 group"
                 title="Refresh trends"
               >
-                <RefreshCw className={`w-4 h-4 text-gray-600 {loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`} />
+                <RefreshCw className={`w-4 h-4 text-gray-600 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`} />
               </button>
               <div className="hidden lg:flex items-center gap-3 text-right">
                 <div>
-                  <p className="text-xs text-gray-500">Today's XP</p>
-                  <p className="text-sm font-bold text-gray-900">{stats.xp_today.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500">Today's Earnings</p>
+                  <p className="text-sm font-bold text-gray-900">${stats.earnings_today.toFixed(2)}</p>
                 </div>
                 <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl shadow-md">
                   <div className="flex items-center gap-2">
@@ -897,7 +897,7 @@ export default function ValidatePageFixed() {
                         {currentTrend.sentiment !== undefined && (
                           <div className="bg-white/70 rounded-lg p-2">
                             <span className="text-xs text-gray-600 block">Sentiment:</span>
-                            <span className={`text-sm font-medium {
+                            <span className={`text-sm font-medium ${
                               currentTrend.sentiment >= 70 ? 'text-green-600' :
                               currentTrend.sentiment >= 40 ? 'text-yellow-600' : 'text-red-600'
                             }`}>
@@ -909,7 +909,7 @@ export default function ValidatePageFixed() {
                           <div className="bg-white/70 rounded-lg p-2">
                             <span className="text-xs text-gray-600 block">Wave Score:</span>
                             <div className="flex items-center gap-1">
-                              <Star className={`w-3 h-3 {currentTrend.wave_score >= 70 ? 'text-yellow-500' : 'text-gray-400'}`} fill="currentColor" />
+                              <Star className={`w-3 h-3 ${currentTrend.wave_score >= 70 ? 'text-yellow-500' : 'text-gray-400'}`} fill="currentColor" />
                               <span className="text-sm font-medium text-gray-900">{currentTrend.wave_score}/100</span>
                             </div>
                           </div>
@@ -951,7 +951,7 @@ export default function ValidatePageFixed() {
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-300"
-                          style={{ width: `{Math.min((Number(currentTrend.approve_count) || 0) * 33.33, 100)}%` }}
+                          style={{ width: `${Math.min((Number(currentTrend.approve_count) || 0) * 33.33, 100)}%` }}
                         />
                       </div>
                     </div>
@@ -1033,7 +1033,7 @@ export default function ValidatePageFixed() {
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-md p-2">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-gray-900 text-xs">Quick Check</h3>
-                      <div className={`text-xs font-bold {
+                      <div className={`text-xs font-bold ${
                         qualityScore >= 80 ? 'text-green-600' :
                         qualityScore >= 60 ? 'text-yellow-600' :
                         'text-red-600'
@@ -1045,10 +1045,10 @@ export default function ValidatePageFixed() {
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                       {qualityCriteria.slice(0, 4).map(criterion => (
                         <div key={criterion.id} className="flex items-center gap-1">
-                          <div className={`w-2.5 h-2.5 rounded-full {
+                          <div className={`w-2.5 h-2.5 rounded-full ${
                             criterion.met ? 'bg-green-500' : 'bg-gray-300'
                           }`} />
-                          <p className={`text-[10px] {
+                          <p className={`text-[10px] ${
                             criterion.met ? 'text-gray-700 font-medium' : 'text-gray-400'
                           }`}>
                             {criterion.label}
@@ -1129,8 +1129,8 @@ export default function ValidatePageFixed() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-600">Session XP</p>
-                <p className="text-xl font-bold text-green-600">+{formatCurrency(calculateValidationXP(sessionValidations, (user?.spotter_tier || 'lxp') as Tier))}</p>
+                <p className="text-sm text-gray-600">Session Earnings</p>
+                <p className="text-xl font-bold text-green-600">+{formatCurrency(calculateValidationEarnings(sessionValidations, (user?.spotter_tier || 'learning') as Tier))}</p>
               </div>
             </div>
           </motion.div>
