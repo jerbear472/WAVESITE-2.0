@@ -8,12 +8,7 @@ import StreakDisplay from '@/components/StreakDisplay';
 import NotificationsWindow from '@/components/NotificationsWindow';
 import TierInfoModal from '@/components/TierInfoModal';
 import { getDynamicGreeting, getTimeOfDay } from '@/lib/greetings';
-import { formatCurrency as formatCurrencyLib } from '@/lib/formatters';
-import { 
-  SUSTAINABLE_EARNINGS,
-  formatCurrency,
-  canCashOut,
-} from '@/lib/SUSTAINABLE_EARNINGS';
+// Removed currency formatting imports - using XP display instead
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -586,7 +581,7 @@ export default function Dashboard() {
     return time.toLocaleDateString();
   };
 
-  const formatCurrency = formatCurrencyLib;
+  // Removed formatCurrency - using direct XP display
 
   const formatNumber = (num: number) => {
     // Ensure num is a valid number and don't return empty string for 0
@@ -945,11 +940,11 @@ export default function Dashboard() {
                 {stats.xp_today > 0 && (
                   <div className="flex flex-col items-end gap-1">
                     <span className="text-xs text-green-600 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded-full animate-pulse">
-                      +{formatCurrency(stats.xp_today)} today
+                      +{stats.xp_today} XP today
                     </span>
                     {(stats.xp_today_pending ?? 0) > 0 && (
                       <span className="text-xs text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
-                        {formatCurrency(stats.xp_today_pending ?? 0)} pending
+                        {stats.xp_today_pending ?? 0} XP pending
                       </span>
                     )}
                   </div>
@@ -967,7 +962,7 @@ export default function Dashboard() {
                 )}
                 {stats.total_cashed_out > 0 && (
                   <p className="text-xs text-gray-500">
-                    {formatCurrency(stats.total_cashed_out)} withdrawn
+                    {stats.total_cashed_out} XP earned total
                   </p>
                 )}
               </div>
@@ -1144,7 +1139,7 @@ export default function Dashboard() {
                               )}
                               {trend.xp_amount && trend.xp_amount > 0 ? (
                                 <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                                  +{formatCurrency(trend.xp_amount)}
+                                  +{trend.xp_amount} XP
                                 </span>
                               ) : null}
                             </div>
@@ -1465,7 +1460,7 @@ export default function Dashboard() {
                           <span className={`text-sm font-semibold {
                             activity.status === 'pending' ? 'text-yellow-600' : 'text-green-600'
                           }`}>
-                            +{formatCurrency(activity.amount)}
+                            +{activity.amount} XP
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
@@ -1544,19 +1539,19 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Today</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(stats.xp_today)}
+                    {stats.xp_today} XP
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">This Week</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(stats.xp_this_week)}
+                    {stats.xp_this_week} XP
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">This Month</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(stats.xp_this_month)}
+                    {stats.xp_this_month} XP
                   </span>
                 </div>
                 
@@ -1564,14 +1559,14 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Available</span>
                     <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                      {formatCurrency(stats.approved_xp)}
+                      {stats.approved_xp} XP
                     </span>
                   </div>
                   {(user?.pending_xp || stats.pending_xp) > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">Pending</span>
                       <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                        {formatCurrency(user?.pending_xp || stats.pending_xp)}
+                        {(user?.pending_xp || stats.pending_xp || 0)} XP
                       </span>
                     </div>
                   )}
