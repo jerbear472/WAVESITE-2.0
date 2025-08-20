@@ -935,10 +935,10 @@ export default function Dashboard() {
               <span className="text-xs text-gray-500">XP</span>
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              {(stats.approved_xp || 0).toLocaleString()}
+              {isNaN(stats.approved_xp) ? 0 : (stats.approved_xp || 0).toLocaleString()}
             </p>
             <p className="text-sm text-gray-500 mt-1">Available XP</p>
-            {(stats.pending_xp || 0) > 0 && (
+            {!isNaN(stats.pending_xp) && (stats.pending_xp || 0) > 0 && (
               <p className="text-xs text-yellow-600 mt-2">
                 +{(stats.pending_xp || 0).toLocaleString()} pending
               </p>
@@ -1358,8 +1358,8 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-2xl font-bold text-white">
                     {(() => {
-                      const totalXP = stats.approved_xp + stats.pending_xp;
-                      if (totalXP < 100) return '🌱 Novice';
+                      const totalXP = (stats.approved_xp || 0) + (stats.pending_xp || 0);
+                      if (isNaN(totalXP) || totalXP < 100) return '🌱 Novice';
                       if (totalXP < 500) return '⚡ Scout';
                       if (totalXP < 1000) return '🔍 Tracker';
                       if (totalXP < 2500) return '📊 Analyst';
@@ -1374,14 +1374,15 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-white/80">Total XP</span>
-                    <span className="text-white font-medium">{(stats.approved_xp + stats.pending_xp).toLocaleString()}</span>
+                    <span className="text-white font-medium">{((stats.approved_xp || 0) + (stats.pending_xp || 0)).toLocaleString()}</span>
                   </div>
                   <div className="bg-white/20 rounded-full h-2">
                     <div 
                       className="bg-white h-2 rounded-full transition-all"
                       style={{ 
                         width: `${(() => {
-                          const totalXP = stats.approved_xp + stats.pending_xp;
+                          const totalXP = (stats.approved_xp || 0) + (stats.pending_xp || 0);
+                          if (isNaN(totalXP)) return 0;
                           const levels = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000];
                           const currentLevel = levels.findIndex(l => totalXP < l);
                           if (currentLevel === -1) return 100;
@@ -1395,7 +1396,8 @@ export default function Dashboard() {
                   </div>
                   <p className="text-xs text-white/70 mt-2">
                     {(() => {
-                      const totalXP = stats.approved_xp + stats.pending_xp;
+                      const totalXP = (stats.approved_xp || 0) + (stats.pending_xp || 0);
+                      if (isNaN(totalXP)) return '100 XP to Scout';
                       const levels = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000];
                       const nextLevel = levels.find(l => totalXP < l);
                       if (!nextLevel) return 'Maximum level reached! 🎉';
@@ -1565,7 +1567,7 @@ export default function Dashboard() {
       <TierInfoModal 
         isOpen={showTierModal}
         onClose={() => setShowTierModal(false)}
-        currentXP={stats.approved_xp + stats.pending_xp}
+        currentXP={(stats.approved_xp || 0) + (stats.pending_xp || 0)}
       />
     </div>
   );
