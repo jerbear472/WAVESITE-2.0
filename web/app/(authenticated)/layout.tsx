@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
+import XPLossNotification from '@/components/XPLossNotification';
 
 export default function AuthenticatedLayout({
   children,
@@ -64,6 +65,7 @@ export default function AuthenticatedLayout({
           {children}
         </div>
       </main>
+      <XPLossNotification />
     </div>
   );
 }

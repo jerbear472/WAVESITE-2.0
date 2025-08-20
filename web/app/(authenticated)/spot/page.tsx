@@ -32,6 +32,7 @@ import StreakDisplay from '@/components/StreakDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
 import WaveLogo from '@/components/WaveLogo';
+import XPPenaltyIndicator from '@/components/XPPenaltyIndicator';
 import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { submitTrend } from '@/lib/submitTrend';
@@ -415,7 +416,7 @@ export default function SpotPage() {
             <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-700">
-                  Base: <span className="font-semibold">100 XP</span> per trend
+                  Base: <span className="font-semibold">10 XP</span> per trend (reduced)
                 </span>
                 <span className="text-green-700">
                   Awarded after 3 validations ✓
@@ -562,6 +563,11 @@ export default function SpotPage() {
           </div>
         </div>
 
+        {/* XP Risk Indicator */}
+        <div className="mb-4 flex justify-end">
+          <XPPenaltyIndicator />
+        </div>
+
         {/* Stats Grid */}
         <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl shadow-sm p-4">
@@ -652,7 +658,7 @@ export default function SpotPage() {
               </div>
             </div>
             <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-semibold">
-              +50 XP approval bonus
+              +50 XP when validated | -15 XP if rejected
             </span>
           </div>
           
