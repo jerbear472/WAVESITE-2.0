@@ -235,11 +235,23 @@ export default function Dashboard() {
     if (!user?.id) return;
     
     try {
+      // First try to get user profile data if it exists
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileData) {
+        console.log('User profile data:', profileData);
+      }
+
       // Get user's xp from xp_ledger - this is the source of truth
       const { data: xpLedger, error: xpError } = await supabase
         .from('xp_ledger')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (xpError) {
         console.error('Error fetching user xp:', xpError);
@@ -248,6 +260,9 @@ export default function Dashboard() {
       
       // Map to userXP format for compatibility
       const userXP = xpLedger || [];
+      
+      // Debug: Log the raw data to see what fields we have
+      console.log('Raw XP Ledger sample:', userXP.slice(0, 3));
 
       // Get user's trends for accuracy calculation
       const { data: userTrends, error: trendsError } = await supabase
@@ -285,20 +300,29 @@ export default function Dashboard() {
       const pendingXP = userXP.filter(e => e.status === 'pending' || e.status === 'awaiting_validation') || [];
       const paidXP = userXP.filter(e => e.status === 'paid') || [];
       
-      // Use xp_amount field instead of amount
-      const totalAvailable = availableXP.reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
-      const pendingAmount = pendingXP.reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
-      const totalPaid = paidXP.reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
+      // Debug: Check what statuses we have
+      const allStatuses = [...new Set(userXP.map(e => e.status))];
+      console.log('All XP statuses found:', allStatuses);
+      console.log('Available XP entries:', availableXP.length, 'Pending XP entries:', pendingXP.length);
+      
+      // Get the XP amount from the correct field (could be xp_amount, amount, or xp)
+      const getXPAmount = (entry: any) => {
+        return entry?.xp_amount || entry?.amount || entry?.xp || 0;
+      };
+      
+      const totalAvailable = availableXP.reduce((sum, e) => sum + getXPAmount(e), 0);
+      const pendingAmount = pendingXP.reduce((sum, e) => sum + getXPAmount(e), 0);
+      const totalPaid = paidXP.reduce((sum, e) => sum + getXPAmount(e), 0);
 
       // XP today (include both approved AND pending from today)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todaysApproved = availableXP
         .filter(e => new Date(e.created_at) >= today)
-        .reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
+        .reduce((sum, e) => sum + getXPAmount(e), 0);
       const todaysPending = pendingXP
         .filter(e => new Date(e.created_at) >= today)
-        .reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
+        .reduce((sum, e) => sum + getXPAmount(e), 0);
       const xpToday = todaysApproved + todaysPending;
 
       // XP this week  
@@ -307,7 +331,7 @@ export default function Dashboard() {
       weekStart.setHours(0, 0, 0, 0);
       const xpThisWeek = availableXP
         .filter(e => new Date(e.created_at) >= weekStart)
-        .reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
+        .reduce((sum, e) => sum + getXPAmount(e), 0);
 
       // XP this month
       const monthStart = new Date();
@@ -315,7 +339,7 @@ export default function Dashboard() {
       monthStart.setHours(0, 0, 0, 0);
       const xpThisMonth = availableXP
         .filter(e => new Date(e.created_at) >= monthStart)
-        .reduce((sum, e) => sum + (e.xp_amount || e.amount || 0), 0);
+        .reduce((sum, e) => sum + getXPAmount(e), 0);
 
       // Current streak (simplified)
       const last7Days = new Date();
@@ -329,12 +353,18 @@ export default function Dashboard() {
         pendingEntries: pendingXP.length,
         totalAvailable,
         pendingAmount,
-        sample: userXP[0]
+        sample: userXP[0],
+        firstApproved: availableXP[0],
+        firstPending: pendingXP[0]
       });
 
+      // Use profile data if it has XP fields, otherwise use calculated values
+      const finalApprovedXP = profileData?.total_xp || profileData?.available_xp || profileData?.approved_xp || totalAvailable;
+      const finalPendingXP = profileData?.pending_xp || pendingAmount;
+
       setStats({
-        approved_xp: totalAvailable,  // Available XP from xp_ledger
-        pending_xp: pendingAmount,     // Pending XP from xp_ledger
+        approved_xp: finalApprovedXP,  // Use profile XP if available, else xp_ledger
+        pending_xp: finalPendingXP,     // Use profile pending if available
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
         scroll_sessions_count: 0, // Would need scroll_sessions table
