@@ -33,6 +33,18 @@ export default function FloatingSessionTimer() {
   // Always show the timer if we're on a page where sessions matter
   // (Don't hide it completely when session is inactive)
 
+  // Format time helper function
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // Handle hiding/showing
   const handleHide = () => {
     setIsHidden(true);
@@ -69,17 +81,6 @@ export default function FloatingSessionTimer() {
       </motion.button>
     );
   }
-
-  const formatTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   return (
     <AnimatePresence>
