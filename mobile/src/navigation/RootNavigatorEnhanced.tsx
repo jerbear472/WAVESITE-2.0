@@ -4,12 +4,14 @@ import { useAuth } from '../hooks/useAuth';
 import { AuthNavigatorClean } from './AuthNavigatorClean';
 import { AppStackNavigator } from './AppStackNavigator';
 import { OnboardingNavigator } from './OnboardingNavigator';
+import CulturalAnalystOnboarding from '../screens/onboarding/CulturalAnalystOnboarding';
 import { LoadingScreenBeautiful } from '../screens/LoadingScreenBeautiful';
 import { theme } from '../styles/theme';
 import { storage } from '../../App';
 
 export type RootStackParamList = {
   Onboarding: undefined;
+  CulturalAnalystOnboarding: undefined;
   Auth: undefined;
   App: undefined;
 };
@@ -17,7 +19,7 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigatorEnhanced: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, needsCulturalAnalystOnboarding } = useAuth();
   const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -52,6 +54,15 @@ export const RootNavigatorEnhanced: React.FC = () => {
         <Stack.Screen 
           name="Onboarding" 
           component={OnboardingNavigator}
+          options={{
+            animation: 'fade',
+            gestureEnabled: false,
+          }}
+        />
+      ) : user && needsCulturalAnalystOnboarding ? (
+        <Stack.Screen 
+          name="CulturalAnalystOnboarding" 
+          component={CulturalAnalystOnboarding}
           options={{
             animation: 'fade',
             gestureEnabled: false,

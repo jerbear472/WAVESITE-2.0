@@ -14,12 +14,14 @@ interface AuthContextType {
   session: Session | null;
   persona: UserPersona | null;
   loading: boolean;
+  needsCulturalAnalystOnboarding: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string, birthday?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   updatePersona: (updates: Partial<UserPersona>) => Promise<void>;
+  completeCulturalAnalystOnboarding: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [persona, setPersona] = useState<UserPersona | null>(null);
   const [loading, setLoading] = useState(true);
+  const [needsCulturalAnalystOnboarding, setNeedsCulturalAnalystOnboarding] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -86,6 +89,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (personaData) {
         setPersona(personaData);
       }
+
+      // Check if user needs Cultural Analyst onboarding
+      const culturalAnalystOnboardingCompleted = await AsyncStorage.getItem('cultural_analyst_onboarding_completed');
+      setNeedsCulturalAnalystOnboarding(!culturalAnalystOnboardingCompleted);
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
@@ -155,6 +162,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(null);
       setSession(null);
       setPersona(null);
+      setNeedsCulturalAnalystOnboarding(false);
       personaService.clearLocalPersona();
       await AsyncStorage.clear();
     } catch (error: any) {
@@ -210,18 +218,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const completeCulturalAnalystOnboarding = () => {
+    setNeedsCulturalAnalystOnboarding(false);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       session, 
       persona,
       loading, 
+      needsCulturalAnalystOnboarding,
       signIn, 
       signUp, 
       signOut, 
       refreshUser, 
       updateProfile,
-      updatePersona 
+      updatePersona,
+      completeCulturalAnalystOnboarding
     }}>
       {children}
     </AuthContext.Provider>

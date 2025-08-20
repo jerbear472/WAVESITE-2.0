@@ -111,6 +111,7 @@ export default function Navigation() {
 
   const userNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/bounties', label: 'Bounties', icon: '🎯' },
     { href: '/creator-training', label: 'Training', icon: '🚀' },
     { href: '/scroll', label: 'Scroll & Earn', icon: '📱' },
     { href: '/timeline', label: 'My Timeline', icon: '📈' },
@@ -123,6 +124,7 @@ export default function Navigation() {
   const professionalNavItems = [
     { href: '/professional/dashboard', label: 'Analytics', icon: '📊' },
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/bounties', label: 'Bounties', icon: '🎯' },
     { href: '/timeline', label: 'Timeline', icon: '📈' },
     { href: '/validate', label: 'Validate', icon: '✅' },
     { href: '/earnings', label: 'Earnings', icon: '💰' },
@@ -133,6 +135,7 @@ export default function Navigation() {
   const businessNavItems = [
     { href: '/business/dashboard', label: 'Analytics', icon: '📊' },
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/bounties', label: 'Bounties', icon: '🎯' },
     { href: '/timeline', label: 'Timeline', icon: '📈' },
     { href: '/validate', label: 'Validate', icon: '✅' },
     { href: '/earnings', label: 'Earnings', icon: '💰' },

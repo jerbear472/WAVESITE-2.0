@@ -877,9 +877,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-6 py-10 max-w-6xl">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {(() => {
@@ -905,7 +905,7 @@ export default function Dashboard() {
               Last updated: {formatTimeAgo(lastRefresh.toISOString())}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             {newNotifications > 0 && (
               <div className="relative">
                 <Bell className="w-6 h-6 text-gray-600 dark:text-gray-400" />
@@ -925,13 +925,13 @@ export default function Dashboard() {
             {user?.email === 'jeremyuys@gmail.com' && (
               <Link 
                 href="/enterprise/live" 
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl whitespace-nowrap"
               >
                 <Sparkles className="w-4 h-4" />
                 Enterprise Live
               </Link>
             )}
-            <Link href="/scroll" className="btn-primary">
+            <Link href="/scroll" className="btn-primary whitespace-nowrap">
               Submit New Trend
             </Link>
           </div>
@@ -939,11 +939,11 @@ export default function Dashboard() {
 
 
         {/* Enhanced Stats Grid with Notifications */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
+            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
           >
             {/* Animated background gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 animate-pulse" />
@@ -988,7 +988,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
+            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-xl">
@@ -1011,7 +1011,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
+            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-xl">
@@ -1037,7 +1037,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all"
+            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm hover:shadow-md transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-xl">
@@ -1058,11 +1058,11 @@ export default function Dashboard() {
         </div>
 
         {/* Main Content Grid with Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Recent Trends - Enhanced */}
           <div className="lg:col-span-2 order-2 lg:order-1">
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-4 sm:p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 sm:p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-6 sm:mb-8">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Recent Platform Trends</h2>
                 <select 
                   value={timeframe} 
@@ -1076,7 +1076,7 @@ export default function Dashboard() {
                 </select>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {recentTrends.length > 0 ? (
                   recentTrends.map((trend) => {
                     const categoryDetails = getCategoryDetails(trend.category);
@@ -1117,7 +1117,7 @@ export default function Dashboard() {
                             }
                           }
                         }}
-                        className="p-3 sm:p-4 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-all cursor-pointer group relative"
+                        className="p-4 sm:p-6 bg-gray-50 dark:bg-neutral-800 rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-700 transition-all cursor-pointer group relative"
                       >
                         {/* External link indicator */}
                         {(trend.url || trend.post_url || trend.evidence?.url) && (
@@ -1127,10 +1127,10 @@ export default function Dashboard() {
                             </svg>
                           </div>
                         )}
-                        <div className="flex flex-col sm:flex-row items-start gap-4">
+                        <div className="flex flex-col sm:flex-row items-start gap-6">
                           {/* Thumbnail */}
                           {(trend.thumbnail_url || trend.screenshot_url) && (
-                            <div className="w-full sm:w-20 h-32 sm:h-20 rounded-lg overflow-hidden flex-shrink-0">
+                            <div className="w-full sm:w-24 h-36 sm:h-24 rounded-lg overflow-hidden flex-shrink-0">
                               <img 
                                 src={trend.thumbnail_url || trend.screenshot_url} 
                                 alt="Trend"
@@ -1373,42 +1373,49 @@ export default function Dashboard() {
           {/* Sidebar with Streak, Notifications, and Tier */}
           <div className="space-y-6 order-1 lg:order-2">
             {/* Streak Display */}
-            <StreakDisplay />
+            <div>
+              <StreakDisplay />
+            </div>
             
             {/* Notifications */}
-            <NotificationsWindow />
+            <div>
+              <NotificationsWindow />
+            </div>
             
-            {/* Creator Mindset Reminder */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-lg p-4 hover:shadow-xl transition-shadow"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
-                  <span className="text-2xl">💡</span>
+            {/* Cultural Analyst Training Reminder */}
+            <Link href="/cultural-analyst-training" className="block">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl shadow-sm p-6 hover:shadow-xl transition-shadow cursor-pointer hover:scale-[1.02]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
+                    <span className="text-2xl">🎓</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white font-semibold text-sm">
+                      Cultural Analyst Training
+                    </p>
+                    <p className="text-white/80 text-xs mt-1">
+                      Learn to earn up to $4.69 per trend
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/80" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-white font-semibold text-sm">
-                    How to spot valuable trends
-                  </p>
-                  <p className="text-white/80 text-xs mt-1">
-                    Focus on trends creators can use
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </Link>
             
             {/* Performance Tier */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-sm text-white cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+              className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-sm text-white cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
               onClick={() => setShowTierModal(true)}
             >
-              <div className="p-4 border-b border-white/20">
+              <div className="p-6 border-b border-white/20">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white/20 backdrop-blur rounded-lg">
@@ -1422,7 +1429,7 @@ export default function Dashboard() {
                   <Info className="w-4 h-4 text-white/60" />
                 </div>
               </div>
-              <div className="p-4">
+              <div className="p-6">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-3xl font-bold text-white capitalize">
                     {user?.performance_tier || 'Learning'}
@@ -1448,16 +1455,16 @@ export default function Dashboard() {
             </motion.div>
 
             {/* Activity Feed - Enhanced */}
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Recent Activity</h2>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
                 {activityFeed.length > 0 ? (
                   activityFeed.map((activity) => (
                     <motion.div 
                       key={activity.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className={`flex items-start gap-3 p-3 rounded-lg ${
+                      className={`flex items-start gap-4 p-4 rounded-lg ${
                         activity.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/10' : 'bg-gray-50 dark:bg-neutral-800'
                       }`}
                     >
@@ -1488,9 +1495,9 @@ export default function Dashboard() {
             </div>
 
             {/* Daily Streak Information */}
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Daily Streak Stats</h2>
-              <div className="space-y-4">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Daily Streak Stats</h2>
+              <div className="space-y-6">
                 <div className="text-center">
                   <div className="text-4xl mb-2">🔥</div>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -1499,20 +1506,20 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Current Streak</p>
                 </div>
                 
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-2">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-3">
                     <span className="text-gray-600 dark:text-gray-400">Accuracy Rate</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {!isNaN(stats.accuracy_score) && stats.accuracy_score >= 0 ? `${Math.round(stats.accuracy_score)}%` : 'N/A'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-2">
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-3">
                     <span className="text-gray-600 dark:text-gray-400">Trends Verified</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {stats.trends_verified}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-2">
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-neutral-800 rounded-lg p-3">
                     <span className="text-gray-600 dark:text-gray-400">Success Rate</span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {stats.trends_spotted > 0 && !isNaN(stats.trends_verified) && !isNaN(stats.trends_spotted) ? `${Math.round((stats.trends_verified / stats.trends_spotted) * 100)}%` : 'N/A'}
@@ -1541,9 +1548,9 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Earnings */}
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Earnings</h2>
-              <div className="space-y-3">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Recent Earnings</h2>
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600 dark:text-gray-400">Today</span>
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -1563,8 +1570,8 @@ export default function Dashboard() {
                   </span>
                 </div>
                 
-                <div className="pt-3 mt-3 border-t border-gray-200 dark:border-neutral-700">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="pt-4 mt-4 border-t border-gray-200 dark:border-neutral-700">
+                  <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Available</span>
                     <span className="text-lg font-bold text-green-600 dark:text-green-400">
                       {formatCurrency(stats.approved_earnings)}

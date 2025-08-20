@@ -172,10 +172,10 @@ export default function NotificationsWindow() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-sm border border-gray-200 dark:border-neutral-700">
       {/* Header */}
       <div 
-        className="p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+        className="p-6 border-b border-gray-200 dark:border-neutral-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
@@ -209,9 +209,9 @@ export default function NotificationsWindow() {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="max-h-64 overflow-y-auto">
+            <div className="max-h-80 overflow-y-auto">
               {loading ? (
-                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                <div className="p-6 text-center text-gray-500 dark:text-gray-400">
                   <Clock className="w-5 h-5 animate-spin mx-auto mb-2" />
                   Loading notifications...
                 </div>
@@ -222,17 +222,17 @@ export default function NotificationsWindow() {
                   <p className="text-xs mt-1">We'll notify you when something happens!</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                <div className="divide-y divide-gray-100 dark:divide-neutral-700">
                   {notifications.map((notification) => (
                     <motion.div
                       key={notification.id}
                       initial={{ x: -20, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
-                      className={`p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors ${
+                      className={`p-4 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors ${
                         !notification.read ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
                       }`}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-4">
                         <div className={`p-1.5 rounded-lg bg-gradient-to-r ${notification.color || 'from-gray-500 to-gray-600'} text-white`}>
                           {getNotificationIcon(notification.type)}
                         </div>
@@ -257,7 +257,7 @@ export default function NotificationsWindow() {
             </div>
             
             {notifications.length > 0 && (
-              <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="p-4 border-t border-gray-200 dark:border-neutral-700">
                 <Link
                   href="/earnings"
                   className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"

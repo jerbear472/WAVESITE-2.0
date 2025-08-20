@@ -41,6 +41,7 @@ import {
   type Tier
 } from '@/lib/SUSTAINABLE_EARNINGS';
 import EarningsNotificationComponent, { useEarningsNotification } from '@/components/EarningsNotification';
+import { BountyTrendCard } from '@/components/BountyTrendCard';
 
 interface TrendToValidate {
   id: string;
@@ -78,6 +79,19 @@ interface TrendToValidate {
   ai_angle?: string;
   audience_age?: string[];
   is_ai_generated?: boolean;
+  // Bounty fields
+  is_bounty_submission?: boolean;
+  bounty_id?: string;
+  bounty_approve_count?: number;
+  bounty_reject_count?: number;
+  bounty_info?: {
+    id: string;
+    title: string;
+    enterprise_name?: string;
+    price_per_spot: number;
+    urgency_level: 'lightning' | 'rapid' | 'standard';
+    expires_at: string;
+  };
 }
 
 interface QualityCriteria {
@@ -214,11 +228,21 @@ export default function ValidatePageFixed() {
       console.log('Already validated trend IDs:', validatedIds.length);
       console.log('Validated IDs:', validatedIds);
       
-      // Get all trends that aren't from this user
+      // Get all trends that aren't from this user, including bounty information
       // Select all columns we need, being explicit to avoid ambiguity
       const { data: trendsData, error } = await supabase
         .from('trend_submissions')
-        .select('*')
+        .select(`
+          *,
+          bounties!trend_submissions_bounty_id_fkey(
+            id,
+            title,
+            price_per_spot,
+            urgency_level,
+            expires_at,
+            enterprise_id
+          )
+        `)
         .neq('spotter_id', user.id) // Exclude user's own trends
         .in('status', ['submitted', 'validating'])
         .order('created_at', { ascending: false }) // NEWEST FIRST
@@ -258,8 +282,24 @@ export default function ValidatePageFixed() {
       // Process trends and calculate time since submission
       const processedTrends = filteredTrends.map(trend => {
         const hoursAgo = Math.round((Date.now() - new Date(trend.created_at).getTime()) / (1000 * 60 * 60));
+        
+        // Check if this is a bounty submission
+        const bountyInfo = trend.bounties ? {
+          id: trend.bounties.id,
+          title: trend.bounties.title,
+          price_per_spot: trend.bounties.price_per_spot,
+          urgency_level: trend.bounties.urgency_level,
+          expires_at: trend.bounties.expires_at,
+          enterprise_name: trend.bounties.enterprise_name
+        } : undefined;
+        
         return {
           ...trend,
+          // Bounty information
+          is_bounty_submission: !!trend.bounty_id,
+          bounty_info: bountyInfo,
+          bounty_approve_count: trend.bounty_approve_count || 0,
+          bounty_reject_count: trend.bounty_reject_count || 0,
           // Ensure numeric fields are properly handled
           likes_count: trend.likes_count,
           comments_count: trend.comments_count,
@@ -383,8 +423,9 @@ export default function ValidatePageFixed() {
         return;
       }
 
-      // Get validation reward - ALWAYS exactly 2 cents, no multipliers
-      const rewardAmount = 0.02; // Fixed amount, no tier multiplier
+      // Get validation reward - 2 cents base, 3x for bounty submissions
+      const isBountySubmission = trends[currentIndex].is_bounty_submission || false;
+      const rewardAmount = isBountySubmission ? 0.06 : 0.02; // 3x reward for bounty validations
       
       // Insert the validation - use only the columns that exist in the database
       const validationPayload = {
@@ -465,10 +506,13 @@ export default function ValidatePageFixed() {
         console.log('Earnings entry created for validation:', rewardAmount);
         
         // Show subtle earnings notification
+        const notificationMessage = isBountySubmission 
+          ? `+$${rewardAmount.toFixed(2)} (3x Bounty Bonus!)` 
+          : `+$${rewardAmount.toFixed(2)}`;
         showEarnings(
           rewardAmount,
           'validation',
-          `+$${rewardAmount.toFixed(2)}`,
+          notificationMessage,
           [] // No breakdown needed for subtle notification
         );
         
@@ -760,6 +804,20 @@ export default function ValidatePageFixed() {
             {/* Details Section - Narrower but taller */}
             <div className="lg:col-span-2 flex flex-col h-full bg-gradient-to-b from-white to-gray-50/50">
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {/* Bounty Card - Show if this is a bounty submission */}
+                  {currentTrend.is_bounty_submission && currentTrend.bounty_info && (
+                    <BountyTrendCard 
+                      bountyInfo={{
+                        ...currentTrend.bounty_info,
+                        current_votes: {
+                          approve: currentTrend.bounty_approve_count || 0,
+                          reject: currentTrend.bounty_reject_count || 0
+                        }
+                      }}
+                      isValidating={true}
+                    />
+                  )}
+                  
                   {/* Submission Time Badge */}
                   <div className="mb-2 inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
                     <Clock className="w-3 h-3" />

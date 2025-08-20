@@ -108,7 +108,7 @@ export default function StreakDisplay() {
     <div className="relative">
       {/* Compact Streak Display */}
       <motion.div
-        className="flex items-center gap-3 bg-gray-900/80 backdrop-blur-sm rounded-xl p-3 border border-gray-800 cursor-pointer"
+        className="flex items-center gap-4 bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-neutral-700 cursor-pointer"
         onClick={() => setShowDetails(!showDetails)}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
@@ -126,8 +126,8 @@ export default function StreakDisplay() {
             )}
           </div>
           <div>
-            <p className="text-xs text-gray-400">Session</p>
-            <p className="text-sm font-bold text-white">
+            <p className="text-xs text-gray-600 dark:text-gray-400">Session</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white">
               {session.currentStreak} 
               {session.currentStreak > 0 && (
                 <span className="text-yellow-400 ml-1">({getSessionMultiplier()}x)</span>
@@ -137,7 +137,7 @@ export default function StreakDisplay() {
         </div>
 
         {/* Divider */}
-        <div className="w-px h-8 bg-gray-700" />
+        <div className="w-px h-10 bg-gray-200 dark:bg-neutral-700" />
 
         {/* Daily Streak */}
         <div className="flex items-center gap-2">
@@ -152,8 +152,8 @@ export default function StreakDisplay() {
             )}
           </div>
           <div>
-            <p className="text-xs text-gray-400">Daily</p>
-            <p className="text-sm font-bold text-white">
+            <p className="text-xs text-gray-600 dark:text-gray-400">Daily</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white">
               {dailyStreak.current} days
               {dailyStreak.current > 0 && (
                 <span className="text-orange-400 ml-1">({getDailyMultiplier()}x)</span>
@@ -163,10 +163,10 @@ export default function StreakDisplay() {
         </div>
 
         {/* Total Multiplier */}
-        <div className="ml-auto flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg border border-blue-500/30">
+        <div className="ml-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-xl border border-blue-500/20">
           <Award className="w-4 h-4 text-blue-400" />
           <div>
-            <p className="text-xs text-gray-400">Total</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
             <p className="text-sm font-bold text-blue-400">{getTotalMultiplier()}x</p>
           </div>
         </div>
@@ -187,9 +187,9 @@ export default function StreakDisplay() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full mt-2 left-0 right-0 z-50 bg-gray-900 rounded-xl border border-gray-800 shadow-2xl p-4"
+            className="absolute top-full mt-3 left-0 right-0 z-50 bg-white dark:bg-neutral-900 rounded-2xl border border-gray-200 dark:border-neutral-700 shadow-2xl p-6"
           >
-            <h3 className="text-lg font-bold text-white mb-3">Streak Rewards</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Streak Rewards</h3>
             
             {/* Session Streak Details */}
             <div className="mb-4">
@@ -197,7 +197,7 @@ export default function StreakDisplay() {
                 <Zap className="w-4 h-4 text-yellow-400" />
                 <p className="text-sm font-semibold text-yellow-400">Session Streak</p>
               </div>
-              <p className="text-xs text-gray-400 mb-2">Submit trends within 5 minutes to build momentum</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Submit trends within 5 minutes to build momentum</p>
               <div className="space-y-1">
                 <div className={`flex justify-between text-xs ${session.currentStreak >= 2 ? 'text-green-400' : 'text-gray-500'}`}>
                   <span>2nd trend</span>
@@ -224,7 +224,7 @@ export default function StreakDisplay() {
                 <Flame className="w-4 h-4 text-orange-400" />
                 <p className="text-sm font-semibold text-orange-400">Daily Streak</p>
               </div>
-              <p className="text-xs text-gray-400 mb-2">Submit at least 1 trend daily</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Submit at least 1 trend daily</p>
               <div className="space-y-1">
                 <div className={`flex justify-between text-xs ${dailyStreak.current >= 2 ? 'text-green-400' : 'text-gray-500'}`}>
                   <span>2-6 days</span>
@@ -246,10 +246,10 @@ export default function StreakDisplay() {
             </div>
 
             {/* Earnings Impact */}
-            <div className="p-3 bg-gradient-to-r from-green-600/10 to-blue-600/10 rounded-lg border border-green-500/20">
-              <p className="text-xs text-gray-400 mb-1">Your earnings with streaks:</p>
+            <div className="p-4 bg-gradient-to-r from-green-600/10 to-blue-600/10 rounded-xl border border-green-500/20">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Your earnings with streaks:</p>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-white">$0.25 base</span>
+                <span className="text-sm text-gray-900 dark:text-white">$0.25 base</span>
                 <span className="text-gray-500">×</span>
                 <span className="text-sm font-bold text-blue-400">{getTotalMultiplier()}x</span>
                 <span className="text-gray-500">=</span>

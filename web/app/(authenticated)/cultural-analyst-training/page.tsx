@@ -150,7 +150,7 @@ export default function CulturalAnalystTraining() {
             </motion.div>
             
             <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-4">
-              WaveSight Cultural Analyst Training
+              Become a Cultural Analyst
             </h1>
             
             <p className="text-xl text-blue-200 text-center mb-8">
@@ -164,22 +164,41 @@ export default function CulturalAnalystTraining() {
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => setCurrentModule(1)}
-                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center gap-2"
-              >
-                <BookOpen className="w-5 h-5" />
-                Start Training
-              </button>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() => setCurrentModule(1)}
+                  className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center gap-2"
+                >
+                  <BookOpen className="w-5 h-5" />
+                  Start Training
+                </button>
+                
+                <button
+                  onClick={handleSkipToQuiz}
+                  className="flex-1 bg-white/10 backdrop-blur text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <ArrowRight className="w-5 h-5" />
+                  Skip to Quiz
+                </button>
+              </div>
               
-              <button
-                onClick={handleSkipToQuiz}
-                className="flex-1 bg-white/10 backdrop-blur text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-white/20 transition-all flex items-center justify-center gap-2"
-              >
-                <ArrowRight className="w-5 h-5" />
-                Skip to Quiz
-              </button>
+              {/* Link to Quality Control Guide */}
+              <div className="mt-2 p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">WaveSight Quality Control</h3>
+                    <p className="text-blue-200 text-sm">Professional standards and earning requirements</p>
+                  </div>
+                  <button
+                    onClick={() => router.push('/quality-standards')}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-2 px-4 rounded-lg font-semibold text-sm hover:shadow-lg transform hover:scale-105 transition-all flex items-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    View Standards
+                  </button>
+                </div>
+              </div>
             </div>
             
             {hasPassedTraining && (
