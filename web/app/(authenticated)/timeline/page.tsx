@@ -46,8 +46,8 @@ interface Trend {
   status: 'pending' | 'approved' | 'rejected' | 'viral';
   quality_score: number;
   validation_count: number;
-  bounty_amount: number;
-  bounty_paid: boolean;
+  xp_amount: number;
+  xp_awarded: boolean;
   created_at: string;
   validated_at?: string;
   mainstream_at?: string;
@@ -94,7 +94,7 @@ export default function Timeline() {
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showSubmitForm, setShowSubmitForm] = useState(false);
-  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [totalXP, setTotalXP] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -192,16 +192,15 @@ export default function Timeline() {
       }
       setTrends(data || []);
 
-      // Fetch total earnings from earnings_ledger
-      const { data: earningsData, error: earningsError } = await supabase
-        .from('earnings_ledger')
-        .select('amount')
-        .eq('user_id', userId)
-        .eq('status', 'approved');
+      // Fetch total XP from xp_events
+      const { data: xpData, error: xpError } = await supabase
+        .from('xp_events')
+        .select('xp_change')
+        .eq('user_id', userId);
 
-      if (!earningsError && earningsData) {
-        const total = earningsData.reduce((sum, earning) => sum + (earning.amount || 0), 0);
-        setTotalEarnings(total);
+      if (!xpError && xpData) {
+        const total = xpData.reduce((sum, xp) => sum + (xp.xp_change || 0), 0);
+        setTotalXP(Math.max(0, total)); // Never show negative XP
       }
     } catch (error: any) {
       showError('An unexpected error occurred', 'Please refresh the page');
@@ -473,7 +472,7 @@ export default function Timeline() {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent">
                   Trend Timeline
                 </h1>
-                <p className="text-gray-400 mt-1">Track your spotted trends and XP</p>
+                <p className="text-gray-400 mt-1">Track your spotted trends and cultural anthropologist progress</p>
               </div>
               
               <div className="flex items-center gap-3">
@@ -522,10 +521,10 @@ export default function Timeline() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-gray-400 text-sm">Total XP</span>
-                  <DollarSignIcon className="w-4 h-4 text-green-400" />
+                  <ZapIcon className="w-4 h-4 text-yellow-400" />
                 </div>
                 <p className="text-2xl font-bold text-white">
-                  {totalEarnings} XP
+                  {totalXP.toLocaleString()} XP
                 </p>
               </motion.div>
 
@@ -917,14 +916,14 @@ export default function Timeline() {
                                 )}
                               </div>
                               
-                              {trend.bounty_amount > 0 && (
+                              {trend.xp_amount > 0 && (
                                 <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                  trend.bounty_paid 
+                                  trend.xp_awarded 
                                     ? 'bg-green-500/20 text-green-400' 
                                     : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
-                                  <DollarSignIcon className="w-3 h-3" />
-                                  <span>{trend.bounty_amount || 0} XP</span>
+                                  <ZapIcon className="w-3 h-3" />
+                                  <span>{trend.xp_amount || 0} XP</span>
                                 </div>
                               )}
                             </div>
@@ -1100,14 +1099,14 @@ export default function Timeline() {
                                    '⏳ Pending'}
                                 </div>
                               )}
-                              {trend.bounty_amount > 0 && (
+                              {trend.xp_amount > 0 && (
                                 <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium ${
-                                  trend.bounty_paid 
+                                  trend.xp_awarded 
                                     ? 'bg-green-500/20 text-green-400' 
                                     : 'bg-yellow-500/20 text-yellow-400'
                                 }`}>
-                                  <DollarSignIcon className="w-4 h-4" />
-                                  <span>{trend.bounty_amount || 0} XP</span>
+                                  <ZapIcon className="w-4 h-4" />
+                                  <span>{trend.xp_amount || 0} XP</span>
                                 </div>
                               )}
                             </div>
@@ -1342,13 +1341,13 @@ export default function Timeline() {
                                                       {formatEngagement((trend.views_count || 0) + (trend.likes_count || 0) * 10)} reach
                                                     </span>
                                                   </div>
-                                                  {trend.bounty_amount > 0 && (
+                                                  {trend.xp_amount > 0 && (
                                                     <div className={`px-2 py-0.5 rounded-full ${
-                                                      trend.bounty_paid 
+                                                      trend.xp_awarded 
                                                         ? 'bg-green-500/20 text-green-400' 
                                                         : 'bg-yellow-500/20 text-yellow-400'
                                                     }`}>
-                                                      {trend.bounty_amount} XP
+                                                      {trend.xp_amount} XP
                                                     </div>
                                                   )}
                                                 </div>

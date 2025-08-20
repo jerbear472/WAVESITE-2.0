@@ -71,8 +71,9 @@ export default function SpotPage() {
   const [submitMessage, setSubmitMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
   // Stats
-  const [todaysEarnings, setTodaysEarnings] = useState(0);
-  const [todaysPendingEarnings, setTodaysPendingEarnings] = useState(0);
+  const [todaysXP, setTodaysXP] = useState(0);
+  const [pendingValidations, setPendingValidations] = useState(0);
+  const [validatedToday, setValidatedToday] = useState(0);
   const [trendsLoggedToday, setTrendsLoggedToday] = useState(0);
   const [recentTickers, setRecentTickers] = useState<string[]>([]);
 
@@ -118,36 +119,34 @@ export default function SpotPage() {
     today.setHours(0, 0, 0, 0);
     
     try {
-      // Get pending XP from xp_ledger
-      const { data: pendingTransactions } = await supabase
-        .from('xp_ledger')
-        .select('xp_amount, created_at')
+      // Get today's XP events
+      const { data: xpEvents } = await supabase
+        .from('xp_events')
+        .select('xp_change, event_type')
         .eq('user_id', user.id)
-        .eq('status', 'pending');
-      
-      // Calculate today's pending XP
-      const todaysPending = pendingTransactions
-        ?.filter(t => new Date(t.created_at) >= today)
-        .reduce((sum, t) => sum + (t.xp_amount || 0), 0) || 0;
-      
-      // Calculate all pending XP
-      const allPending = pendingTransactions
-        ?.reduce((sum, t) => sum + (t.xp_amount || 0), 0) || 0;
-      
-      setTodaysPendingEarnings(allPending);
-      
-      // Get today's approved XP
-      const { data: approvedToday } = await supabase
-        .from('xp_ledger')
-        .select('xp_amount')
-        .eq('user_id', user.id)
-        .eq('status', 'approved')
         .gte('created_at', today.toISOString());
       
-      const todaysApproved = approvedToday
-        ?.reduce((sum, t) => sum + (t.xp_amount || 0), 0) || 0;
+      const todaysTotal = xpEvents?.reduce((sum, e) => sum + e.xp_change, 0) || 0;
+      setTodaysXP(todaysTotal);
       
-      setTodaysEarnings(todaysApproved);
+      // Get pending validations count
+      const { data: pending } = await supabase
+        .from('trend_submissions')
+        .select('id')
+        .eq('spotter_id', user.id)
+        .eq('validation_state', 'pending_validation');
+      
+      setPendingValidations(pending?.length || 0);
+      
+      // Get validated today count
+      const { data: validated } = await supabase
+        .from('trend_submissions')
+        .select('id')
+        .eq('spotter_id', user.id)
+        .eq('validation_state', 'validated')
+        .gte('validated_at', today.toISOString());
+      
+      setValidatedToday(validated?.length || 0);
       
       const { count } = await supabase
         .from('trend_submissions')
@@ -412,15 +411,21 @@ export default function SpotPage() {
               </div>
             </div>
             
-            {/* XP Info */}
-            <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">
-                  Base: <span className="font-semibold">10 XP</span> per trend (reduced)
-                </span>
-                <span className="text-green-700">
-                  Awarded after 3 validations ✓
-                </span>
+            {/* XP Flow Info */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+              <div className="text-sm space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">📤 Submit trend</span>
+                  <span className="font-semibold text-purple-700">+10 XP instantly</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">✅ Community validates</span>
+                  <span className="font-semibold text-green-700">+50 XP bonus</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">❌ Community rejects</span>
+                  <span className="font-semibold text-red-600">-15 XP penalty</span>
+                </div>
               </div>
             </div>
 
@@ -573,19 +578,19 @@ export default function SpotPage() {
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
               <Trophy className="w-5 h-5 text-yellow-600" />
-              <span className="text-xs text-gray-500">Today</span>
+              <span className="text-xs text-gray-500">Today's XP</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{Math.round(todaysEarnings || 0)} XP</p>
-            <p className="text-xs text-gray-500">Confirmed</p>
+            <p className="text-2xl font-bold text-gray-900">{Math.round(todaysXP || 0)}</p>
+            <p className="text-xs text-gray-500">Earned</p>
           </div>
           
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <Clock className="w-5 h-5 text-yellow-600" />
-              <span className="text-xs text-gray-500">Pending</span>
+              <Clock className="w-5 h-5 text-orange-600" />
+              <span className="text-xs text-gray-500">Awaiting</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{Math.round(todaysPendingEarnings || 0)} XP</p>
-            <p className="text-xs text-gray-500">Verification</p>
+            <p className="text-2xl font-bold text-gray-900">{pendingValidations}</p>
+            <p className="text-xs text-gray-500">Validation</p>
           </div>
           
           <div className="bg-white rounded-xl shadow-sm p-4">
@@ -645,20 +650,20 @@ export default function SpotPage() {
           </div>
         </div>
 
-        {/* Finance Bonus Section */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-200">
+        {/* Pro Tips Section */}
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <Coins className="w-5 h-5 text-white" />
+              <div className="p-2 bg-purple-500 rounded-lg">
+                <Award className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Finance Trends = Extra XP</h3>
-                <p className="text-sm text-gray-600">Track meme stocks & crypto for bonus XP</p>
+                <h3 className="font-semibold text-gray-900">Quality = More XP</h3>
+                <p className="text-sm text-gray-600">Well-documented trends get validated faster</p>
               </div>
             </div>
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-semibold">
-              +50 XP when validated | -15 XP if rejected
+            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold">
+              Focus on viral potential
             </span>
           </div>
           

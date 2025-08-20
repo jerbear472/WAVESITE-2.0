@@ -45,7 +45,7 @@ interface XPEvent {
   created_at: string;
 }
 
-export default function Dashboard() {
+export default function DashboardXP() {
   const { user } = useAuth();
   const [stats, setStats] = useState<XPStats>({
     total_xp: 0,
