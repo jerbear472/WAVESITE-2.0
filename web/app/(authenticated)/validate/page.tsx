@@ -102,11 +102,18 @@ interface QualityCriteria {
 
 export default function ValidatePageFixed() {
   const { user, refreshUser } = useAuth();
-  const { notification, showXP, dismissNotification } = useXPNotification();
+  const [notification, setNotification] = useState<{ show: boolean; xp: number } | null>(null);
   const [trends, setTrends] = useState<TrendToValidate[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(false);
+  
+  const showXP = (xp: number) => {
+    setNotification({ show: true, xp });
+    setTimeout(() => setNotification(null), 3000);
+  };
+  
+  const dismissNotification = () => setNotification(null);
   const [stats, setStats] = useState({
     validated_today: 0,
     xp_today: 0,

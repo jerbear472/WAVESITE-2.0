@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Clock, TrendingUp, Link, CheckCircle, XCircle, AlertCircle, Trophy, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ProofSubmissionModal from '@/components/ProofSubmissionModal';
 
 interface SpikePrediction {
   id: string;
@@ -39,6 +40,10 @@ export default function PredictionsPage() {
   const [predictions, setPredictions] = useState<SpikePrediction[]>([]);
   const [myStats, setMyStats] = useState<PredictorStats | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Proof submission modal
+  const [proofModalOpen, setProofModalOpen] = useState(false);
+  const [selectedPrediction, setSelectedPrediction] = useState<SpikePrediction | null>(null);
   
   // New prediction form
   const [trendTitle, setTrendTitle] = useState('');
@@ -397,7 +402,13 @@ export default function PredictionsPage() {
                         </p>
                         
                         {prediction.seconds_remaining <= 0 && prediction.predictor_id === user?.id && (
-                          <button className="mt-2 px-3 py-1 bg-yellow-500 text-black rounded-md text-sm font-medium hover:bg-yellow-400">
+                          <button 
+                            onClick={() => {
+                              setSelectedPrediction(prediction);
+                              setProofModalOpen(true);
+                            }}
+                            className="mt-2 px-3 py-1 bg-yellow-500 text-black rounded-md text-sm font-medium hover:bg-yellow-400"
+                          >
                             Submit Proof
                           </button>
                         )}
@@ -461,6 +472,24 @@ export default function PredictionsPage() {
             </ul>
           </div>
         </div>
+
+        {/* Proof Submission Modal */}
+        {selectedPrediction && (
+          <ProofSubmissionModal
+            isOpen={proofModalOpen}
+            onClose={() => {
+              setProofModalOpen(false);
+              setSelectedPrediction(null);
+            }}
+            predictionId={selectedPrediction.id}
+            trendTitle={selectedPrediction.trend_title}
+            originalLink={selectedPrediction.original_link}
+            onSuccess={() => {
+              fetchPredictions();
+              fetchMyStats();
+            }}
+          />
+        )}
       </div>
     </div>
   );
