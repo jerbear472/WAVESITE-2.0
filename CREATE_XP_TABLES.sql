@@ -46,6 +46,10 @@ CREATE POLICY "System can update xp_ledger" ON xp_ledger
 GRANT ALL ON xp_ledger TO authenticated;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
+-- Drop existing award_xp functions to avoid conflicts
+DROP FUNCTION IF EXISTS award_xp(UUID, INTEGER, TEXT);
+DROP FUNCTION IF EXISTS award_xp(UUID, INTEGER, TEXT, TEXT);
+
 -- Create a function to safely award XP
 CREATE OR REPLACE FUNCTION award_xp(
   p_user_id UUID,
@@ -65,79 +69,85 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Grant execute permission on the function
-GRANT EXECUTE ON FUNCTION award_xp TO authenticated;
+GRANT EXECUTE ON FUNCTION award_xp(UUID, INTEGER, TEXT, TEXT) TO authenticated;
 
 -- Migrate data from earnings_ledger if it exists
 DO $$
+DECLARE
+  v_column_list TEXT;
+  v_query TEXT;
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'earnings_ledger') THEN
-    -- Copy earnings data to xp_ledger
-    INSERT INTO xp_ledger (user_id, amount, xp_amount, reason, status, trend_submission_id, created_at)
-    SELECT 
-      user_id,
-      COALESCE(amount, 0),
-      COALESCE(amount, 0), -- XP amount same as earnings amount
-      COALESCE(reason, 'Migrated from earnings'),
-      COALESCE(status, 'pending'),
-      trend_submission_id,
-      created_at
-    FROM earnings_ledger
-    WHERE NOT EXISTS (
-      SELECT 1 FROM xp_ledger xl 
-      WHERE xl.user_id = earnings_ledger.user_id 
-      AND xl.created_at = earnings_ledger.created_at
-    );
+    -- Get list of common columns between earnings_ledger and xp_ledger
+    SELECT string_agg(column_name, ', ')
+    INTO v_column_list
+    FROM (
+      SELECT c1.column_name
+      FROM information_schema.columns c1
+      JOIN information_schema.columns c2 
+        ON c1.column_name = c2.column_name
+      WHERE c1.table_name = 'earnings_ledger'
+        AND c2.table_name = 'xp_ledger'
+        AND c1.column_name IN ('user_id', 'amount', 'created_at', 'status')
+    ) AS common_cols;
     
-    RAISE NOTICE 'Migrated earnings_ledger data to xp_ledger';
+    -- Only migrate if we have at least user_id and amount
+    IF v_column_list LIKE '%user_id%' AND v_column_list LIKE '%amount%' THEN
+      -- Simple migration with available columns
+      v_query := format(
+        'INSERT INTO xp_ledger (user_id, amount, xp_amount, reason, status, created_at)
+         SELECT 
+           user_id,
+           COALESCE(amount, 0),
+           COALESCE(amount, 0),
+           ''Migrated from earnings'',
+           CASE 
+             WHEN %s THEN COALESCE(status, ''approved'')
+             ELSE ''approved''
+           END,
+           CASE 
+             WHEN %s THEN created_at
+             ELSE NOW()
+           END
+         FROM earnings_ledger
+         WHERE NOT EXISTS (
+           SELECT 1 FROM xp_ledger xl 
+           WHERE xl.user_id = earnings_ledger.user_id 
+           AND ABS(EXTRACT(EPOCH FROM (xl.created_at - earnings_ledger.created_at))) < 1
+         )',
+         CASE WHEN v_column_list LIKE '%status%' THEN 'TRUE' ELSE 'FALSE' END,
+         CASE WHEN v_column_list LIKE '%created_at%' THEN 'TRUE' ELSE 'FALSE' END
+      );
+      
+      EXECUTE v_query;
+      
+      RAISE NOTICE 'Migrated earnings_ledger data to xp_ledger';
+    ELSE
+      RAISE NOTICE 'Insufficient columns in earnings_ledger for migration';
+    END IF;
+  ELSE
+    RAISE NOTICE 'No earnings_ledger table found, skipping migration';
   END IF;
 END $$;
 
--- Create or update profiles table to track XP totals
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS total_xp INTEGER DEFAULT 0;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS available_xp INTEGER DEFAULT 0;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS pending_xp INTEGER DEFAULT 0;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS approved_xp INTEGER DEFAULT 0;
+-- Skip profile alterations since profiles is a view, not a table
+-- The dashboard can calculate XP totals directly from xp_ledger
 
--- Create a function to update user XP totals
-CREATE OR REPLACE FUNCTION update_user_xp_totals()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Update the user's profile with new XP totals
-  UPDATE profiles
-  SET 
-    total_xp = (
-      SELECT COALESCE(SUM(xp_amount), 0)
-      FROM xp_ledger
-      WHERE user_id = NEW.user_id
-    ),
-    available_xp = (
-      SELECT COALESCE(SUM(xp_amount), 0)
-      FROM xp_ledger
-      WHERE user_id = NEW.user_id AND status = 'approved'
-    ),
-    pending_xp = (
-      SELECT COALESCE(SUM(xp_amount), 0)
-      FROM xp_ledger
-      WHERE user_id = NEW.user_id AND status IN ('pending', 'awaiting_validation')
-    ),
-    approved_xp = (
-      SELECT COALESCE(SUM(xp_amount), 0)
-      FROM xp_ledger
-      WHERE user_id = NEW.user_id AND status = 'approved'
-    ),
-    updated_at = NOW()
-  WHERE id = NEW.user_id;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- Create a view for easy XP stats access
+CREATE OR REPLACE VIEW user_xp_stats AS
+SELECT 
+  user_id,
+  COUNT(*) as total_transactions,
+  SUM(CASE WHEN status = 'approved' THEN xp_amount ELSE 0 END) as approved_xp,
+  SUM(CASE WHEN status IN ('pending', 'awaiting_validation') THEN xp_amount ELSE 0 END) as pending_xp,
+  SUM(CASE WHEN status = 'paid' THEN xp_amount ELSE 0 END) as paid_xp,
+  SUM(xp_amount) as total_xp,
+  MAX(created_at) as last_xp_earned
+FROM xp_ledger
+GROUP BY user_id;
 
--- Create trigger to update XP totals
-DROP TRIGGER IF EXISTS update_xp_totals ON xp_ledger;
-CREATE TRIGGER update_xp_totals
-AFTER INSERT OR UPDATE ON xp_ledger
-FOR EACH ROW
-EXECUTE FUNCTION update_user_xp_totals();
+-- Grant access to the view
+GRANT SELECT ON user_xp_stats TO authenticated;
 
 -- Now update the verification consensus function to use xp_ledger
 CREATE OR REPLACE FUNCTION process_verification_consensus()
@@ -202,7 +212,7 @@ BEGIN
         xp_awarded_at = NOW()
       WHERE id = NEW.prediction_id;
       
-      -- Use the award_xp function
+      -- Use the award_xp function with all parameters
       PERFORM award_xp(v_user_id, 50, 'Correct trend peak prediction', 'approved');
     END IF;
     

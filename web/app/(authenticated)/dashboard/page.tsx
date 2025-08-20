@@ -277,23 +277,52 @@ export default function Dashboard() {
 
       // Calculate accuracy rate: approved / (approved + rejected)
       const totalTrends = userTrends?.length || 0;
+      
+      // Count approved trends - check multiple status fields
       const approvedTrends = userTrends?.filter(trend => {
-        // Check validation_status first, then fallback to status
+        // Check validation_status first (newer field)
         if (trend.validation_status === 'approved') return true;
-        if (trend.validation_status === null && ['approved', 'viral'].includes(trend.status)) return true;
+        if (trend.validation_status === 'validated') return true; // Also check for 'validated'
+        
+        // Fallback to status field if validation_status is null/undefined
+        if (!trend.validation_status && ['approved', 'viral', 'validated'].includes(trend.status)) return true;
+        
         return false;
       }).length || 0;
       
+      // Count rejected trends
       const rejectedTrends = userTrends?.filter(trend => {
-        // Check validation_status first, then fallback to status
-        if (trend.validation_status === 'rejected' || trend.validation_status === 'cancelled') return true;
-        if (trend.validation_status === null && trend.status === 'rejected') return true;
+        // Check validation_status first
+        if (trend.validation_status === 'rejected') return true;
+        if (trend.validation_status === 'cancelled') return true;
+        if (trend.validation_status === 'invalid') return true; // Also check for 'invalid'
+        
+        // Fallback to status field if validation_status is null/undefined
+        if (!trend.validation_status && ['rejected', 'cancelled', 'invalid'].includes(trend.status)) return true;
+        
         return false;
+      }).length || 0;
+      
+      // Count pending/validating trends for debugging
+      const pendingTrends = userTrends?.filter(trend => {
+        const status = trend.validation_status || trend.status;
+        return ['pending', 'validating', 'awaiting_validation', 'submitted'].includes(status);
       }).length || 0;
       
       // Accuracy is approved / (approved + rejected), not out of total
       const decidedTrends = approvedTrends + rejectedTrends;
-      const accuracyScore = decidedTrends > 0 && !isNaN(decidedTrends) && !isNaN(approvedTrends) ? ((approvedTrends / decidedTrends) * 100) : 0;
+      const accuracyScore = decidedTrends > 0 ? Math.round((approvedTrends / decidedTrends) * 100) : 0;
+      
+      // Debug logging for accuracy calculation
+      console.log('Accuracy Calculation:', {
+        totalTrends,
+        approvedTrends,
+        rejectedTrends,
+        pendingTrends,
+        decidedTrends,
+        accuracyScore: `${accuracyScore}%`,
+        formula: decidedTrends > 0 ? `(${approvedTrends} / ${decidedTrends}) * 100 = ${accuracyScore}%` : 'No decided trends yet'
+      });
 
       // Calculate other stats from xp_ledger
       const availableXP = userXP.filter(e => e.status === 'approved') || [];
@@ -368,7 +397,7 @@ export default function Dashboard() {
         trends_spotted: totalTrends,
         trends_verified: approvedTrends,
         scroll_sessions_count: 0, // Would need scroll_sessions table
-        accuracy_score: !isNaN(accuracyScore) ? accuracyScore : 0, // Already in percentage
+        accuracy_score: accuracyScore, // Already calculated as percentage with fallback to 0
         current_streak: uniqueDays,
         xp_today: xpToday,
         xp_today_pending: todaysPending,  // Add pending from today
@@ -378,7 +407,10 @@ export default function Dashboard() {
         total_cashed_out: totalPaid  // Amount already paid out
       });
 
-      console.log(`Calculated XP: Available=${totalAvailable}, Pending=${pendingAmount}`);
+      console.log(`Dashboard Stats Calculated:
+        - XP: Available=${finalApprovedXP}, Pending=${finalPendingXP}
+        - Accuracy: ${accuracyScore}% (${approvedTrends}/${decidedTrends} decided)
+        - Trends: ${totalTrends} total, ${approvedTrends} approved, ${rejectedTrends} rejected, ${pendingTrends} pending`);
     } catch (error) {
       console.error('Error in manual stats calculation:', error);
     }
