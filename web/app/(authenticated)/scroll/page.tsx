@@ -33,7 +33,7 @@ import StreakDisplay from '@/components/StreakDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
 import WaveLogo from '@/components/WaveLogo';
-// formatCurrency now comes from SUSTAINABLE_EARNINGS
+// XP system - replaced earnings with XP
 import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { submitTrend } from '@/lib/submitTrend';
@@ -978,10 +978,10 @@ export default function LegibleScrollPage() {
             <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-700">
-                  Base: <span className="font-semibold">${SUSTAINABLE_EARNINGS.base.trendSubmission}</span> per trend
+                  Base: <span className="font-semibold">100 XP</span> per trend
                 </span>
                 <span className="text-green-700">
-                  Paid after 3 validations ✓
+                  Awarded after 3 validations ✓
                 </span>
               </div>
             </div>
@@ -1217,7 +1217,7 @@ export default function LegibleScrollPage() {
               </div>
             </div>
             <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-semibold">
-              +{formatCurrency(SUSTAINABLE_EARNINGS.base.approvalBonus)} approval bonus
+              +50 XP approval bonus
             </span>
           </div>
           
