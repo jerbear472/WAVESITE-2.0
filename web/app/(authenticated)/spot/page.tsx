@@ -277,7 +277,7 @@ export default function SpotPage() {
         setShowSubmissionForm(false);
         setTrendUrl('');
         
-        const xpAmount = result.xp || 100;
+        const xpAmount = result.earnings || 100;
         
         await loadTodaysStats();
         await refreshUser();
