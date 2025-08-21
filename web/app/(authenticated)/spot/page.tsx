@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 // ScrollSession component removed - using session context directly
 import { XPLevelDisplay } from '@/components/XPLevelDisplay';
-import SmartTrendSubmission from '@/components/SmartTrendSubmissionSimple';
+import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import StreakDisplay from '@/components/StreakDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';

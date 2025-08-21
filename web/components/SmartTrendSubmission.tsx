@@ -1163,7 +1163,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       // Calculate quality score as user types
                       calculateDescriptionQuality(e.target.value);
                     }}
-                    placeholder="e.g., TikTok creators are pranking their pets with cucumber filters, causing millions of confused cat reactions that are going mega-viral because the cats genuinely think they're snakes"
+                    placeholder="e.g., TikTok creators are pranking their pets with cucumber filters, causing millions of confused cat reactions that are going mega-viral because the cats genuinely think they are snakes"
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y"
                     rows={3}
                   />
