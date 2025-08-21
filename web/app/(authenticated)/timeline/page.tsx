@@ -216,6 +216,13 @@ export default function Timeline() {
         console.log('Timeline: First trend screenshot_url:', data[0].screenshot_url);
         console.log('Timeline: First trend post_url:', data[0].post_url);
         console.log('Timeline: First trend wave_score:', data[0].wave_score);
+        // Debug: Check for any fields that might be "0"
+        const firstTrend = data[0];
+        Object.keys(firstTrend).forEach(key => {
+          if (firstTrend[key] === "0" || firstTrend[key] === 0) {
+            console.warn(`Timeline: Field "${key}" has value:`, firstTrend[key], 'type:', typeof firstTrend[key]);
+          }
+        });
       }
       setTrends(data || []);
 
@@ -1031,7 +1038,13 @@ export default function Timeline() {
                                 {(trend as any).ai_angle && (
                                   <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
                                     <span className="text-xs font-medium text-gray-600">
-                                      {(trend as any).ai_angle === 'not_ai' ? '🚫 Not AI' :
+                                      {(trend as any).ai_angle === 'not_ai' ? '👤 Human' :
+                                       (trend as any).ai_angle === 'using_ai' ? '🎨 Using AI' :
+                                       (trend as any).ai_angle === 'reacting_to_ai' ? '😮 Reacting to AI' :
+                                       (trend as any).ai_angle === 'ai_tool_viral' ? '🚀 AI Tool Viral' :
+                                       (trend as any).ai_angle === 'ai_technique' ? '💡 AI Technique' :
+                                       (trend as any).ai_angle === 'anti_ai' ? '🚫 Anti-AI' :
+                                       // Fallback for old values
                                        (trend as any).ai_angle === 'ai_created' ? '🤖 AI Created' :
                                        (trend as any).ai_angle === 'ai_enhanced' ? '✨ AI Enhanced' :
                                        (trend as any).ai_angle === 'about_ai' ? '💭 About AI' : '🔍 AI'}
@@ -1050,23 +1063,40 @@ export default function Timeline() {
                               </div>
                             )}
                             
-                            {/* Category Answers Display */}
-                            {(trend as any).category_answers && Object.keys((trend as any).category_answers).length > 0 && (
-                              <div className="bg-gray-50/60 rounded-lg p-2 border border-gray-200/50">
-                                <div className="text-xs text-gray-500 font-medium mb-1">Category Insights</div>
-                                <div className="space-y-1">
-                                  {Object.entries((trend as any).category_answers).slice(0, 2).map(([key, value]: [string, any]) => (
-                                    <div key={key} className="flex justify-between text-xs">
-                                      <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
-                                      <span className="text-gray-600 font-medium">{String(value)}</span>
+                            {/* Category Answers Display - Only show if has valid non-zero values */}
+                            {(() => {
+                              const validAnswers = (trend as any).category_answers ? 
+                                Object.entries((trend as any).category_answers)
+                                  .filter(([key, value]) => 
+                                    value !== 0 && 
+                                    value !== '0' && 
+                                    value !== null && 
+                                    value !== undefined && 
+                                    value !== '' &&
+                                    // Exclude old category fields that shouldn't be displayed
+                                    !['creator_technique', 'behavior_pattern', 'visual_style', 'audio_music', 'meme_format', 'product_brand'].includes(key)
+                                  ) : [];
+                              
+                              if (validAnswers.length > 0) {
+                                return (
+                                  <div className="bg-gray-50/60 rounded-lg p-2 border border-gray-200/50">
+                                    <div className="text-xs text-gray-500 font-medium mb-1">Category Insights</div>
+                                    <div className="space-y-1">
+                                      {validAnswers.slice(0, 2).map(([key, value]: [string, any]) => (
+                                        <div key={key} className="flex justify-between text-xs">
+                                          <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                                          <span className="text-gray-600 font-medium">{String(value)}</span>
+                                        </div>
+                                      ))}
+                                      {validAnswers.length > 2 && (
+                                        <div className="text-xs text-blue-500 font-medium">+{validAnswers.length - 2} more insights</div>
+                                      )}
                                     </div>
-                                  ))}
-                                  {Object.keys((trend as any).category_answers).length > 2 && (
-                                    <div className="text-xs text-blue-500 font-medium">+{Object.keys((trend as any).category_answers).length - 2} more insights</div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
                             
                             {/* Validation & Status Row */}
                             <div className="flex items-center justify-between">
@@ -1277,7 +1307,13 @@ export default function Timeline() {
                               {(trend as any).ai_angle && (
                                 <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
                                   <span className="text-sm font-medium text-gray-600">
-                                    {(trend as any).ai_angle === 'not_ai' ? '🚫' :
+                                    {(trend as any).ai_angle === 'not_ai' ? '👤' :
+                                     (trend as any).ai_angle === 'using_ai' ? '🎨' :
+                                     (trend as any).ai_angle === 'reacting_to_ai' ? '😮' :
+                                     (trend as any).ai_angle === 'ai_tool_viral' ? '🚀' :
+                                     (trend as any).ai_angle === 'ai_technique' ? '💡' :
+                                     (trend as any).ai_angle === 'anti_ai' ? '🚫' :
+                                     // Fallback for old values
                                      (trend as any).ai_angle === 'ai_created' ? '🤖' :
                                      (trend as any).ai_angle === 'ai_enhanced' ? '✨' :
                                      (trend as any).ai_angle === 'about_ai' ? '💭' : '🔍'}
@@ -1325,23 +1361,40 @@ export default function Timeline() {
                               )}
                             </div>
                             
-                            {/* Category Insights for List View */}
-                            {(trend as any).category_answers && Object.keys((trend as any).category_answers).length > 0 && (
-                              <div className="bg-gray-50/60 rounded-lg p-3 mb-3 border border-gray-200/50">
-                                <div className="text-sm text-gray-500 font-medium mb-2">📊 Category Insights</div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  {Object.entries((trend as any).category_answers).slice(0, 4).map(([key, value]: [string, any]) => (
-                                    <div key={key} className="flex justify-between text-sm">
-                                      <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
-                                      <span className="text-gray-600 font-medium">{String(value)}</span>
+                            {/* Category Insights for List View - Only show if has valid non-zero values */}
+                            {(() => {
+                              const validAnswers = (trend as any).category_answers ? 
+                                Object.entries((trend as any).category_answers)
+                                  .filter(([key, value]) => 
+                                    value !== 0 && 
+                                    value !== '0' && 
+                                    value !== null && 
+                                    value !== undefined && 
+                                    value !== '' &&
+                                    // Exclude old category fields that shouldn't be displayed
+                                    !['creator_technique', 'behavior_pattern', 'visual_style', 'audio_music', 'meme_format', 'product_brand'].includes(key)
+                                  ) : [];
+                              
+                              if (validAnswers.length > 0) {
+                                return (
+                                  <div className="bg-gray-50/60 rounded-lg p-3 mb-3 border border-gray-200/50">
+                                    <div className="text-sm text-gray-500 font-medium mb-2">📊 Category Insights</div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      {validAnswers.slice(0, 4).map(([key, value]: [string, any]) => (
+                                        <div key={key} className="flex justify-between text-sm">
+                                          <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                                          <span className="text-gray-600 font-medium">{String(value)}</span>
+                                        </div>
+                                      ))}
+                                      {validAnswers.length > 4 && (
+                                        <div className="text-sm text-blue-500 font-medium col-span-full">+{validAnswers.length - 4} more insights</div>
+                                      )}
                                     </div>
-                                  ))}
-                                  {Object.keys((trend as any).category_answers).length > 4 && (
-                                    <div className="text-sm text-blue-500 font-medium col-span-full">+{Object.keys((trend as any).category_answers).length - 4} more insights</div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
 
                             {/* Enhanced Marketing Tags and Hashtags */}
                             {((trend.evidence?.categories?.length > 0) || (trend.evidence?.moods?.length > 0) || (trend.hashtags && trend.hashtags.length > 0)) && (

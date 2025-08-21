@@ -104,14 +104,14 @@ export default function StreakDisplay() {
     <div className="relative">
       {/* Compact Streak Display */}
       <motion.div
-        className="flex items-center gap-4 bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-neutral-700 cursor-pointer"
+        className="flex items-center gap-3 bg-white dark:bg-neutral-900 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-neutral-700 cursor-pointer overflow-hidden"
         onClick={() => setShowDetails(!showDetails)}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
         {/* Session Streak */}
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="relative flex-shrink-0">
             <Zap className={`w-5 h-5 ${session.currentStreak > 0 ? 'text-yellow-400' : 'text-gray-600'}`} />
             {session.currentStreak >= 5 && (
               <motion.div
@@ -121,23 +121,23 @@ export default function StreakDisplay() {
               />
             )}
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs text-gray-600 dark:text-gray-400">Session</p>
-            <p className="text-sm font-bold text-gray-900 dark:text-white">
-              {session.currentStreak} 
+            <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center">
+              <span>{session.currentStreak}</span>
               {session.currentStreak > 0 && (
-                <span className="text-yellow-400 ml-1">({getSessionMultiplier()}x)</span>
+                <span className="text-yellow-400 ml-1 text-xs">({getSessionMultiplier()}x)</span>
               )}
             </p>
           </div>
         </div>
 
         {/* Divider */}
-        <div className="w-px h-10 bg-gray-200 dark:bg-neutral-700" />
+        <div className="w-px h-8 bg-gray-200 dark:bg-neutral-700 flex-shrink-0" />
 
         {/* Daily Streak */}
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="relative flex-shrink-0">
             <Flame className={`w-5 h-5 ${dailyStreak.current > 0 ? 'text-orange-400' : 'text-gray-600'}`} />
             {dailyStreak.current >= 7 && (
               <motion.div
@@ -147,34 +147,37 @@ export default function StreakDisplay() {
               />
             )}
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs text-gray-600 dark:text-gray-400">Daily</p>
-            <p className="text-sm font-bold text-gray-900 dark:text-white">
-              {dailyStreak.current} days
+            <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center">
+              <span>{dailyStreak.current}d</span>
               {dailyStreak.current > 0 && (
-                <span className="text-orange-400 ml-1">({getDailyMultiplier()}x)</span>
+                <span className="text-orange-400 ml-1 text-xs">({getDailyMultiplier()}x)</span>
               )}
             </p>
           </div>
         </div>
 
+        {/* Divider */}
+        <div className="w-px h-8 bg-gray-200 dark:bg-neutral-700 flex-shrink-0" />
+
         {/* Level Multiplier */}
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="relative flex-shrink-0">
             <Award className={`w-5 h-5 ${getLevelMult() > 1 ? 'text-purple-400' : 'text-gray-600'}`} />
           </div>
-          <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">Level {userLevel}</p>
-            <p className="text-sm font-bold text-gray-900 dark:text-white">
-              <span className="text-purple-400">({getLevelMult()}x)</span>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-600 dark:text-gray-400">Lvl {userLevel}</p>
+            <p className="text-sm font-bold">
+              <span className="text-purple-400 text-xs">({getLevelMult()}x)</span>
             </p>
           </div>
         </div>
 
         {/* Total Multiplier */}
-        <div className="ml-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-xl border border-blue-500/20">
-          <TrendingUp className="w-4 h-4 text-blue-400" />
-          <div>
+        <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-lg border border-blue-500/20 flex-shrink-0">
+          <TrendingUp className="w-4 h-4 text-blue-400 flex-shrink-0" />
+          <div className="min-w-0">
             <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
             <p className="text-sm font-bold text-blue-400">{getTotalMultiplier()}x</p>
           </div>
@@ -182,7 +185,7 @@ export default function StreakDisplay() {
 
         {/* Streak Timer */}
         {session.streakTimeRemaining > 0 && (
-          <div className="flex items-center gap-1 text-xs">
+          <div className="flex items-center gap-1 text-xs flex-shrink-0">
             <Clock className="w-3 h-3 text-gray-400" />
             <span className="text-gray-400">{formatTimeRemaining(session.streakTimeRemaining)}</span>
           </div>

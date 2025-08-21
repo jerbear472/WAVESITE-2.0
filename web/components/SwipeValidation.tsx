@@ -459,7 +459,7 @@ export default function SwipeValidation() {
                   )}
                 </div>
                 
-                {currentTrend.description && (
+                {currentTrend.description && currentTrend.description !== '0' && (
                   <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                     {currentTrend.description}
                   </p>

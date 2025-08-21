@@ -121,7 +121,7 @@ export default function ValidatePage() {
         .select('*')
         .or('validation_count.is.null,validation_count.lt.3')
         .neq('spotter_id', user.id) // Don't show user's own trends
-        .in('status', ['submitted', 'validating', 'pending']) // Only get trends not yet quality approved
+        .in('status', ['submitted', 'validating']) // Only get trends not yet quality approved (removed 'pending' as it's not a valid enum)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -211,7 +211,7 @@ export default function ValidatePage() {
         .from('trend_submissions')
         .update({ 
           validation_count: newValidationCount,
-          status: newValidationCount >= 3 ? 'quality_approved' : 'pending'
+          status: newValidationCount >= 3 ? 'approved' : 'validating'
         })
         .eq('id', currentTrend.id);
 
@@ -435,7 +435,7 @@ export default function ValidatePage() {
                     </span>
                   </div>
                   
-                  {currentTrend.description && (
+                  {currentTrend.description && currentTrend.description !== '0' && (
                     <p className="text-gray-600 text-sm leading-relaxed">
                       {currentTrend.description}
                     </p>

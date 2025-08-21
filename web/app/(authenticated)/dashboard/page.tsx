@@ -415,7 +415,7 @@ export default function Dashboard() {
           </div>
 
           {/* XP & Level Progress */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Your Progress</h3>
               <Link
@@ -596,12 +596,12 @@ export default function Dashboard() {
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </Link>
             </div>
-            
-            {/* Streak Display */}
-            <div className="mt-6">
-              <StreakDisplay />
-            </div>
           </div>
+        </div>
+
+        {/* Streak Display - Separate Section */}
+        <div className="mt-6">
+          <StreakDisplay />
         </div>
 
         {/* Pending Validations */}

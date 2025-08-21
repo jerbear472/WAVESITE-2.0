@@ -96,7 +96,7 @@ export default function PredictionsPage() {
           spotter:users!trend_submissions_spotter_id_fkey(username),
           predictions:trend_predictions(*)
         `)
-        .in('status', ['validated', 'quality_approved']) // Include both for backwards compatibility
+        .in('status', ['approved', 'validating']) // Show approved trends and those still being validated
         .order('created_at', { ascending: false })
         .limit(20);
 
