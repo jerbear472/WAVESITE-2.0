@@ -76,7 +76,7 @@ interface Trend {
   thumbnail_url?: string;
   posted_at?: string;
   wave_score?: number;
-  trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'peaked' | 'declining';
+  trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'peaked' | 'declining';
 }
 
 // Add new types for filtering and sorting
@@ -347,7 +347,7 @@ export default function Timeline() {
     
     if (trend.stage === 'viral') return 'viral';
     if (trend.stage === 'declining') return 'declining';
-    if (trend.stage === 'peaked') return 'peaked';
+    if (trend.stage === 'peaked') return 'saturated';
     if (trend.stage === 'trending' || (trend.wave_score && trend.wave_score >= 7)) return 'picking_up';
     if (trend.stage === 'submitted' || trend.stage === 'validating') return 'just_starting';
     
@@ -360,10 +360,11 @@ export default function Timeline() {
 
   const getVelocityDisplay = (velocity: string) => {
     switch (velocity) {
-      case 'just_starting': return { text: '🚀 Just Starting', color: 'text-blue-600' };
-      case 'picking_up': return { text: '📈 Picking Up', color: 'text-green-600' };
-      case 'viral': return { text: '🔥 Going Viral', color: 'text-red-600' };
-      case 'peaked': return { text: '⚡ Peaked', color: 'text-purple-600' };
+      case 'just_starting': return { text: '🌱 Just Starting', color: 'text-green-600' };
+      case 'picking_up': return { text: '📈 Picking Up', color: 'text-blue-600' };
+      case 'viral': return { text: '🚀 Going Viral', color: 'text-red-600' };
+      case 'saturated': return { text: '⚡ Saturated', color: 'text-purple-600' };
+      case 'peaked': return { text: '⚡ Peaked', color: 'text-purple-600' }; // Backward compatibility
       case 'declining': return { text: '📉 Declining', color: 'text-orange-600' };
       default: return { text: '📊 Tracking', color: 'text-gray-600' };
     }
@@ -371,14 +372,60 @@ export default function Timeline() {
 
   const getCategoryEmoji = (category: string) => {
     const emojiMap: Record<string, string> = {
+      // Old categories (for backwards compatibility)
       'visual_style': '🎨',
       'audio_music': '🎵',
       'creator_technique': '🎬',
       'meme_format': '😂',
       'product_brand': '🛍️',
-      'behavior_pattern': '📊'
+      'behavior_pattern': '📊',
+      // New categories from SmartTrendSubmission
+      'meme': '😂',
+      'fashion': '👗',
+      'food': '🍔',
+      'music': '🎵',
+      'lifestyle': '🏡',
+      'tech': '🎮',
+      'finance': '💰',
+      'sports': '⚽',
+      'political': '⚖️',
+      'cars': '🚗',
+      'animals': '🐾',
+      'travel': '✈️',
+      'education': '📚',
+      'health': '💊',
+      'product': '🛍️'
     };
     return emojiMap[category] || '📌';
+  };
+
+  const getCategoryLabel = (category: string) => {
+    const labelMap: Record<string, string> = {
+      // Old categories (for backwards compatibility)
+      'visual_style': 'Visual Style',
+      'audio_music': 'Audio/Music',
+      'creator_technique': 'Creator Technique',
+      'meme_format': 'Meme Format',
+      'product_brand': 'Product/Brand',
+      'behavior_pattern': 'Behavior Pattern',
+      // New categories from SmartTrendSubmission
+      'meme': 'Meme/Humor',
+      'fashion': 'Fashion/Beauty',
+      'food': 'Food/Drink',
+      'music': 'Music/Dance',
+      'lifestyle': 'Lifestyle',
+      'tech': 'Tech/Gaming',
+      'finance': 'Finance/Crypto',
+      'sports': 'Sports/Fitness',
+      'political': 'Political/Social',
+      'cars': 'Cars & Machines',
+      'animals': 'Animals & Pets',
+      'travel': 'Travel & Places',
+      'education': 'Education & Learning',
+      'health': 'Health & Wellness',
+      'product': 'Product/Shopping'
+    };
+    return labelMap[category] || category.replace(/_/g, ' ');
   };
 
   const getStageInfo = (stage: string) => {
@@ -829,7 +876,7 @@ export default function Timeline() {
                             <div className="absolute bottom-3 left-3">
                               <div className="flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-gray-700 text-xs border border-gray-200">
                                 <span className="text-base">{getCategoryEmoji(trend.category)}</span>
-                                <span>{trend.category.replace(/_/g, ' ')}</span>
+                                <span>{getCategoryLabel(trend.category)}</span>
                               </div>
                             </div>
 
@@ -1114,7 +1161,7 @@ export default function Timeline() {
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
                                     <span>{getCategoryEmoji(trend.category)}</span>
-                                    {trend.category.replace(/_/g, ' ')}
+                                    {getCategoryLabel(trend.category)}
                                   </span>
                                   {(trend.creator_handle || trend.creator_name) && (
                                     <span className="flex items-center gap-1">
@@ -1432,7 +1479,7 @@ export default function Timeline() {
                                                   <div className="absolute bottom-2 left-2">
                                                     <div className="flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 text-xs shadow-sm">
                                                       <span>{getCategoryEmoji(trend.category)}</span>
-                                                      <span>{trend.category.replace(/_/g, ' ')}</span>
+                                                      <span>{getCategoryLabel(trend.category)}</span>
                                                     </div>
                                                   </div>
 
@@ -1453,7 +1500,7 @@ export default function Timeline() {
                                                 <div className="h-32 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
                                                   <div className="text-center">
                                                     <span className="text-3xl">{getCategoryEmoji(trend.category)}</span>
-                                                    <p className="text-xs text-gray-500 mt-1">{trend.category.replace(/_/g, ' ')}</p>
+                                                    <p className="text-xs text-gray-500 mt-1">{getCategoryLabel(trend.category)}</p>
                                                   </div>
                                                 </div>
                                               )}
