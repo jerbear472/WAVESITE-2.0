@@ -840,7 +840,7 @@ export default function Timeline() {
 
                           {/* Title from description */}
                           <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2">
-                            {trend.evidence?.title || trend.description.split('\n')[0]}
+                            {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description.split('\n')[0] : 'Untitled Trend')}
                           </h3>
 
                           {/* Caption */}
@@ -972,15 +972,14 @@ export default function Timeline() {
                                   </div>
                                 )}
                                 {trend.validation_status && trend.validation_status !== 'pending' && (
-                                  <div className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
-                                    trend.validation_status === 'approved' ? 'bg-green-100 text-green-600 border-green-200' :
-                                    trend.validation_status === 'rejected' ? 'bg-red-100 text-red-600 border-red-200' :
-                                    'bg-yellow-100 text-yellow-600 border-yellow-200'
-                                  }`}>
-                                    {trend.validation_status === 'approved' ? '✅ Approved' :
-                                     trend.validation_status === 'rejected' ? '❌ Rejected' :
-                                     ''}
-                                  </div>
+                                  trend.validation_status === 'approved' || trend.validation_status === 'rejected' ? (
+                                    <div className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
+                                      trend.validation_status === 'approved' ? 'bg-green-100 text-green-600 border-green-200' :
+                                      'bg-red-100 text-red-600 border-red-200'
+                                    }`}>
+                                      {trend.validation_status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                                    </div>
+                                  ) : null
                                 )}
                               </div>
                               
@@ -1064,7 +1063,7 @@ export default function Timeline() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                                  {trend.evidence?.title || trend.description.split('\n')[0]}
+                                  {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description.split('\n')[0] : 'Untitled Trend')}
                                 </h3>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
@@ -1410,7 +1409,7 @@ export default function Timeline() {
                                               <div className="p-3">
                                                 {/* Title */}
                                                 <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-1">
-                                                  {trend.evidence?.title || trend.description.split('\n')[0]}
+                                                  {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description.split('\n')[0] : 'Untitled Trend')}
                                                 </h3>
 
                                                 {/* Creator & Time */}
