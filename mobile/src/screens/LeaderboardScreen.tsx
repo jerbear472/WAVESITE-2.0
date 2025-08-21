@@ -199,7 +199,9 @@ export const LeaderboardScreen: React.FC = () => {
           <Text style={[styles.username, isCurrentUser && styles.currentUsername]}>
             {user.username}
           </Text>
-          <Text style={styles.userLevel}>Level {user.level}</Text>
+          <Text style={styles.userLevel}>
+            {getLevelFromXP(user.total_xp).icon} Level {user.level} - {getLevelFromXP(user.total_xp).title}
+          </Text>
         </View>
         
         <View style={styles.scoreContainer}>

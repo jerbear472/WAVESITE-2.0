@@ -17,6 +17,7 @@ import supabaseService from '../services/supabaseService';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/Button';
 import { theme } from '../styles/theme';
+import { getLevelFromXP, formatXP } from '../config/xpConfig';
 
 interface StatCard {
   label: string;
@@ -153,10 +154,13 @@ export const ProfileScreenClean: React.FC = () => {
             <View style={styles.xpMain}>
               <Text style={styles.xpLabel}>Current Level</Text>
               <Text style={styles.levelText}>
-                Level {stats?.level || 1}
+                {getLevelFromXP(stats?.total_xp || 0).icon} Level {stats?.level || 1}
+              </Text>
+              <Text style={styles.levelTitle}>
+                {getLevelFromXP(stats?.total_xp || 0).title}
               </Text>
               <Text style={styles.xpAmount}>
-                {stats?.total_xp?.toLocaleString() || '0'} XP
+                {formatXP(stats?.total_xp || 0)} XP
               </Text>
             </View>
           </View>
@@ -358,10 +362,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   levelText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 4,
+  },
+  levelTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 8,
   },
   xpAmount: {
     fontSize: 18,

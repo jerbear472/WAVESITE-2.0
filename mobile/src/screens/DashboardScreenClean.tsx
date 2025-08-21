@@ -15,7 +15,7 @@ import { Button } from '../components/Button';
 import { theme } from '../styles/theme';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../config/supabase';
-import { XP_CONFIG, getLevelFromXP, formatXP } from '../config/xpConfig';
+import { XP_CONFIG, getLevelFromXP, formatXP, getXPToNextLevel } from '../config/xpConfig';
 
 interface DashboardData {
   totalXP: number;
@@ -129,21 +129,15 @@ export const DashboardScreenClean: React.FC = () => {
       // Sort activity by time and take most recent
       activity.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
       
-      // Calculate level progress
+      // Calculate level progress using XP config
       const currentXP = profile?.total_xp || 0;
-      const currentLevel = profile?.level || 1;
-      const nextLevel = XP_CONFIG.LEVELS.find(l => l.level === currentLevel + 1);
-      const currentLevelData = XP_CONFIG.LEVELS.find(l => l.level === currentLevel);
-      const nextLevelXP = nextLevel?.requiredXP || currentXP;
-      const currentLevelXP = currentLevelData?.requiredXP || 0;
-      const progress = nextLevelXP > currentLevelXP 
-        ? ((currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100 
-        : 100;
+      const levelInfo = getLevelFromXP(currentXP);
+      const progressInfo = getXPToNextLevel(currentXP);
 
       setDashboardData({
         totalXP: currentXP,
-        currentLevel,
-        levelProgress: Math.min(progress, 100),
+        currentLevel: levelInfo.level,
+        levelProgress: progressInfo.percentage,
         trendsSpotted: trendsCount || 0,
         validationsCompleted: validationsCount || 0,
         currentStreak: profile?.daily_streak || 0,
@@ -203,12 +197,16 @@ export const DashboardScreenClean: React.FC = () => {
           <Text style={styles.subtitle}>Here's what's trending today</Text>
         </View>
 
-        {/* Stats Cards */}
-        <View style={styles.statsGrid}>
-          {/* Level & XP Card */}
-          <Card style={[styles.statCard, styles.levelCard]} variant="elevated">
+        {/* Level & XP Card */}
+        <View style={styles.levelCardContainer}>
+          <Card style={styles.levelCard} variant="elevated">
             <View style={styles.levelHeader}>
-              <Text style={styles.levelNumber}>LVL {dashboardData.currentLevel}</Text>
+              <View style={styles.levelInfo}>
+                <Text style={styles.levelNumber}>LVL {dashboardData.currentLevel}</Text>
+                <Text style={styles.levelTitle}>
+                  {getLevelFromXP(dashboardData.totalXP).icon} {getLevelFromXP(dashboardData.totalXP).title}
+                </Text>
+              </View>
               <Text style={styles.xpValue}>{formatXP(dashboardData.totalXP)} XP</Text>
             </View>
             <View style={styles.progressContainer}>
@@ -220,10 +218,18 @@ export const DashboardScreenClean: React.FC = () => {
                   ]} 
                 />
               </View>
-              <Text style={styles.progressText}>{Math.round(dashboardData.levelProgress)}%</Text>
+              <View style={styles.progressInfo}>
+                <Text style={styles.progressText}>{Math.round(dashboardData.levelProgress)}% to next level</Text>
+                <Text style={styles.xpToNext}>
+                  {getXPToNextLevel(dashboardData.totalXP).current} / {getXPToNextLevel(dashboardData.totalXP).required} XP
+                </Text>
+              </View>
             </View>
           </Card>
+        </View>
 
+        {/* Stats Cards */}
+        <View style={styles.statsGrid}>
           <Card style={styles.statCard} variant="elevated">
             <Text style={styles.statValue}>{dashboardData.trendsSpotted}</Text>
             <Text style={styles.statLabel}>Trends Spotted</Text>
@@ -240,6 +246,12 @@ export const DashboardScreenClean: React.FC = () => {
             <Text style={styles.statValue}>{dashboardData.currentStreak}</Text>
             <Text style={styles.statLabel}>Day Streak</Text>
             <Text style={styles.statIcon}>🔥</Text>
+          </Card>
+
+          <Card style={styles.statCard} variant="elevated">
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Weekly Goal</Text>
+            <Text style={styles.statIcon}>🎯</Text>
           </Card>
         </View>
 
@@ -424,13 +436,18 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: theme.spacing.md,
+    justifyContent: 'space-between',
     marginBottom: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
   },
   statCard: {
-    flex: 1,
+    width: '47%',
     alignItems: 'center',
     paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    minHeight: 90,
   },
   statValue: {
     fontSize: 24,
@@ -447,21 +464,35 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.xs,
     opacity: 0.7,
   },
+  levelCardContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+  },
   levelCard: {
-    flex: 2,
-    minHeight: 80,
+    width: '100%',
+    minHeight: 100,
+    padding: theme.spacing.lg,
   },
   levelHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '100%',
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  levelInfo: {
+    flex: 1,
   },
   levelNumber: {
     fontSize: 20,
     fontWeight: '700',
     color: theme.colors.primary,
+    marginBottom: 4,
+  },
+  levelTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: theme.colors.textLight,
   },
   xpValue: {
     fontSize: 16,
@@ -470,13 +501,17 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     width: '100%',
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   progressBar: {
     width: '100%',
-    height: 8,
+    height: 12,
     backgroundColor: theme.colors.border,
-    borderRadius: 4,
+    borderRadius: 6,
     overflow: 'hidden',
     marginBottom: theme.spacing.xs,
   },
@@ -489,6 +524,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textLight,
     fontWeight: '500',
+  },
+  xpToNext: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
   },
   section: {
     marginBottom: theme.spacing.xl,
