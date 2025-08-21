@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import UserProfileLink from '@/components/UserProfileLink';
+import { getCurrentLevel } from '@/lib/XP_REWARDS';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -62,13 +63,20 @@ export default function LeaderboardPage() {
       
       if (error) throw error;
       
-      // Assign proper rankings based on XP with mock data for demonstration
-      const rankedData = (data || []).map((entry, index) => ({
-        ...entry,
-        global_rank: index + 1,
-        weekly_xp_gain: Math.floor(Math.random() * 2000) + 100,
-        rank_change: Math.floor(Math.random() * 10) - 5
-      }));
+      // Assign proper rankings based on XP with correct level calculation
+      const rankedData = (data || []).map((entry, index) => {
+        // Calculate level using the same function that works correctly
+        const levelData = getCurrentLevel(entry.total_xp || 0);
+        
+        return {
+          ...entry,
+          global_rank: index + 1,
+          current_level: levelData.level,
+          level_title: levelData.title,
+          weekly_xp_gain: Math.floor(Math.random() * 2000) + 100,
+          rank_change: Math.floor(Math.random() * 10) - 5
+        };
+      });
       
       setLeaderboard(rankedData);
 

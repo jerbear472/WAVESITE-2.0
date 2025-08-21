@@ -125,28 +125,28 @@ const CatchinessIndicators = ({ title }: { title: string }) => {
   return (
     <div className="space-y-2">
       {/* Catchiness Meter */}
-      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-lg border border-purple-800/30">
+      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
         <div className="flex items-center gap-2">
-          <SparklesIcon className="w-5 h-5 text-pink-400" />
-          <span className="text-sm font-medium text-white">Catchiness Score</span>
+          <SparklesIcon className="w-5 h-5 text-pink-600" />
+          <span className="text-sm font-medium text-gray-800">Catchiness Score</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-pink-400">{catchinessScore}%</span>
+          <span className="text-2xl font-bold text-pink-600">{catchinessScore}%</span>
           <div className={`w-3 h-3 rounded-full ${
-            catchinessScore >= 80 ? 'bg-green-400' : 
-            catchinessScore >= 60 ? 'bg-yellow-400' : 
-            catchinessScore >= 40 ? 'bg-orange-400' : 'bg-red-400'
+            catchinessScore >= 80 ? 'bg-green-500' : 
+            catchinessScore >= 60 ? 'bg-yellow-500' : 
+            catchinessScore >= 40 ? 'bg-orange-500' : 'bg-red-500'
           }`} />
         </div>
       </div>
       
       {/* Progress Bar */}
-      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
         <motion.div
           className={`h-full transition-all duration-300 ${
-            catchinessScore >= 80 ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 
-            catchinessScore >= 60 ? 'bg-gradient-to-r from-yellow-400 to-amber-500' : 
-            catchinessScore >= 40 ? 'bg-gradient-to-r from-orange-400 to-red-500' : 'bg-gradient-to-r from-red-400 to-red-600'
+            catchinessScore >= 80 ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 
+            catchinessScore >= 60 ? 'bg-gradient-to-r from-yellow-500 to-amber-600' : 
+            catchinessScore >= 40 ? 'bg-gradient-to-r from-orange-500 to-red-600' : 'bg-gradient-to-r from-red-500 to-red-700'
           }`}
           style={{ width: `${catchinessScore}%` }}
         />
@@ -191,12 +191,12 @@ const CatchinessIndicators = ({ title }: { title: string }) => {
 
 const QualityCheck = ({ met, label, icon }: { met: boolean; label: string; icon: React.ReactNode }) => (
   <div className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
-    met ? 'bg-green-900/20 border border-green-800/30' : 'bg-gray-800/30 border border-gray-700/30'
+    met ? 'bg-green-100 border border-green-300' : 'bg-gray-100 border border-gray-300'
   }`}>
-    <div className={`${met ? 'text-green-400' : 'text-gray-500'}`}>
+    <div className={`${met ? 'text-green-600' : 'text-gray-500'}`}>
       {met ? <CheckIcon className="w-4 h-4" /> : icon}
     </div>
-    <span className={`text-xs ${met ? 'text-green-400' : 'text-gray-500'}`}>
+    <span className={`text-xs ${met ? 'text-green-600' : 'text-gray-500'}`}>
       {label}
     </span>
   </div>
@@ -926,21 +926,21 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-gray-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-gray-800 shadow-2xl"
+        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-gray-200 shadow-2xl"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-5 border-b border-gray-800">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-5 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                 <SendIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white">Submit New Trend</h2>
-                <p className="text-xs text-gray-400">
-                  {currentStep === 'url' && 'Earn up to 200 XP'}
+                <h2 className="text-lg font-bold text-gray-800">Submit New Trend</h2>
+                <p className="text-xs text-gray-500">
+                  {currentStep === 'url' && 'Paste URL and describe the trend'}
                   {currentStep === 'velocity' && 'Predict the trend trajectory'}
-                  {currentStep === 'category' && 'Categorize for bonus XP'}
+                  {currentStep === 'category' && 'Categorize the trend'}
                   {currentStep === 'details' && `Complete for ${getSelectedCategory()?.label} expertise`}
                   {currentStep === 'review' && 'Finalize your submission'}
                 </p>
@@ -954,15 +954,15 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-lg"
+                    className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded-lg"
                   >
-                    <CheckIcon className="w-3 h-3 text-green-400" />
-                    <span className="text-xs text-green-400">Saved</span>
+                    <CheckIcon className="w-3 h-3 text-green-600" />
+                    <span className="text-xs text-green-600">Saved</span>
                   </motion.div>
                 )}
               </AnimatePresence>
               {lastSaved && !showSavedNotification && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-600">
                   Draft saved
                 </span>
               )}
@@ -1002,17 +1002,17 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       setCurrentStep('url');
                     }
                   }}
-                  className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group"
+                  className="p-1.5 hover:bg-red-100 rounded-lg transition-colors group"
                   title="Clear saved draft"
                 >
-                  <TrashIcon className="w-4 h-4 text-gray-400 group-hover:text-red-400" />
+                  <TrashIcon className="w-4 h-4 text-gray-500 group-hover:text-red-600" />
                 </button>
               )}
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <XIcon className="w-5 h-5 text-gray-400" />
+                <XIcon className="w-5 h-5 text-gray-500" />
               </button>
             </div>
           </div>
@@ -1042,7 +1042,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1.5">
             <div 
-              className="bg-gradient-to-r from-purple-500 to-purple-600 h-1.5 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full transition-all duration-300"
               style={{ 
                 width: `${
                   currentStep === 'url' ? '20%' :
@@ -1068,38 +1068,10 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-4"
               >
-                {/* XP Potential Banner */}
-                <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 p-4 rounded-lg border border-yellow-800/30">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-semibold text-yellow-400">Total XP Available</h3>
-                      <p className="text-xs text-gray-400 mt-1">Base + Quality + Accuracy Bonuses</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-yellow-400">200</div>
-                      <div className="text-xs text-gray-400">max XP</div>
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                    <div className="bg-gray-800/50 rounded p-2">
-                      <div className="text-yellow-400 font-semibold">30 XP</div>
-                      <div className="text-gray-400">Base submission</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded p-2">
-                      <div className="text-blue-400 font-semibold">+50 XP</div>
-                      <div className="text-gray-400">Quality bonus</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded p-2">
-                      <div className="text-purple-400 font-semibold">+120 XP</div>
-                      <div className="text-gray-400">If validated</div>
-                    </div>
-                  </div>
-                </div>
 
                 <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Trend URL <span className="text-red-400">*</span>
-                    <span className="ml-2 text-xs text-yellow-400">+30 base XP</span>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Trend URL <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -1108,17 +1080,17 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       value={formData.url}
                       onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                       placeholder="Paste TikTok, Instagram, YouTube, X link..."
-                      className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none pr-10"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none pr-10"
                       autoFocus
                     />
                     {extracting && (
                       <div className="absolute right-3 top-3.5">
-                        <LoaderIcon className="w-5 h-5 text-blue-400 animate-spin" />
+                        <LoaderIcon className="w-5 h-5 text-blue-500 animate-spin" />
                       </div>
                     )}
                   </div>
                   {metadataError && (
-                    <p className="text-xs text-yellow-400 mt-1">{metadataError}</p>
+                    <p className="text-xs text-orange-500 mt-1">{metadataError}</p>
                   )}
                 </div>
 
@@ -1127,9 +1099,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 rounded-lg p-4 border border-blue-800/30"
+                    className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200"
                   >
-                    <div className="flex items-center gap-2 text-green-400 text-sm mb-3">
+                    <div className="flex items-center gap-2 text-green-600 text-sm mb-3">
                       <CheckIcon className="w-4 h-4" />
                       <span className="font-medium">Metadata captured automatically</span>
                     </div>
@@ -1140,7 +1112,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         {formData.creator_handle && (
                           <div className="flex items-center gap-2 text-sm">
                             <UserIcon className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-300">{formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</span>
+                            <span className="text-gray-700">{formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</span>
                           </div>
                         )}
                         
@@ -1148,19 +1120,19 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                           {formData.views_count > 0 && (
                             <div className="flex items-center gap-1">
                               <EyeIcon className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-300">{formatNumber(formData.views_count)}</span>
+                              <span className="text-gray-700">{formatNumber(formData.views_count)}</span>
                             </div>
                           )}
                           {formData.likes_count > 0 && (
                             <div className="flex items-center gap-1">
                               <HeartIcon className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-300">{formatNumber(formData.likes_count)}</span>
+                              <span className="text-gray-700">{formatNumber(formData.likes_count)}</span>
                             </div>
                           )}
                           {formData.comments_count > 0 && (
                             <div className="flex items-center gap-1">
                               <CommentIcon className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-300">{formatNumber(formData.comments_count)}</span>
+                              <span className="text-gray-700">{formatNumber(formData.comments_count)}</span>
                             </div>
                           )}
                         </div>
@@ -1168,12 +1140,12 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         {formData.hashtags.length > 0 && (
                           <div className="flex flex-wrap gap-1">
                             {formData.hashtags.slice(0, 3).map((tag, i) => (
-                              <span key={i} className="text-xs bg-blue-900/30 px-2 py-1 rounded text-blue-400">
+                              <span key={i} className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-600">
                                 #{tag}
                               </span>
                             ))}
                             {formData.hashtags.length > 3 && (
-                              <span className="text-xs text-gray-500">+{formData.hashtags.length - 3} more</span>
+                              <span className="text-xs text-gray-600">+{formData.hashtags.length - 3} more</span>
                             )}
                           </div>
                         )}
@@ -1186,11 +1158,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                             <img 
                               src={formData.thumbnail_url} 
                               alt="Trend thumbnail"
-                              className="w-24 h-24 object-cover rounded-lg border border-gray-700 shadow-lg"
+                              className="w-24 h-24 object-cover rounded-lg border border-gray-300 shadow-lg"
                             />
                           </div>
                         ) : (
-                          <label className="w-24 h-24 bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center cursor-pointer hover:bg-gray-700 transition-colors">
+                          <label className="w-24 h-24 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors">
                             <input
                               type="file"
                               accept="image/*"
@@ -1212,8 +1184,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                               }}
                             />
                             <div className="text-center">
-                              <CameraIcon className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                              <p className="text-xs text-gray-400">Tap to add</p>
+                              <CameraIcon className="w-6 h-6 text-gray-500 mx-auto mb-1" />
+                              <p className="text-xs text-gray-500">Tap to add</p>
                             </div>
                           </label>
                         )}
@@ -1224,10 +1196,10 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                 {/* Quality Description Input */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Give this trend a catchy title <span className="text-red-400">*</span>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Give this trend a catchy title <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-gray-400 mb-2">
+                  <p className="text-xs text-gray-600 mb-2">
                     Make it clickable! Use viral words, emotional hooks, and power phrases
                   </p>
                   <textarea
@@ -1238,7 +1210,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       calculateTitleCatchiness(e.target.value);
                     }}
                     placeholder="e.g., This Viral TikTok Trend Will Blow Your Mind - Millions Are Obsessed!"
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y"
                     rows={3}
                   />
                   
@@ -1252,7 +1224,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                 {/* Platform indicator */}
                 {formData.platform && (
-                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <GlobeIcon className="w-4 h-4" />
                     <span>Detected platform: {formData.platform}</span>
                   </div>
@@ -1271,8 +1243,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               >
                 {/* Trend Velocity */}
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">How fast is this trend moving?</h3>
-                  <p className="text-sm text-gray-400 mb-4">This helps us identify market opportunities</p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">How fast is this trend moving?</h3>
+                  <p className="text-sm text-gray-600 mb-4">This helps us identify market opportunities</p>
                   
                   <div className="space-y-2">
                     {[
@@ -1287,15 +1259,15 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         onClick={() => setFormData(prev => ({ ...prev, trendVelocity: option.value as any }))}
                         className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
                           formData.trendVelocity === option.value
-                            ? 'border-blue-500 bg-blue-500/10'
-                            : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 hover:border-gray-400 bg-white'
                         }`}
                       >
                         <div className="flex items-start gap-3">
                           <span className="text-2xl">{option.label.split(' ')[0]}</span>
                           <div className="flex-1">
-                            <div className="font-medium text-white">{option.label.split(' ').slice(1).join(' ')}</div>
-                            <div className="text-sm text-gray-400 mt-0.5">{option.desc}</div>
+                            <div className="font-medium text-gray-800">{option.label.split(' ').slice(1).join(' ')}</div>
+                            <div className="text-sm text-gray-600 mt-0.5">{option.desc}</div>
                           </div>
                         </div>
                       </button>
@@ -1304,8 +1276,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 </div>
 
                 {/* Sentiment for Velocity */}
-                <div className="bg-gray-800/50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-400 mb-2">How do you feel about this trend's momentum?</h4>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-600 mb-2">How do you feel about this trend's momentum?</h4>
                   <SentimentSlider
                     value={formData.sentiment}
                     onChange={(value) => setFormData(prev => ({ ...prev, sentiment: value }))}
@@ -1314,8 +1286,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                 {/* Trend Size */}
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">How big is this trend?</h3>
-                  <p className="text-sm text-gray-400 mb-4">Based on engagement and reach</p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">How big is this trend?</h3>
+                  <p className="text-sm text-gray-600 mb-4">Based on engagement and reach</p>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {[
@@ -1330,15 +1302,15 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         onClick={() => setFormData(prev => ({ ...prev, trendSize: option.value as any }))}
                         className={`p-3 rounded-lg border-2 transition-all text-left ${
                           formData.trendSize === option.value
-                            ? 'border-green-500 bg-green-500/10'
-                            : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 hover:border-gray-400 bg-white'
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{option.label.split(' ')[0]}</span>
                           <div className="flex-1">
-                            <div className="font-medium text-white text-sm">{option.label.substring(3)}</div>
-                            <div className="text-xs text-gray-400">{option.desc}</div>
+                            <div className="font-medium text-gray-800 text-sm">{option.label.substring(3)}</div>
+                            <div className="text-xs text-gray-600">{option.desc}</div>
                           </div>
                         </div>
                       </button>
@@ -1348,8 +1320,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                 {/* Peak Prediction */}
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">When will this trend peak? 📊</h3>
-                  <p className="text-sm text-gray-400 mb-4">Your prediction helps us track trend lifecycles</p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">When will this trend peak? 📊</h3>
+                  <p className="text-sm text-gray-600 mb-4">Your prediction helps us track trend lifecycles</p>
                   
                   <div className="grid grid-cols-2 gap-2">
                     {[
@@ -1367,13 +1339,13 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         onClick={() => setFormData(prev => ({ ...prev, predictedPeak: option.value }))}
                         className={`p-3 rounded-lg border-2 transition-all text-left ${
                           formData.predictedPeak === option.value
-                            ? 'border-purple-500 bg-purple-500/10'
-                            : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 hover:border-gray-400 bg-white'
                         }`}
                       >
                         <div className="flex flex-col">
-                          <div className="font-medium text-white text-sm">{option.label}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">{option.desc}</div>
+                          <div className="font-medium text-gray-800 text-sm">{option.label}</div>
+                          <div className="text-xs text-gray-600 mt-0.5">{option.desc}</div>
                         </div>
                       </button>
                     ))}
@@ -1381,10 +1353,10 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                   {/* Prediction confidence indicator */}
                   {formData.predictedPeak && (
-                    <div className="mt-3 p-3 bg-purple-900/20 rounded-lg border border-purple-800/30">
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <div className="flex items-center gap-2">
-                        <ClockIcon className="w-4 h-4 text-purple-400" />
-                        <span className="text-sm text-purple-300">
+                        <ClockIcon className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm text-blue-700">
                           Peak prediction recorded: {
                             formData.predictedPeak === '24_hours' ? 'Next 24 hours' :
                             formData.predictedPeak === '3_days' ? '2-3 days' :
@@ -1397,7 +1369,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                           }
                         </span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-gray-600 mt-1">
                         We'll track this prediction and show your accuracy over time
                       </p>
                     </div>
@@ -1417,8 +1389,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 className="space-y-4"
               >
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">What type of trend is this?</h3>
-                  <p className="text-sm text-gray-400 mb-4">This helps us ask the right follow-up questions</p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">What type of trend is this?</h3>
+                  <p className="text-sm text-gray-600 mb-4">This helps us ask the right follow-up questions</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1426,12 +1398,12 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     <button
                       key={cat.id}
                       onClick={() => handleCategorySelect(cat.id)}
-                      className="group relative p-4 rounded-xl border border-gray-700 hover:border-blue-500 bg-gray-800/50 hover:bg-gray-800 transition-all text-left"
+                      className="group relative p-4 rounded-xl border border-gray-300 hover:border-blue-500 bg-white hover:bg-blue-50 transition-all text-left"
                     >
                       <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
                       <div className="relative">
                         <div className="text-2xl mb-2">{cat.icon}</div>
-                        <div className="font-medium text-white text-sm">{cat.label}</div>
+                        <div className="font-medium text-gray-800 text-sm">{cat.label}</div>
                       </div>
                     </button>
                   ))}
@@ -1455,7 +1427,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       <span className="text-3xl">{getSelectedCategory()!.icon}</span>
                       <div>
                         <h3 className="text-white font-semibold text-lg">{getSelectedCategory()!.label}</h3>
-                        <p className="text-white/80 text-sm">Answer a few specific questions</p>
+                        <p className="text-white/90 text-sm">Answer a few specific questions</p>
                       </div>
                     </div>
                   </div>
@@ -1466,7 +1438,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   <div className="space-y-4">
                     {Object.entries(getSelectedCategory()!.questions).map(([key, question]) => (
                       <div key={key}>
-                        <label className="block text-gray-300 text-sm font-medium mb-2">
+                        <label className="block text-gray-700 text-sm font-medium mb-2">
                           {question.label}
                         </label>
                         <div className="grid grid-cols-2 gap-2">
@@ -1480,8 +1452,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                               }))}
                               className={`p-2.5 rounded-lg border text-sm transition-all ${
                                 formData.categoryAnswers[key] === option
-                                  ? 'border-blue-500 bg-blue-500/10 text-blue-300'
-                                  : 'border-gray-700 text-gray-300 hover:border-gray-600'
+                                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
                               }`}
                             >
                               {option}
@@ -1495,7 +1467,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                 {/* AI Adoption Signal - HIGH VALUE */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
                     What's the AI angle here? 🤖
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1513,8 +1485,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         onClick={() => setFormData(prev => ({ ...prev, aiAngle: option.value as any }))}
                         className={`p-2.5 rounded-lg border text-sm transition-all flex items-center gap-2 ${
                           formData.aiAngle === option.value
-                            ? 'border-purple-500 bg-purple-500/10 text-purple-300'
-                            : 'border-gray-700 text-gray-300 hover:border-gray-600'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-gray-300 text-gray-700 hover:border-gray-400'
                         }`}
                       >
                         <span>{option.icon}</span>
@@ -1526,7 +1498,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                 {/* Audience age */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
                     Who's into this? (select all that apply)
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -1544,8 +1516,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         }}
                         className={`p-2.5 rounded-lg border text-sm transition-all ${
                           formData.audienceAge.includes(age)
-                            ? 'border-blue-500 bg-blue-500/10 text-blue-300'
-                            : 'border-gray-700 text-gray-300 hover:border-gray-600'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-gray-300 text-gray-700 hover:border-gray-400'
                         }`}
                       >
                         {age}
@@ -1566,68 +1538,53 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-4"
               >
-                <h3 className="text-lg font-semibold text-white mb-4">Review & Earn XP</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Review & Submit</h3>
                 
                 {/* XP Summary */}
-                <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 p-4 rounded-lg border border-yellow-800/30">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-medium text-yellow-400">Your XP Breakdown</h4>
-                    <div className="text-2xl font-bold text-yellow-400">
+                    <h4 className="text-sm font-medium text-blue-600">Submission Summary</h4>
+                    <div className="text-2xl font-bold text-blue-600">
                       {(() => {
                         const qualityBonus = Math.floor(calculateTitleCatchiness(formData.title) / 2);
                         const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
                         const predictionBonus = formData.predictedPeak ? 15 : 0;
                         const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
                         return 30 + qualityBonus + velocityBonus + predictionBonus + categoryBonus;
-                      })()} XP
+                      })() > 0 ? 'Complete' : 'In Progress'}
                     </div>
                   </div>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Base submission</span>
-                      <span className="text-white">30 XP</span>
+                      <span className="text-gray-600">URL & Description</span>
+                      <span className="text-gray-800">{formData.url && formData.title ? '✓' : '○'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Description quality</span>
-                      <span className="text-blue-400">+{Math.floor(calculateTitleCatchiness(formData.title) / 2)} XP</span>
+                      <span className="text-gray-600">Trend Analysis</span>
+                      <span className="text-gray-800">{formData.trendVelocity && formData.trendSize ? '✓' : '○'}</span>
                     </div>
-                    {formData.trendVelocity && formData.trendSize && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Velocity data</span>
-                        <span className="text-green-400">+20 XP</span>
-                      </div>
-                    )}
-                    {formData.predictedPeak && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Peak prediction</span>
-                        <span className="text-purple-400">+15 XP</span>
-                      </div>
-                    )}
-                    {Object.keys(formData.categoryAnswers).length >= 2 && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Category details</span>
-                        <span className="text-orange-400">+15 XP</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-gray-700">
-                    <p className="text-xs text-gray-400">
-                      <span className="text-purple-400 font-semibold">+120 XP bonus</span> if your trend gets validated by the community!
-                    </p>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Category & Details</span>
+                      <span className="text-gray-800">{formData.category ? '✓' : '○'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Category Questions</span>
+                      <span className="text-gray-800">{Object.keys(formData.categoryAnswers).length >= 2 ? '✓' : '○'}</span>
+                    </div>
                   </div>
                 </div>
                 
                 {/* Summary cards */}
                 <div className="space-y-3">
                   {/* Basic info with thumbnail */}
-                  <div className="bg-gray-800/50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-2">Trend Info</h4>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-600 mb-2">Trend Info</h4>
                     <div className="flex gap-4">
                       <div className="flex-1 space-y-2">
-                        <p className="text-white font-medium">{formData.title}</p>
-                        <p className="text-sm text-gray-400 break-all">{formData.url}</p>
+                        <p className="text-gray-800 font-medium">{formData.title}</p>
+                        <p className="text-sm text-gray-600 break-all">{formData.url}</p>
                         {formData.creator_handle && (
-                          <p className="text-sm text-gray-400">by {formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</p>
+                          <p className="text-sm text-gray-600">by {formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</p>
                         )}
                       </div>
                       {formData.thumbnail_url && (
@@ -1635,7 +1592,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                           <img 
                             src={formData.thumbnail_url} 
                             alt="Trend thumbnail"
-                            className="w-16 h-16 object-cover rounded-lg border border-gray-700"
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-300"
                           />
                         </div>
                       )}
@@ -1643,12 +1600,12 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   </div>
 
                   {/* Velocity & Timing (HIGH VALUE DATA) */}
-                  <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 rounded-lg p-4 border border-green-800/30">
-                    <h4 className="text-sm font-medium text-green-400 mb-2">📊 Market Intelligence</h4>
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
+                    <h4 className="text-sm font-medium text-green-600 mb-2">📊 Market Intelligence</h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <p className="text-xs text-gray-400">Velocity</p>
-                        <p className="text-sm font-medium text-white capitalize">
+                        <p className="text-xs text-gray-600">Velocity</p>
+                        <p className="text-sm font-medium text-gray-800 capitalize">
                           {formData.trendVelocity === 'just_starting' && '🌱 Just Starting'}
                           {formData.trendVelocity === 'picking_up' && '📈 Picking Up'}
                           {formData.trendVelocity === 'viral' && '🚀 Going Viral'}
@@ -1658,8 +1615,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">Size</p>
-                        <p className="text-sm font-medium text-white capitalize">
+                        <p className="text-xs text-gray-600">Size</p>
+                        <p className="text-sm font-medium text-gray-800 capitalize">
                           {formData.trendSize === 'micro' && '🔬 Micro'}
                           {formData.trendSize === 'niche' && '🎯 Niche'}
                           {formData.trendSize === 'viral' && '🔥 Viral'}
@@ -1671,9 +1628,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     </div>
                     {/* Peak Prediction */}
                     {formData.predictedPeak && (
-                      <div className="mt-3 pt-3 border-t border-gray-700">
-                        <p className="text-xs text-gray-400">Peak Prediction</p>
-                        <p className="text-sm font-medium text-purple-400">
+                      <div className="mt-3 pt-3 border-t border-gray-300">
+                        <p className="text-xs text-gray-600">Peak Prediction</p>
+                        <p className="text-sm font-medium text-blue-600">
                           {formData.predictedPeak === '24_hours' ? '⚡ Next 24 hours' :
                            formData.predictedPeak === '3_days' ? '🔥 2-3 days' :
                            formData.predictedPeak === '1_week' ? '📈 Within a week' :
@@ -1688,17 +1645,17 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   </div>
 
                   {/* Category & answers */}
-                  <div className="bg-gray-800/50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-2">Category Analysis</h4>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-600 mb-2">Category Analysis</h4>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xl">{getSelectedCategory()?.icon}</span>
-                      <span className="text-white font-medium">{getSelectedCategory()?.label}</span>
+                      <span className="text-gray-800 font-medium">{getSelectedCategory()?.label}</span>
                     </div>
                     <div className="space-y-1">
                       {Object.entries(formData.categoryAnswers).map(([key, value]) => (
                         <div key={key} className="text-sm">
-                          <span className="text-gray-500">{key}: </span>
-                          <span className="text-gray-300">{value}</span>
+                          <span className="text-gray-600">{key}: </span>
+                          <span className="text-gray-700">{value}</span>
                         </div>
                       ))}
                     </div>
@@ -1706,9 +1663,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                   {/* AI Signal if selected */}
                   {formData.aiAngle && formData.aiAngle !== 'not_ai' && (
-                    <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-lg p-4 border border-purple-800/30">
-                      <h4 className="text-sm font-medium text-purple-400 mb-2">🤖 AI Signal</h4>
-                      <p className="text-white font-medium">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                      <h4 className="text-sm font-medium text-purple-600 mb-2">🤖 AI Signal</h4>
+                      <p className="text-gray-800 font-medium">
                         {formData.aiAngle === 'using_ai' && 'People using AI to create content'}
                         {formData.aiAngle === 'reacting_to_ai' && 'People reacting to AI content'}
                         {formData.aiAngle === 'ai_tool_viral' && 'AI tool going viral'}
@@ -1720,25 +1677,25 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
                   {/* Stats */}
                   {(formData.views_count > 0 || formData.likes_count > 0) && (
-                    <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg p-4 border border-blue-800/30">
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Engagement</h4>
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+                      <h4 className="text-sm font-medium text-gray-600 mb-2">Engagement</h4>
                       <div className="flex gap-4">
                         {formData.views_count > 0 && (
                           <div>
-                            <p className="text-2xl font-bold text-white">{formatNumber(formData.views_count)}</p>
-                            <p className="text-xs text-gray-400">views</p>
+                            <p className="text-2xl font-bold text-gray-800">{formatNumber(formData.views_count)}</p>
+                            <p className="text-xs text-gray-600">views</p>
                           </div>
                         )}
                         {formData.likes_count > 0 && (
                           <div>
-                            <p className="text-2xl font-bold text-white">{formatNumber(formData.likes_count)}</p>
-                            <p className="text-xs text-gray-400">likes</p>
+                            <p className="text-2xl font-bold text-gray-800">{formatNumber(formData.likes_count)}</p>
+                            <p className="text-xs text-gray-600">likes</p>
                           </div>
                         )}
                         {formData.comments_count > 0 && (
                           <div>
-                            <p className="text-2xl font-bold text-white">{formatNumber(formData.comments_count)}</p>
-                            <p className="text-xs text-gray-400">comments</p>
+                            <p className="text-2xl font-bold text-gray-800">{formatNumber(formData.comments_count)}</p>
+                            <p className="text-xs text-gray-600">comments</p>
                           </div>
                         )}
                       </div>
@@ -1746,8 +1703,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   )}
 
                   {/* Sentiment Analysis */}
-                  <div className="bg-gray-800/50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-400 mb-3">Trend Sentiment</h4>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-600 mb-3">Trend Sentiment</h4>
                     <SentimentSlider
                       value={formData.sentiment}
                       onChange={(value) => setFormData(prev => ({ ...prev, sentiment: value }))}
@@ -1764,23 +1721,23 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2"
+              className="mt-4 p-3 bg-red-50 border border-red-300 rounded-lg flex items-center gap-2"
             >
-              <AlertCircleIcon className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
+              <AlertCircleIcon className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-500">{error}</p>
             </motion.div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-gray-800 bg-gray-900/50">
+        <div className="p-5 border-t border-gray-200 bg-gray-50">
           {/* Error display */}
           {error && (
-            <div className="mb-4 p-3 bg-red-900/20 border border-red-800/30 rounded-lg">
+            <div className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg">
               <div className="flex items-start gap-2">
-                <AlertCircleIcon className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                <AlertCircleIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm text-red-300">{error}</p>
+                  <p className="text-sm text-red-600">{error}</p>
                 </div>
               </div>
             </div>
@@ -1790,14 +1747,14 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
             {currentStep !== 'url' ? (
               <button
                 onClick={handleBack}
-                className="px-5 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-all text-gray-300"
+                className="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all text-gray-700"
               >
                 Back
               </button>
             ) : (
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-all text-gray-300"
+                className="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all text-gray-700"
               >
                 Cancel
               </button>
@@ -1807,7 +1764,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 transition-all text-white font-medium flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all text-white font-medium flex items-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -1822,11 +1779,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 )}
               </button>
             ) : currentStep === 'category' ? (
-              <p className="text-sm text-gray-400">Select a category to continue</p>
+              <p className="text-sm text-gray-500">Select a category to continue</p>
             ) : (
               <button
                 onClick={handleNext}
-                className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 transition-all text-white font-medium flex items-center gap-2"
+                className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all text-white font-medium flex items-center gap-2"
               >
                 Next
                 <ChevronRightIcon className="w-4 h-4" />

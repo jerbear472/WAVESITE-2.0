@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import PendingValidations from '@/components/PendingValidations';
 import StreakDisplay from '@/components/StreakDisplay';
 import { motion } from 'framer-motion';
+import { getCurrentLevel } from '@/lib/XP_REWARDS';
 import { 
   Trophy,
   TrendingUp,
@@ -185,12 +186,11 @@ export default function Dashboard() {
 
       // Ensure we handle both null and undefined properly
       const totalXP = xpSummary?.total_xp ?? 0;
-      const currentLevel = xpSummary?.level ?? 1;
       
-      // Calculate level title from level number if not provided
-      const levelTitle = xpSummary?.level_title || 
-        XP_LEVELS.find(l => l.level === currentLevel)?.title || 
-        'Observer';
+      // Calculate level using the same function that works correctly on scroll page
+      const currentLevelData = getCurrentLevel(totalXP);
+      const currentLevel = currentLevelData.level;
+      const levelTitle = currentLevelData.title;
       
       setStats({
         total_xp: totalXP,
