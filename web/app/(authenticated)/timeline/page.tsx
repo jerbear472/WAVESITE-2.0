@@ -13,6 +13,7 @@ import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
+import { getTrendSubmissionMessage, getAudienceSize, WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
 // Removed formatCurrency import - using XP display instead
 import { 
   TrendingUp as TrendingUpIcon,
@@ -488,7 +489,18 @@ export default function Timeline() {
         await fetchUserTrends();
         
         // Show XP notification
-        showXPNotification(10, 'Trend submitted successfully!', 'submission');
+        const audienceSize = getAudienceSize(data.wave_score);
+        const message = getTrendSubmissionMessage({
+          xpAmount: 10,
+          audienceSize: audienceSize
+        });
+        showXPNotification(
+          10, 
+          message, 
+          'submission',
+          WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
+          WAVESIGHT_MESSAGES.VALIDATION_NOTE
+        );
         
         // XP will be awarded automatically
         setError('');
@@ -506,7 +518,18 @@ export default function Timeline() {
             setShowSubmitForm(false);
             await fetchUserTrends();
             // Show XP notification
-            showXPNotification(10, 'Trend submitted successfully!', 'submission');
+            const audienceSize = getAudienceSize(data.wave_score);
+            const message = getTrendSubmissionMessage({
+              xpAmount: 10,
+              audienceSize: audienceSize
+            });
+            showXPNotification(
+              10, 
+              message, 
+              'submission',
+              WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
+              WAVESIGHT_MESSAGES.VALIDATION_NOTE
+            );
             // XP will be awarded automatically
             setError('');
             return fallbackResult.data;
@@ -532,7 +555,18 @@ export default function Timeline() {
           setShowSubmitForm(false);
           await fetchUserTrends();
           // Show XP notification
-          showXPNotification(10, 'Trend submitted successfully!', 'submission');
+          const audienceSize = getAudienceSize(data.wave_score);
+          const message = getTrendSubmissionMessage({
+            xpAmount: 10,
+            audienceSize: audienceSize
+          });
+          showXPNotification(
+            10, 
+            message, 
+            'submission',
+            WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
+            WAVESIGHT_MESSAGES.VALIDATION_NOTE
+          );
           // XP will be shown in UI automatically
           setError('');
           return fallbackResult.data;
