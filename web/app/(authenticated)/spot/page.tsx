@@ -31,6 +31,7 @@ import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import StreakDisplay from '@/components/StreakDisplay';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
+import { useXPNotification } from '@/contexts/XPNotificationContext';
 import WaveLogo from '@/components/WaveLogo';
 import XPPenaltyIndicator from '@/components/XPPenaltyIndicator';
 import { supabase } from '@/lib/supabase';
@@ -54,6 +55,7 @@ const PLATFORMS = [
 export default function SpotPage() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
+  const { showXPNotification } = useXPNotification();
   
   // Using XP-based 15-level cultural anthropologist system
   const { session, startSession, endSession, logTrendSubmission } = useSession();
@@ -308,6 +310,9 @@ export default function SpotPage() {
         setTrendUrl('');
         
         const xpAmount = result.earnings || 100;
+        
+        // Show animated XP notification
+        showXPNotification(xpAmount, 'Trend Submitted!', 'submission');
         
         await loadTodaysStats();
         await refreshUser();
