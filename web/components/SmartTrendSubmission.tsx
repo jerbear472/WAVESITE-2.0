@@ -1018,8 +1018,46 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           </div>
         </div>
 
+        {/* Progress Bar */}
+        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-gray-600">
+              Step {
+                currentStep === 'url' ? '1' :
+                currentStep === 'velocity' ? '2' :
+                currentStep === 'category' ? '3' :
+                currentStep === 'details' ? '4' :
+                '5'
+              } of 5
+            </span>
+            <span className="text-xs text-gray-500">
+              {
+                currentStep === 'url' ? 'URL & Description' :
+                currentStep === 'velocity' ? 'Trend Analysis' :
+                currentStep === 'category' ? 'Category' :
+                currentStep === 'details' ? 'Details' :
+                'Review'
+              }
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
+            <div 
+              className="bg-gradient-to-r from-purple-500 to-purple-600 h-1.5 rounded-full transition-all duration-300"
+              style={{ 
+                width: `${
+                  currentStep === 'url' ? '20%' :
+                  currentStep === 'velocity' ? '40%' :
+                  currentStep === 'category' ? '60%' :
+                  currentStep === 'details' ? '80%' :
+                  '100%'
+                }%` 
+              }}
+            />
+          </div>
+        </div>
+
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           <AnimatePresence mode="wait">
             {/* Step 1: URL & Title */}
             {currentStep === 'url' && (
@@ -1584,18 +1622,20 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   {/* Basic info with thumbnail */}
                   <div className="bg-gray-800/50 rounded-lg p-4">
                     <h4 className="text-sm font-medium text-gray-400 mb-2">Trend Info</h4>
-                    <div className="space-y-2">
-                      <p className="text-white font-medium">{formData.title}</p>
-                      <p className="text-sm text-gray-400 break-all">{formData.url}</p>
-                      {formData.creator_handle && (
-                        <p className="text-sm text-gray-400">by {formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</p>
-                      )}
+                    <div className="flex gap-4">
+                      <div className="flex-1 space-y-2">
+                        <p className="text-white font-medium">{formData.title}</p>
+                        <p className="text-sm text-gray-400 break-all">{formData.url}</p>
+                        {formData.creator_handle && (
+                          <p className="text-sm text-gray-400">by {formData.creator_handle.startsWith('@') ? formData.creator_handle : `@${formData.creator_handle}`}</p>
+                        )}
+                      </div>
                       {formData.thumbnail_url && (
-                        <div className="mt-3 flex justify-center">
+                        <div className="flex-shrink-0">
                           <img 
                             src={formData.thumbnail_url} 
                             alt="Trend thumbnail"
-                            className="max-w-full h-auto max-h-60 object-contain rounded-lg border border-gray-700"
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-700"
                           />
                         </div>
                       )}

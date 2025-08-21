@@ -173,16 +173,15 @@ export default function PredictionsPage() {
 
       if (error) throw error;
 
-      // Award XP for making a prediction
-      await supabase
-        .from('xp_ledger')
-        .insert({
-          user_id: user.id,
-          xp_amount: 25,
-          transaction_type: 'prediction',
-          description: `Predicted trend: ${selectedTrend.title}`,
-          status: 'approved'
-        });
+      // Award XP for making a prediction using unified XP system
+      await supabase.rpc('award_xp', {
+        p_user_id: user.id,
+        p_amount: 25,
+        p_type: 'prediction',
+        p_description: `Predicted trend: ${selectedTrend.title}`,
+        p_reference_id: selectedTrend.id,
+        p_reference_type: 'trend_submission'
+      });
 
       setSuccessMessage('Prediction submitted! +25 XP');
       setTimeout(() => {
@@ -420,7 +419,7 @@ export default function PredictionsPage() {
                           📅 When will this trend peak?
                         </label>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                          {['24hrs', '48hrs', '1 week', '2 weeks', 'Already peaked'].map((option) => (
+                          {['48hrs', '1 week', '2-4 weeks', '2-3 months', '6 months'].map((option) => (
                             <button
                               key={option}
                               onClick={() => setPredictionForm({...predictionForm, peak_time: option})}
