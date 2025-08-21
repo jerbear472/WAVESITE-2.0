@@ -4,14 +4,14 @@ import { useAuth } from '../hooks/useAuth';
 import { AuthNavigatorClean } from './AuthNavigatorClean';
 import { AppStackNavigator } from './AppStackNavigator';
 import { OnboardingNavigator } from './OnboardingNavigator';
-import CulturalAnalystOnboarding from '../screens/onboarding/CulturalAnalystOnboarding';
+import WaveSightOnboarding from '../screens/onboarding/WaveSightOnboarding';
 import { LoadingScreenBeautiful } from '../screens/LoadingScreenBeautiful';
 import { theme } from '../styles/theme';
 import { storage } from '../../App';
 
 export type RootStackParamList = {
   Onboarding: undefined;
-  CulturalAnalystOnboarding: undefined;
+  WaveSightOnboarding: undefined;
   Auth: undefined;
   App: undefined;
 };
@@ -59,10 +59,10 @@ export const RootNavigatorEnhanced: React.FC = () => {
             gestureEnabled: false,
           }}
         />
-      ) : user && needsCulturalAnalystOnboarding ? (
+      ) : !isOnboardingComplete ? (
         <Stack.Screen 
-          name="CulturalAnalystOnboarding" 
-          component={CulturalAnalystOnboarding}
+          name="WaveSightOnboarding" 
+          component={WaveSightOnboarding}
           options={{
             animation: 'fade',
             gestureEnabled: false,

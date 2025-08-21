@@ -746,10 +746,12 @@ const SubmitTrendScreen: React.FC = () => {
   };
 
   const progressStyle = {
-    width: progressWidth.interpolate({
-      inputRange: [0, 100],
-      outputRange: ['0%', '100%'],
-    }),
+    transform: [{
+      scaleX: progressWidth.interpolate({
+        inputRange: [0, 100],
+        outputRange: [0, 1],
+      })
+    }],
   };
 
   const buttonAnimatedStyle = {
@@ -1212,7 +1214,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: {
-    height: '100%',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    right: 0,
     backgroundColor: '#667eea',
   },
   metadataSection: {

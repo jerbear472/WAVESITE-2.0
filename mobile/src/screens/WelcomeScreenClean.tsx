@@ -71,18 +71,18 @@ export const WelcomeScreenClean: React.FC = () => {
         <View style={styles.features}>
           <FeatureItem 
             icon="🔮"
-            title="Predict What's Next"
-            description="Identify emerging trends before they hit mainstream"
+            title="Spot the Signal"
+            description="Find trends before the algorithm does"
           />
           <FeatureItem 
             icon="🌊"
-            title="Ride the Wave"
-            description="Track cultural movements as they build momentum"
+            title="Track Evolution"
+            description="Map how trends mutate across platforms"
           />
           <FeatureItem 
-            icon="🎯"
-            title="Trust Your Instincts"
-            description="Build your reputation as a trend spotter"
+            icon="⚡"
+            title="Earn XP"
+            description="Build your WaveSight score with every call"
           />
         </View>
 

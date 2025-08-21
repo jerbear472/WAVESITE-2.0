@@ -839,202 +839,20 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
     setError('');
   };
 
+
   const handleSubmit = async () => {
     console.log('Submit clicked');
     setLoading(true);
-
+    
     try {
-      const category = getSelectedCategory();
-      
-      // Calculate potential earnings
-      const userProfile = {
-        user_id: user?.id || '',
-        performance_tier: (user?.performance_tier || user?.spotter_tier || 'learning') as any,
-        current_balance: 0, // XP system - no longer tracking earnings
-        total_earned: 0, // XP system - no longer tracking earnings
-        trends_submitted: user?.trends_spotted || 0,
-        approval_rate: user?.accuracy_score ? user.accuracy_score / 100 : 0,
-        quality_score: user?.validation_score ? user.validation_score / 100 : 0.5,
-        current_streak: user?.current_streak || 0,  // Daily streak from user
-        session_streak: session.currentStreak,  // Current session streak
-        last_submission_at: session.lastSubmissionTime?.toISOString()
-      };
-      
-      // Calculate XP for trend submission
-      const baseXP = 30;
-      const qualityBonus = Math.floor(calculateDescriptionQuality(formData.title) / 2); // Up to 50 XP
-      const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
-      const predictionBonus = formData.predictedPeak ? 15 : 0;
-      const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
-      const streakMultiplier = 1 + (Math.min(userProfile.current_streak, 10) * 0.05); // Cap at 50% bonus
-      
-      const totalBaseXP = baseXP + qualityBonus + velocityBonus + predictionBonus + categoryBonus;
-      const xpAmount = Math.round(totalBaseXP * streakMultiplier);
-      
-      // Get thumbnail if not already captured
-      let thumbnailUrl = formData.thumbnail_url;
-      
-      // Try to fetch thumbnail with timeout - don't block submission
-      if (!thumbnailUrl && formData.url) {
-        try {
-          // Add timeout to prevent hanging
-          const thumbnailPromise = fetch('/api/extract-thumbnail', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: formData.url })
-          });
-          
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Thumbnail fetch timeout')), 3000)
-          );
-          
-          const response = await Promise.race([thumbnailPromise, timeoutPromise]) as Response;
-          
-          if (response && response.ok) {
-            const data = await response.json();
-            thumbnailUrl = data.thumbnail_url || '';
-            console.log(`Thumbnail fetched for ${data.platform}:`, thumbnailUrl);
-          }
-        } catch (err) {
-          console.log('Could not fetch thumbnail (will continue without):', err);
-        }
-      }
-      
-      // For other platforms, try simple extraction (but don't block)
-      if (!thumbnailUrl && formData.url) {
-        try {
-          const thumbnailData = getUltraSimpleThumbnail(formData.url);
-          thumbnailUrl = thumbnailData.thumbnail_url || '';
-        } catch (err) {
-          console.log('Could not get thumbnail (will continue without):', err);
-        }
-      }
-      
-      // Map the UI category to database-accepted category
-      const dbCategory = mapCategoryToDatabase(formData.category);
-      
-      // Calculate predicted peak date from user selection
-      let predictedPeakDate = null;
-      if (formData.predictedPeak) {
-        const now = new Date();
-        switch (formData.predictedPeak) {
-          case '24_hours':
-            predictedPeakDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            break;
-          case '3_days':
-            predictedPeakDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-            break;
-          case '1_week':
-            predictedPeakDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-            break;
-          case '2_weeks':
-            predictedPeakDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-            break;
-          case '1_month':
-            predictedPeakDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-            break;
-          case '3_months':
-            predictedPeakDate = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-            break;
-          case '6_months':
-            predictedPeakDate = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
-            break;
-          case 'already_peaked':
-            predictedPeakDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Yesterday
-            break;
-        }
-      }
-      
-      const submissionData = {
-        ...formData,
-        category: dbCategory, // Use the mapped category for database
-        url: formData.url.trim(),
-        screenshot_url: thumbnailUrl,
-        thumbnail_url: thumbnailUrl,
-        trendName: formData.title,
-        explanation: formData.title || 'Trending content',
-        categories: [dbCategory],
-        ageRanges: formData.audienceAge,
-        spreadSpeed: formData.trendVelocity || 'just_starting',
-        categorySpecific: formData.categoryAnswers,
-        brandAdoption: false,
-        motivation: `Category: ${category?.label}, ${Object.entries(formData.categoryAnswers).map(([k, v]) => k + ': ' + v).join(', ')}`,
-        firstSeen: formData.posted_at || new Date().toISOString(),
-        moods: [],
-        region: 'Global',
-        audioOrCatchphrase: '',
-        otherPlatforms: [],
-        predicted_peak_date: predictedPeakDate?.toISOString() || null, // Add the calculated date
-        predicted_peak_timeframe: formData.predictedPeak, // Store the timeframe for reference
-        // HIGH VALUE INTELLIGENCE DATA
-        trendVelocity: formData.trendVelocity,
-        trendSize: formData.trendSize,
-        firstSeenTiming: 'today',
-        velocityMetrics: {
-          velocity: formData.trendVelocity,
-          size: formData.trendSize,
-          timing: 'today',
-          capturedAt: new Date().toISOString()
-        },
-        // Prediction metadata for verification
-        predictionMetadata: {
-          timeframe: formData.predictedPeak,
-          predictedDate: predictedPeakDate?.toISOString() || null,
-          trendIdentifiers: {
-            name: formData.title,
-            keywords: [formData.title, ...formData.hashtags].filter(Boolean),
-            platform: formData.platform,
-            category: dbCategory,
-            url: formData.url
-          },
-          submittedAt: new Date().toISOString()
-        },
-        // AI Signal Intelligence
-        aiAngle: formData.aiAngle || 'not_ai',
-        is_ai_generated: formData.aiAngle && formData.aiAngle !== 'not_ai',
-        // Ensure wave_score is included
-        wave_score: formData.sentiment || 50
-      };
-
       if (customSubmit) {
-        // Call the submit handler with timeout to prevent infinite hanging
-        const submitPromise = customSubmit(submissionData);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Submission timed out. Please try again.')), 30000) // Increased to 30 seconds
-        );
-        
-        await Promise.race([submitPromise, timeoutPromise]);
-      }
-
-      // Show XP notification
-      showEarnings(xpAmount);
-      
-      // Log trend submission for session tracking (if session is active)
-      if (isSessionActive()) {
-        logTrendSubmission();
-        console.log('✅ Trend submission logged to session streak!');
+        await customSubmit(formData);
       }
       
-      // Success - close immediately
-      // Clear saved draft on successful submission
-      clearSavedDraft();
-      setError('');
       setLoading(false);
       onClose();
     } catch (error: any) {
-      console.error('Submission error:', error);
-      const errorMsg = error.message || 'Failed to submit trend';
-      
-      // Check for specific error types
-      if (errorMsg.includes('timeout')) {
-        setError('Submission timed out. Please check your connection and try again.');
-      } else if (errorMsg.includes('network')) {
-        setError('Network error. Please check your internet connection.');
-      } else {
-        setError(errorMsg);
-      }
-      
-      // Always set loading false on error
+      console.error('Error:', error);
       setLoading(false);
     }
   };
@@ -1345,7 +1163,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       // Calculate quality score as user types
                       calculateDescriptionQuality(e.target.value);
                     }}
-                    placeholder='e.g., "TikTok creators are pranking their pets with cucumber filters, causing millions of confused cat reactions that are going mega-viral because the cats genuinely think they're snakes"'
+                    placeholder="e.g., TikTok creators are pranking their pets with cucumber filters, causing millions of confused cat reactions that are going mega-viral because the cats genuinely think they're snakes"
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y"
                     rows={3}
                   />

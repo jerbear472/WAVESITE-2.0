@@ -188,11 +188,13 @@ const CulturalAnalystOnboarding: React.FC = () => {
   };
 
   const progressBarStyle = {
-    width: progressAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: ['0%', '100%'],
-      extrapolate: 'clamp',
-    }),
+    transform: [{
+      scaleX: progressAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+      })
+    }],
   };
 
   const renderSlide = (slide: OnboardingSlide, index: number) => {
@@ -280,15 +282,15 @@ const CulturalAnalystOnboarding: React.FC = () => {
     return (
       <View style={styles.pagination}>
         {slides.map((_, index) => {
-          const dotWidth = new Animated.Value(index === currentIndex ? 24 : 8);
+          const dotScale = new Animated.Value(index === currentIndex ? 3 : 1);
           const dotOpacity = new Animated.Value(index === currentIndex ? 1 : 0.3);
 
           React.useEffect(() => {
             Animated.parallel([
-              Animated.timing(dotWidth, {
-                toValue: index === currentIndex ? 24 : 8,
+              Animated.timing(dotScale, {
+                toValue: index === currentIndex ? 3 : 1,
                 duration: 200,
-                useNativeDriver: false,
+                useNativeDriver: true,
               }),
               Animated.timing(dotOpacity, {
                 toValue: index === currentIndex ? 1 : 0.3,
@@ -299,7 +301,7 @@ const CulturalAnalystOnboarding: React.FC = () => {
           }, [currentIndex]);
 
           const dotStyle = {
-            width: dotWidth,
+            transform: [{ scaleX: dotScale }],
             opacity: dotOpacity,
           };
 
@@ -413,7 +415,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: {
-    height: '100%',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    right: 0,
     backgroundColor: '#fff',
     borderRadius: 1.5,
   },
