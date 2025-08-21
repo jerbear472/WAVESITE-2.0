@@ -62,16 +62,43 @@ export const XPLevelDisplay: React.FC<Props> = ({ userId, compact = false }) => 
     loadXPStats();
   }, [userId]);
 
+  // Subscribe to real-time XP updates
+  useEffect(() => {
+    if (!userId) return;
+
+    const subscription = supabase
+      .channel(`xp-updates-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_profiles',
+          filter: `id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('User profile update in XPLevelDisplay:', payload);
+          // Reload XP stats when user profile changes
+          loadXPStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [userId]);
+
   const loadXPStats = async () => {
     try {
-      // Get user XP from xp_events
-      const { data: xpEvents } = await supabase
-        .from('xp_events')
-        .select('xp_change')
-        .eq('user_id', userId);
+      // Get user XP from user_profiles (same source as AuthContext)
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('total_earned')
+        .eq('id', userId)
+        .single();
 
-      const totalXP = xpEvents?.reduce((sum, event) => sum + event.xp_change, 0) || 0;
-      const finalXP = Math.max(0, totalXP); // Never show negative XP
+      const finalXP = Math.max(0, userProfile?.total_earned || 0); // Never show negative XP
 
       // Calculate current level based on XP
       const currentLevelData = XP_LEVELS

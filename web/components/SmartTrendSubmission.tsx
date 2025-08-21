@@ -48,104 +48,141 @@ import {
   Coins
 } from 'lucide-react';
 
-// Quality scoring functions
-const calculateDescriptionQuality = (description: string): number => {
-  let score = 0;
+// Catchy title scoring functions
+const calculateTitleCatchiness = (title: string): number => {
+  let score = 30; // Start lenient with base score
   
-  // Length bonus (10-30 points)
-  const wordCount = description.split(/\s+/).length;
-  if (wordCount >= 10) score += 10;
-  if (wordCount >= 20) score += 10;
-  if (wordCount >= 30) score += 10;
+  // Length bonus - catchy titles are usually concise but descriptive (5-15 words)
+  const wordCount = title.split(/\s+/).length;
+  if (wordCount >= 5 && wordCount <= 15) score += 20;
+  else if (wordCount >= 3 && wordCount <= 20) score += 10;
   
-  // Specificity checks (20 points)
-  const hasNumbers = /\d+/.test(description);
-  const hasPlatform = /tiktok|instagram|youtube|twitter|reddit|threads|x\.com/i.test(description);
-  if (hasNumbers) score += 10;
-  if (hasPlatform) score += 10;
+  // Catchy words and phrases (high impact)
+  const catchyWords = [
+    'viral', 'trending', 'exploding', 'breaking', 'shocking', 'mind-blowing', 'insane',
+    'crazy', 'wild', 'epic', 'legendary', 'iconic', 'game-changing', 'revolutionary',
+    'unstoppable', 'massive', 'huge', 'gigantic', 'ultimate', 'secret', 'forbidden',
+    'exposed', 'revealed', 'mystery', 'bizarre', 'weird', 'strange', 'unbelievable',
+    'incredible', 'amazing', 'genius', 'brilliant', 'masterpiece', 'phenomenon'
+  ];
+  const catchyWordsFound = catchyWords.filter(word => 
+    title.toLowerCase().includes(word.toLowerCase())
+  ).length;
+  score += Math.min(catchyWordsFound * 15, 30); // Up to 30 points for catchy words
   
-  // Action verbs (20 points)
-  const actionVerbs = ['pranking', 'dancing', 'creating', 'posting', 'sharing', 'remixing', 
-                       'jumping', 'reacting', 'building', 'launching', 'going', 'making',
-                       'flooding', 'exploding', 'surging', 'transforming', 'disrupting'];
-  const hasActionVerb = actionVerbs.some(verb => description.toLowerCase().includes(verb));
-  if (hasActionVerb) score += 20;
+  // Power phrases that make titles compelling
+  const powerPhrases = [
+    'you won\'t believe', 'will blow your mind', 'breaks the internet', 'going viral',
+    'everyone is', 'nobody talks about', 'secret that', 'truth about', 'real reason',
+    'what happens when', 'the moment when', 'why everyone', 'how to', 'this is why'
+  ];
+  const hasPowerPhrase = powerPhrases.some(phrase => 
+    title.toLowerCase().includes(phrase.toLowerCase())
+  );
+  if (hasPowerPhrase) score += 20;
   
-  // Humor/Personality (10 points)
-  const humorWords = ['hilarious', 'funny', 'lol', 'crazy', 'wild', 'insane', 'unhinged',
-                      'chaotic', 'legendary', 'iconic', 'viral', 'broke the internet'];
-  const hasHumor = humorWords.some(word => description.toLowerCase().includes(word));
-  if (hasHumor) score += 10;
+  // Emotional hooks
+  const emotions = ['love', 'hate', 'obsessed', 'addicted', 'shocked', 'surprised', 'terrified', 'excited'];
+  const hasEmotion = emotions.some(emotion => title.toLowerCase().includes(emotion));
+  if (hasEmotion) score += 15;
   
-  // Explanation quality (10 points)
-  const hasWhy = /because|since|due to|thanks to|after/i.test(description);
-  if (hasWhy) score += 10;
+  // Numbers in titles (clickbait factor)
+  if (/\d+/.test(title)) score += 10;
   
   return Math.min(score, 100);
 };
 
-// Quality Indicators Component
-const QualityIndicators = ({ description }: { description: string }) => {
-  const wordCount = description.split(/\s+/).length;
-  const hasNumbers = /\d+/.test(description);
-  const hasPlatform = /tiktok|instagram|youtube|twitter|reddit|threads|x\.com/i.test(description);
-  const actionVerbs = ['pranking', 'dancing', 'creating', 'posting', 'sharing', 'remixing', 
-                       'jumping', 'reacting', 'building', 'launching', 'going', 'making',
-                       'flooding', 'exploding', 'surging', 'transforming', 'disrupting'];
-  const hasActionVerb = actionVerbs.some(verb => description.toLowerCase().includes(verb));
-  const humorWords = ['hilarious', 'funny', 'lol', 'crazy', 'wild', 'insane', 'unhinged',
-                      'chaotic', 'legendary', 'iconic', 'viral', 'broke the internet'];
-  const hasHumor = humorWords.some(word => description.toLowerCase().includes(word));
-  const hasWhy = /because|since|due to|thanks to|after/i.test(description);
+// Catchiness Indicators Component
+const CatchinessIndicators = ({ title }: { title: string }) => {
+  const wordCount = title.split(/\s+/).length;
+  const hasNumbers = /\d+/.test(title);
   
-  const qualityScore = calculateDescriptionQuality(description);
-  const xpBonus = Math.floor(qualityScore / 2); // Up to 50 bonus XP
+  const catchyWords = [
+    'viral', 'trending', 'exploding', 'breaking', 'shocking', 'mind-blowing', 'insane',
+    'crazy', 'wild', 'epic', 'legendary', 'iconic', 'game-changing', 'revolutionary',
+    'unstoppable', 'massive', 'huge', 'gigantic', 'ultimate', 'secret', 'forbidden',
+    'exposed', 'revealed', 'mystery', 'bizarre', 'weird', 'strange', 'unbelievable',
+    'incredible', 'amazing', 'genius', 'brilliant', 'masterpiece', 'phenomenon'
+  ];
+  const catchyWordsFound = catchyWords.filter(word => 
+    title.toLowerCase().includes(word.toLowerCase())
+  ).length;
+  
+  const powerPhrases = [
+    'you won\'t believe', 'will blow your mind', 'breaks the internet', 'going viral',
+    'everyone is', 'nobody talks about', 'secret that', 'truth about', 'real reason',
+    'what happens when', 'the moment when', 'why everyone', 'how to', 'this is why'
+  ];
+  const hasPowerPhrase = powerPhrases.some(phrase => 
+    title.toLowerCase().includes(phrase.toLowerCase())
+  );
+  
+  const emotions = ['love', 'hate', 'obsessed', 'addicted', 'shocked', 'surprised', 'terrified', 'excited'];
+  const hasEmotion = emotions.some(emotion => title.toLowerCase().includes(emotion));
+  
+  const catchinessScore = calculateTitleCatchiness(title);
   
   return (
     <div className="space-y-2">
-      {/* XP Preview */}
-      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg border border-blue-800/30">
+      {/* Catchiness Meter */}
+      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-lg border border-purple-800/30">
         <div className="flex items-center gap-2">
-          <Coins className="w-5 h-5 text-yellow-400" />
-          <span className="text-sm font-medium text-white">Quality Bonus XP</span>
+          <SparklesIcon className="w-5 h-5 text-pink-400" />
+          <span className="text-sm font-medium text-white">Catchiness Score</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-yellow-400">+{xpBonus}</span>
-          <span className="text-xs text-gray-400">/ 50 max</span>
+          <span className="text-2xl font-bold text-pink-400">{catchinessScore}%</span>
+          <div className={`w-3 h-3 rounded-full ${
+            catchinessScore >= 80 ? 'bg-green-400' : 
+            catchinessScore >= 60 ? 'bg-yellow-400' : 
+            catchinessScore >= 40 ? 'bg-orange-400' : 'bg-red-400'
+          }`} />
         </div>
       </div>
       
-      {/* Quality Checklist */}
+      {/* Progress Bar */}
+      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+        <motion.div
+          className={`h-full transition-all duration-300 ${
+            catchinessScore >= 80 ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 
+            catchinessScore >= 60 ? 'bg-gradient-to-r from-yellow-400 to-amber-500' : 
+            catchinessScore >= 40 ? 'bg-gradient-to-r from-orange-400 to-red-500' : 'bg-gradient-to-r from-red-400 to-red-600'
+          }`}
+          style={{ width: `${catchinessScore}%` }}
+        />
+      </div>
+      
+      {/* Catchiness Checklist */}
       <div className="grid grid-cols-2 gap-2">
         <QualityCheck 
-          met={wordCount >= 20} 
-          label="20+ words" 
+          met={wordCount >= 5 && wordCount <= 15} 
+          label="Optimal length" 
           icon={<HashIcon className="w-3 h-3" />}
         />
         <QualityCheck 
-          met={hasPlatform} 
-          label="Platform mentioned" 
-          icon={<GlobeIcon className="w-3 h-3" />}
+          met={catchyWordsFound > 0} 
+          label="Catchy words" 
+          icon={<SparklesIcon className="w-3 h-3" />}
         />
         <QualityCheck 
-          met={hasActionVerb} 
-          label="Action verb" 
+          met={hasPowerPhrase} 
+          label="Power phrase" 
           icon={<ZapIcon className="w-3 h-3" />}
         />
         <QualityCheck 
           met={hasNumbers} 
-          label="Specific numbers" 
+          label="Has numbers" 
           icon={<TrendingUpIcon className="w-3 h-3" />}
         />
         <QualityCheck 
-          met={hasHumor} 
-          label="Personality/Humor" 
-          icon={<SparklesIcon className="w-3 h-3" />}
+          met={hasEmotion} 
+          label="Emotional hook" 
+          icon={<HeartIcon className="w-3 h-3" />}
         />
         <QualityCheck 
-          met={hasWhy} 
-          label="Explains why" 
-          icon={<AlertCircleIcon className="w-3 h-3" />}
+          met={catchinessScore >= 80} 
+          label="Super catchy!" 
+          icon={<TrophyIcon className="w-3 h-3" />}
         />
       </div>
     </div>
@@ -1150,28 +1187,27 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 {/* Quality Description Input */}
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Describe this trend <span className="text-red-400">*</span>
-                    <span className="ml-2 text-xs text-blue-400">+50 XP for quality description</span>
+                    Give this trend a catchy title <span className="text-red-400">*</span>
                   </label>
                   <p className="text-xs text-gray-400 mb-2">
-                    Be specific! Use action verbs, mention the platform, explain why it's trending
+                    Make it clickable! Use viral words, emotional hooks, and power phrases
                   </p>
                   <textarea
                     value={formData.title}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, title: e.target.value }));
-                      // Calculate quality score as user types
-                      calculateDescriptionQuality(e.target.value);
+                      // Calculate catchiness score as user types
+                      calculateTitleCatchiness(e.target.value);
                     }}
-                    placeholder="e.g., TikTok creators are pranking their pets with cucumber filters, causing millions of confused cat reactions that are going mega-viral because the cats genuinely think they are snakes"
+                    placeholder="e.g., This Viral TikTok Trend Will Blow Your Mind - Millions Are Obsessed!"
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y"
                     rows={3}
                   />
                   
-                  {/* Quality Indicators */}
+                  {/* Catchiness Indicators */}
                   {formData.title && (
                     <div className="mt-3 space-y-2">
-                      <QualityIndicators description={formData.title} />
+                      <CatchinessIndicators title={formData.title} />
                     </div>
                   )}
                 </div>
@@ -1500,7 +1536,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     <h4 className="text-sm font-medium text-yellow-400">Your XP Breakdown</h4>
                     <div className="text-2xl font-bold text-yellow-400">
                       {(() => {
-                        const qualityBonus = Math.floor(calculateDescriptionQuality(formData.title) / 2);
+                        const qualityBonus = Math.floor(calculateTitleCatchiness(formData.title) / 2);
                         const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
                         const predictionBonus = formData.predictedPeak ? 15 : 0;
                         const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
@@ -1515,7 +1551,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Description quality</span>
-                      <span className="text-blue-400">+{Math.floor(calculateDescriptionQuality(formData.title) / 2)} XP</span>
+                      <span className="text-blue-400">+{Math.floor(calculateTitleCatchiness(formData.title) / 2)} XP</span>
                     </div>
                     {formData.trendVelocity && formData.trendSize && (
                       <div className="flex justify-between">
@@ -1742,7 +1778,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   <>
                     <Coins className="w-4 h-4" />
                     Submit & Earn {(() => {
-                      const qualityBonus = Math.floor(calculateDescriptionQuality(formData.title) / 2);
+                      const qualityBonus = Math.floor(calculateTitleCatchiness(formData.title) / 2);
                       const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
                       const predictionBonus = formData.predictedPeak ? 15 : 0;
                       const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
