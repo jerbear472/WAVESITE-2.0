@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
-import { XP_REWARDS } from './XP_REWARDS';
+import { XP_REWARDS, getCurrentLevel } from './XP_REWARDS';
 import { getSafeCategory } from './safeCategory';
+import { calculateXPWithMultipliers, isWithinSessionWindow } from './calculateXPWithMultipliers';
 
 export interface TrendSubmissionData {
   url?: string;
@@ -43,13 +44,19 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     }
     console.log('✅ Database connection successful');
     
-    // Get user profile for earnings calculation
-    // Use 'id' column which matches auth.users.id
-    console.log('📊 [1] Fetching user profile...');
+    // Get user profile for XP calculation with multipliers
+    console.log('📊 [1] Fetching user profile for XP calculation...');
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
-      .select('performance_tier, current_streak, session_streak')
+      .select('performance_tier, current_streak, session_streak, last_submission_at, total_earned')
       .eq('id', userId)
+      .single();
+    
+    // Also get user's current XP for level calculation
+    const { data: userXP } = await supabase
+      .from('user_xp')
+      .select('total_xp')
+      .eq('user_id', userId)
       .single();
     
     console.log(`📊 [1] Profile fetch completed in ${Date.now() - startTime}ms`);
@@ -58,23 +65,34 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       console.log('Profile lookup error:', profileError);
     }
     
-    // Calculate earnings
-    const userProfile = {
-      user_id: userId,
-      performance_tier: profile?.performance_tier || 'learning',
-      current_balance: 0,
-      total_earned: 0,
-      trends_submitted: 0,
-      approval_rate: 0.5,
-      quality_score: 0.5,
-      current_streak: profile?.current_streak || 0,
-      session_streak: profile?.session_streak || 0,
-      last_submission_at: undefined
-    };
-    
-    // Use XP rewards system for base submission XP
+    // Calculate XP with all multipliers
     const baseXP = XP_REWARDS.base.trendSubmission; // 10 XP
-    const paymentAmount = baseXP;
+    const totalXP = userXP?.total_xp || 0;
+    const currentLevel = getCurrentLevel(totalXP);
+    const dailyStreak = profile?.current_streak || 0;
+    const sessionStreak = profile?.session_streak || 0;
+    const lastSubmission = profile?.last_submission_at;
+    const withinSession = isWithinSessionWindow(lastSubmission);
+    
+    const xpCalculation = calculateXPWithMultipliers({
+      baseAmount: baseXP,
+      totalXP: totalXP,
+      currentLevel: currentLevel,
+      dailyStreak: dailyStreak,
+      sessionStreak: withinSession ? sessionStreak : 0,
+      isWithinSessionWindow: withinSession
+    });
+    
+    const paymentAmount = xpCalculation.finalXP;
+    
+    console.log('💎 XP Calculation:', {
+      base: xpCalculation.baseXP,
+      level: `${currentLevel} (${xpCalculation.levelMultiplier}x)`,
+      dailyStreak: `${dailyStreak} days (${xpCalculation.dailyStreakMultiplier}x)`,
+      sessionStreak: withinSession ? `${sessionStreak + 1} (${xpCalculation.sessionStreakMultiplier}x)` : 'new session',
+      totalMultiplier: xpCalculation.totalMultiplier,
+      finalXP: paymentAmount
+    });
     
     // Prepare submission data - only include essential columns first
     const submissionData: any = {

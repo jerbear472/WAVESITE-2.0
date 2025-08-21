@@ -21,6 +21,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PredictionTimeline from '@/components/PredictionTimeline';
 
 interface ValidatedTrend {
   id: string;
@@ -76,6 +77,7 @@ export default function PredictionsPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [otherPredictions, setOtherPredictions] = useState<{ peak_time: string; count: number }[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -346,7 +348,34 @@ export default function PredictionsPage() {
                       key={trend.id}
                       whileHover={{ scale: 1.02 }}
                       className="bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-lg transition-all"
-                      onClick={() => setSelectedTrend(trend)}
+                      onClick={async () => {
+                        setSelectedTrend(trend);
+                        
+                        // Load other users' predictions for this trend
+                        try {
+                          const { data: predictions } = await supabase
+                            .from('trend_predictions')
+                            .select('peak_time')
+                            .eq('trend_id', trend.id);
+                          
+                          if (predictions) {
+                            // Group predictions by peak_time and count
+                            const grouped = predictions.reduce((acc: any, pred) => {
+                              acc[pred.peak_time] = (acc[pred.peak_time] || 0) + 1;
+                              return acc;
+                            }, {});
+                            
+                            setOtherPredictions(
+                              Object.entries(grouped).map(([peak_time, count]) => ({
+                                peak_time,
+                                count: count as number
+                              }))
+                            );
+                          }
+                        } catch (error) {
+                          console.error('Error loading predictions:', error);
+                        }
+                      }}
                     >
                       {trend.thumbnail_url ? (
                         <div className="h-40 bg-gray-100">
@@ -430,26 +459,15 @@ export default function PredictionsPage() {
 
                     {/* Prediction Form */}
                     <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                          📅 When will this trend peak?
-                        </label>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                          {['48hrs', '1 week', '2-4 weeks', '2-3 months', '6 months'].map((option) => (
-                            <button
-                              key={option}
-                              onClick={() => setPredictionForm({...predictionForm, peak_time: option})}
-                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                predictionForm.peak_time === option
-                                  ? 'bg-blue-500 text-white'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      {/* Visual Timeline for Peak Prediction */}
+                      <PredictionTimeline
+                        selectedPeak={predictionForm.peak_time}
+                        onPeakSelect={(peak) => setPredictionForm({...predictionForm, peak_time: peak})}
+                        otherPredictions={otherPredictions}
+                        currentTrendAge={selectedTrend.submitted_at ? 
+                          Math.floor((Date.now() - new Date(selectedTrend.submitted_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
+                        }
+                      />
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
