@@ -71,9 +71,6 @@ export default function ValidatePage() {
   const [lastVote, setLastVote] = useState<'valid' | 'invalid' | null>(null);
   const [consensus, setConsensus] = useState<number | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
-  const [lightningMode, setLightningMode] = useState(false);
-  const [lightningTimer, setLightningTimer] = useState(0);
-  const [lightningCount, setLightningCount] = useState(0);
   const [lastXPEarned, setLastXPEarned] = useState(5);
   
   // Swipe animation values
@@ -96,22 +93,6 @@ export default function ValidatePage() {
     }
   }, [user]);
 
-  // Lightning mode timer
-  useEffect(() => {
-    if (lightningMode && lightningTimer > 0) {
-      const interval = setInterval(() => {
-        setLightningTimer(prev => {
-          if (prev <= 1) {
-            setLightningMode(false);
-            handleLightningComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [lightningMode, lightningTimer]);
 
   const loadTrendsToValidate = async () => {
     if (!user) return;
@@ -222,7 +203,7 @@ export default function ValidatePage() {
       // Award XP using unified XP system
       const baseXP = 5;
       const streakBonus = Math.floor(streak / 10) * 2;
-      const totalXP = baseXP + streakBonus + (lightningMode ? baseXP : 0);
+      const totalXP = baseXP + streakBonus;
       
       const { error: xpError } = await supabase.rpc('award_xp', {
         p_user_id: user.id,
@@ -237,19 +218,17 @@ export default function ValidatePage() {
         setXpEarned(prev => prev + totalXP);
         setLastXPEarned(totalXP);
         // Show XP notification
-        const notificationText = lightningMode ? 
-          `Lightning validation! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}` :
-          `Trend validated! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}`;
+        const notificationText = `Trend validated! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}`;
         showXPNotification(totalXP, notificationText, 'validation');
+      } else {
+        // Still show notification even if XP RPC fails
+        console.warn('XP award failed:', xpError);
+        showXPNotification(baseXP, 'Trend validated!', 'validation');
       }
 
       // Update stats
       setStreak(prev => prev + 1);
       setDailyValidations(prev => prev + 1);
-      
-      if (lightningMode) {
-        setLightningCount(prev => prev + 1);
-      }
 
       // Get consensus (simplified - in production, query actual votes)
       const consensusPercent = isValid ? 65 + Math.random() * 30 : 20 + Math.random() * 40;
@@ -281,34 +260,6 @@ export default function ValidatePage() {
     }
   };
 
-  const startLightningRound = () => {
-    setLightningMode(true);
-    setLightningTimer(60);
-    setLightningCount(0);
-  };
-
-  const handleLightningComplete = async () => {
-    const bonusXP = lightningCount * 10;
-    if (bonusXP > 0 && user) {
-      try {
-        const { error } = await supabase.rpc('award_xp', {
-          p_user_id: user.id,
-          p_amount: bonusXP,
-          p_type: 'lightning_bonus',
-          p_description: `Lightning round: ${lightningCount} validations`,
-          p_reference_id: null,
-          p_reference_type: null
-        });
-        
-        if (!error) {
-          setXpEarned(prev => prev + bonusXP);
-          showXPNotification(bonusXP, `Lightning round complete! ${lightningCount} validations`, 'bonus');
-        }
-      } catch (error) {
-        console.error('Error awarding lightning bonus:', error);
-      }
-    }
-  };
 
   const getPlatformEmoji = (platform: string) => {
     const emojis: Record<string, string> = {
@@ -375,45 +326,7 @@ export default function ValidatePage() {
               </div>
             </div>
           </div>
-          
-          {!lightningMode && (
-            <button
-              onClick={startLightningRound}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-1 hover:shadow-lg transition-all"
-            >
-              <Zap className="h-4 w-4" />
-              <span>Lightning</span>
-            </button>
-          )}
         </div>
-
-        {/* Lightning Mode Banner */}
-        {lightningMode && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-4 text-white"
-          >
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-2">
-                <Zap className="h-6 w-6" />
-                <span className="font-bold">LIGHTNING ROUND!</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
-                  <div className="text-2xl font-bold">{lightningTimer}s</div>
-                  <div className="text-xs">{lightningCount}/10 validated</div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-2 bg-white/20 rounded-full h-2">
-              <div 
-                className="bg-white h-2 rounded-full transition-all"
-                style={{ width: `${(lightningCount / 10) * 100}%` }}
-              />
-            </div>
-          </motion.div>
-        )}
 
         {/* Swipe Card - Adjusted height for better balance */}
         <div className="relative h-[650px]">
@@ -641,8 +554,8 @@ export default function ValidatePage() {
                 </div>
               </div>
 
-              {/* Swipe Indicators - Overlaid on validation question */}
-              <div className="absolute inset-x-0 bottom-6 px-6">
+              {/* Swipe Indicators - Moved further down to avoid overlap */}
+              <div className="absolute inset-x-0 bottom-3 px-6">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2 text-red-500 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
                     <X className="h-6 w-6" />
@@ -657,8 +570,8 @@ export default function ValidatePage() {
             </div>
           </motion.div>
 
-          {/* Action Buttons */}
-          <div className="absolute bottom-[-70px] inset-x-0 flex justify-center space-x-6">
+          {/* Action Buttons - Positioned below the card with proper spacing */}
+          <div className="mt-6 flex justify-center space-x-6">
             <button
               onClick={() => handleSwipe('left')}
               className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-red-500"
