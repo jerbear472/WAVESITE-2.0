@@ -64,7 +64,6 @@ export default function Navigation() {
       } catch (error) {
         console.error('Error fetching XP data:', error);
       }
-    }
   };
 
   // Refresh XP data on navigation changes
