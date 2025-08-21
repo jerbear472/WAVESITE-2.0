@@ -11,10 +11,15 @@ export default function Home() {
       <section className="flex-1 flex items-center justify-center px-4 py-20 pt-32">
         <div className="text-center max-w-4xl mx-auto animate-fade-in">
           {/* Title */}
-          <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-8">
+          <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6">
             See The Wave<br/>
             <span className="text-gradient font-normal">Before It Breaks</span>
           </h1>
+          
+          {/* Sub-hero */}
+          <p className="text-2xl md:text-3xl font-medium text-gray-800 dark:text-gray-200 mb-8">
+            Spot trends. Call peaks. Prove you saw it first.
+          </p>
           
           {/* Tagline */}
           <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-4">
@@ -110,7 +115,7 @@ export default function Home() {
       <section className="py-20 bg-gray-50 dark:bg-neutral-900">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            Your Cultural Intelligence <span className="text-gradient font-normal">Workflow</span>
+            <span className="text-gradient font-normal">How It Works</span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
