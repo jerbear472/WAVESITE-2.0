@@ -826,8 +826,9 @@ export default function Timeline() {
                   {filteredTrends.map((trend, index) => {
                     // Debug: Log any 0 values in this trend
                     Object.keys(trend).forEach(key => {
-                      if (trend[key] === 0 || trend[key] === '0') {
-                        console.warn(`Trend ${trend.id} has 0 value in field: ${key}`, trend[key]);
+                      const value = (trend as any)[key];
+                      if (value === 0 || value === '0') {
+                        console.warn(`Trend ${trend.id} has 0 value in field: ${key}`, value);
                       }
                     });
                     return (
@@ -1179,8 +1180,9 @@ export default function Timeline() {
                   {filteredTrends.map((trend, index) => {
                     // Debug: Log any 0 values in this trend
                     Object.keys(trend).forEach(key => {
-                      if (trend[key] === 0 || trend[key] === '0') {
-                        console.warn(`Trend ${trend.id} has 0 value in field: ${key}`, trend[key]);
+                      const value = (trend as any)[key];
+                      if (value === 0 || value === '0') {
+                        console.warn(`Trend ${trend.id} has 0 value in field: ${key}`, value);
                       }
                     });
                     return (
