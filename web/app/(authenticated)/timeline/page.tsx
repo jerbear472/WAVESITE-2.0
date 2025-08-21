@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import SmartTrendSubmission from '@/components/SmartTrendSubmission';
+import SmartTrendSubmission from '@/components/SmartTrendSubmissionSimple';
 import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';

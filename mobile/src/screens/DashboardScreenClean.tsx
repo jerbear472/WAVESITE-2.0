@@ -15,17 +15,23 @@ import { Button } from '../components/Button';
 import { theme } from '../styles/theme';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../config/supabase';
+import { XP_CONFIG, getLevelFromXP, formatXP } from '../config/xpConfig';
 
 interface DashboardData {
-  totalEarnings: number;
+  totalXP: number;
+  currentLevel: number;
+  levelProgress: number;
   trendsSpotted: number;
+  validationsCompleted: number;
+  currentStreak: number;
   recentActivity: Array<{
     id: string;
     title: string;
     description: string;
     time: string;
-    earnings?: string;
+    xpGained?: number;
     status?: string;
+    type: 'trend' | 'validation' | 'achievement' | 'streak';
   }>;
 }
 
@@ -34,8 +40,12 @@ export const DashboardScreenClean: React.FC = () => {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
-    totalEarnings: 0,
+    totalXP: 0,
+    currentLevel: 1,
+    levelProgress: 0,
     trendsSpotted: 0,
+    validationsCompleted: 0,
+    currentStreak: 0,
     recentActivity: [],
   });
   const [loading, setLoading] = useState(true);
@@ -50,10 +60,10 @@ export const DashboardScreenClean: React.FC = () => {
     if (!user?.id) return;
     
     try {
-      // Get user profile data
+      // Get user XP data
       const { data: profile } = await supabase
         .from('profiles')
-        .select('total_earned, wave_score')
+        .select('total_xp, level, wave_score, daily_streak')
         .eq('id', user.id)
         .single();
 
@@ -63,65 +73,81 @@ export const DashboardScreenClean: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .eq('spotter_id', user.id);
 
-      // Get recent activity (validations and trends)
-      const { data: recentTrends } = await supabase
-        .from('trend_submissions')
-        .select('id, trend_name, status, created_at, base_amount')
-        .eq('spotter_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const { data: recentValidations } = await supabase
+      // Get validations count
+      const { count: validationsCount } = await supabase
         .from('trend_validations')
-        .select('id, created_at, reward_amount')
-        .eq('validator_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .select('*', { count: 'exact', head: true })
+        .eq('validator_id', user.id);
 
-      // Format recent activity
+      // Get recent XP transactions
+      const { data: recentXP } = await supabase
+        .from('xp_transactions')
+        .select('id, amount, source_type, description, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Format recent activity from XP transactions
       const activity = [];
       
-      // Add recent trends
-      recentTrends?.forEach(trend => {
-        const timeAgo = getTimeAgo(new Date(trend.captured_at));
-        if (trend.status === 'validated') {
-          activity.push({
-            id: trend.id,
-            title: 'Trend Validated',
-            description: trend.title || 'Your submission was approved',
-            time: timeAgo,
-            earnings: trend.validation_reward ? `+$${trend.validation_reward.toFixed(2)}` : '+$2.50',
-          });
-        } else if (trend.status === 'pending_validation') {
-          activity.push({
-            id: trend.id,
-            title: 'New Trend Captured',
-            description: trend.title || 'Trend submission pending',
-            time: timeAgo,
-            status: 'pending',
-          });
+      recentXP?.forEach(xp => {
+        const timeAgo = getTimeAgo(new Date(xp.created_at));
+        let title = 'XP Gained';
+        let type: 'trend' | 'validation' | 'achievement' | 'streak' = 'trend';
+        
+        switch (xp.source_type) {
+          case 'trend_submission':
+            title = 'Trend Spotted';
+            type = 'trend';
+            break;
+          case 'validation_vote':
+            title = 'Validation Completed';
+            type = 'validation';
+            break;
+          case 'streak_bonus':
+            title = 'Streak Bonus';
+            type = 'streak';
+            break;
+          case 'achievement':
+            title = 'Achievement Unlocked';
+            type = 'achievement';
+            break;
+          default:
+            title = 'XP Gained';
         }
-      });
-
-      // Add recent validations
-      recentValidations?.forEach(validation => {
-        const timeAgo = getTimeAgo(new Date(validation.created_at));
+        
         activity.push({
-          id: validation.id,
-          title: 'Validation Completed',
-          description: 'You validated a trend',
+          id: xp.id,
+          title,
+          description: xp.description || 'Experience gained',
           time: timeAgo,
-          earnings: `+$${validation.reward_amount.toFixed(2)}`,
+          xpGained: xp.amount,
+          type,
         });
       });
 
       // Sort activity by time and take most recent
       activity.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
       
+      // Calculate level progress
+      const currentXP = profile?.total_xp || 0;
+      const currentLevel = profile?.level || 1;
+      const nextLevel = XP_CONFIG.LEVELS.find(l => l.level === currentLevel + 1);
+      const currentLevelData = XP_CONFIG.LEVELS.find(l => l.level === currentLevel);
+      const nextLevelXP = nextLevel?.requiredXP || currentXP;
+      const currentLevelXP = currentLevelData?.requiredXP || 0;
+      const progress = nextLevelXP > currentLevelXP 
+        ? ((currentXP - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100 
+        : 100;
+
       setDashboardData({
-        totalEarnings: profile?.total_earned || 0,
+        totalXP: currentXP,
+        currentLevel,
+        levelProgress: Math.min(progress, 100),
         trendsSpotted: trendsCount || 0,
-        recentActivity: activity.slice(0, 3),
+        validationsCompleted: validationsCount || 0,
+        currentStreak: profile?.daily_streak || 0,
+        recentActivity: activity.slice(0, 5),
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -179,13 +205,41 @@ export const DashboardScreenClean: React.FC = () => {
 
         {/* Stats Cards */}
         <View style={styles.statsGrid}>
-          <Card style={styles.statCard} variant="elevated">
-            <Text style={styles.statValue}>${dashboardData.totalEarnings.toFixed(2)}</Text>
-            <Text style={styles.statLabel}>Total Earnings</Text>
+          {/* Level & XP Card */}
+          <Card style={[styles.statCard, styles.levelCard]} variant="elevated">
+            <View style={styles.levelHeader}>
+              <Text style={styles.levelNumber}>LVL {dashboardData.currentLevel}</Text>
+              <Text style={styles.xpValue}>{formatXP(dashboardData.totalXP)} XP</Text>
+            </View>
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { width: `${dashboardData.levelProgress}%` }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.progressText}>{Math.round(dashboardData.levelProgress)}%</Text>
+            </View>
           </Card>
+
           <Card style={styles.statCard} variant="elevated">
             <Text style={styles.statValue}>{dashboardData.trendsSpotted}</Text>
             <Text style={styles.statLabel}>Trends Spotted</Text>
+            <Text style={styles.statIcon}>🔍</Text>
+          </Card>
+
+          <Card style={styles.statCard} variant="elevated">
+            <Text style={styles.statValue}>{dashboardData.validationsCompleted}</Text>
+            <Text style={styles.statLabel}>Validations</Text>
+            <Text style={styles.statIcon}>✅</Text>
+          </Card>
+
+          <Card style={styles.statCard} variant="elevated">
+            <Text style={styles.statValue}>{dashboardData.currentStreak}</Text>
+            <Text style={styles.statLabel}>Day Streak</Text>
+            <Text style={styles.statIcon}>🔥</Text>
           </Card>
         </View>
 
@@ -231,8 +285,8 @@ export const DashboardScreenClean: React.FC = () => {
                     title={activity.title}
                     description={activity.description}
                     time={activity.time}
-                    earnings={activity.earnings}
-                    status={activity.status}
+                    xpGained={activity.xpGained}
+                    type={activity.type}
                   />
                   {index < dashboardData.recentActivity.length - 1 && <View style={styles.divider} />}
                 </React.Fragment>
@@ -277,25 +331,47 @@ const ActivityItem: React.FC<{
   title: string;
   description: string;
   time: string;
-  earnings?: string;
-  status?: string;
-}> = ({ title, description, time, earnings, status }) => (
-  <View style={styles.activityItem}>
-    <View style={styles.activityContent}>
-      <Text style={styles.activityTitle}>{title}</Text>
-      <Text style={styles.activityDescription}>{description}</Text>
-      <Text style={styles.activityTime}>{time}</Text>
-    </View>
-    {earnings && (
-      <Text style={styles.activityEarnings}>{earnings}</Text>
-    )}
-    {status === 'pending' && (
-      <View style={styles.pendingBadge}>
-        <Text style={styles.pendingText}>Pending</Text>
+  xpGained?: number;
+  type: 'trend' | 'validation' | 'achievement' | 'streak';
+}> = ({ title, description, time, xpGained, type }) => {
+  const getTypeIcon = () => {
+    switch (type) {
+      case 'trend': return '🔍';
+      case 'validation': return '✅';
+      case 'achievement': return '🏆';
+      case 'streak': return '🔥';
+      default: return '⭐';
+    }
+  };
+
+  const getTypeColor = () => {
+    switch (type) {
+      case 'trend': return theme.colors.primary;
+      case 'validation': return theme.colors.success;
+      case 'achievement': return theme.colors.warning;
+      case 'streak': return '#ff6b35';
+      default: return theme.colors.textLight;
+    }
+  };
+
+  return (
+    <View style={styles.activityItem}>
+      <View style={styles.activityIcon}>
+        <Text style={styles.activityEmoji}>{getTypeIcon()}</Text>
       </View>
-    )}
-  </View>
-);
+      <View style={styles.activityContent}>
+        <Text style={styles.activityTitle}>{title}</Text>
+        <Text style={styles.activityDescription}>{description}</Text>
+        <Text style={styles.activityTime}>{time}</Text>
+      </View>
+      {xpGained && (
+        <View style={[styles.xpBadge, { backgroundColor: getTypeColor() }]}>
+          <Text style={styles.xpText}>+{xpGained} XP</Text>
+        </View>
+      )}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
