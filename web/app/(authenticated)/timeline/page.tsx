@@ -118,9 +118,9 @@ export default function Timeline() {
     if (user) {
       fetchUserTrends();
       
-      // Set up real-time subscription for trends and validations
+      // Set up real-time subscription for trends, validations, and XP
       const subscription = supabase
-        .channel('user-trends-and-votes')
+        .channel('user-trends-xp-updates')
         .on(
           'postgres_changes',
           {
@@ -148,6 +148,20 @@ export default function Timeline() {
             if ((payload.new as any)?.trend_id || (payload.old as any)?.trend_id) {
               fetchUserTrends();
             }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'xp_events',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('XP update:', payload);
+            // Just refresh the XP total, not all trends
+            fetchUserTrends(false);
           }
         )
         .subscribe();
@@ -204,15 +218,40 @@ export default function Timeline() {
       }
       setTrends(data || []);
 
-      // Fetch total XP from xp_events
-      const { data: xpData, error: xpError } = await supabase
-        .from('xp_events')
-        .select('xp_change')
-        .eq('user_id', userId);
+      // Fetch total XP from user_xp_summary view (same as Navigation)
+      const { data: xpSummary, error: xpError } = await supabase
+        .from('user_xp_summary')
+        .select('total_xp')
+        .eq('user_id', userId)
+        .single();
 
-      if (!xpError && xpData) {
-        const total = xpData.reduce((sum, xp) => sum + (xp.xp_change || 0), 0);
-        setTotalXP(Math.max(0, total)); // Never show negative XP
+      if (!xpError && xpSummary) {
+        setTotalXP(Math.max(0, xpSummary.total_xp || 0)); // Never show negative XP
+        console.log('Timeline: User total XP:', xpSummary.total_xp);
+      } else {
+        // Fallback: Try to get XP directly from user_xp table
+        const { data: directXP } = await supabase
+          .from('user_xp')
+          .select('total_xp')
+          .eq('user_id', userId)
+          .single();
+          
+        if (directXP) {
+          setTotalXP(Math.max(0, directXP.total_xp || 0));
+          console.log('Timeline: User XP from fallback:', directXP.total_xp);
+        } else {
+          // Final fallback: sum from xp_events
+          const { data: xpEvents } = await supabase
+            .from('xp_events')
+            .select('xp_change')
+            .eq('user_id', userId);
+            
+          if (xpEvents) {
+            const total = xpEvents.reduce((sum, xp) => sum + (xp.xp_change || 0), 0);
+            setTotalXP(Math.max(0, total));
+            console.log('Timeline: XP calculated from events:', total);
+          }
+        }
       }
     } catch (error: any) {
       showError('An unexpected error occurred', 'Please refresh the page');
