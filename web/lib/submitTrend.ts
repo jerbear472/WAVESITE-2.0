@@ -61,7 +61,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     };
     
     // Use XP rewards system for base submission XP
-    const baseXP = XP_REWARDS.base.trendSubmission; // 25 XP
+    const baseXP = XP_REWARDS.base.trendSubmission; // 10 XP
     const paymentAmount = baseXP;
     
     // Prepare submission data - only include columns that exist

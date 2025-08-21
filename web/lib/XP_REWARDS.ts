@@ -8,7 +8,7 @@
 export const XP_REWARDS = {
   // Base XP rewards for actions
   base: {
-    trendSubmission: 25,     // Base XP per trend submission (pending)
+    trendSubmission: 10,     // Base XP per trend submission (pending)
     validationVote: 5,       // XP per validation vote
     approvalBonus: 50,       // Bonus XP when trend gets approved (3+ YES votes)
     rejectionPenalty: -10,   // XP penalty when trend gets rejected
