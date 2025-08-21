@@ -43,7 +43,7 @@ interface Trend {
   evidence?: any;
   virality_prediction?: number;
   predicted_peak_date?: string;
-  status: 'pending' | 'approved' | 'rejected' | 'viral';
+  status: 'pending' | 'approved' | 'rejected' | 'validating';
   quality_score: number;
   validation_count: number;
   xp_amount: number;
@@ -77,7 +77,7 @@ interface Trend {
 }
 
 // Add new types for filtering and sorting
-type FilterOption = 'all' | 'submitted' | 'validating' | 'approved' | 'rejected';
+type FilterOption = 'all' | 'pending' | 'validating' | 'approved' | 'rejected';
 type SortOption = 'newest' | 'oldest' | 'engagement';
 type ViewMode = 'grid' | 'list' | 'timeline';
 
@@ -275,7 +275,6 @@ export default function Timeline() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved': return 'from-green-500 to-emerald-600';
-      case 'viral': return 'from-purple-500 to-pink-600';
       case 'rejected': return 'from-red-500 to-rose-600';
       case 'validating': return 'from-yellow-500 to-amber-600';
       default: return 'from-gray-500 to-slate-600';
@@ -285,7 +284,6 @@ export default function Timeline() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved': return <SparklesIcon className="w-4 h-4" />;
-      case 'viral': return <ZapIcon className="w-4 h-4" />;
       case 'rejected': return <ClockIcon className="w-4 h-4" />;
       case 'validating': return <EyeIcon className="w-4 h-4" />;
       default: return <TrendingUpIcon className="w-4 h-4" />;
@@ -636,7 +634,7 @@ export default function Timeline() {
                       className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     >
                       <option value="all">All Status</option>
-                      <option value="submitted">Submitted</option>
+                      <option value="pending">Pending</option>
                       <option value="validating">Validating</option>
                       <option value="approved">Approved</option>
                       <option value="rejected">Rejected</option>
@@ -741,7 +739,6 @@ export default function Timeline() {
                             <div className="absolute top-3 right-3 space-y-2">
                               <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg ${
                                 trend.status === 'approved' ? 'bg-blue-100/90 text-blue-700 border border-blue-200' :
-                                trend.status === 'viral' ? 'bg-purple-100/90 text-purple-700 border border-purple-200' :
                                 trend.status === 'rejected' ? 'bg-red-100/90 text-red-700 border border-red-200' :
                                 trend.status === 'validating' ? 'bg-yellow-100/90 text-yellow-700 border border-yellow-200' :
                                 'bg-gray-100/90 text-gray-700 border border-gray-200'
