@@ -371,7 +371,7 @@ export default function ValidatePage() {
             }}
             className="absolute inset-0 cursor-grab active:cursor-grabbing"
           >
-            <div className="h-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+            <div className="h-[650px] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
               {/* Trend Image/Thumbnail - Optimized height */}
               {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
                 <div className="h-48 bg-gray-100 relative flex-shrink-0">
