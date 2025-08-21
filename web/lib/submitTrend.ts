@@ -68,7 +68,8 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     // Calculate XP with all multipliers
     const baseXP = XP_REWARDS.base.trendSubmission; // 10 XP
     const totalXP = userXP?.total_xp || 0;
-    const currentLevel = getCurrentLevel(totalXP);
+    const levelData = getCurrentLevel(totalXP);
+    const currentLevel = levelData.level;
     const dailyStreak = profile?.current_streak || 0;
     const sessionStreak = profile?.session_streak || 0;
     const lastSubmission = profile?.last_submission_at;

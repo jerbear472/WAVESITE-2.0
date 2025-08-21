@@ -307,7 +307,7 @@ export default function PredictionTimeline({
               <div className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
-                  <span className="text-sm font-medium text-red-900">Wrong (>5 days off)</span>
+                  <span className="text-sm font-medium text-red-900">Wrong (&gt;5 days off)</span>
                 </div>
                 <span className="text-sm font-bold text-red-600">
                   -{Math.round(25 * (confidenceLevel / 100))} XP

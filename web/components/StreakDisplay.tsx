@@ -68,8 +68,8 @@ export default function StreakDisplay() {
         .single();
       
       if (userXP) {
-        const level = getCurrentLevel(userXP.total_xp || 0);
-        setUserLevel(level);
+        const levelData = getCurrentLevel(userXP.total_xp || 0);
+        setUserLevel(levelData.level);
       }
     } catch (error) {
       console.error('Error loading user level:', error);

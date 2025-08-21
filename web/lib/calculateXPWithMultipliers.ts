@@ -41,11 +41,11 @@ export function calculateXPWithMultipliers(data: XPCalculationData): XPCalculati
       breakdown.push(`Level ${data.currentLevel} (${levelInfo?.title}): ${levelMultiplier}x`);
     }
   } else if (data.totalXP !== undefined) {
-    const level = getCurrentLevel(data.totalXP);
+    const levelData = getCurrentLevel(data.totalXP);
+    const level = levelData.level;
     levelMultiplier = XP_REWARDS.levelMultipliers[level as keyof typeof XP_REWARDS.levelMultipliers] || 1.0;
     if (levelMultiplier > 1.0) {
-      const levelInfo = XP_REWARDS.levels.find(l => l.level === level);
-      breakdown.push(`Level ${level} (${levelInfo?.title}): ${levelMultiplier}x`);
+      breakdown.push(`Level ${level} (${levelData.title}): ${levelMultiplier}x`);
     }
   }
   

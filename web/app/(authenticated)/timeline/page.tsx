@@ -488,8 +488,8 @@ export default function Timeline() {
         setShowSubmitForm(false);
         await fetchUserTrends();
         
-        // Show XP notification with actual XP earned
-        const xpEarned = result.earnings || 10;
+        // Show XP notification (default 10 XP for submissions)
+        const xpEarned = 10;
         showXPNotification(
           xpEarned, 
           `You earned ${xpEarned} XP`, 
@@ -514,17 +514,12 @@ export default function Timeline() {
             setShowSubmitForm(false);
             await fetchUserTrends();
             // Show XP notification
-            const audienceSize = getAudienceSize(data.wave_score);
-            const message = getTrendSubmissionMessage({
-              xpAmount: 10,
-              audienceSize: audienceSize
-            });
             showXPNotification(
               10, 
-              message, 
+              'You earned 10 XP', 
               'submission',
               WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
-              WAVESIGHT_MESSAGES.VALIDATION_NOTE
+              WAVESIGHT_MESSAGES.VALIDATION_BONUS
             );
             // XP will be awarded automatically
             setError('');
@@ -551,17 +546,12 @@ export default function Timeline() {
           setShowSubmitForm(false);
           await fetchUserTrends();
           // Show XP notification
-          const audienceSize = getAudienceSize(data.wave_score);
-          const message = getTrendSubmissionMessage({
-            xpAmount: 10,
-            audienceSize: audienceSize
-          });
           showXPNotification(
             10, 
-            message, 
+            'You earned 10 XP', 
             'submission',
             WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
-            WAVESIGHT_MESSAGES.VALIDATION_NOTE
+            WAVESIGHT_MESSAGES.VALIDATION_BONUS
           );
           // XP will be shown in UI automatically
           setError('');
