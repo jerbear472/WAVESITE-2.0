@@ -10,10 +10,12 @@ interface XPNotification {
   reason: string;
   type: 'submission' | 'validation' | 'prediction' | 'streak' | 'achievement' | 'bonus' | 'session';
   timestamp: number;
+  title?: string;
+  subtitle?: string;
 }
 
 interface XPNotificationContextType {
-  showXPNotification: (amount: number, reason: string, type?: XPNotification['type']) => void;
+  showXPNotification: (amount: number, reason: string, type?: XPNotification['type'], title?: string, subtitle?: string) => void;
 }
 
 const XPNotificationContext = createContext<XPNotificationContextType | undefined>(undefined);
@@ -29,7 +31,7 @@ export const useXPNotification = () => {
 export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<XPNotification[]>([]);
 
-  const showXPNotification = useCallback((amount: number, reason: string, type: XPNotification['type'] = 'submission') => {
+  const showXPNotification = useCallback((amount: number, reason: string, type: XPNotification['type'] = 'submission', title?: string, subtitle?: string) => {
     const id = `xp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const notification: XPNotification = {
@@ -37,7 +39,9 @@ export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = (
       amount,
       reason,
       type,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      title,
+      subtitle
     };
 
     setNotifications(prev => [...prev, notification]);
@@ -104,15 +108,25 @@ export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = (
                 </div>
                 
                 <div className="flex-1 min-w-0">
+                  {notification.title && (
+                    <p className="text-xs text-white/90 font-semibold mb-1">
+                      {notification.title}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-2xl font-bold">
                       +{notification.amount} XP
                     </span>
                     <div className="flex-1 h-px bg-white/30"></div>
                   </div>
-                  <p className="text-sm text-white/90 truncate">
+                  <p className="text-sm text-white/90">
                     {notification.reason}
                   </p>
+                  {notification.subtitle && (
+                    <p className="text-xs text-white/70 mt-1">
+                      {notification.subtitle}
+                    </p>
+                  )}
                 </div>
               </div>
               

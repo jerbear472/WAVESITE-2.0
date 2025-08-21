@@ -86,7 +86,7 @@ export default function PredictionsPage() {
 
   const loadValidatedTrends = async () => {
     try {
-      // Get trends that have been validated (3+ positive validations)
+      // Get trends that have passed quality check (ready for community predictions)
       const { data: trends, error } = await supabase
         .from('trend_submissions')
         .select(`
@@ -94,7 +94,7 @@ export default function PredictionsPage() {
           spotter:users!trend_submissions_spotter_id_fkey(username),
           predictions:trend_predictions(*)
         `)
-        .eq('status', 'validated')
+        .in('status', ['validated', 'quality_approved']) // Include both for backwards compatibility
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -249,10 +249,19 @@ export default function PredictionsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-gray-600"
+            className="text-gray-600 mb-2"
           >
-            Predict the trajectory of validated trends and earn XP
+            Vote and predict the trajectory of quality-approved trends
           </motion.p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm"
+          >
+            <CheckCircle className="w-4 h-4" />
+            These trends passed quality check - now predict their potential!
+          </motion.div>
         </div>
 
         {/* Stats Summary */}

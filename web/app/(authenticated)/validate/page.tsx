@@ -115,13 +115,13 @@ export default function ValidatePage() {
     
     setLoading(true);
     try {
-      // Get trends that need validation (less than 3 votes)
+      // Get trends that need quality checking (less than 3 votes, not yet quality approved)
       const { data: trends, error } = await supabase
         .from('trend_submissions')
         .select('*')
         .or('validation_count.is.null,validation_count.lt.3')
         .neq('spotter_id', user.id) // Don't show user's own trends
-        .in('status', ['submitted', 'validating']) // Show submitted and validating trends
+        .in('status', ['submitted', 'validating', 'pending']) // Only get trends not yet quality approved
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -205,12 +205,13 @@ export default function ValidatePage() {
 
       if (validationError) throw validationError;
 
-      // Update validation count
+      // Update validation count and status
+      const newValidationCount = currentTrend.validation_count + 1;
       const { error: updateError } = await supabase
         .from('trend_submissions')
         .update({ 
-          validation_count: currentTrend.validation_count + 1,
-          status: currentTrend.validation_count + 1 >= 3 ? 'validated' : 'pending'
+          validation_count: newValidationCount,
+          status: newValidationCount >= 3 ? 'quality_approved' : 'pending'
         })
         .eq('id', currentTrend.id);
 
@@ -323,6 +324,12 @@ export default function ValidatePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 py-6">
       <div className="max-w-lg mx-auto px-4">
+        {/* Page Header */}
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Quality Control</h1>
+          <p className="text-sm text-gray-600 mt-1">Help filter spam from real trends</p>
+        </div>
+
         {/* Header Stats */}
         <div className="mb-6 flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -359,14 +366,19 @@ export default function ValidatePage() {
                     {lastVote === 'valid' ? '✓' : '✗'}
                   </div>
                   <p className="text-lg font-bold text-gray-900 mb-2">
-                    You voted: {lastVote === 'valid' ? 'Valid' : 'Invalid'}
+                    {lastVote === 'valid' ? 'Quality Content!' : 'Marked as Spam'}
                   </p>
                   {consensus && (
                     <p className="text-sm text-gray-600">
-                      Community: {consensus}% agree
+                      {consensus}% of validators agree
                     </p>
                   )}
                   <p className="text-xs text-green-600 mt-2">+{lastXPEarned} XP</p>
+                  {lastVote === 'valid' && currentTrend.validation_count >= 2 && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      ✨ Moved to Predictions!
+                    </p>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -573,9 +585,17 @@ export default function ValidatePage() {
 
                 {/* Validation Question */}
                 <div className="mt-auto pt-4">
-                  <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
-                    <p className="text-center font-semibold text-gray-900 text-sm">
-                      Is this actually trending?
+                  <div className="space-y-2">
+                    <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+                      <p className="text-center font-semibold text-gray-900 text-sm">
+                        Is this quality content worth tracking?
+                      </p>
+                      <p className="text-center text-xs text-gray-600 mt-1">
+                        Not spam • Real trend • Worth monitoring
+                      </p>
+                    </div>
+                    <p className="text-xs text-center text-gray-500">
+                      Approved trends move to Predictions for community voting
                     </p>
                   </div>
                 </div>
@@ -586,10 +606,10 @@ export default function ValidatePage() {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2 text-red-500 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
                     <X className="h-6 w-6" />
-                    <span className="font-semibold text-sm">REJECT</span>
+                    <span className="font-semibold text-sm">SPAM/JUNK</span>
                   </div>
                   <div className="flex items-center space-x-2 text-green-500 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
-                    <span className="font-semibold text-sm">VALIDATE</span>
+                    <span className="font-semibold text-sm">QUALITY</span>
                     <Check className="h-6 w-6" />
                   </div>
                 </div>
@@ -620,11 +640,17 @@ export default function ValidatePage() {
         {/* Queue indicator and keyboard hint */}
         <div className="mt-8 text-center space-y-2">
           <p className="text-sm text-gray-500">
-            {trendQueue.length - 1} more trends to validate
+            {trendQueue.length - 1} more trends to review
           </p>
           <p className="text-xs text-gray-400">
-            💡 Tip: Use ← → arrow keys or click buttons to validate
+            💡 Tip: Use ← → arrow keys • Left = Spam/Junk • Right = Quality
           </p>
+          <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+            <p className="text-xs text-blue-700">
+              <span className="font-semibold">How it works:</span> After 3 quality votes, trends move to Predictions 
+              where the community votes on their trending potential
+            </p>
+          </div>
         </div>
       </div>
     </div>
