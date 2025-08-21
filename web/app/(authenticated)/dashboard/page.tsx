@@ -244,11 +244,12 @@ export default function Dashboard() {
       
       if (result.success) {
         console.log('✅ Submission successful, showing XP notification...');
-        // Show XP notification
+        // Show XP notification with actual XP earned (including multipliers)
+        const xpEarned = result.earnings || 10;
         try {
           showXPNotification(
-            10, 
-            WAVESIGHT_MESSAGES.SUBMISSION_MESSAGE, 
+            xpEarned, 
+            `You earned ${xpEarned} XP`, 
             'submission',
             WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
             WAVESIGHT_MESSAGES.VALIDATION_BONUS

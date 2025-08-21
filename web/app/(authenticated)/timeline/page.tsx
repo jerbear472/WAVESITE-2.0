@@ -488,10 +488,11 @@ export default function Timeline() {
         setShowSubmitForm(false);
         await fetchUserTrends();
         
-        // Show XP notification
+        // Show XP notification with actual XP earned
+        const xpEarned = result.earnings || 10;
         showXPNotification(
-          10, 
-          WAVESIGHT_MESSAGES.SUBMISSION_MESSAGE, 
+          xpEarned, 
+          `You earned ${xpEarned} XP`, 
           'submission',
           WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
           WAVESIGHT_MESSAGES.VALIDATION_BONUS
