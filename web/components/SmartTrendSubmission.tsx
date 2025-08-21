@@ -484,11 +484,8 @@ const CATEGORIES = [
   }
 ];
 
-export default function SmartTrendSubmission({ 
-  onClose, 
-  onSubmit: customSubmit, 
-  initialUrl = ''
-}: SmartTrendSubmissionProps) {
+export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
+  const { onClose, onSubmit: customSubmit, initialUrl = '' } = props;
   const { user } = useAuth();
   const { logTrendSubmission, isSessionActive, session } = useSession();
   const [loading, setLoading] = useState(false);
@@ -1956,7 +1953,7 @@ export default function SmartTrendSubmission({
           </div>
         </div>
       </motion.div>
-      </div>
+      </AnimatePresence>
     </>
   );
 }
