@@ -71,14 +71,14 @@ export const XPLevelDisplay: React.FC<Props> = ({ userId, compact = false }) => 
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
-          table: 'user_profiles',
-          filter: `id=eq.${userId}`
+          table: 'user_xp',
+          filter: `user_id=eq.${userId}`
         },
         (payload) => {
-          console.log('User profile update in XPLevelDisplay:', payload);
-          // Reload XP stats when user profile changes
+          console.log('User XP update in XPLevelDisplay:', payload);
+          // Reload XP stats when user XP changes
           loadXPStats();
         }
       )
@@ -91,14 +91,14 @@ export const XPLevelDisplay: React.FC<Props> = ({ userId, compact = false }) => 
 
   const loadXPStats = async () => {
     try {
-      // Get user XP from user_profiles (same source as AuthContext)
-      const { data: userProfile } = await supabase
-        .from('user_profiles')
-        .select('total_earned')
-        .eq('id', userId)
+      // Get user XP from user_xp table (correct XP source)
+      const { data: userXP } = await supabase
+        .from('user_xp')
+        .select('total_xp')
+        .eq('user_id', userId)
         .single();
 
-      const finalXP = Math.max(0, userProfile?.total_earned || 0); // Never show negative XP
+      const finalXP = Math.max(0, userXP?.total_xp || 0); // Never show negative XP
 
       // Calculate current level based on XP
       const currentLevelData = XP_LEVELS
