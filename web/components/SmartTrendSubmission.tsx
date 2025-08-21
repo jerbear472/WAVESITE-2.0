@@ -932,11 +932,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-5 border-b border-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center">
-                <Coins className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                <SendIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white">Spot Cultural Wave</h2>
+                <h2 className="text-lg font-bold text-white">Submit New Trend</h2>
                 <p className="text-xs text-gray-400">
                   {currentStep === 'url' && 'Earn up to 200 XP'}
                   {currentStep === 'velocity' && 'Predict the trend trajectory'}
@@ -1767,7 +1767,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 transition-all text-white font-medium flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 transition-all text-white font-medium flex items-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -1776,14 +1776,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   </>
                 ) : (
                   <>
-                    <Coins className="w-4 h-4" />
-                    Submit & Earn {(() => {
-                      const qualityBonus = Math.floor(calculateTitleCatchiness(formData.title) / 2);
-                      const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
-                      const predictionBonus = formData.predictedPeak ? 15 : 0;
-                      const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
-                      return 30 + qualityBonus + velocityBonus + predictionBonus + categoryBonus;
-                    })()} XP
+                    <SendIcon className="w-4 h-4" />
+                    Submit New Trend
                   </>
                 )}
               </button>
