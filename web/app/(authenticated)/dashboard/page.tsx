@@ -289,19 +289,20 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Welcome back, <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">{user?.username || 'Cultural Anthropologist'}</span>!
             </h1>
             <p className="text-gray-600">Track your journey in spotting cultural waves</p>
           </div>
           <button
             onClick={() => setShowSubmissionForm(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-3 sm:px-6 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base whitespace-nowrap min-w-fit"
           >
-            <Send className="w-5 h-5" />
-            Submit New Trend
+            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden xs:inline">Submit New Trend</span>
+            <span className="xs:hidden">New Trend</span>
           </button>
         </div>
 

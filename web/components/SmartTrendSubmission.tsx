@@ -355,7 +355,7 @@ const CATEGORIES = [
     questions: {
       type: {
         label: 'What kind of tech trend?',
-        options: ['New app/tool', 'Gaming meta', 'Tech hack', 'AI thing', 'Gadget']
+        options: ['New app/tool', 'Gaming meta', 'Tech hack', 'AI thing', 'Gadget', 'Startup']
       },
       accessibility: {
         label: 'Who can do this?',
@@ -878,18 +878,22 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
 
   const handleSubmit = async () => {
-    console.log('Submit clicked');
+    console.log('🚀 Submit clicked from SmartTrendSubmission');
     setLoading(true);
+    setError('');
     
     try {
       if (customSubmit) {
+        console.log('📤 Calling customSubmit with data:', formData);
         await customSubmit(formData);
+        console.log('✅ customSubmit completed successfully');
+        onClose();
       }
-      
-      setLoading(false);
-      onClose();
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('❌ Error in handleSubmit:', error);
+      setError(error.message || 'Failed to submit trend. Please try again.');
+    } finally {
+      console.log('🏁 Setting loading to false');
       setLoading(false);
     }
   };

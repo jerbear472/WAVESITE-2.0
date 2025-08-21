@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
@@ -38,6 +39,7 @@ interface TrendToValidate {
 export default function ValidatePage() {
   const { user } = useAuth();
   const { showXPNotification } = useXPNotification();
+  const router = useRouter();
   const [currentTrend, setCurrentTrend] = useState<TrendToValidate | null>(null);
   const [trendQueue, setTrendQueue] = useState<TrendToValidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,7 @@ export default function ValidatePage() {
   const [lightningMode, setLightningMode] = useState(false);
   const [lightningTimer, setLightningTimer] = useState(0);
   const [lightningCount, setLightningCount] = useState(0);
+  const [lastXPEarned, setLastXPEarned] = useState(5);
   
   // Swipe animation values
   const x = useMotionValue(0);
@@ -177,23 +180,23 @@ export default function ValidatePage() {
 
       if (updateError) throw updateError;
 
-      // Award XP
+      // Award XP using unified XP system
       const baseXP = 5;
       const streakBonus = Math.floor(streak / 10) * 2;
       const totalXP = baseXP + streakBonus + (lightningMode ? baseXP : 0);
       
-      const { error: xpError } = await supabase
-        .from('xp_ledger')
-        .insert({
-          user_id: user.id,
-          xp_amount: totalXP,
-          transaction_type: 'validation',
-          description: `Validated trend: ${currentTrend.title}`,
-          status: 'approved'
-        });
+      const { error: xpError } = await supabase.rpc('award_xp', {
+        p_user_id: user.id,
+        p_amount: totalXP,
+        p_type: 'validation',
+        p_description: `Validated trend: ${currentTrend.title}`,
+        p_reference_id: currentTrend.id,
+        p_reference_type: 'trend_submission'
+      });
 
       if (!xpError) {
         setXpEarned(prev => prev + totalXP);
+        setLastXPEarned(totalXP);
         // Show XP notification
         const notificationText = lightningMode ? 
           `Lightning validation! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}` :
@@ -245,20 +248,26 @@ export default function ValidatePage() {
     setLightningCount(0);
   };
 
-  const handleLightningComplete = () => {
+  const handleLightningComplete = async () => {
     const bonusXP = lightningCount * 10;
-    if (bonusXP > 0) {
-      supabase
-        .from('xp_ledger')
-        .insert({
-          user_id: user?.id,
-          xp_amount: bonusXP,
-          transaction_type: 'lightning_bonus',
-          description: `Lightning round: ${lightningCount} validations`,
-          status: 'approved'
+    if (bonusXP > 0 && user) {
+      try {
+        const { error } = await supabase.rpc('award_xp', {
+          p_user_id: user.id,
+          p_amount: bonusXP,
+          p_type: 'lightning_bonus',
+          p_description: `Lightning round: ${lightningCount} validations`,
+          p_reference_id: null,
+          p_reference_type: null
         });
-      
-      setXpEarned(prev => prev + bonusXP);
+        
+        if (!error) {
+          setXpEarned(prev => prev + bonusXP);
+          showXPNotification(bonusXP, `Lightning round complete! ${lightningCount} validations`, 'bonus');
+        }
+      } catch (error) {
+        console.error('Error awarding lightning bonus:', error);
+      }
     }
   };
 
@@ -295,7 +304,7 @@ export default function ValidatePage() {
             No trends need validation right now. Check back soon or submit your own trends!
           </p>
           <button
-            onClick={() => window.location.href = '/spot'}
+            onClick={() => router.push('/spot')}
             className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
           >
             Start Spotting Trends
@@ -389,7 +398,7 @@ export default function ValidatePage() {
                       Community: {consensus}% agree
                     </p>
                   )}
-                  <p className="text-xs text-green-600 mt-2">+{5 + (lightningMode ? 5 : 0)} XP</p>
+                  <p className="text-xs text-green-600 mt-2">+{lastXPEarned} XP</p>
                 </div>
               </motion.div>
             )}

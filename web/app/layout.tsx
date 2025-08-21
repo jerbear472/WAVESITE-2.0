@@ -4,13 +4,13 @@ import { Providers } from "./providers";
 import GlobalErrorBoundary from "@/components/GlobalErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "WaveSight - Get Paid to Spot Viral Trends",
-  description: "Human spotters catch cultural shifts 2 weeks early. Earn money by identifying viral content before it trends.",
-  keywords: "get paid, spot trends, viral content, earn money online, social media trends, trend spotting",
+  title: "WaveSight - See the wave before it breaks",
+  description: "Human spotters catch cultural shifts 2 weeks early. See the wave before it breaks and identify viral content before it trends.",
+  keywords: "cultural trends, viral content, social media trends, trend spotting, cultural anthropology, wave sight",
   authors: [{ name: "WaveSight" }],
   openGraph: {
-    title: "WaveSight - Get Paid to Spot Viral Trends",
-    description: "Human spotters catch cultural shifts 2 weeks early. Earn money by identifying viral content before it trends.",
+    title: "WaveSight - See the wave before it breaks",
+    description: "Human spotters catch cultural shifts 2 weeks early. See the wave before it breaks and identify viral content before it trends.",
     type: "website",
   },
 };
