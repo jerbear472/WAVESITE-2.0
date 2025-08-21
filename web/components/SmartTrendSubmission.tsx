@@ -1229,7 +1229,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   <p className="text-xs text-gray-600 mb-2">
                     Make it clickable! Use viral words, emotional hooks, and power phrases
                   </p>
-                  <textarea
+                  <input
+                    type="text"
                     value={formData.title}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, title: e.target.value }));
@@ -1237,8 +1238,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       calculateTitleCatchiness(e.target.value);
                     }}
                     placeholder="e.g., This Viral TikTok Trend Will Blow Your Mind - Millions Are Obsessed!"
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y text-base"
-                    rows={3}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-base"
                   />
                   
                   {/* Catchiness Indicators */}
