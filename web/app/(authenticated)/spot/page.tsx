@@ -437,20 +437,43 @@ export default function SpotPage() {
               </button>
             </form>
 
-            {/* XP Flow Info - Moved below Start Submission button */}
-            <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
-              <div className="text-sm space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">📤 Submit trend</span>
-                  <span className="font-semibold text-purple-700">+10 XP instantly</span>
+            {/* XP Flow Info - Sleek version */}
+            <div className="mt-4 p-4 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <Send className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-gray-800 font-medium">Submit trend</span>
+                  </div>
+                  <div className="px-3 py-1 bg-purple-100 rounded-full">
+                    <span className="text-sm font-bold text-purple-700">+10 XP</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">✅ Community validates</span>
-                  <span className="font-semibold text-green-700">+50 XP bonus</span>
+                
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-gray-800 font-medium">Community validates</span>
+                  </div>
+                  <div className="px-3 py-1 bg-green-100 rounded-full">
+                    <span className="text-sm font-bold text-green-700">+50 XP</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">❌ Community rejects</span>
-                  <span className="font-semibold text-red-600">-15 XP penalty</span>
+                
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+                      <X className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-gray-800 font-medium">Community rejects</span>
+                  </div>
+                  <div className="px-3 py-1 bg-red-100 rounded-full">
+                    <span className="text-sm font-bold text-red-700">-15 XP</span>
+                  </div>
                 </div>
               </div>
             </div>

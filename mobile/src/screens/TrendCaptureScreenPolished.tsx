@@ -1,42 +1,8 @@
-import React, { useState, useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  ActivityIndicator,
-  Dimensions,
-  Image,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
-import { Camera, useCameraDevices, PhotoFile } from 'react-native-vision-camera';
-import ImagePicker from 'react-native-image-picker';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../hooks/useAuth';
-import { enhancedTheme } from '../styles/theme.enhanced';
-import { BlurView } from '@react-native-community/blur';
-import HapticFeedback from 'react-native-haptic-feedback';
-import ViewShot from 'react-native-view-shot';
-import RNFS from 'react-native-fs';
-import supabaseService from '../services/supabaseService';
-import { TrendCategory } from '../types/database';
+import { SmartTrendSubmission } from '../components/SmartTrendSubmission';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
