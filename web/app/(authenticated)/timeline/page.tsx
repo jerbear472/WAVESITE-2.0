@@ -489,7 +489,7 @@ export default function Timeline() {
         await fetchUserTrends();
         
         // Show XP notification
-        const audienceSize = getAudienceSize(data.wave_score);
+        const audienceSize = getAudienceSize(data);
         const message = getTrendSubmissionMessage({
           xpAmount: 10,
           audienceSize: audienceSize

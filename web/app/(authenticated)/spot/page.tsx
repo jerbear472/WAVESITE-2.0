@@ -313,7 +313,12 @@ export default function SpotPage() {
         const xpAmount = result.earnings || 100;
         
         // Show animated XP notification with WaveSight branding
-        const audienceSize = getAudienceSize(formData.wave_score || formData.sentiment);
+        const audienceSize = getAudienceSize({
+          wave_score: formData.wave_score,
+          trendVelocity: formData.trendVelocity,
+          trendSize: formData.trendSize,
+          views_count: formData.views_count
+        });
         const message = getTrendSubmissionMessage({
           xpAmount: xpAmount,
           audienceSize: audienceSize

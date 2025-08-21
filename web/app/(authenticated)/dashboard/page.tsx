@@ -246,7 +246,7 @@ export default function Dashboard() {
         console.log('✅ Submission successful, showing XP notification...');
         // Show XP notification
         try {
-          const audienceSize = getAudienceSize(data.wave_score);
+          const audienceSize = getAudienceSize(data);
           const message = getTrendSubmissionMessage({
             xpAmount: 10,
             audienceSize: audienceSize
