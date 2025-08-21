@@ -22,26 +22,19 @@ export default function Navigation() {
       if (!user) return;
       
       try {
-        // Fetch XP and level
+        // Fetch XP and level from user_xp_summary view (same as dashboard)
         const { data: xpData } = await supabase
-          .from('user_xp')
-          .select('total_xp, current_level')
+          .from('user_xp_summary')
+          .select('total_xp, level, level_title')
           .eq('user_id', user.id)
           .single();
 
         if (xpData) {
+          console.log('Navigation XP data:', xpData);
           setUserXP(xpData.total_xp || 0);
-          
-          // Fetch level title
-          const { data: levelData } = await supabase
-            .from('xp_levels')
-            .select('title')
-            .eq('level', xpData.current_level)
-            .single();
-            
-          if (levelData) {
-            setUserLevel(levelData.title);
-          }
+          setUserLevel(xpData.level_title || 'Observer');
+        } else {
+          console.log('No XP data found for user:', user.id);
         }
 
         // Fetch leaderboard rank

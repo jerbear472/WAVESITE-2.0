@@ -967,7 +967,7 @@ export default function SmartTrendSubmission({
         spreadSpeed: formData.trendVelocity || 'just_starting',
         categorySpecific: formData.categoryAnswers,
         brandAdoption: false,
-        motivation: `Category: ${category?.label}, ${Object.entries(formData.categoryAnswers).map(([k, v]) => `${k}: ${v}`).join(', ')}`,
+        motivation: `Category: ${category?.label}, ${Object.entries(formData.categoryAnswers).map(([k, v]) => k + ': ' + v).join(', ')}`,
         firstSeen: formData.posted_at || new Date().toISOString(),
         moods: [],
         region: 'Global',

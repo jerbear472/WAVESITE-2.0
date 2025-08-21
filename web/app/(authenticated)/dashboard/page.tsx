@@ -97,11 +97,17 @@ export default function Dashboard() {
 
     try {
       // Get user XP summary
-      const { data: xpSummary } = await supabase
+      const { data: xpSummary, error: xpError } = await supabase
         .from('user_xp_summary')
         .select('*')
         .eq('user_id', user.id)
         .single();
+
+      if (xpError) {
+        console.error('Error fetching XP summary:', xpError);
+      }
+      
+      console.log('XP Summary data:', xpSummary);
 
       // Get today's and this week's XP
       const today = new Date();
@@ -110,12 +116,33 @@ export default function Dashboard() {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
 
-      const { data: xpEvents } = await supabase
+      // Try xp_events first, fall back to xp_transactions if it doesn't exist
+      let xpEvents = null;
+      const { data: xpEventsData, error: eventsError } = await supabase
         .from('xp_events')
         .select('*')
         .eq('user_id', user.id)
         .gte('created_at', weekAgo.toISOString())
         .order('created_at', { ascending: false });
+      
+      if (eventsError && eventsError.code === '42P01') {
+        // Table doesn't exist, try xp_transactions
+        const { data: xpTransData } = await supabase
+          .from('xp_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('created_at', weekAgo.toISOString())
+          .order('created_at', { ascending: false });
+        
+        // Map xp_transactions to match xp_events structure
+        xpEvents = xpTransData?.map(t => ({
+          ...t,
+          xp_change: t.amount,
+          event_type: t.type
+        }));
+      } else {
+        xpEvents = xpEventsData;
+      }
 
       const todaysXP = xpEvents
         ?.filter(e => new Date(e.created_at) >= today)
@@ -144,10 +171,14 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .single();
 
+      // Ensure we handle both null and undefined properly
+      const totalXP = xpSummary?.total_xp ?? 0;
+      const currentLevel = xpSummary?.level ?? 1;
+      
       setStats({
-        total_xp: xpSummary?.total_xp || 0,
-        current_level: xpSummary?.level || 1,
-        level_title: xpSummary?.level_title || 'Observer',
+        total_xp: totalXP,
+        current_level: currentLevel,
+        level_title: xpSummary?.level_title || XP_LEVELS.find(l => l.level === currentLevel)?.title || 'Observer',
         todays_xp: todaysXP,
         weekly_xp: weeklyXP,
         trends_submitted: xpSummary?.total_trends_submitted || 0,
@@ -157,6 +188,12 @@ export default function Dashboard() {
         validation_accuracy: accuracy,
         current_streak: 0, // Would need to calculate from profile
         global_rank: leaderboard?.global_rank || null
+      });
+      
+      console.log('Stats updated:', {
+        totalXP,
+        currentLevel,
+        fromSummary: xpSummary
       });
 
       // Get recent XP events
