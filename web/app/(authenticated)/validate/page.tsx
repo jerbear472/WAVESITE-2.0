@@ -93,6 +93,22 @@ export default function ValidatePage() {
     }
   }, [user]);
 
+  // Add keyboard event listener for arrow keys
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!currentTrend || showFeedback) return;
+      
+      if (e.key === 'ArrowLeft') {
+        handleSwipe('left');
+      } else if (e.key === 'ArrowRight') {
+        handleSwipe('right');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentTrend, showFeedback]);
+
 
   const loadTrendsToValidate = async () => {
     if (!user) return;
@@ -328,8 +344,8 @@ export default function ValidatePage() {
           </div>
         </div>
 
-        {/* Swipe Card - Adjusted height for better balance */}
-        <div className="relative h-[650px]">
+        {/* Swipe Card Container */}
+        <div className="relative">
           <AnimatePresence>
             {showFeedback && (
               <motion.div
@@ -580,29 +596,34 @@ export default function ValidatePage() {
               </div>
             </div>
           </motion.div>
-
-          {/* Action Buttons - Positioned below the card with proper spacing */}
-          <div className="mt-6 flex justify-center space-x-6">
-            <button
-              onClick={() => handleSwipe('left')}
-              className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-red-500"
-            >
-              <X className="h-8 w-8 text-red-500" />
-            </button>
-            
-            <button
-              onClick={() => handleSwipe('right')}
-              className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-green-500"
-            >
-              <Check className="h-8 w-8 text-green-500" />
-            </button>
-          </div>
         </div>
 
-        {/* Queue indicator */}
-        <div className="mt-24 text-center">
+        {/* Action Buttons - Fixed positioning below card */}
+        <div className="flex justify-center space-x-6 mt-8">
+          <button
+            onClick={() => handleSwipe('left')}
+            className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-red-500 group"
+            disabled={showFeedback}
+          >
+            <X className="h-8 w-8 text-red-500 group-hover:scale-110 transition-transform" />
+          </button>
+          
+          <button
+            onClick={() => handleSwipe('right')}
+            className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-green-500 group"
+            disabled={showFeedback}
+          >
+            <Check className="h-8 w-8 text-green-500 group-hover:scale-110 transition-transform" />
+          </button>
+        </div>
+
+        {/* Queue indicator and keyboard hint */}
+        <div className="mt-8 text-center space-y-2">
           <p className="text-sm text-gray-500">
             {trendQueue.length - 1} more trends to validate
+          </p>
+          <p className="text-xs text-gray-400">
+            💡 Tip: Use ← → arrow keys or click buttons to validate
           </p>
         </div>
       </div>
