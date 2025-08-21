@@ -177,8 +177,8 @@ export const WelcomeScreenPolished: React.FC = () => {
             />
             <FeatureCard
               icon="cash-multiple"
-              title="Earn Rewards"
-              description="Get paid for your trend-spotting skills"
+              title="Build Reputation"
+              description="Establish yourself as a trusted trend spotter"
               index={1}
             />
             <FeatureCard

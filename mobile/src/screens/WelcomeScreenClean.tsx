@@ -40,12 +40,12 @@ export const WelcomeScreenClean: React.FC = () => {
 
         <View style={styles.heroSection}>
           <Text style={styles.headline}>
-            Get Paid to{'\n'}
-            <Text style={styles.highlightText}>Spot Trends</Text>
+            For People Who{'\n'}
+            <Text style={styles.highlightText}>Spot Trends First</Text>
           </Text>
           
           <Text style={styles.description}>
-            Turn your social media scrolling into cash by identifying viral content before it takes off
+            Join the community that identifies what's next before everyone else catches on
           </Text>
         </View>
 
@@ -70,24 +70,24 @@ export const WelcomeScreenClean: React.FC = () => {
 
         <View style={styles.features}>
           <FeatureItem 
-            icon="👀"
-            title="Spot Early"
-            description="Find trending content before it goes viral"
+            icon="🔮"
+            title="Predict What's Next"
+            description="Identify emerging trends before they hit mainstream"
           />
           <FeatureItem 
-            icon="✅"
-            title="Validate"
-            description="Verify and rate emerging trends"
+            icon="🌊"
+            title="Ride the Wave"
+            description="Track cultural movements as they build momentum"
           />
           <FeatureItem 
-            icon="💵"
-            title="Get Paid"
-            description="Earn real money for accurate predictions"
+            icon="🎯"
+            title="Trust Your Instincts"
+            description="Build your reputation as a trend spotter"
           />
         </View>
 
         <Text style={styles.footer}>
-          Join 10,000+ users earning daily
+          Join the community of trend spotters
         </Text>
       </ScrollView>
     </View>
