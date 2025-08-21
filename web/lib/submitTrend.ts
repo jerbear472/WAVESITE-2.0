@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { calculateTrendEarnings } from './SUSTAINABLE_EARNINGS';
+import { XP_REWARDS } from './XP_REWARDS';
 import { getSafeCategory } from './safeCategory';
 
 export interface TrendSubmissionData {
@@ -60,8 +60,9 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       last_submission_at: undefined
     };
     
-    const earningsCalc = calculateTrendEarnings(null, userProfile as any);
-    const paymentAmount = earningsCalc.total || 0.25;
+    // Use XP rewards system for base submission XP
+    const baseXP = XP_REWARDS.base.trendSubmission; // 25 XP
+    const paymentAmount = baseXP;
     
     // Prepare submission data - only include columns that exist
     const submissionData = {

@@ -437,81 +437,36 @@ export default function SpotPage() {
               </button>
             </form>
 
-            {/* XP Flow Info - Elegant & Sleek */}
-            <div className="mt-6 relative">
-              {/* Gradient background with subtle glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-indigo-500/5 to-cyan-500/10 rounded-2xl blur-xl"></div>
-              
-              <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 p-6">
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Earn XP Flow</h3>
-                    <p className="text-xs text-gray-600">Smart trend validation system</p>
-                  </div>
+            {/* XP Flow - Simple & Light */}
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <Send className="w-4 h-4 text-purple-500" />
+                  <span className="text-gray-700">Submit trend</span>
                 </div>
-
-                {/* Flow Steps */}
-                <div className="space-y-4">
-                  <div className="group flex items-center justify-between p-4 rounded-xl bg-white/50 border border-purple-100/50 hover:bg-white/80 hover:border-purple-200/80 transition-all duration-200">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                        <Send className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">Submit trend</div>
-                        <div className="text-xs text-gray-500">Share your cultural insights</div>
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2 rounded-full shadow-sm">
-                      <span className="text-sm font-bold">+10 XP</span>
-                    </div>
-                  </div>
-                  
-                  <div className="group flex items-center justify-between p-4 rounded-xl bg-white/50 border border-emerald-100/50 hover:bg-white/80 hover:border-emerald-200/80 transition-all duration-200">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                        <CheckCircle className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">Community validates</div>
-                        <div className="text-xs text-gray-500">Your trend gets verified</div>
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-4 py-2 rounded-full shadow-sm">
-                      <span className="text-sm font-bold">+50 XP</span>
-                    </div>
-                  </div>
-                  
-                  <div className="group flex items-center justify-between p-4 rounded-xl bg-white/50 border border-red-100/50 hover:bg-white/80 hover:border-red-200/80 transition-all duration-200">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                        <X className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">Community rejects</div>
-                        <div className="text-xs text-gray-500">Learn from feedback</div>
-                      </div>
-                    </div>
-                    <div className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full shadow-sm">
-                      <span className="text-sm font-bold">-15 XP</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Feature */}
-                <div className="mt-6 pt-4 border-t border-gray-200/50">
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-sm font-medium">Auto-captures creator info & metrics</span>
-                  </div>
-                </div>
+                <span className="text-purple-600 font-medium">+10 XP</span>
               </div>
+              
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-gray-700">Community validates</span>
+                </div>
+                <span className="text-green-600 font-medium">+50 XP</span>
+              </div>
+              
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <X className="w-4 h-4 text-red-500" />
+                  <span className="text-gray-700">Community rejects</span>
+                </div>
+                <span className="text-red-600 font-medium">-15 XP</span>
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+              <Sparkles className="w-3 h-3" />
+              <span>Auto-captures creator info & metrics</span>
             </div>
           </div>
 
