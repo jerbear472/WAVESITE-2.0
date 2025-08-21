@@ -21,8 +21,12 @@ import {
   XCircle,
   Flame,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Plus,
+  Send
 } from 'lucide-react';
+import SmartTrendSubmission from '@/components/SmartTrendSubmission';
+import { submitTrend } from '@/lib/submitTrend';
 
 interface XPStats {
   total_xp: number;
@@ -85,6 +89,7 @@ export default function Dashboard() {
   const [recentEvents, setRecentEvents] = useState<XPEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAllLevels, setShowAllLevels] = useState(false);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -219,6 +224,18 @@ export default function Dashboard() {
     }
   };
 
+  const handleTrendSubmit = async (data: any) => {
+    try {
+      await submitTrend(user!.id, data);
+      setShowSubmissionForm(false);
+      // Reload dashboard data to show new stats
+      loadDashboardData();
+    } catch (error) {
+      console.error('Error submitting trend:', error);
+      throw error; // Re-throw to let SmartTrendSubmission handle the error
+    }
+  };
+
   const getLevelProgress = () => {
     // Calculate progress to next level
     const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500, 6600, 8000, 10000, 12500, 15000];
@@ -255,11 +272,20 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.username || 'Cultural Anthropologist'}!
-          </h1>
-          <p className="text-gray-600">Track your journey in spotting cultural waves</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome back, {user?.username || 'Cultural Anthropologist'}!
+            </h1>
+            <p className="text-gray-600">Track your journey in spotting cultural waves</p>
+          </div>
+          <button
+            onClick={() => setShowSubmissionForm(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <Send className="w-5 h-5" />
+            Submit New Trend
+          </button>
         </div>
 
 
@@ -548,6 +574,14 @@ export default function Dashboard() {
           <PendingValidations />
         </div>
       </div>
+
+      {/* Trend Submission Modal */}
+      {showSubmissionForm && (
+        <SmartTrendSubmission
+          onClose={() => setShowSubmissionForm(false)}
+          onSubmit={handleTrendSubmit}
+        />
+      )}
     </div>
   );
 }
