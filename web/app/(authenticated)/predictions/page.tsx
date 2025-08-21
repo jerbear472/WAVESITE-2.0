@@ -467,6 +467,7 @@ export default function PredictionsPage() {
                         currentTrendAge={selectedTrend.submitted_at ? 
                           Math.floor((Date.now() - new Date(selectedTrend.submitted_at).getTime()) / (1000 * 60 * 60 * 24)) : 0
                         }
+                        confidenceLevel={predictionForm.confidence_level}
                       />
 
                       <div>

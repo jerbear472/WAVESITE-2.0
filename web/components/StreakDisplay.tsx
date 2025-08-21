@@ -6,7 +6,8 @@ import { Flame, Zap, Calendar, TrendingUp, Clock, Award } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatCurrency } from '@/lib/formatters';
+import { XP_REWARDS, getCurrentLevel } from '@/lib/XP_REWARDS';
+import { getLevelMultiplier, getDailyStreakMultiplier, getSessionStreakMultiplier } from '@/lib/calculateXPWithMultipliers';
 
 interface DailyStreak {
   current: number;
@@ -22,11 +23,13 @@ export default function StreakDisplay() {
     longest: 0,
     lastActive: null
   });
+  const [userLevel, setUserLevel] = useState(1);
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadDailyStreak();
+      loadUserLevel();
     }
   }, [user]);
 
