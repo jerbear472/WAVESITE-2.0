@@ -22,8 +22,9 @@ export default function FloatingSessionTimer() {
   const pathname = usePathname();
   const [isMinimized, setIsMinimized] = useState(false);
   const [isHidden, setIsHidden] = useState(() => {
-    // Check localStorage to persist hidden state
-    if (typeof window !== 'undefined') {
+    // Only check localStorage for hidden state if session is active
+    // If session is not active, always start visible (don't persist hidden state)
+    if (typeof window !== 'undefined' && session.isActive) {
       return localStorage.getItem('floatingTimerHidden') === 'true';
     }
     return false;
@@ -37,8 +38,8 @@ export default function FloatingSessionTimer() {
   // Only show on authenticated pages where sessions matter
   const isPublicPage = ['/', '/login', '/register', '/privacy', '/terms', '/contact', '/about'].includes(pathname || '');
   
-  // Don't show on public pages or if user is not logged in
-  if (isPublicPage || !user) {
+  // Don't show on public pages, if user is not logged in, or if session is not active
+  if (isPublicPage || !user || !session.isActive) {
     return null;
   }
 

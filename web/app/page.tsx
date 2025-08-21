@@ -17,7 +17,7 @@ export default function Home() {
           </h1>
           
           {/* Sub-hero */}
-          <p className="text-2xl md:text-3xl font-medium text-gray-800 dark:text-gray-200 mb-8">
+          <p className="text-2xl md:text-3xl font-normal text-gray-800 dark:text-gray-200 mb-8">
             The app for people who spot trends first.
           </p>
           

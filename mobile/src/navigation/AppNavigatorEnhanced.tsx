@@ -79,7 +79,7 @@ const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
 
   const iconMap: { [key: string]: string } = {
     Home: 'view-dashboard',
-    Capture: 'camera-plus',
+    Capture: 'eye-outline',
     Validate: 'check-decagram',
     Timeline: 'timeline-clock',
     Profile: 'account-circle',
@@ -175,7 +175,7 @@ const TabNavigator: React.FC = () => {
       <Tab.Screen 
         name="Capture" 
         component={TrendCaptureScreenPolished}
-        options={{ title: 'Capture' }}
+        options={{ title: 'Spot' }}
       />
       <Tab.Screen 
         name="Validate" 
