@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import WaveSightLogo from '@/components/WaveSightLogo';
 import Header from '@/components/Header';
 import { CheckCircle } from 'lucide-react';
+import { testDirectLogin } from '@/lib/testLogin';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login form submitted'); // Debug log
+    console.log('[LOGIN PAGE] Form submitted'); // Debug log
     
     if (!formData.email || !formData.password) {
       setError('Please enter both email and password');
@@ -52,23 +53,28 @@ export default function LoginPage() {
     
     setError('');
     setLoading(true);
-    console.log('Attempting login with email:', formData.email); // Debug log
+    console.log('[LOGIN PAGE] Attempting login with email:', formData.email); // Debug log
 
     try {
       await login(formData.email, formData.password);
-      console.log('Login successful, redirecting...'); // Debug log
+      console.log('[LOGIN PAGE] Login successful, redirecting...'); // Debug log
       
       // Small delay to ensure session is set
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const from = searchParams?.get('from') || '/dashboard';
-      console.log('Redirecting to:', from); // Debug log
+      console.log('[LOGIN PAGE] Redirecting to:', from); // Debug log
       
       // Use Next.js router for client-side navigation
       router.push(from);
     } catch (err: any) {
-      console.error('Login error:', err); // Debug log
+      console.error('[LOGIN PAGE] Login error details:', {
+        message: err.message,
+        stack: err.stack,
+        fullError: err
+      }); // Enhanced debug log
       setError(err.message || 'Invalid email or password');
+    } finally {
       setLoading(false);
     }
   };
@@ -145,6 +151,31 @@ export default function LoginPage() {
                 'Sign in'
               )}
             </button>
+            
+            {/* Debug button - remove after fixing */}
+            <button
+              type="button"
+              onClick={async () => {
+                console.log('Test login button clicked');
+                setLoading(true);
+                try {
+                  const result = await testDirectLogin(formData.email, formData.password);
+                  console.log('Test login result:', result);
+                  if (result.success) {
+                    // Use router.push instead of window.location
+                    router.push('/dashboard');
+                  }
+                } catch (err: any) {
+                  console.error('Test login error:', err);
+                  setError(err.message);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="w-full mt-2 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg"
+            >
+              Test Direct Login (Debug)
+            </button>
             </form>
           </div>
 
@@ -154,6 +185,25 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
+          
+          {/* Test credentials - remove after fixing */}
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
+            <p className="font-semibold text-yellow-800">Test Credentials (Debug):</p>
+            <p className="text-yellow-700">Email: test1755800878902@wavesight.com</p>
+            <p className="text-yellow-700">Password: TestPassword123!</p>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({
+                  email: 'test1755800878902@wavesight.com',
+                  password: 'TestPassword123!'
+                });
+              }}
+              className="mt-2 text-yellow-600 hover:text-yellow-800 underline"
+            >
+              Fill Test Credentials
+            </button>
+          </div>
         </div>
       </div>
     </div>

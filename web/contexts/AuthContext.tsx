@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { safeLogin, ensureValidSession, getCurrentUser } from '@/lib/authHelpers';
+import { simpleLogin } from '@/lib/simpleLogin';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -208,37 +209,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('[AUTH] Attempting login for:', email);
+      console.log('[AUTH CONTEXT] Starting login for:', email);
       setLoading(true);
       
-      // Use the safer login helper with retries
-      const { user, session } = await safeLogin(email.trim().toLowerCase(), password);
+      // Use the simpler login that handles missing profiles
+      console.log('[AUTH CONTEXT] Calling simpleLogin...');
+      const loginResult = await simpleLogin(email.trim().toLowerCase(), password);
       
-      if (!user || !session) {
-        throw new Error('Login failed - invalid response');
+      if (!loginResult.success || !loginResult.user || !loginResult.session) {
+        throw new Error('Login failed');
       }
-
-      // Fetch user profile with retry logic
-      const userData = await fetchUserProfile(user.id);
+      
+      console.log('[AUTH CONTEXT] Login successful, fetching profile...');
+      
+      // Try to fetch user profile
+      const userData = await fetchUserProfile(loginResult.user.id);
+      
       if (!userData) {
-        // Try once more after a delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const retryData = await fetchUserProfile(user.id);
-        if (!retryData) {
-          throw new Error('Failed to load user profile after retries');
-        }
-        setUser(retryData);
-        console.log('[AUTH] Login successful with retry');
+        console.log('[AUTH CONTEXT] Using basic user data');
+        // Use basic user data if profile fetch fails
+        const basicUser: User = {
+          id: loginResult.user.id,
+          email: loginResult.user.email!,
+          username: loginResult.user.email!.split('@')[0],
+          role: 'participant',
+          total_xp: 0,
+          pending_xp: 0,
+          trends_spotted: 0,
+          accuracy_score: 0,
+          validation_score: 0,
+          performance_tier: 'lxp',
+          current_streak: 0,
+          session_streak: 0,
+          view_mode: 'user',
+          subscription_tier: 'starter',
+          spotter_tier: 'lxp',
+          is_admin: false,
+          account_type: 'user',
+          permissions: {}
+        };
+        setUser(basicUser);
       } else {
         setUser(userData);
-        console.log('[AUTH] Login successful');
       }
       
-      // Navigate to dashboard
-      router.push('/dashboard');
+      console.log('[AUTH CONTEXT] Login complete!');
       
-    } catch (error) {
-      console.error('[AUTH] Login error:', error);
+    } catch (error: any) {
+      console.error('[AUTH CONTEXT] Login error:', error.message);
       throw error;
     } finally {
       setLoading(false);

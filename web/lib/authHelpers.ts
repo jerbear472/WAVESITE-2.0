@@ -64,19 +64,33 @@ export async function ensureValidSession() {
 
 // Safe login with retries
 export async function safeLogin(email: string, password: string) {
+  console.log('[SAFE LOGIN] Starting login for:', email);
+  
   return retryAuth(async () => {
+    console.log('[SAFE LOGIN] Clearing existing session...');
     // Clear any existing session first
     await supabase.auth.signOut();
     
     // Small delay to ensure cleanup
     await new Promise(resolve => setTimeout(resolve, 100));
     
+    console.log('[SAFE LOGIN] Calling signInWithPassword...');
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
+    console.log('[SAFE LOGIN] Sign in result:', {
+      hasData: !!data,
+      hasError: !!error,
+      errorMessage: error?.message,
+      hasSession: !!data?.session,
+      hasUser: !!data?.user,
+      userId: data?.user?.id
+    });
+    
     if (error) {
+      console.error('[SAFE LOGIN] Auth error:', error);
       // Check for specific errors
       if (error.message.includes('Email not confirmed')) {
         throw new Error('Please confirm your email before logging in. Check your inbox for the confirmation link.');
@@ -87,10 +101,12 @@ export async function safeLogin(email: string, password: string) {
       throw error;
     }
     
-    if (!data.session) {
+    if (!data?.session) {
+      console.error('[SAFE LOGIN] No session in data:', data);
       throw new Error('Login succeeded but no session was created. Please try again.');
     }
     
+    console.log('[SAFE LOGIN] Login successful, returning data');
     return data;
   });
 }
