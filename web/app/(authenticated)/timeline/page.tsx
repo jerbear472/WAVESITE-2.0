@@ -10,6 +10,7 @@ import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
+import { useXPNotification } from '@/contexts/XPNotificationContext';
 // Removed formatCurrency import - using XP display instead
 import { 
   TrendingUp as TrendingUpIcon,
@@ -84,6 +85,7 @@ type ViewMode = 'grid' | 'list' | 'timeline';
 export default function Timeline() {
   const { user, loading: authLoading } = useAuth();
   const { showError, showSuccess, showWarning } = useToast();
+  const { showXPNotification } = useXPNotification();
   // Removed earnings toast - using XP system now
   const [trends, setTrends] = useState<Trend[]>([]);
   const [loading, setLoading] = useState(true);
@@ -389,6 +391,9 @@ export default function Timeline() {
         setShowSubmitForm(false);
         await fetchUserTrends();
         
+        // Show XP notification
+        showXPNotification(10, 'Trend submitted successfully!', 'submission');
+        
         // XP will be awarded automatically
         setError('');
         return result.data;
@@ -404,6 +409,8 @@ export default function Timeline() {
           if (fallbackResult.success) {
             setShowSubmitForm(false);
             await fetchUserTrends();
+            // Show XP notification
+            showXPNotification(10, 'Trend submitted successfully!', 'submission');
             // XP will be awarded automatically
             setError('');
             return fallbackResult.data;
@@ -428,6 +435,8 @@ export default function Timeline() {
         if (fallbackResult.success) {
           setShowSubmitForm(false);
           await fetchUserTrends();
+          // Show XP notification
+          showXPNotification(10, 'Trend submitted successfully!', 'submission');
           // XP will be shown in UI automatically
           setError('');
           return fallbackResult.data;
