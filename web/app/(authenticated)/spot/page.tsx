@@ -704,31 +704,6 @@ export default function SpotPage() {
           </div>
         </div>
 
-        {/* Pro Tips Section */}
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500 rounded-lg">
-                <Award className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Quality = More XP</h3>
-                <p className="text-sm text-gray-600">Well-documented trends get validated faster</p>
-              </div>
-            </div>
-            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold">
-              Focus on viral potential
-            </span>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
-            {['r/wallstreetbets', 'r/stocks', 'r/cryptocurrency', 'r/superstonk', 'StockTwits'].map(community => (
-              <span key={community} className="px-3 py-1 bg-white rounded-lg text-sm text-gray-700">
-                {community}
-              </span>
-            ))}
-          </div>
-        </div>
 
       </div>
 
