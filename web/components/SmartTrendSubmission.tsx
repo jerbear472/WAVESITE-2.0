@@ -953,7 +953,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-xl sm:rounded-2xl max-w-3xl w-full trend-modal overflow-hidden border border-gray-200 shadow-2xl flex flex-col"
+        className="bg-white rounded-xl sm:rounded-2xl max-w-3xl w-full trend-modal border border-gray-200 shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[80vh] overflow-hidden"
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 sm:p-5 border-b border-gray-200 flex-shrink-0">
@@ -1084,7 +1084,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <AnimatePresence mode="wait">
             {/* Step 1: URL & Title */}
             {currentStep === 'url' && (

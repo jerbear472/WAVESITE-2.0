@@ -946,7 +946,7 @@ export default function Timeline() {
                                     <span className="text-red-500 font-medium">👎 {trend.reject_count || 0}</span>
                                   </div>
                                 )}
-                                {trend.validation_status && (
+                                {trend.validation_status && trend.validation_status !== 'pending' && (
                                   <div className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
                                     trend.validation_status === 'approved' ? 'bg-green-100 text-green-600 border-green-200' :
                                     trend.validation_status === 'rejected' ? 'bg-red-100 text-red-600 border-red-200' :
@@ -954,7 +954,7 @@ export default function Timeline() {
                                   }`}>
                                     {trend.validation_status === 'approved' ? '✅ Approved' :
                                      trend.validation_status === 'rejected' ? '❌ Rejected' :
-                                     '⏳ Pending'}
+                                     ''}
                                   </div>
                                 )}
                               </div>
@@ -1152,7 +1152,7 @@ export default function Timeline() {
                                   <span className="text-sm text-gray-500 font-medium">👎 {trend.reject_count || 0}</span>
                                 </div>
                               )}
-                              {trend.validation_status && (
+                              {trend.validation_status && trend.validation_status !== 'pending' && (
                                 <div className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${
                                   trend.validation_status === 'approved' ? 'bg-blue-50/60 text-blue-600 border-blue-200/50' :
                                   trend.validation_status === 'rejected' ? 'bg-gray-50/60 text-gray-500 border-gray-200/50' :
@@ -1160,7 +1160,7 @@ export default function Timeline() {
                                 }`}>
                                   {trend.validation_status === 'approved' ? '✅ Approved' :
                                    trend.validation_status === 'rejected' ? '❌ Rejected' :
-                                   '⏳ Pending'}
+                                   ''}
                                 </div>
                               )}
                               {trend.xp_amount > 0 && (
