@@ -77,8 +77,8 @@ interface Trend {
 }
 
 // Add new types for filtering and sorting
-type FilterOption = 'all' | 'submitted' | 'validating' | 'approved' | 'viral' | 'rejected';
-type SortOption = 'newest' | 'oldest' | 'engagement' | 'virality';
+type FilterOption = 'all' | 'submitted' | 'validating' | 'approved' | 'rejected';
+type SortOption = 'newest' | 'oldest' | 'engagement';
 type ViewMode = 'grid' | 'list' | 'timeline';
 
 export default function Timeline() {
@@ -233,8 +233,6 @@ export default function Timeline() {
           const engagementA = (a.likes_count || 0) + (a.comments_count || 0) + (a.shares_count || 0);
           const engagementB = (b.likes_count || 0) + (b.comments_count || 0) + (b.shares_count || 0);
           return engagementB - engagementA;
-        case 'virality':
-          return (b.virality_prediction || 0) - (a.virality_prediction || 0);
         default:
           return 0;
       }
@@ -539,7 +537,7 @@ export default function Timeline() {
                   <SparklesIcon className="w-4 h-4 text-purple-600" />
                 </div>
                 <p className="text-2xl font-bold text-gray-800">
-                  {trends.filter(t => t.status === 'approved' || t.status === 'viral').length}
+                  {trends.filter(t => t.status === 'approved').length}
                 </p>
               </motion.div>
 
@@ -555,12 +553,12 @@ export default function Timeline() {
                 </div>
                 <p className="text-2xl font-bold text-gray-800">
                   {trends.length > 0 
-                    ? `${Math.round((trends.filter(t => t.status === 'approved' || t.status === 'viral').length / trends.length) * 100)}%`
+                    ? `${Math.round((trends.filter(t => t.status === 'approved').length / trends.length) * 100)}%`
                     : '0%'}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   {trends.length > 0 
-                    ? `${trends.filter(t => t.status === 'approved' || t.status === 'viral').length} of ${trends.length}`
+                    ? `${trends.filter(t => t.status === 'approved').length} of ${trends.length}`
                     : 'No trends'}
                 </p>
               </motion.div>
@@ -641,7 +639,6 @@ export default function Timeline() {
                       <option value="submitted">Submitted</option>
                       <option value="validating">Validating</option>
                       <option value="approved">Approved</option>
-                      <option value="viral">Viral</option>
                       <option value="rejected">Rejected</option>
                     </select>
                   </div>
@@ -656,7 +653,6 @@ export default function Timeline() {
                       <option value="newest">Newest First</option>
                       <option value="oldest">Oldest First</option>
                       <option value="engagement">Most Engagement</option>
-                      <option value="virality">Highest Virality</option>
                     </select>
                   </div>
                 </motion.div>
@@ -710,9 +706,9 @@ export default function Timeline() {
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       
-                      <div className="relative bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-800 overflow-hidden hover:border-gray-700 transition-all duration-300">
+                      <div className="relative bg-white/95 backdrop-blur-md rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-all duration-300">
                         {/* Thumbnail */}
-                        <div className="relative h-48 bg-gray-800 overflow-hidden">
+                        <div className="relative h-48 bg-gray-100 overflow-hidden">
                           {(trend.thumbnail_url || trend.screenshot_url || trend.post_url) ? (
                             <>
                               <img 
@@ -736,24 +732,30 @@ export default function Timeline() {
                               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60" />
                             </>
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center">
-                              <TrendingUpIcon className="w-16 h-16 text-gray-600" />
+                            <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                              <TrendingUpIcon className="w-16 h-16 text-gray-400" />
                             </div>
                           )}
                             
                             {/* Status Badge with Stage */}
                             <div className="absolute top-3 right-3 space-y-2">
-                              <div className={`flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold shadow-lg`}>
+                              <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg ${
+                                trend.status === 'approved' ? 'bg-blue-100/90 text-blue-700 border border-blue-200' :
+                                trend.status === 'viral' ? 'bg-purple-100/90 text-purple-700 border border-purple-200' :
+                                trend.status === 'rejected' ? 'bg-red-100/90 text-red-700 border border-red-200' :
+                                trend.status === 'validating' ? 'bg-yellow-100/90 text-yellow-700 border border-yellow-200' :
+                                'bg-gray-100/90 text-gray-700 border border-gray-200'
+                              }`}>
                                 {getStatusIcon(trend.status)}
                                 <span className="capitalize">{trend.status}</span>
                               </div>
                               {trend.stage && (
-                                <div className={`flex items-center gap-1 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full text-xs font-medium shadow-lg ${
-                                  trend.stage === 'viral' ? 'text-red-400' :
-                                  trend.stage === 'trending' ? 'text-green-400' :
-                                  trend.stage === 'validating' ? 'text-blue-400' :
-                                  trend.stage === 'declining' ? 'text-orange-400' :
-                                  'text-gray-400'
+                                <div className={`flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium shadow-lg border border-gray-200 ${
+                                  trend.stage === 'viral' ? 'text-red-600' :
+                                  trend.stage === 'trending' ? 'text-green-600' :
+                                  trend.stage === 'validating' ? 'text-blue-600' :
+                                  trend.stage === 'declining' ? 'text-orange-600' :
+                                  'text-gray-600'
                                 }`}>
                                   <ZapIcon className="w-3 h-3" />
                                   <span>
@@ -771,7 +773,7 @@ export default function Timeline() {
 
                             {/* Category Badge */}
                             <div className="absolute bottom-3 left-3">
-                              <div className="flex items-center gap-1 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white text-xs">
+                              <div className="flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-gray-700 text-xs border border-gray-200">
                                 <span className="text-base">{getCategoryEmoji(trend.category)}</span>
                                 <span>{trend.category.replace(/_/g, ' ')}</span>
                               </div>
@@ -783,7 +785,7 @@ export default function Timeline() {
                                 href={trend.post_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="absolute top-3 left-3 p-2 bg-black/50 backdrop-blur-md rounded-full text-white hover:bg-black/70 transition-all"
+                                className="absolute top-3 left-3 p-2 bg-white/90 backdrop-blur-md rounded-full text-gray-700 hover:bg-white transition-all border border-gray-200"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <ExternalLinkIcon className="w-4 h-4" />
@@ -795,8 +797,8 @@ export default function Timeline() {
                           {/* Creator Info */}
                           {(trend.creator_handle || trend.creator_name) && (
                             <div className="flex items-center gap-2 mb-3">
-                              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                                <UserIcon className="w-4 h-4 text-white" />
+                              <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center border border-blue-200">
+                                <UserIcon className="w-4 h-4 text-blue-600" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 {trend.creator_handle && trend.evidence?.platform ? (
@@ -804,13 +806,13 @@ export default function Timeline() {
                                     href={getCreatorProfileUrl(trend.evidence.platform, trend.creator_handle)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm font-medium text-white hover:text-blue-400 truncate block transition-colors"
+                                    className="text-sm font-medium text-gray-700 hover:text-blue-600 truncate block transition-colors"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     {trend.creator_handle}
                                   </a>
                                 ) : (
-                                  <p className="text-sm font-medium text-white truncate">
+                                  <p className="text-sm font-medium text-gray-700 truncate">
                                     {trend.creator_handle || trend.creator_name}
                                   </p>
                                 )}
@@ -822,13 +824,13 @@ export default function Timeline() {
                           )}
 
                           {/* Title from description */}
-                          <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">
+                          <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2">
                             {trend.evidence?.title || trend.description.split('\n')[0]}
                           </h3>
 
                           {/* Caption */}
                           {trend.post_caption && (
-                            <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                               "{trend.post_caption}"
                             </p>
                           )}
@@ -838,26 +840,26 @@ export default function Timeline() {
                             <div className="flex items-center gap-4 mb-4">
                               {trend.likes_count && trend.likes_count > 0 && (
                                 <div className="flex items-center gap-1">
-                                  <HeartIcon className="w-4 h-4 text-red-400" />
-                                  <p className="text-xs text-gray-400">{formatEngagement(trend.likes_count || 0)}</p>
+                                  <HeartIcon className="w-4 h-4 text-red-500" />
+                                  <p className="text-xs text-gray-600">{formatEngagement(trend.likes_count || 0)}</p>
                                 </div>
                               )}
                               {trend.comments_count && trend.comments_count > 0 && (
                                 <div className="flex items-center gap-1">
-                                  <MessageCircleIcon className="w-4 h-4 text-blue-400" />
-                                  <p className="text-xs text-gray-400">{formatEngagement(trend.comments_count || 0)}</p>
+                                  <MessageCircleIcon className="w-4 h-4 text-blue-500" />
+                                  <p className="text-xs text-gray-600">{formatEngagement(trend.comments_count || 0)}</p>
                                 </div>
                               )}
                               {trend.shares_count && trend.shares_count > 0 && (
                                 <div className="flex items-center gap-1">
-                                  <ShareIcon className="w-4 h-4 text-green-400" />
-                                  <p className="text-xs text-gray-400">{formatEngagement(trend.shares_count || 0)}</p>
+                                  <ShareIcon className="w-4 h-4 text-green-500" />
+                                  <p className="text-xs text-gray-600">{formatEngagement(trend.shares_count || 0)}</p>
                                 </div>
                               )}
                               {trend.views_count && trend.views_count > 0 && (
                                 <div className="flex items-center gap-1">
-                                  <EyeIcon className="w-4 h-4 text-purple-400" />
-                                  <p className="text-xs text-gray-400">{formatEngagement(trend.views_count || 0)}</p>
+                                  <EyeIcon className="w-4 h-4 text-purple-500" />
+                                  <p className="text-xs text-gray-600">{formatEngagement(trend.views_count || 0)}</p>
                                 </div>
                               )}
                             </div>
@@ -867,7 +869,7 @@ export default function Timeline() {
                           {trend.hashtags && trend.hashtags.length > 0 && (
                             <div className="flex flex-wrap gap-1 mb-4">
                               {trend.hashtags.slice(0, 3).map((tag, i) => (
-                                <span key={i} className="text-xs text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full">
+                                <span key={i} className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full border border-blue-200">
                                   #{tag}
                                 </span>
                               ))}
@@ -878,20 +880,20 @@ export default function Timeline() {
                           )}
 
                           {/* Enhanced Metadata Display */}
-                          <div className="pt-4 border-t border-gray-200 space-y-3">
+                          <div className="pt-4 border-t border-gray-100 space-y-3">
                             {/* Primary Analysis Row */}
                             <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col items-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg px-2 py-1.5 border border-blue-100">
-                                <span className={`text-xs font-bold ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                              <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
+                                <span className={`text-xs font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
                                   {getVelocityDisplay(getTrendVelocity(trend)).text}
                                 </span>
-                                <span className="text-xs text-gray-500">Velocity</span>
+                                <span className="text-xs text-gray-400">Velocity</span>
                               </div>
-                              <div className="flex flex-col items-center bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg px-2 py-1.5 border border-green-100">
-                                <span className="text-xs font-bold text-gray-700">
+                              <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
+                                <span className="text-xs font-medium text-gray-600">
                                   {(trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown'}
                                 </span>
-                                <span className="text-xs text-gray-500">Size</span>
+                                <span className="text-xs text-gray-400">Size</span>
                               </div>
                             </div>
                             
@@ -899,22 +901,22 @@ export default function Timeline() {
                             {((trend as any).ai_angle || (trend as any).audience_age) && (
                               <div className="grid grid-cols-2 gap-2">
                                 {(trend as any).ai_angle && (
-                                  <div className="flex flex-col items-center bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg px-2 py-1.5 border border-purple-100">
-                                    <span className="text-xs font-bold text-purple-700">
+                                  <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
+                                    <span className="text-xs font-medium text-gray-600">
                                       {(trend as any).ai_angle === 'not_ai' ? '🚫 Not AI' :
                                        (trend as any).ai_angle === 'ai_created' ? '🤖 AI Created' :
                                        (trend as any).ai_angle === 'ai_enhanced' ? '✨ AI Enhanced' :
                                        (trend as any).ai_angle === 'about_ai' ? '💭 About AI' : '🔍 AI'}
                                     </span>
-                                    <span className="text-xs text-gray-500">AI Signal</span>
+                                    <span className="text-xs text-gray-400">AI Signal</span>
                                   </div>
                                 )}
                                 {(trend as any).audience_age && Array.isArray((trend as any).audience_age) && (trend as any).audience_age.length > 0 && (
-                                  <div className="flex flex-col items-center bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg px-2 py-1.5 border border-orange-100">
-                                    <span className="text-xs font-bold text-orange-700">
+                                  <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
+                                    <span className="text-xs font-medium text-gray-600">
                                       {(trend as any).audience_age.slice(0, 2).join(', ')}{(trend as any).audience_age.length > 2 ? '+' : ''}
                                     </span>
-                                    <span className="text-xs text-gray-500">Audience</span>
+                                    <span className="text-xs text-gray-400">Audience</span>
                                   </div>
                                 )}
                               </div>
@@ -922,17 +924,17 @@ export default function Timeline() {
                             
                             {/* Category Answers Display */}
                             {(trend as any).category_answers && Object.keys((trend as any).category_answers).length > 0 && (
-                              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200">
-                                <div className="text-xs text-gray-600 font-medium mb-1">Category Insights</div>
+                              <div className="bg-gray-50/60 rounded-lg p-2 border border-gray-200/50">
+                                <div className="text-xs text-gray-500 font-medium mb-1">Category Insights</div>
                                 <div className="space-y-1">
                                   {Object.entries((trend as any).category_answers).slice(0, 2).map(([key, value]: [string, any]) => (
                                     <div key={key} className="flex justify-between text-xs">
-                                      <span className="text-gray-500 capitalize">{key.replace(/_/g, ' ')}:</span>
-                                      <span className="text-gray-700 font-medium">{String(value)}</span>
+                                      <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                                      <span className="text-gray-600 font-medium">{String(value)}</span>
                                     </div>
                                   ))}
                                   {Object.keys((trend as any).category_answers).length > 2 && (
-                                    <div className="text-xs text-blue-600 font-medium">+{Object.keys((trend as any).category_answers).length - 2} more insights</div>
+                                    <div className="text-xs text-blue-500 font-medium">+{Object.keys((trend as any).category_answers).length - 2} more insights</div>
                                   )}
                                 </div>
                               </div>
@@ -993,12 +995,12 @@ export default function Timeline() {
                             {/* Wave Score Display */}
                             {(trend as any).wave_score && (
                               <div className="flex items-center justify-center">
-                                <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg px-3 py-1.5 border border-blue-200">
+                                <div className="bg-blue-50/60 rounded-lg px-3 py-1.5 border border-blue-200/50">
                                   <div className="flex items-center gap-2">
                                     <span className="text-lg">🌊</span>
                                     <div className="text-center">
-                                      <div className="text-sm font-bold text-blue-700">{Math.round((trend as any).wave_score)}/100</div>
-                                      <div className="text-xs text-gray-600">Wave Score</div>
+                                      <div className="text-sm font-semibold text-blue-600">{Math.round((trend as any).wave_score)}/100</div>
+                                      <div className="text-xs text-gray-400">Wave Score</div>
                                     </div>
                                   </div>
                                 </div>
@@ -1133,49 +1135,49 @@ export default function Timeline() {
 
                             {/* Enhanced Metadata Grid for List View */}
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                              <div className="flex flex-col items-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg px-3 py-2 border border-blue-100">
-                                <span className={`text-sm font-bold ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                              <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
+                                <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
                                   {getVelocityDisplay(getTrendVelocity(trend)).text}
                                 </span>
-                                <span className="text-xs text-gray-500">Velocity</span>
+                                <span className="text-xs text-gray-400">Velocity</span>
                               </div>
-                              <div className="flex flex-col items-center bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg px-3 py-2 border border-green-100">
-                                <span className="text-sm font-bold text-gray-700">
+                              <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
+                                <span className="text-sm font-medium text-gray-600">
                                   {(trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown'}
                                 </span>
-                                <span className="text-xs text-gray-500">Size</span>
+                                <span className="text-xs text-gray-400">Size</span>
                               </div>
                               {(trend as any).ai_angle && (
-                                <div className="flex flex-col items-center bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg px-3 py-2 border border-purple-100">
-                                  <span className="text-sm font-bold text-purple-700">
+                                <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
+                                  <span className="text-sm font-medium text-gray-600">
                                     {(trend as any).ai_angle === 'not_ai' ? '🚫' :
                                      (trend as any).ai_angle === 'ai_created' ? '🤖' :
                                      (trend as any).ai_angle === 'ai_enhanced' ? '✨' :
                                      (trend as any).ai_angle === 'about_ai' ? '💭' : '🔍'}
                                   </span>
-                                  <span className="text-xs text-gray-500">AI Signal</span>
+                                  <span className="text-xs text-gray-400">AI Signal</span>
                                 </div>
                               )}
                               {(trend as any).wave_score && (
-                                <div className="flex flex-col items-center bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg px-3 py-2 border border-blue-200">
-                                  <span className="text-sm font-bold text-blue-700">🌊 {Math.round((trend as any).wave_score)}</span>
-                                  <span className="text-xs text-gray-500">Wave Score</span>
+                                <div className="flex flex-col items-center bg-blue-50/60 rounded-lg px-3 py-2 border border-blue-200/50">
+                                  <span className="text-sm font-semibold text-blue-600">🌊 {Math.round((trend as any).wave_score)}</span>
+                                  <span className="text-xs text-gray-400">Wave Score</span>
                                 </div>
                               )}
                             </div>
                             
                             {/* Voting and Status */}
                             <div className="flex flex-wrap items-center gap-3 mb-3">
-                              <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 border border-gray-200">
-                                <span className="text-sm text-green-600 font-medium">👍 {trend.approve_count || 0}</span>
-                                <span className="text-sm text-gray-400">·</span>
-                                <span className="text-sm text-red-500 font-medium">👎 {trend.reject_count || 0}</span>
+                              <div className="flex items-center gap-2 bg-gray-50/60 rounded-lg px-3 py-1.5 border border-gray-200/50">
+                                <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count || 0}</span>
+                                <span className="text-sm text-gray-300">·</span>
+                                <span className="text-sm text-gray-500 font-medium">👎 {trend.reject_count || 0}</span>
                               </div>
                               {trend.validation_status && (
                                 <div className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${
-                                  trend.validation_status === 'approved' ? 'bg-green-100 text-green-600 border-green-200' :
-                                  trend.validation_status === 'rejected' ? 'bg-red-100 text-red-600 border-red-200' :
-                                  'bg-yellow-100 text-yellow-600 border-yellow-200'
+                                  trend.validation_status === 'approved' ? 'bg-blue-50/60 text-blue-600 border-blue-200/50' :
+                                  trend.validation_status === 'rejected' ? 'bg-gray-50/60 text-gray-500 border-gray-200/50' :
+                                  'bg-gray-50/60 text-gray-500 border-gray-200/50'
                                 }`}>
                                   {trend.validation_status === 'approved' ? '✅ Approved' :
                                    trend.validation_status === 'rejected' ? '❌ Rejected' :
@@ -1196,17 +1198,17 @@ export default function Timeline() {
                             
                             {/* Category Insights for List View */}
                             {(trend as any).category_answers && Object.keys((trend as any).category_answers).length > 0 && (
-                              <div className="bg-gray-50 rounded-lg p-3 mb-3 border border-gray-200">
-                                <div className="text-sm text-gray-700 font-medium mb-2">📊 Category Insights</div>
+                              <div className="bg-gray-50/60 rounded-lg p-3 mb-3 border border-gray-200/50">
+                                <div className="text-sm text-gray-500 font-medium mb-2">📊 Category Insights</div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   {Object.entries((trend as any).category_answers).slice(0, 4).map(([key, value]: [string, any]) => (
                                     <div key={key} className="flex justify-between text-sm">
-                                      <span className="text-gray-600 capitalize">{key.replace(/_/g, ' ')}:</span>
-                                      <span className="text-gray-800 font-medium">{String(value)}</span>
+                                      <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                                      <span className="text-gray-600 font-medium">{String(value)}</span>
                                     </div>
                                   ))}
                                   {Object.keys((trend as any).category_answers).length > 4 && (
-                                    <div className="text-sm text-blue-600 font-medium col-span-full">+{Object.keys((trend as any).category_answers).length - 4} more insights</div>
+                                    <div className="text-sm text-blue-500 font-medium col-span-full">+{Object.keys((trend as any).category_answers).length - 4} more insights</div>
                                   )}
                                 </div>
                               </div>
