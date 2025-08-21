@@ -120,32 +120,32 @@ const QualityIndicators = ({ description }: { description: string }) => {
         <QualityCheck 
           met={wordCount >= 20} 
           label="20+ words" 
-          icon={<Hash className="w-3 h-3" />}
+          icon={<HashIcon className="w-3 h-3" />}
         />
         <QualityCheck 
           met={hasPlatform} 
           label="Platform mentioned" 
-          icon={<Globe className="w-3 h-3" />}
+          icon={<GlobeIcon className="w-3 h-3" />}
         />
         <QualityCheck 
           met={hasActionVerb} 
           label="Action verb" 
-          icon={<Zap className="w-3 h-3" />}
+          icon={<ZapIcon className="w-3 h-3" />}
         />
         <QualityCheck 
           met={hasNumbers} 
           label="Specific numbers" 
-          icon={<TrendingUp className="w-3 h-3" />}
+          icon={<TrendingUpIcon className="w-3 h-3" />}
         />
         <QualityCheck 
           met={hasHumor} 
           label="Personality/Humor" 
-          icon={<Sparkles className="w-3 h-3" />}
+          icon={<SparklesIcon className="w-3 h-3" />}
         />
         <QualityCheck 
           met={hasWhy} 
           label="Explains why" 
-          icon={<AlertCircle className="w-3 h-3" />}
+          icon={<AlertCircleIcon className="w-3 h-3" />}
         />
       </div>
     </div>
@@ -1765,6 +1765,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           </div>
         </div>
       </motion.div>
+      </div>
     </>
   );
 }

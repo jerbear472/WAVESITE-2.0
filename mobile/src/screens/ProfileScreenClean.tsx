@@ -75,16 +75,6 @@ export const ProfileScreenClean: React.FC = () => {
     );
   };
 
-  const handlePayout = () => {
-    if (!stats?.earnings_available || stats.earnings_available < 10) {
-      Alert.alert(
-        'Minimum not reached',
-        'You need at least $10 in available earnings to request a payout.'
-      );
-      return;
-    }
-    Alert.alert('Payout', 'Payout feature coming soon!');
-  };
 
   const statCards: StatCard[] = [
     {
@@ -151,37 +141,37 @@ export const ProfileScreenClean: React.FC = () => {
           </View>
         </View>
 
-        {/* Earnings Card */}
-        <Card style={styles.earningsCard} variant="elevated">
+        {/* XP Card */}
+        <Card style={styles.xpCard} variant="elevated">
           <LinearGradient
             colors={[theme.colors.primary, theme.colors.primaryDark]}
-            style={styles.earningsGradient}
+            style={styles.xpGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           />
-          <View style={styles.earningsContent}>
-            <View style={styles.earningsMain}>
-              <Text style={styles.earningsLabel}>Available Earnings</Text>
-              <Text style={styles.earningsAmount}>
-                ${stats?.earnings_available?.toFixed(2) || '0.00'}
+          <View style={styles.xpContent}>
+            <View style={styles.xpMain}>
+              <Text style={styles.xpLabel}>Current Level</Text>
+              <Text style={styles.levelText}>
+                Level {stats?.level || 1}
+              </Text>
+              <Text style={styles.xpAmount}>
+                {stats?.total_xp?.toLocaleString() || '0'} XP
               </Text>
             </View>
-            <TouchableOpacity style={styles.payoutButton} onPress={handlePayout}>
-              <Text style={styles.payoutButtonText}>Request Payout</Text>
-            </TouchableOpacity>
           </View>
-          <View style={styles.earningsFooter}>
-            <View style={styles.earningsStat}>
-              <Text style={styles.earningsStatLabel}>Total Earned</Text>
-              <Text style={styles.earningsStatValue}>
-                ${stats?.earnings_total?.toFixed(2) || '0.00'}
+          <View style={styles.xpFooter}>
+            <View style={styles.xpStat}>
+              <Text style={styles.xpStatLabel}>This Week</Text>
+              <Text style={styles.xpStatValue}>
+                {stats?.trends_this_week || 0} trends
               </Text>
             </View>
-            <View style={styles.earningsDivider} />
-            <View style={styles.earningsStat}>
-              <Text style={styles.earningsStatLabel}>This Week</Text>
-              <Text style={styles.earningsStatValue}>
-                {stats?.trends_this_week || 0} trends
+            <View style={styles.xpDivider} />
+            <View style={styles.xpStat}>
+              <Text style={styles.xpStatLabel}>Daily Streak</Text>
+              <Text style={styles.xpStatValue}>
+                {stats?.daily_streak || 0} days
               </Text>
             </View>
           </View>
@@ -238,8 +228,8 @@ export const ProfileScreenClean: React.FC = () => {
             <Text style={styles.settingsArrow}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.settingsItem}>
-            <Text style={styles.settingsIcon}>💳</Text>
-            <Text style={styles.settingsText}>Payment Methods</Text>
+            <Text style={styles.settingsIcon}>🏆</Text>
+            <Text style={styles.settingsText}>Achievements</Text>
             <Text style={styles.settingsArrow}>›</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.settingsItem}>
@@ -343,71 +333,62 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: theme.colors.primary,
   },
-  earningsCard: {
+  xpCard: {
     marginHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
     overflow: 'hidden',
   },
-  earningsGradient: {
+  xpGradient: {
     position: 'absolute',
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
   },
-  earningsContent: {
+  xpContent: {
     padding: theme.spacing.lg,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  earningsMain: {
-    flex: 1,
+  xpMain: {
+    alignItems: 'center',
   },
-  earningsLabel: {
+  xpLabel: {
     fontSize: theme.typography.bodySmall.fontSize,
     color: 'rgba(255,255,255,0.8)',
     marginBottom: 4,
   },
-  earningsAmount: {
-    fontSize: 32,
-    fontWeight: '600',
+  levelText: {
+    fontSize: 24,
+    fontWeight: '700',
     color: '#ffffff',
+    marginBottom: 4,
   },
-  payoutButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.round,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  payoutButtonText: {
-    color: '#ffffff',
-    fontSize: theme.typography.bodySmall.fontSize,
+  xpAmount: {
+    fontSize: 18,
     fontWeight: '500',
+    color: 'rgba(255,255,255,0.9)',
   },
-  earningsFooter: {
+  xpFooter: {
     flexDirection: 'row',
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
     alignItems: 'center',
   },
-  earningsStat: {
+  xpStat: {
     flex: 1,
     alignItems: 'center',
   },
-  earningsStatLabel: {
+  xpStatLabel: {
     fontSize: theme.typography.caption.fontSize,
     color: 'rgba(255,255,255,0.7)',
     marginBottom: 2,
   },
-  earningsStatValue: {
+  xpStatValue: {
     fontSize: theme.typography.body.fontSize,
     fontWeight: '500',
     color: '#ffffff',
   },
-  earningsDivider: {
+  xpDivider: {
     width: 1,
     height: 30,
     backgroundColor: 'rgba(255,255,255,0.2)',

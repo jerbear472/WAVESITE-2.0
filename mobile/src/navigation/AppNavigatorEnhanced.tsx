@@ -19,9 +19,9 @@ import { DashboardScreen } from '../screens/DashboardScreen';
 import { TrendCaptureScreenPolished } from '../screens/TrendCaptureScreenPolished';
 import { ValidationScreenPolished } from '../screens/ValidationScreenPolished';
 import MyTimelineScreen from '../screens/MyTimelineScreen';
-import { ProfileScreen } from '../screens/ProfileScreen';
-import { EarningsDashboard } from '../screens/EarningsDashboard';
+import { ProfileScreenClean } from '../screens/ProfileScreenClean';
 import { TrendsScreen } from '../screens/TrendsScreen';
+import { LeaderboardScreen } from '../screens/LeaderboardScreen';
 // MyTimelineScreen is already imported above
 import { AchievementsScreen } from '../screens/AchievementsScreen';
 
@@ -37,7 +37,6 @@ export type AppTabParamList = {
 
 export type AppStackParamList = {
   MainTabs: undefined;
-  Earnings: undefined;
   MyTimeline: undefined;
   Achievements: undefined;
   Trends: undefined;
@@ -190,7 +189,7 @@ const TabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name="Profile" 
-        component={ProfileScreen}
+        component={ProfileScreenClean}
         options={{ title: 'Profile' }}
       />
     </Tab.Navigator>
@@ -209,25 +208,6 @@ export const AppNavigatorEnhanced: React.FC = () => {
       <Stack.Screen 
         name="MainTabs" 
         component={TabNavigator}
-      />
-      <Stack.Screen 
-        name="Earnings" 
-        component={EarningsDashboard}
-        options={{
-          headerShown: true,
-          headerTitle: 'Earnings',
-          headerStyle: {
-            backgroundColor: enhancedTheme.colors.background,
-          },
-          headerTintColor: enhancedTheme.colors.text,
-          headerTitleStyle: {
-            fontWeight: '700',
-            fontSize: 18,
-          },
-          headerShadowVisible: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
       />
       <Stack.Screen 
         name="MyTimeline" 
@@ -286,7 +266,7 @@ export const AppNavigatorEnhanced: React.FC = () => {
       />
       <Stack.Screen 
         name="Leaderboard" 
-        component={TrendsScreen}
+        component={LeaderboardScreen}
         options={{
           headerShown: true,
           headerTitle: 'Leaderboard',

@@ -201,7 +201,7 @@ export const ValidationScreenClean: React.FC = () => {
               <Icon name="information" size={20} color={enhancedTheme.colors.primary} />
               <Text style={styles.infoText}>
                 Submitted trends are validated by the community. High-quality submissions
-                earn more rewards!
+                earn more XP and boost your WaveSight score!
               </Text>
             </View>
           </View>

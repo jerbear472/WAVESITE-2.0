@@ -423,6 +423,7 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: theme.spacing.md,
     marginBottom: theme.spacing.xl,
   },
@@ -440,6 +441,54 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: theme.typography.caption.fontSize,
     color: theme.colors.textLight,
+  },
+  statIcon: {
+    fontSize: 20,
+    marginTop: theme.spacing.xs,
+    opacity: 0.7,
+  },
+  levelCard: {
+    flex: 2,
+    minHeight: 80,
+  },
+  levelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: theme.spacing.sm,
+  },
+  levelNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.colors.primary,
+  },
+  xpValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  progressContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  progressBar: {
+    width: '100%',
+    height: 8,
+    backgroundColor: theme.colors.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: theme.spacing.xs,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 12,
+    color: theme.colors.textLight,
+    fontWeight: '500',
   },
   section: {
     marginBottom: theme.spacing.xl,
@@ -477,9 +526,20 @@ const styles = StyleSheet.create({
   },
   activityItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: theme.spacing.md,
+  },
+  activityIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.wave[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.md,
+  },
+  activityEmoji: {
+    fontSize: 18,
   },
   activityContent: {
     flex: 1,
@@ -499,21 +559,17 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.caption.fontSize,
     color: theme.colors.textMuted,
   },
-  activityEarnings: {
-    fontSize: theme.typography.body.fontSize,
-    fontWeight: '600',
-    color: theme.colors.success,
-  },
-  pendingBadge: {
-    backgroundColor: theme.colors.wave[50],
+  xpBadge: {
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
+    borderRadius: theme.borderRadius.full,
+    minWidth: 60,
+    alignItems: 'center',
   },
-  pendingText: {
-    fontSize: theme.typography.caption.fontSize,
-    color: theme.colors.primary,
-    fontWeight: '500',
+  xpText: {
+    fontSize: 12,
+    color: '#ffffff',
+    fontWeight: '600',
   },
   divider: {
     height: 1,

@@ -3,7 +3,6 @@ import {
   UserProfile,
   TrendSubmission,
   TrendValidation,
-  Payment,
   DashboardStats,
   ActivityItem,
   TrendCategory,
@@ -227,8 +226,9 @@ class SupabaseService {
         trends_spotted: profile.trends_spotted || 0,
         trends_this_week: weeklyTrends?.length || 0,
         total_validations: profile.validation_score || 0,
-        earnings_available: profile.pending_earnings || 0,
-        earnings_total: profile.total_earnings || 0,
+        total_xp: profile.total_xp || 0,
+        level: profile.level || 1,
+        daily_streak: profile.daily_streak || 0,
         wave_score: profile.wave_score || 0,
         rank,
         streak_days: profile.streak_days || 0,
@@ -242,8 +242,9 @@ class SupabaseService {
         trends_spotted: 0,
         trends_this_week: 0,
         total_validations: 0,
-        earnings_available: 0,
-        earnings_total: 0,
+        total_xp: 0,
+        level: 1,
+        daily_streak: 0,
         wave_score: 0,
         rank: 'Newcomer',
         streak_days: 0,
@@ -297,7 +298,7 @@ class SupabaseService {
           id,
           created_at,
           confirmed,
-          reward_amount,
+          xp_reward,
           trend:trend_submissions(title, description)
         `)
         .eq('validator_id', userId)
@@ -312,7 +313,7 @@ class SupabaseService {
               type: 'validation_approved',
               title: 'Validation approved',
               subtitle: (validation as any).trend?.title || 'Trend validated',
-              value: `+${validation.reward_amount}`,
+              value: `+${validation.xp_reward} XP`,
               timestamp: validation.created_at,
               icon: 'check-circle',
               color: '#00d4ff',
@@ -447,7 +448,7 @@ class SupabaseService {
     notes?: string
   ) {
     try {
-      const rewardAmount = 0.02; // $0.02 per validation (sustainable model)
+      const xpReward = 10; // 10 XP per validation
 
       const { data, error } = await supabase
         .from('trend_validations')
@@ -456,16 +457,16 @@ class SupabaseService {
           validator_id: userId,
           confirmed,
           notes,
-          reward_amount: rewardAmount,
+          xp_reward: xpReward,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Update user earnings and stats
-      await this.incrementUserStats(userId, 'pending_earnings', rewardAmount);
-      await this.incrementUserStats(userId, 'wave_score', 1); // Small wave score increase per validation
+      // Update user XP and stats
+      await this.incrementUserStats(userId, 'total_xp', xpReward);
+      await this.incrementUserStats(userId, 'wave_score', 1);
 
       // Update trend validation count
       await supabase.rpc('increment', {
@@ -581,47 +582,6 @@ class SupabaseService {
       .subscribe();
   }
 
-  // Earnings
-  async getEarningsHistory(userId: string): Promise<Payment[]> {
-    try {
-      const { data, error } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('GetEarningsHistory error:', error);
-      return [];
-    }
-  }
-
-  async requestPayout(userId: string, amount: number, paymentMethod: string) {
-    try {
-      const { data, error } = await supabase
-        .from('payments')
-        .insert({
-          user_id: userId,
-          amount,
-          payment_type: paymentMethod,
-          status: 'pending',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Update user's pending earnings
-      await this.incrementUserStats(userId, 'pending_earnings', -amount);
-
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('RequestPayout error:', error);
-      return { data: null, error };
-    }
-  }
 }
 
 export default new SupabaseService();
