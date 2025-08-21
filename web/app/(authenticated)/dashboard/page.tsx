@@ -8,6 +8,7 @@ import PendingValidations from '@/components/PendingValidations';
 import StreakDisplay from '@/components/StreakDisplay';
 import { motion } from 'framer-motion';
 import { getCurrentLevel } from '@/lib/XP_REWARDS';
+import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { 
   Trophy,
   TrendingUp,
@@ -73,6 +74,7 @@ const XP_LEVELS = [
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { showXPNotification } = useXPNotification();
   const [stats, setStats] = useState<XPStats>({
     total_xp: 0,
     current_level: 1,
@@ -226,12 +228,27 @@ export default function Dashboard() {
 
   const handleTrendSubmit = async (data: any) => {
     try {
-      await submitTrend(user!.id, data);
-      setShowSubmissionForm(false);
-      // Reload dashboard data to show new stats
-      loadDashboardData();
+      console.log('🚀 Starting trend submission...');
+      const result = await submitTrend(user!.id, data);
+      console.log('📨 Submission result:', result);
+      
+      if (result.success) {
+        console.log('✅ Submission successful, showing XP notification...');
+        // Show XP notification
+        try {
+          showXPNotification(10, 'Trend submitted successfully!', 'submission');
+        } catch (notificationError) {
+          console.warn('XP notification error:', notificationError);
+        }
+        setShowSubmissionForm(false);
+        // Reload dashboard data to show new stats
+        loadDashboardData();
+      } else {
+        console.error('❌ Submission failed:', result.error);
+        throw new Error(result.error || 'Failed to submit trend');
+      }
     } catch (error) {
-      console.error('Error submitting trend:', error);
+      console.error('❌ Trend submission error:', error);
       throw error; // Re-throw to let SmartTrendSubmission handle the error
     }
   };
@@ -275,7 +292,7 @@ export default function Dashboard() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, {user?.username || 'Cultural Anthropologist'}!
+              Welcome back, <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">{user?.username || 'Cultural Anthropologist'}</span>!
             </h1>
             <p className="text-gray-600">Track your journey in spotting cultural waves</p>
           </div>

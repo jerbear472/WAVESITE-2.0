@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, TrendingUp, Clock, Zap, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { XP_REWARDS, calculateTrendXP, formatXP, getCurrentLevel, getProgressToNextLevel } from '@/lib/XP_REWARDS';
 
 interface ScrollSessionProps {
@@ -18,6 +19,7 @@ interface ScrollSessionProps {
 export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
   ({ onSessionStateChange, onTrendLogged, streak = 0, streakMultiplier = 1, onStreakUpdate }, ref) => {
     const { user } = useAuth();
+    const { showXPNotification } = useXPNotification();
     const [isActive, setIsActive] = useState(false);
     const [sessionTime, setSessionTime] = useState(0);
     const [trendsLogged, setTrendsLogged] = useState(0);
@@ -158,6 +160,12 @@ export const ScrollSession = React.forwardRef<any, ScrollSessionProps>(
           });
 
         if (xpError) throw xpError;
+
+        // Show XP notification for session completion
+        if (finalXP > 0) {
+          const durationText = `${Math.floor(sessionTime / 60)}min session completed!`;
+          showXPNotification(finalXP, durationText, 'session');
+        }
 
         // Reload user XP to reflect changes
         await loadUserXP();

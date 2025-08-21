@@ -142,12 +142,21 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     if (submission?.id) {
       console.log('📊 Updating scroll session...');
       try {
-        // Call the database function to update session and apply multipliers
-        const { data: sessionData, error: sessionError } = await supabase
+        // Call the database function to update session and apply multipliers with timeout
+        const rpcPromise = supabase
           .rpc('update_session_on_trend_submission', {
             p_user_id: userId,
             p_trend_id: submission.id
           });
+        
+        const rpcTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('RPC timeout after 5 seconds')), 5000)
+        );
+        
+        const { data: sessionData, error: sessionError } = await Promise.race([
+          rpcPromise,
+          rpcTimeoutPromise
+        ]) as any;
         
         if (sessionError) {
           console.warn('Failed to update scroll session:', sessionError);

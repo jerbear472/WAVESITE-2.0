@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { 
   Clock, 
   TrendingUp, 
@@ -59,6 +60,7 @@ interface PredictorStats {
 
 export default function PredictionsPage() {
   const { user } = useAuth();
+  const { showXPNotification } = useXPNotification();
   const [activeTab, setActiveTab] = useState<'predict' | 'tracking' | 'history'>('predict');
   const [validatedTrends, setValidatedTrends] = useState<ValidatedTrend[]>([]);
   const [myStats, setMyStats] = useState<PredictorStats | null>(null);
@@ -174,7 +176,7 @@ export default function PredictionsPage() {
       if (error) throw error;
 
       // Award XP for making a prediction using unified XP system
-      await supabase.rpc('award_xp', {
+      const { error: xpError } = await supabase.rpc('award_xp', {
         p_user_id: user.id,
         p_amount: 25,
         p_type: 'prediction',
@@ -182,6 +184,11 @@ export default function PredictionsPage() {
         p_reference_id: selectedTrend.id,
         p_reference_type: 'trend_submission'
       });
+
+      // Show XP notification
+      if (!xpError) {
+        showXPNotification(25, 'Trend prediction submitted!', 'prediction');
+      }
 
       setSuccessMessage('Prediction submitted! +25 XP');
       setTimeout(() => {

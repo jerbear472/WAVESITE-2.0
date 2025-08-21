@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { 
   X, 
   Check, 
@@ -36,6 +37,7 @@ interface TrendToValidate {
 
 export default function ValidatePage() {
   const { user } = useAuth();
+  const { showXPNotification } = useXPNotification();
   const [currentTrend, setCurrentTrend] = useState<TrendToValidate | null>(null);
   const [trendQueue, setTrendQueue] = useState<TrendToValidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -192,6 +194,11 @@ export default function ValidatePage() {
 
       if (!xpError) {
         setXpEarned(prev => prev + totalXP);
+        // Show XP notification
+        const notificationText = lightningMode ? 
+          `Lightning validation! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}` :
+          `Trend validated! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}`;
+        showXPNotification(totalXP, notificationText, 'validation');
       }
 
       // Update stats

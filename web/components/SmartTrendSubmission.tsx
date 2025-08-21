@@ -896,6 +896,29 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
   return (
     <>
+      {/* Mobile viewport and accessibility styles */}
+      <style jsx global>{`
+        @media (max-width: 640px) {
+          .trend-modal {
+            height: 100vh;
+            height: 100dvh;
+            max-height: none;
+          }
+          
+          /* Prevent zoom on input focus */
+          input[type="text"],
+          input[type="url"],
+          textarea {
+            font-size: 16px !important;
+          }
+          
+          /* Improve touch targets */
+          .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+          }
+        }
+      `}</style>
       {/* Earnings Notification - shows in bottom-left corner */}
       <AnimatePresence>
         {notification?.show && (
@@ -922,14 +945,14 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         )}
       </AnimatePresence>
       
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4 z-50">
         <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden border border-gray-200 shadow-2xl"
+        className="bg-white rounded-xl sm:rounded-2xl max-w-3xl w-full trend-modal overflow-hidden border border-gray-200 shadow-2xl flex flex-col"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-5 border-b border-gray-200">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 sm:p-5 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
@@ -1010,7 +1033,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               )}
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <XIcon className="w-5 h-5 text-gray-500" />
               </button>
@@ -1019,7 +1042,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         </div>
 
         {/* Progress Bar */}
-        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+        <div className="px-4 sm:px-6 py-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-gray-600">
               Step {
@@ -1057,7 +1080,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
           <AnimatePresence mode="wait">
             {/* Step 1: URL & Title */}
             {currentStep === 'url' && (
@@ -1080,7 +1103,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       value={formData.url}
                       onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                       placeholder="Paste TikTok, Instagram, YouTube, X link..."
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none pr-10"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none pr-10 text-base"
                       autoFocus
                     />
                     {extracting && (
@@ -1210,7 +1233,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       calculateTitleCatchiness(e.target.value);
                     }}
                     placeholder="e.g., This Viral TikTok Trend Will Blow Your Mind - Millions Are Obsessed!"
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y text-base"
                     rows={3}
                   />
                   
@@ -1730,7 +1753,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 sm:p-5 border-t border-gray-200 bg-gray-50 flex-shrink-0">
           {/* Error display */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg">
@@ -1743,52 +1766,56 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
             </div>
           )}
           
-          <div className="flex justify-between items-center">
-            {currentStep !== 'url' ? (
-              <button
-                onClick={handleBack}
-                className="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all text-gray-700"
-              >
-                Back
-              </button>
-            ) : (
-              <button
-                onClick={onClose}
-                className="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all text-gray-700"
-              >
-                Cancel
-              </button>
-            )}
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
+            <div className="flex-1 sm:flex-initial">
+              {currentStep !== 'url' ? (
+                <button
+                  onClick={handleBack}
+                  className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all text-gray-700 font-medium"
+                >
+                  Back
+                </button>
+              ) : (
+                <button
+                  onClick={onClose}
+                  className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all text-gray-700 font-medium"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
             
-            {currentStep === 'review' ? (
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all text-white font-medium flex items-center gap-2 disabled:opacity-50"
-              >
-                {loading ? (
-                  <>
-                    <LoaderIcon className="w-4 h-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <SendIcon className="w-4 h-4" />
-                    Submit New Trend
-                  </>
-                )}
-              </button>
-            ) : currentStep === 'category' ? (
-              <p className="text-sm text-gray-500">Select a category to continue</p>
-            ) : (
-              <button
-                onClick={handleNext}
-                className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all text-white font-medium flex items-center gap-2"
-              >
-                Next
-                <ChevronRightIcon className="w-4 h-4" />
-              </button>
-            )}
+            <div className="flex-1 sm:flex-initial">
+              {currentStep === 'review' ? (
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full sm:w-auto px-6 py-3 sm:py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <LoaderIcon className="w-4 h-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <SendIcon className="w-4 h-4" />
+                      Submit New Trend
+                    </>
+                  )}
+                </button>
+              ) : currentStep === 'category' ? (
+                <p className="text-sm text-gray-500 text-center sm:text-right py-3">Select a category to continue</p>
+              ) : (
+                <button
+                  onClick={handleNext}
+                  className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all text-white font-medium flex items-center justify-center gap-2"
+                >
+                  Next
+                  <ChevronRightIcon className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>

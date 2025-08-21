@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { SessionProvider } from '@/contexts/SessionContext';
+import { XPNotificationProvider } from '@/contexts/XPNotificationContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import dynamic from 'next/dynamic';
 
@@ -34,8 +35,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AuthProvider>
           <SessionProvider>
             <ToastProvider>
-              {children}
-              <FloatingSessionTimer />
+              <XPNotificationProvider>
+                {children}
+                <FloatingSessionTimer />
+              </XPNotificationProvider>
             </ToastProvider>
           </SessionProvider>
         </AuthProvider>
