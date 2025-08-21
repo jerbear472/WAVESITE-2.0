@@ -433,11 +433,22 @@ export default function ValidatePage() {
                   {currentTrend.trend_size && (
                     <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-2.5">
                       <div className="flex items-center space-x-1.5">
-                        <Users className="h-3.5 w-3.5 text-blue-600" />
+                        <span className="text-sm">
+                          {currentTrend.trend_size === 'micro' ? '🔬' :
+                           currentTrend.trend_size === 'niche' ? '🎯' :
+                           currentTrend.trend_size === 'viral' || currentTrend.trend_size === 'medium' ? '🔥' :
+                           currentTrend.trend_size === 'mega' || currentTrend.trend_size === 'large' ? '💥' :
+                           currentTrend.trend_size === 'global' ? '🌍' : '📏'}
+                        </span>
                         <span className="text-xs font-medium text-blue-900">Size</span>
                       </div>
                       <p className="text-xs text-blue-700 mt-0.5 capitalize">
-                        {currentTrend.trend_size.replace(/_/g, ' ')}
+                        {currentTrend.trend_size === 'micro' ? 'Micro' :
+                         currentTrend.trend_size === 'niche' ? 'Niche' :
+                         currentTrend.trend_size === 'viral' || currentTrend.trend_size === 'medium' ? 'Viral' :
+                         currentTrend.trend_size === 'mega' || currentTrend.trend_size === 'large' ? 'Mega' :
+                         currentTrend.trend_size === 'global' ? 'Global' :
+                         currentTrend.trend_size.replace(/_/g, ' ')}
                       </p>
                     </div>
                   )}
