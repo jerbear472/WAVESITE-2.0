@@ -21,12 +21,6 @@ export default function Home() {
             Spot trends. Call peaks. Prove you saw it first.
           </p>
           
-          {/* Tagline */}
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-4">
-            The cultural intelligence platform where digital anthropologists track,<br/>
-            predict, and map the evolution of human trends in real-time.
-          </p>
-          
           <p className="text-lg text-gray-500 dark:text-gray-500 mb-8 max-w-2xl mx-auto italic">
             Do you have WaveSight?
           </p>

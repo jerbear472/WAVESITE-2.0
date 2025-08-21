@@ -35,6 +35,20 @@ export default function Navigation() {
           setUserLevel(xpData.level_title || 'Observer');
         } else {
           console.log('No XP data found for user:', user.id);
+          
+          // Fallback: Try to get XP directly from user_xp table
+          const { data: directXP } = await supabase
+            .from('user_xp')
+            .select('total_xp, current_level')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (directXP) {
+            console.log('Found direct XP data:', directXP);
+            setUserXP(directXP.total_xp || 0);
+          } else {
+            console.log('No XP data in user_xp table either for user:', user.id);
+          }
         }
 
         // Fetch leaderboard rank

@@ -405,24 +405,6 @@ export default function SpotPage() {
               </div>
             </div>
             
-            {/* XP Flow Info */}
-            <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
-              <div className="text-sm space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">📤 Submit trend</span>
-                  <span className="font-semibold text-purple-700">+10 XP instantly</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">✅ Community validates</span>
-                  <span className="font-semibold text-green-700">+50 XP bonus</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700">❌ Community rejects</span>
-                  <span className="font-semibold text-red-600">-15 XP penalty</span>
-                </div>
-              </div>
-            </div>
-
             <form onSubmit={handleUrlSubmit} className="space-y-4">
               <div className="relative">
                 <input
@@ -454,6 +436,24 @@ export default function SpotPage() {
                 Start Submission
               </button>
             </form>
+
+            {/* XP Flow Info - Moved below Start Submission button */}
+            <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+              <div className="text-sm space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">📤 Submit trend</span>
+                  <span className="font-semibold text-purple-700">+10 XP instantly</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">✅ Community validates</span>
+                  <span className="font-semibold text-green-700">+50 XP bonus</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">❌ Community rejects</span>
+                  <span className="font-semibold text-red-600">-15 XP penalty</span>
+                </div>
+              </div>
+            </div>
 
             <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
               <Sparkles className="w-4 h-4" />
