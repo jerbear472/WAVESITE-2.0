@@ -906,7 +906,12 @@ export default function Timeline() {
                               </div>
                               <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
                                 <span className="text-xs font-medium text-gray-600">
-                                  {(trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown'}
+                                  {(trend as any).trend_size === 'mega' ? '🌍 Mega' :
+                                   (trend as any).trend_size === 'large' ? '🌐 Large' :
+                                   (trend as any).trend_size === 'medium' ? '📊 Medium' :
+                                   (trend as any).trend_size === 'niche' ? '🎯 Niche' :
+                                   (trend as any).trend_size === 'micro' ? '🔬 Micro' :
+                                   '📏 ' + ((trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown')}
                                 </span>
                                 <span className="text-xs text-gray-400">Size</span>
                               </div>
@@ -1150,7 +1155,12 @@ export default function Timeline() {
                               </div>
                               <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
                                 <span className="text-sm font-medium text-gray-600">
-                                  {(trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown'}
+                                  {(trend as any).trend_size === 'mega' ? '🌍 Mega' :
+                                   (trend as any).trend_size === 'large' ? '🌐 Large' :
+                                   (trend as any).trend_size === 'medium' ? '📊 Medium' :
+                                   (trend as any).trend_size === 'niche' ? '🎯 Niche' :
+                                   (trend as any).trend_size === 'micro' ? '🔬 Micro' :
+                                   '📏 ' + ((trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown')}
                                 </span>
                                 <span className="text-xs text-gray-400">Size</span>
                               </div>
