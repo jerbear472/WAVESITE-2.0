@@ -105,9 +105,16 @@ export default function Dashboard() {
 
       if (xpError) {
         console.error('Error fetching XP summary:', xpError);
+        console.log('XP Error details:', {
+          message: xpError.message,
+          details: xpError.details,
+          hint: xpError.hint,
+          code: xpError.code
+        });
       }
       
       console.log('XP Summary data:', xpSummary);
+      console.log('XP Summary columns available:', xpSummary ? Object.keys(xpSummary) : 'No data');
 
       // Get today's and this week's XP
       const today = new Date();
@@ -175,16 +182,21 @@ export default function Dashboard() {
       const totalXP = xpSummary?.total_xp ?? 0;
       const currentLevel = xpSummary?.level ?? 1;
       
+      // Calculate level title from level number if not provided
+      const levelTitle = xpSummary?.level_title || 
+        XP_LEVELS.find(l => l.level === currentLevel)?.title || 
+        'Observer';
+      
       setStats({
         total_xp: totalXP,
         current_level: currentLevel,
-        level_title: xpSummary?.level_title || XP_LEVELS.find(l => l.level === currentLevel)?.title || 'Observer',
+        level_title: levelTitle,
         todays_xp: todaysXP,
         weekly_xp: weeklyXP,
-        trends_submitted: xpSummary?.total_trends_submitted || 0,
-        trends_validated: xpSummary?.validated_trends || 0,
-        trends_rejected: xpSummary?.rejected_trends || 0,
-        pending_validations: xpSummary?.pending_trends || 0,
+        trends_submitted: xpSummary?.total_trends_submitted ?? 0,
+        trends_validated: xpSummary?.validated_trends ?? 0,
+        trends_rejected: xpSummary?.rejected_trends ?? 0,
+        pending_validations: xpSummary?.pending_trends ?? 0,
         validation_accuracy: accuracy,
         current_streak: 0, // Would need to calculate from profile
         global_rank: leaderboard?.global_rank || null
