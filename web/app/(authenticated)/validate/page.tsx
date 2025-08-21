@@ -72,6 +72,8 @@ export default function ValidatePage() {
   const [consensus, setConsensus] = useState<number | null>(null);
   const [xpEarned, setXpEarned] = useState(0);
   const [lastXPEarned, setLastXPEarned] = useState(5);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [cardKey, setCardKey] = useState(0);
   
   // Swipe animation values
   const x = useMotionValue(0);
@@ -115,15 +117,30 @@ export default function ValidatePage() {
     
     setLoading(true);
     try {
+      // First get trends the user has already validated
+      const { data: userValidations } = await supabase
+        .from('trend_validations')
+        .select('trend_id')
+        .eq('validator_id', user.id);
+      
+      const validatedTrendIds = userValidations?.map(v => v.trend_id) || [];
+      
       // Get trends that need quality checking (less than 3 votes, not yet quality approved)
-      const { data: trends, error } = await supabase
+      let query = supabase
         .from('trend_submissions')
         .select('*')
         .or('validation_count.is.null,validation_count.lt.3')
         .neq('spotter_id', user.id) // Don't show user's own trends
-        .in('status', ['submitted', 'validating']) // Only get trends not yet quality approved (removed 'pending' as it's not a valid enum)
+        .in('status', ['submitted', 'validating']) // Only get trends not yet quality approved
         .order('created_at', { ascending: false })
         .limit(20);
+      
+      // Exclude trends the user has already validated
+      if (validatedTrendIds.length > 0) {
+        query = query.not('id', 'in', `(${validatedTrendIds.join(',')})`);
+      }
+      
+      const { data: trends, error } = await query;
 
       if (error) throw error;
 
@@ -265,16 +282,26 @@ export default function ValidatePage() {
   };
 
   const moveToNextTrend = () => {
-    const newQueue = trendQueue.slice(1);
-    setTrendQueue(newQueue);
-    setCurrentTrend(newQueue[0] || null);
-    setLastVote(null);
-    setConsensus(null);
+    setIsAnimating(true);
     
-    // Reload if queue is getting low
-    if (newQueue.length < 5) {
-      loadTrendsToValidate();
-    }
+    // Animate out current card
+    setTimeout(() => {
+      const newQueue = trendQueue.slice(1);
+      setTrendQueue(newQueue);
+      setCurrentTrend(newQueue[0] || null);
+      setLastVote(null);
+      setConsensus(null);
+      setCardKey(prev => prev + 1); // Force re-render with new key for animation
+      
+      // Reload if queue is getting low
+      if (newQueue.length < 5) {
+        loadTrendsToValidate();
+      }
+      
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 50);
+    }, 200);
   };
 
 
@@ -353,7 +380,14 @@ export default function ValidatePage() {
 
         {/* Swipe Card Container */}
         <div className="relative">
-          <AnimatePresence>
+          {/* Background card preview (next in queue) */}
+          {trendQueue.length > 1 && (
+            <div className="absolute inset-0 scale-95 opacity-30">
+              <div className="h-[650px] bg-white rounded-2xl shadow-lg" />
+            </div>
+          )}
+          
+          <AnimatePresence mode="wait">
             {showFeedback && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -361,10 +395,20 @@ export default function ValidatePage() {
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 z-20 flex items-center justify-center"
               >
-                <div className="bg-white rounded-2xl p-6 shadow-2xl text-center">
-                  <div className={`text-5xl mb-3 ${lastVote === 'valid' ? 'text-green-500' : 'text-red-500'}`}>
+                <motion.div 
+                  className="bg-white rounded-2xl p-6 shadow-2xl text-center"
+                  initial={{ scale: 0.8, rotate: -10 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  <motion.div 
+                    className={`text-5xl mb-3 ${lastVote === 'valid' ? 'text-green-500' : 'text-red-500'}`}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.1, type: "spring", stiffness: 500 }}
+                  >
                     {lastVote === 'valid' ? '✓' : '✗'}
-                  </div>
+                  </motion.div>
                   <p className="text-lg font-bold text-gray-900 mb-2">
                     {lastVote === 'valid' ? 'Trend Confirmed!' : 'Not a Trend'}
                   </p>
@@ -379,13 +423,28 @@ export default function ValidatePage() {
                       ✨ Moved to Predictions!
                     </p>
                   )}
-                </div>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
 
           <motion.div
+            key={cardKey}
             style={{ x, rotate, opacity }}
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ 
+              scale: 0.9, 
+              opacity: 0,
+              x: lastVote === 'valid' ? 300 : -300,
+              rotate: lastVote === 'valid' ? 20 : -20,
+              transition: { duration: 0.3 }
+            }}
+            transition={{ 
+              type: "spring",
+              stiffness: 300,
+              damping: 30
+            }}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={1}
@@ -398,6 +457,7 @@ export default function ValidatePage() {
               }
             }}
             className="absolute inset-0 cursor-grab active:cursor-grabbing"
+            whileDrag={{ scale: 1.05 }}
           >
             <div className="h-[650px] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
               {/* Trend Image/Thumbnail - Optimized height */}
@@ -607,7 +667,12 @@ export default function ValidatePage() {
         </div>
 
         {/* Action Buttons - Below card stack */}
-        <div className="flex justify-center space-x-8 mt-[680px]">
+        <motion.div 
+          className="flex justify-center space-x-8 mt-[680px]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <button
             onClick={() => handleSwipe('left')}
             className="flex flex-col items-center group"
@@ -629,10 +694,15 @@ export default function ValidatePage() {
             </div>
             <span className="text-sm font-medium text-gray-700">Real Trend</span>
           </button>
-        </div>
+        </motion.div>
 
         {/* Queue indicator and keyboard hint */}
-        <div className="mt-8 text-center space-y-2">
+        <motion.div 
+          className="mt-8 text-center space-y-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
           <p className="text-sm text-gray-500">
             {trendQueue.length - 1} more trends to review
           </p>
@@ -645,7 +715,7 @@ export default function ValidatePage() {
               where the community votes on their trending potential
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
