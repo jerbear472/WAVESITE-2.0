@@ -16,14 +16,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
-import Animated, {
-  FadeInDown,
-  FadeIn,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import {
+  Animated,
+} from 'react-native';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { WebView } from 'react-native-webview';
 import { supabase } from '../config/supabase';
@@ -228,8 +223,8 @@ const SubmitTrendScreen: React.FC = () => {
   const [webViewHtml, setWebViewHtml] = useState('');
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const buttonScale = useSharedValue(1);
-  const progressWidth = useSharedValue(0);
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const progressWidth = useRef(new Animated.Value(0)).current;
 
   // Load saved draft on mount
   useEffect(() => {
@@ -408,7 +403,11 @@ const SubmitTrendScreen: React.FC = () => {
 
     try {
       // Start progress animation
-      progressWidth.value = withTiming(100, { duration: 3000 });
+      Animated.timing(progressWidth, {
+        toValue: 100,
+        duration: 3000,
+        useNativeDriver: false,
+      }).start();
 
       // Create extraction script based on platform
       const platform = detectPlatform(urlToProcess);
@@ -515,7 +514,10 @@ const SubmitTrendScreen: React.FC = () => {
     await saveDraft();
 
     setLoading(true);
-    buttonScale.value = withSpring(0.95);
+    Animated.spring(buttonScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
     ReactNativeHapticFeedback.trigger('impactMedium');
 
     try {
@@ -725,7 +727,10 @@ const SubmitTrendScreen: React.FC = () => {
       }
     } finally {
       setLoading(false);
-      buttonScale.value = withSpring(1);
+      Animated.spring(buttonScale, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
     }
   };
 
@@ -740,13 +745,16 @@ const SubmitTrendScreen: React.FC = () => {
     await clearDraft();
   };
 
-  const progressStyle = useAnimatedStyle(() => ({
-    width: `${progressWidth.value}%`,
-  }));
+  const progressStyle = {
+    width: progressWidth.interpolate({
+      inputRange: [0, 100],
+      outputRange: ['0%', '100%'],
+    }),
+  };
 
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
+  const buttonAnimatedStyle = {
+    transform: [{ scale: buttonScale }],
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -759,16 +767,15 @@ const SubmitTrendScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View entering={FadeInDown.springify()}>
+          <View>
             <Text style={styles.title}>Submit a Trend</Text>
             <Text style={styles.subtitle}>
               Share trending content from social media
             </Text>
-          </Animated.View>
+          </View>
 
           {/* URL Input */}
           <Animated.View 
-            entering={FadeInDown.delay(100).springify()}
             style={styles.inputSection}
           >
             <Text style={styles.sectionTitle}>Social Media URL</Text>
@@ -829,7 +836,6 @@ const SubmitTrendScreen: React.FC = () => {
           {/* Extracted Metadata Preview */}
           {metadata && (
             <Animated.View 
-              entering={FadeIn.springify()}
               style={styles.metadataSection}
             >
               <Text style={styles.sectionTitle}>Extracted Content</Text>
@@ -911,7 +917,6 @@ const SubmitTrendScreen: React.FC = () => {
           {/* Category Selection */}
           {metadata && (
             <Animated.View 
-              entering={FadeInDown.delay(200).springify()}
               style={styles.categorySection}
             >
               <Text style={styles.sectionTitle}>Trend Category</Text>
@@ -951,7 +956,6 @@ const SubmitTrendScreen: React.FC = () => {
           {/* Follow-up Questions */}
           {metadata && selectedCategory && categoryQuestions[selectedCategory] && (
             <Animated.View 
-              entering={FadeInDown.delay(250).springify()}
               style={styles.followUpSection}
             >
               <Text style={styles.sectionTitle}>Additional Details</Text>
@@ -1014,7 +1018,6 @@ const SubmitTrendScreen: React.FC = () => {
           {/* Confidence Slider */}
           {metadata && (
             <Animated.View 
-              entering={FadeInDown.delay(300).springify()}
               style={styles.confidenceSection}
             >
               <Text style={styles.sectionTitle}>
@@ -1038,7 +1041,6 @@ const SubmitTrendScreen: React.FC = () => {
           {/* Notes */}
           {metadata && (
             <Animated.View 
-              entering={FadeInDown.delay(400).springify()}
               style={styles.notesSection}
             >
               <Text style={styles.sectionTitle}>Additional Notes</Text>
@@ -1058,7 +1060,6 @@ const SubmitTrendScreen: React.FC = () => {
           {/* Auto-save Status */}
           {lastSaved && (
             <Animated.View 
-              entering={FadeIn.duration(300)}
               style={styles.autoSaveStatus}
             >
               <Icon name="check-circle" size={14} color="#27ae60" />
@@ -1071,7 +1072,6 @@ const SubmitTrendScreen: React.FC = () => {
           {/* Retry indicator for failed submissions */}
           {retryCount > 0 && (
             <Animated.View 
-              entering={FadeIn.duration(300)}
               style={styles.retryStatus}
             >
               <Icon name="alert-triangle" size={14} color="#f39c12" />
@@ -1083,7 +1083,7 @@ const SubmitTrendScreen: React.FC = () => {
 
           {/* Submit Button */}
           {metadata && selectedCategory && (
-            <Animated.View entering={FadeInDown.delay(500).springify()}>
+            <View>
               <TouchableOpacity
                 onPress={() => handleSubmit(false)}
                 disabled={loading}
@@ -1107,7 +1107,7 @@ const SubmitTrendScreen: React.FC = () => {
                   </LinearGradient>
                 </Animated.View>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           )}
         </ScrollView>
       </KeyboardAvoidingView>

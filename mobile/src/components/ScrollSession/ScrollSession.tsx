@@ -40,7 +40,7 @@ export const ScrollSession: React.FC<{
   onSessionStateChange 
 }) => {
   const { user } = useAuth();
-  const [isActive, setIsActive] = useState(false);
+  const [isActive, setIsActive] = useState(false); // Ensure starts as false
   const [sessionData, setSessionData] = useState<SessionData>({
     startTime: new Date(),
     duration: 0,

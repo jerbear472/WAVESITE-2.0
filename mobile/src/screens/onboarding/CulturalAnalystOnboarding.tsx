@@ -9,18 +9,9 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  interpolate,
-  Extrapolate,
-  FadeIn,
-  FadeOut,
-  SlideInRight,
-  SlideOutLeft,
-} from 'react-native-reanimated';
+import {
+  Animated,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
@@ -117,14 +108,16 @@ const CulturalAnalystOnboarding: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAgreed, setUserAgreed] = useState(false);
-  const translateX = useSharedValue(0);
-  const buttonScale = useSharedValue(1);
-  const progressAnimation = useSharedValue(0);
+  const translateX = new Animated.Value(0);
+  const buttonScale = new Animated.Value(1);
+  const progressAnimation = new Animated.Value(0);
 
   React.useEffect(() => {
-    progressAnimation.value = withTiming((currentIndex + 1) / slides.length, {
+    Animated.timing(progressAnimation, {
+      toValue: (currentIndex + 1) / slides.length,
       duration: 300,
-    });
+      useNativeDriver: false,
+    }).start();
   }, [currentIndex]);
 
   const handleNext = () => {
@@ -190,34 +183,43 @@ const CulturalAnalystOnboarding: React.FC = () => {
     }
   };
 
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
+  const buttonAnimatedStyle = {
+    transform: [{ scale: buttonScale }],
+  };
 
-  const progressBarStyle = useAnimatedStyle(() => ({
-    width: `${interpolate(
-      progressAnimation.value,
-      [0, 1],
-      [0, 100],
-      Extrapolate.CLAMP
-    )}%`,
-  }));
+  const progressBarStyle = {
+    width: progressAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%'],
+      extrapolate: 'clamp',
+    }),
+  };
 
   const renderSlide = (slide: OnboardingSlide, index: number) => {
-    const titleTranslateY = useSharedValue(0);
-    const titleOpacity = useSharedValue(0);
+    const titleTranslateY = new Animated.Value(50);
+    const titleOpacity = new Animated.Value(0);
 
     React.useEffect(() => {
       if (index === currentIndex) {
-        titleTranslateY.value = withTiming(0, { duration: 300 });
-        titleOpacity.value = withTiming(1, { duration: 300 });
+        Animated.parallel([
+          Animated.timing(titleTranslateY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(titleOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
       }
     }, [currentIndex]);
 
-    const titleStyle = useAnimatedStyle(() => ({
-      transform: [{ translateY: titleTranslateY.value }],
-      opacity: titleOpacity.value,
-    }));
+    const titleStyle = {
+      transform: [{ translateY: titleTranslateY }],
+      opacity: titleOpacity,
+    };
 
     return (
       <View key={slide.id} style={styles.slide}>
@@ -247,10 +249,7 @@ const CulturalAnalystOnboarding: React.FC = () => {
               </Text>
               
               {slide.commitment && index === currentIndex && (
-                <Animated.View 
-                  entering={FadeIn.delay(1000)}
-                  style={styles.agreementContainer}
-                >
+                <View style={styles.agreementContainer}>
                   <TouchableOpacity
                     style={[
                       styles.agreementButton,
@@ -268,7 +267,7 @@ const CulturalAnalystOnboarding: React.FC = () => {
                       {userAgreed ? '✓' : '○'} I agree to maintain professional standards
                     </Text>
                   </TouchableOpacity>
-                </Animated.View>
+                </View>
               )}
             </Animated.View>
           </View>
@@ -281,18 +280,28 @@ const CulturalAnalystOnboarding: React.FC = () => {
     return (
       <View style={styles.pagination}>
         {slides.map((_, index) => {
-          const dotWidth = useSharedValue(8);
-          const dotOpacity = useSharedValue(0.3);
+          const dotWidth = new Animated.Value(index === currentIndex ? 24 : 8);
+          const dotOpacity = new Animated.Value(index === currentIndex ? 1 : 0.3);
 
           React.useEffect(() => {
-            dotWidth.value = withTiming(index === currentIndex ? 24 : 8, { duration: 200 });
-            dotOpacity.value = withTiming(index === currentIndex ? 1 : 0.3, { duration: 200 });
+            Animated.parallel([
+              Animated.timing(dotWidth, {
+                toValue: index === currentIndex ? 24 : 8,
+                duration: 200,
+                useNativeDriver: false,
+              }),
+              Animated.timing(dotOpacity, {
+                toValue: index === currentIndex ? 1 : 0.3,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
           }, [currentIndex]);
 
-          const dotStyle = useAnimatedStyle(() => ({
-            width: dotWidth.value,
-            opacity: dotOpacity.value,
-          }));
+          const dotStyle = {
+            width: dotWidth,
+            opacity: dotOpacity,
+          };
 
           return (
             <Animated.View
@@ -346,10 +355,18 @@ const CulturalAnalystOnboarding: React.FC = () => {
           <TouchableOpacity
             onPress={handleNext}
             onPressIn={() => {
-              buttonScale.value = withTiming(0.95, { duration: 100 });
+              Animated.timing(buttonScale, {
+                toValue: 0.95,
+                duration: 100,
+                useNativeDriver: true,
+              }).start();
             }}
             onPressOut={() => {
-              buttonScale.value = withTiming(1, { duration: 100 });
+              Animated.timing(buttonScale, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true,
+              }).start();
             }}
             activeOpacity={0.8}
             disabled={isLastSlide && !userAgreed}

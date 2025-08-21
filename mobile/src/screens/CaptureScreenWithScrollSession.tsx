@@ -106,6 +106,12 @@ export default function CaptureScreenWithScrollSession() {
 
   useEffect(() => {
     loadStreakData();
+    // Ensure session is not active on mount
+    setIsSessionActive(false);
+    setCurrentSession(null);
+    setSelectedPlatform(null);
+    setSessionTime(0);
+    
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -206,6 +212,12 @@ export default function CaptureScreenWithScrollSession() {
 
   const startScrollSession = (platform: string) => {
     if (isSessionActive) return;
+    
+    // Ensure this is an intentional user action
+    if (!platform) {
+      console.warn('startScrollSession called without platform');
+      return;
+    }
 
     Vibration.vibrate(100);
     setSelectedPlatform(platform);
@@ -264,18 +276,21 @@ export default function CaptureScreenWithScrollSession() {
       console.error('Error saving session:', error);
     }
 
-    // Show summary
-    Alert.alert(
-      '📊 Session Complete!',
-      `Duration: ${formatTime(duration)}\nPlatform: ${currentSession.platform}\n\nGreat job hunting for trends! 🔥`,
-      [
-        {
-          text: 'Submit Trends',
-          onPress: () => navigation.navigate('SubmitTrend'),
-        },
-        { text: 'Done', style: 'cancel' },
-      ]
-    );
+    // Only show summary if session had meaningful duration
+    if (duration > 0) {
+      // Show summary
+      Alert.alert(
+        '📊 Session Complete!',
+        `Duration: ${formatTime(duration)}\nPlatform: ${currentSession.platform}\n\nGreat job hunting for trends! 🔥`,
+        [
+          {
+            text: 'Submit Trends',
+            onPress: () => navigation.navigate('SubmitTrend'),
+          },
+          { text: 'Done', style: 'cancel' },
+        ]
+      );
+    }
 
     setIsSessionActive(false);
     setCurrentSession(null);

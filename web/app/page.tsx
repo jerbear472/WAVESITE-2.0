@@ -18,7 +18,7 @@ export default function Home() {
           
           {/* Sub-hero */}
           <p className="text-2xl md:text-3xl font-medium text-gray-800 dark:text-gray-200 mb-8">
-            Spot trends. Call peaks. Prove you saw it first.
+            The app for people who spot trends first.
           </p>
           
           <p className="text-lg text-gray-500 dark:text-gray-500 mb-8 max-w-2xl mx-auto italic">
