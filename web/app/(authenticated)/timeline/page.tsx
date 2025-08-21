@@ -294,7 +294,7 @@ export default function Timeline() {
     // Determine velocity based on stage, status, or other metrics
     if (trend.trend_velocity) return trend.trend_velocity;
     
-    if (trend.stage === 'viral' || trend.status === 'viral') return 'viral';
+    if (trend.stage === 'viral') return 'viral';
     if (trend.stage === 'declining') return 'declining';
     if (trend.stage === 'peaked') return 'peaked';
     if (trend.stage === 'trending' || (trend.wave_score && trend.wave_score >= 7)) return 'picking_up';
