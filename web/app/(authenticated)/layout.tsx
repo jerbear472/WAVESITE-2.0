@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
@@ -15,11 +15,17 @@ export default function AuthenticatedLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isClient, setIsClient] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Ensure client-side rendering
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Handle navigation state changes
+  useEffect(() => {
+    setIsNavigating(false);
+  }, [pathname]);
 
   // Handle authentication redirect
   useEffect(() => {
@@ -60,7 +66,7 @@ export default function AuthenticatedLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-1 overflow-x-hidden">
+      <main className="flex-1 overflow-x-hidden" key={pathname}>
         <div className="min-h-full">
           {children}
         </div>

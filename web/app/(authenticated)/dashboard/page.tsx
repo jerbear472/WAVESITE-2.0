@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import PendingValidations from '@/components/PendingValidations';
 import StreakDisplay from '@/components/StreakDisplay';
 import { motion } from 'framer-motion';
@@ -94,6 +95,14 @@ export default function Dashboard() {
   const [showAllLevels, setShowAllLevels] = useState(false);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
+  // Use navigation refresh hook to reload data on route changes
+  useNavigationRefresh(() => {
+    if (user) {
+      loadDashboardData();
+    }
+  }, [user]);
+
+  // Also load on user change
   useEffect(() => {
     if (user) {
       loadDashboardData();

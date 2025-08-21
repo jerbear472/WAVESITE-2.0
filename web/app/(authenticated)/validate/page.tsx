@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import { useAuth } from '@/contexts/AuthContext';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { 
@@ -58,6 +59,14 @@ export default function ValidatePage() {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-30, 30]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5]);
+
+  // Use navigation refresh hook to reload data on route changes
+  useNavigationRefresh(() => {
+    if (user) {
+      loadTrendsToValidate();
+      loadUserStats();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {

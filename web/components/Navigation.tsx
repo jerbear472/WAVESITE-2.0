@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import WaveSightLogo from '@/components/WaveSightLogo';
 import { Trophy, TrendingUp, Award } from 'lucide-react';
 
@@ -17,11 +18,10 @@ export default function Navigation() {
   const [userLevel, setUserLevel] = useState<string>('Observer');
   const [globalRank, setGlobalRank] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchXPData = async () => {
-      if (!user) return;
-      
-      try {
+  const fetchXPData = async () => {
+    if (!user) return;
+    
+    try {
         // Fetch XP and level from user_xp_summary view (same as dashboard)
         const { data: xpData } = await supabase
           .from('user_xp_summary')
@@ -65,9 +65,16 @@ export default function Navigation() {
         console.error('Error fetching XP data:', error);
       }
     };
+  };
 
+  // Refresh XP data on navigation changes
+  useNavigationRefresh(() => {
     fetchXPData();
   }, [user]);
+
+  useEffect(() => {
+    fetchXPData();
+  }, [user, pathname]); // Also refresh when pathname changes
 
   const handleLogout = async () => {
     await logout();

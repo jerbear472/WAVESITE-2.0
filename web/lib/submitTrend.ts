@@ -64,48 +64,62 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     const baseXP = XP_REWARDS.base.trendSubmission; // 10 XP
     const paymentAmount = baseXP;
     
-    // Prepare submission data - only include columns that exist
-    const submissionData = {
+    // Prepare submission data - only include essential columns first
+    const submissionData: any = {
       spotter_id: userId,  // Use spotter_id as that's what the table expects
       category: getSafeCategory(data.category),
       description: data.description || data.title || 'Untitled Trend',
-      title: data.title || 'Untitled Trend',
       status: 'submitted',
-      payment_amount: paymentAmount,
-      validation_count: 0,
-      
-      // Optional fields
-      platform: data.platform,
-      post_url: data.url,
-      screenshot_url: data.screenshot_url,
-      thumbnail_url: data.thumbnail_url,
-      creator_handle: data.creator_handle,
-      views_count: data.views_count || 0,
-      likes_count: data.likes_count || 0,
-      comments_count: data.comments_count || 0,
-      hashtags: data.hashtags || [],
-      wave_score: data.wave_score || data.sentiment || 50,
-      quality_score: 75,
-      
-      // Intelligence fields
-      trend_velocity: data.trendVelocity || 'just_starting',
-      trend_size: data.trendSize || 'niche',
-      ai_angle: data.aiAngle || 'not_ai',
-      sentiment: data.sentiment || 50,
-      audience_age: data.audienceAge,
-      category_answers: data.categoryAnswers,
-      velocity_metrics: data.velocityMetrics,
-      is_ai_generated: data.aiAngle && data.aiAngle !== 'not_ai',
-      
-      // Evidence for backwards compatibility
-      evidence: {
-        ...data,
-        payment_amount: paymentAmount
-      }
+      payment_amount: paymentAmount
+    };
+
+    // Add optional fields if they exist and are not undefined
+    if (data.title) submissionData.title = data.title;
+    if (data.platform) submissionData.platform = data.platform;
+    if (data.url) submissionData.post_url = data.url;
+    if (data.screenshot_url) submissionData.screenshot_url = data.screenshot_url;
+    if (data.thumbnail_url) submissionData.thumbnail_url = data.thumbnail_url;
+    if (data.creator_handle) submissionData.creator_handle = data.creator_handle;
+    
+    // Add numeric fields with defaults
+    submissionData.views_count = data.views_count || 0;
+    submissionData.likes_count = data.likes_count || 0;
+    submissionData.comments_count = data.comments_count || 0;
+    submissionData.quality_score = 75;
+    submissionData.wave_score = data.wave_score || data.sentiment || 50;
+    
+    // Add arrays only if they have content
+    if (data.hashtags && data.hashtags.length > 0) {
+      submissionData.hashtags = data.hashtags;
+    }
+    
+    // Only add intelligence fields if they exist in the data
+    if (data.trendVelocity) submissionData.trend_velocity = data.trendVelocity;
+    if (data.trendSize) submissionData.trend_size = data.trendSize;
+    if (data.aiAngle) submissionData.ai_angle = data.aiAngle;
+    if (data.sentiment) submissionData.sentiment = data.sentiment;
+    if (data.audienceAge && data.audienceAge.length > 0) {
+      submissionData.audience_age = data.audienceAge;
+    }
+    
+    // Only add JSON fields if they have content
+    if (data.categoryAnswers && Object.keys(data.categoryAnswers).length > 0) {
+      submissionData.category_answers = data.categoryAnswers;
+    }
+    if (data.velocityMetrics && Object.keys(data.velocityMetrics).length > 0) {
+      submissionData.velocity_metrics = data.velocityMetrics;
+    }
+    
+    // Add evidence field for backwards compatibility
+    submissionData.evidence = {
+      url: data.url || '',
+      title: data.title || 'Untitled Trend',
+      payment_amount: paymentAmount
     };
     
     console.log(`💾 [2] Saving to database at ${Date.now() - startTime}ms...`);
     console.log('Submission data keys:', Object.keys(submissionData));
+    console.log('Full submission data:', JSON.stringify(submissionData, null, 2));
     
     // Insert the trend submission with timeout
     const insertPromise = supabase

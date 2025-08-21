@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
+import { supabaseCache } from '@/lib/supabaseCache';
 import { motion, AnimatePresence } from 'framer-motion';
 import SmartTrendSubmission from '@/components/SmartTrendSubmissionSimple';
 import { TrendSubmissionService } from '@/services/TrendSubmissionService';
@@ -98,6 +100,14 @@ export default function Timeline() {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [totalXP, setTotalXP] = useState(0);
   const router = useRouter();
+
+  // Use navigation refresh hook to reload data on route changes
+  useNavigationRefresh(() => {
+    if (user && !authLoading) {
+      supabaseCache.clearTable('trend_submissions');
+      fetchUserTrends();
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
     if (!authLoading && !user) {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import { usePersona } from '@/hooks/usePersona';
 import WaveLogo from '@/components/WaveLogo';
 import { 
