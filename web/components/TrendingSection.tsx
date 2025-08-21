@@ -217,22 +217,22 @@ export default function TrendingSection() {
 
                     {/* Engagement Stats */}
                     <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                      {(trend.likes_count || 0) > 0 && (
+                      {trend.likes_count && trend.likes_count > 0 && (
                         <div className="flex items-center gap-1">
                           <Heart className="w-4 h-4 text-red-400" />
-                          <span>{formatEngagement(trend.likes_count || 0)}</span>
+                          <span>{formatEngagement(trend.likes_count)}</span>
                         </div>
                       )}
-                      {(trend.comments_count || 0) > 0 && (
+                      {trend.comments_count && trend.comments_count > 0 && (
                         <div className="flex items-center gap-1">
                           <MessageCircle className="w-4 h-4 text-blue-400" />
-                          <span>{formatEngagement(trend.comments_count || 0)}</span>
+                          <span>{formatEngagement(trend.comments_count)}</span>
                         </div>
                       )}
-                      {(trend.views_count || 0) > 0 && (
+                      {trend.views_count && trend.views_count > 0 && (
                         <div className="flex items-center gap-1">
                           <Eye className="w-4 h-4 text-purple-400" />
-                          <span>{formatEngagement(trend.views_count || 0)}</span>
+                          <span>{formatEngagement(trend.views_count)}</span>
                         </div>
                       )}
                       {trend.validation_count > 0 && (

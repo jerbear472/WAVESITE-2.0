@@ -972,25 +972,25 @@ export default function Timeline() {
                               {trend.likes_count && trend.likes_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <HeartIcon className="w-4 h-4 text-red-500" />
-                                  <p className="text-xs text-gray-600">{formatEngagement(trend.likes_count || 0)}</p>
+                                  <p className="text-xs text-gray-600">{formatEngagement(trend.likes_count)}</p>
                                 </div>
                               )}
                               {trend.comments_count && trend.comments_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <MessageCircleIcon className="w-4 h-4 text-blue-500" />
-                                  <p className="text-xs text-gray-600">{formatEngagement(trend.comments_count || 0)}</p>
+                                  <p className="text-xs text-gray-600">{formatEngagement(trend.comments_count)}</p>
                                 </div>
                               )}
                               {trend.shares_count && trend.shares_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <ShareIcon className="w-4 h-4 text-green-500" />
-                                  <p className="text-xs text-gray-600">{formatEngagement(trend.shares_count || 0)}</p>
+                                  <p className="text-xs text-gray-600">{formatEngagement(trend.shares_count)}</p>
                                 </div>
                               )}
                               {trend.views_count && trend.views_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <EyeIcon className="w-4 h-4 text-purple-500" />
-                                  <p className="text-xs text-gray-600">{formatEngagement(trend.views_count || 0)}</p>
+                                  <p className="text-xs text-gray-600">{formatEngagement(trend.views_count)}</p>
                                 </div>
                               )}
                             </div>
@@ -1239,25 +1239,25 @@ export default function Timeline() {
                                 {trend.likes_count && trend.likes_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <HeartIcon className="w-4 h-4 text-red-500" />
-                                    <span>{formatEngagement(trend.likes_count || 0)}</span>
+                                    <span>{formatEngagement(trend.likes_count)}</span>
                                   </div>
                                 )}
                                 {trend.comments_count && trend.comments_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <MessageCircleIcon className="w-4 h-4 text-blue-600" />
-                                    <span>{formatEngagement(trend.comments_count || 0)}</span>
+                                    <span>{formatEngagement(trend.comments_count)}</span>
                                   </div>
                                 )}
                                 {trend.shares_count && trend.shares_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <ShareIcon className="w-4 h-4 text-green-600" />
-                                    <span>{formatEngagement(trend.shares_count || 0)}</span>
+                                    <span>{formatEngagement(trend.shares_count)}</span>
                                   </div>
                                 )}
                                 {trend.views_count && trend.views_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <EyeIcon className="w-4 h-4 text-purple-600" />
-                                    <span>{formatEngagement(trend.views_count || 0)}</span>
+                                    <span>{formatEngagement(trend.views_count)}</span>
                                   </div>
                                 )}
                               </div>
@@ -1570,13 +1570,13 @@ export default function Timeline() {
                                                     {trend.likes_count && trend.likes_count > 0 && (
                                                       <div className="flex items-center gap-0.5">
                                                         <HeartIcon className="w-3 h-3 text-red-500" />
-                                                        <span>{formatEngagement(trend.likes_count || 0)}</span>
+                                                        <span>{formatEngagement(trend.likes_count)}</span>
                                                       </div>
                                                     )}
                                                     {trend.views_count && trend.views_count > 0 && (
                                                       <div className="flex items-center gap-0.5">
                                                         <EyeIcon className="w-3 h-3 text-purple-600" />
-                                                        <span>{formatEngagement(trend.views_count || 0)}</span>
+                                                        <span>{formatEngagement(trend.views_count)}</span>
                                                       </div>
                                                     )}
                                                   </div>
@@ -1588,10 +1588,14 @@ export default function Timeline() {
                                                     <span className={`font-bold ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
                                                       {getVelocityDisplay(getTrendVelocity(trend)).text.split(' ')[1]}
                                                     </span>
-                                                    <span className="text-gray-500">•</span>
-                                                    <span className="text-gray-600">
-                                                      {formatEngagement((trend.views_count || 0) + (trend.likes_count || 0) * 10)} reach
-                                                    </span>
+                                                    {((trend.views_count || 0) + (trend.likes_count || 0) * 10) > 0 && (
+                                                      <>
+                                                        <span className="text-gray-500">•</span>
+                                                        <span className="text-gray-600">
+                                                          {formatEngagement((trend.views_count || 0) + (trend.likes_count || 0) * 10)} reach
+                                                        </span>
+                                                      </>
+                                                    )}
                                                   </div>
                                                   {trend.xp_amount > 0 && (
                                                     <div className={`px-2 py-0.5 rounded-full ${
