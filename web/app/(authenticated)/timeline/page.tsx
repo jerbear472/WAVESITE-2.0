@@ -823,7 +823,14 @@ export default function Timeline() {
             {viewMode === 'grid' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
-                  {filteredTrends.map((trend, index) => (
+                  {filteredTrends.map((trend, index) => {
+                    // Debug: Log any 0 values in this trend
+                    Object.keys(trend).forEach(key => {
+                      if (trend[key] === 0 || trend[key] === '0') {
+                        console.warn(`Trend ${trend.id} has 0 value in field: ${key}`, trend[key]);
+                      }
+                    });
+                    return (
                     <motion.div
                       key={trend.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -957,7 +964,7 @@ export default function Timeline() {
                           </h3>
 
                           {/* Caption */}
-                          {trend.post_caption && (
+                          {trend.post_caption && trend.post_caption !== '0' && (
                             <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                               "{trend.post_caption}"
                             </p>
@@ -1139,7 +1146,7 @@ export default function Timeline() {
                             </div>
                             
                             {/* Enhanced Marketing Tags */}
-                            {(trend.evidence?.categories?.length > 0 || trend.evidence?.moods?.length > 0) && (
+                            {((trend.evidence?.categories?.length || 0) > 0 || (trend.evidence?.moods?.length || 0) > 0) && (
                               <div className="space-y-1">
                                 <div className="text-xs text-gray-600 font-medium">Marketing Tags</div>
                                 <div className="flex flex-wrap gap-1">
@@ -1160,7 +1167,7 @@ export default function Timeline() {
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+                  )})}
                 </AnimatePresence>
               </div>
             )}
@@ -1169,7 +1176,14 @@ export default function Timeline() {
             {viewMode === 'list' && (
               <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
-                  {filteredTrends.map((trend, index) => (
+                  {filteredTrends.map((trend, index) => {
+                    // Debug: Log any 0 values in this trend
+                    Object.keys(trend).forEach(key => {
+                      if (trend[key] === 0 || trend[key] === '0') {
+                        console.warn(`Trend ${trend.id} has 0 value in field: ${key}`, trend[key]);
+                      }
+                    });
+                    return (
                     <motion.div
                       key={trend.id}
                       initial={{ opacity: 0, x: -20 }}
@@ -1249,7 +1263,7 @@ export default function Timeline() {
                               </div>
                             </div>
 
-                            {trend.post_caption && (
+                            {trend.post_caption && trend.post_caption !== '0' && (
                               <p className="text-sm text-gray-600 mb-3">"{trend.post_caption}"</p>
                             )}
 
@@ -1428,7 +1442,7 @@ export default function Timeline() {
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+                  )})}
                 </AnimatePresence>
               </div>
             )}

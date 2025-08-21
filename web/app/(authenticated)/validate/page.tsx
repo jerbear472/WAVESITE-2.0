@@ -326,8 +326,8 @@ export default function ValidatePage() {
       <div className="max-w-lg mx-auto px-4">
         {/* Page Header */}
         <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">Quality Control</h1>
-          <p className="text-sm text-gray-600 mt-1">Help filter spam from real trends</p>
+          <h1 className="text-2xl font-bold text-gray-900">Trend Validation</h1>
+          <p className="text-sm text-gray-600 mt-1">Help identify real trends worth tracking</p>
         </div>
 
         {/* Header Stats */}
@@ -366,7 +366,7 @@ export default function ValidatePage() {
                     {lastVote === 'valid' ? '✓' : '✗'}
                   </div>
                   <p className="text-lg font-bold text-gray-900 mb-2">
-                    {lastVote === 'valid' ? 'Quality Content!' : 'Marked as Spam'}
+                    {lastVote === 'valid' ? 'Trend Confirmed!' : 'Not a Trend'}
                   </p>
                   {consensus && (
                     <p className="text-sm text-gray-600">
@@ -588,10 +588,10 @@ export default function ValidatePage() {
                   <div className="space-y-2">
                     <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
                       <p className="text-center font-semibold text-gray-900 text-sm">
-                        Is this quality content worth tracking?
+                        Is this a real trend worth tracking?
                       </p>
                       <p className="text-center text-xs text-gray-600 mt-1">
-                        Not spam • Real trend • Worth monitoring
+                        Authentic • Emerging • Worth monitoring
                       </p>
                     </div>
                     <p className="text-xs text-center text-gray-500">
@@ -601,39 +601,33 @@ export default function ValidatePage() {
                 </div>
               </div>
 
-              {/* Swipe Indicators - Moved further down to avoid overlap */}
-              <div className="absolute inset-x-0 bottom-3 px-6">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2 text-red-500 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
-                    <X className="h-6 w-6" />
-                    <span className="font-semibold text-sm">SPAM/JUNK</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-green-500 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
-                    <span className="font-semibold text-sm">QUALITY</span>
-                    <Check className="h-6 w-6" />
-                  </div>
-                </div>
-              </div>
+              {/* Removed swipe indicators from card - buttons are now below */}
             </div>
           </motion.div>
         </div>
 
-        {/* Action Buttons - Fixed positioning below card */}
-        <div className="flex justify-center space-x-6 mt-8">
+        {/* Action Buttons - Below card stack */}
+        <div className="flex justify-center space-x-8 mt-[680px]">
           <button
             onClick={() => handleSwipe('left')}
-            className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-red-500 group"
+            className="flex flex-col items-center group"
             disabled={showFeedback}
           >
-            <X className="h-8 w-8 text-red-500 group-hover:scale-110 transition-transform" />
+            <div className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-red-500 mb-2">
+              <X className="h-8 w-8 text-red-500 group-hover:scale-110 transition-transform" />
+            </div>
+            <span className="text-sm font-medium text-gray-700">Not a Trend</span>
           </button>
           
           <button
             onClick={() => handleSwipe('right')}
-            className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-green-500 group"
+            className="flex flex-col items-center group"
             disabled={showFeedback}
           >
-            <Check className="h-8 w-8 text-green-500 group-hover:scale-110 transition-transform" />
+            <div className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-green-500 mb-2">
+              <Check className="h-8 w-8 text-green-500 group-hover:scale-110 transition-transform" />
+            </div>
+            <span className="text-sm font-medium text-gray-700">Real Trend</span>
           </button>
         </div>
 
@@ -643,7 +637,7 @@ export default function ValidatePage() {
             {trendQueue.length - 1} more trends to review
           </p>
           <p className="text-xs text-gray-400">
-            💡 Tip: Use ← → arrow keys • Left = Spam/Junk • Right = Quality
+            💡 Tip: Use ← → arrow keys • Left = Not a Trend • Right = Real Trend
           </p>
           <div className="mt-3 p-3 bg-blue-50 rounded-lg">
             <p className="text-xs text-blue-700">
