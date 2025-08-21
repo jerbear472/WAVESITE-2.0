@@ -77,7 +77,7 @@ interface Trend {
 }
 
 // Add new types for filtering and sorting
-type FilterOption = 'all' | 'pending' | 'validating' | 'approved' | 'rejected';
+type FilterOption = 'all' | 'validating' | 'approved' | 'rejected';
 type SortOption = 'newest' | 'oldest' | 'engagement';
 type ViewMode = 'grid' | 'list' | 'timeline';
 
@@ -634,7 +634,6 @@ export default function Timeline() {
                       className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                     >
                       <option value="all">All Status</option>
-                      <option value="pending">Pending</option>
                       <option value="validating">Validating</option>
                       <option value="approved">Approved</option>
                       <option value="rejected">Rejected</option>
@@ -940,11 +939,13 @@ export default function Timeline() {
                             {/* Validation & Status Row */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1.5 text-xs bg-white rounded-lg px-2 py-1 border border-gray-200">
-                                  <span className="text-green-600 font-medium">👍 {trend.approve_count || 0}</span>
-                                  <span className="text-gray-400">·</span>
-                                  <span className="text-red-500 font-medium">👎 {trend.reject_count || 0}</span>
-                                </div>
+                                {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
+                                  <div className="flex items-center gap-1.5 text-xs bg-white rounded-lg px-2 py-1 border border-gray-200">
+                                    <span className="text-green-600 font-medium">👍 {trend.approve_count || 0}</span>
+                                    <span className="text-gray-400">·</span>
+                                    <span className="text-red-500 font-medium">👎 {trend.reject_count || 0}</span>
+                                  </div>
+                                )}
                                 {trend.validation_status && (
                                   <div className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
                                     trend.validation_status === 'approved' ? 'bg-green-100 text-green-600 border-green-200' :
@@ -985,21 +986,6 @@ export default function Timeline() {
                                       🎭 {mood}
                                     </span>
                                   ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Wave Score Display */}
-                            {(trend as any).wave_score && (
-                              <div className="flex items-center justify-center">
-                                <div className="bg-blue-50/60 rounded-lg px-3 py-1.5 border border-blue-200/50">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-lg">🌊</span>
-                                    <div className="text-center">
-                                      <div className="text-sm font-semibold text-blue-600">{Math.round((trend as any).wave_score)}/100</div>
-                                      <div className="text-xs text-gray-400">Wave Score</div>
-                                    </div>
-                                  </div>
                                 </div>
                               </div>
                             )}
@@ -1155,21 +1141,17 @@ export default function Timeline() {
                                   <span className="text-xs text-gray-400">AI Signal</span>
                                 </div>
                               )}
-                              {(trend as any).wave_score && (
-                                <div className="flex flex-col items-center bg-blue-50/60 rounded-lg px-3 py-2 border border-blue-200/50">
-                                  <span className="text-sm font-semibold text-blue-600">🌊 {Math.round((trend as any).wave_score)}</span>
-                                  <span className="text-xs text-gray-400">Wave Score</span>
-                                </div>
-                              )}
                             </div>
                             
                             {/* Voting and Status */}
                             <div className="flex flex-wrap items-center gap-3 mb-3">
-                              <div className="flex items-center gap-2 bg-gray-50/60 rounded-lg px-3 py-1.5 border border-gray-200/50">
-                                <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count || 0}</span>
-                                <span className="text-sm text-gray-300">·</span>
-                                <span className="text-sm text-gray-500 font-medium">👎 {trend.reject_count || 0}</span>
-                              </div>
+                              {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
+                                <div className="flex items-center gap-2 bg-gray-50/60 rounded-lg px-3 py-1.5 border border-gray-200/50">
+                                  <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count || 0}</span>
+                                  <span className="text-sm text-gray-300">·</span>
+                                  <span className="text-sm text-gray-500 font-medium">👎 {trend.reject_count || 0}</span>
+                                </div>
+                              )}
                               {trend.validation_status && (
                                 <div className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${
                                   trend.validation_status === 'approved' ? 'bg-blue-50/60 text-blue-600 border-blue-200/50' :

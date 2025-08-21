@@ -225,7 +225,7 @@ export const ScrollSession = forwardRef<ScrollSessionRef, ScrollSessionProps>(({
 
           <View style={styles.statItem}>
             <Icon name="cash" size={20} color={enhancedTheme.colors.success} />
-            <AnimatedText style={styles.statValue}>{`$${sessionData.earnings.toFixed(2)}`}</AnimatedText>
+            <AnimatedText style={styles.statValue}>{`$${(sessionData.earnings || 0).toFixed(2)}`}</AnimatedText>
             <Text style={styles.statLabel}>Earned</Text>
           </View>
         </View>

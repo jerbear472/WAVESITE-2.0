@@ -1,4 +1,4 @@
-import { WebFetch } from 'react-native';
+// WebFetch functionality would need to be implemented or imported from a different source
 
 interface PostMetadata {
   creator?: string;

@@ -29,8 +29,8 @@ import { calculateTrendXP, formatXP } from '../config/xpConfig';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface SmartTrendSubmissionProps {
-  visible: boolean;
-  onClose: () => void;
+  visible?: boolean;
+  onClose?: () => void;
   onSubmit?: (data: TrendFormData) => Promise<void>;
   initialUrl?: string;
 }
@@ -370,7 +370,7 @@ export const SmartTrendSubmission: React.FC<SmartTrendSubmissionProps> = ({
         await onSubmit(formData);
       }
       setLoading(false);
-      onClose();
+      onClose?.();
     } catch (error: any) {
       console.error('Error:', error);
       setLoading(false);
@@ -395,16 +395,9 @@ export const SmartTrendSubmission: React.FC<SmartTrendSubmissionProps> = ({
     }
   }, [formData.url]);
 
-  if (!visible) return null;
 
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <SafeAreaView style={styles.container}>
+  const renderContent = () => (
+    <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -426,9 +419,11 @@ export const SmartTrendSubmission: React.FC<SmartTrendSubmissionProps> = ({
                 </Text>
               </View>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Icon name="close" size={24} color={theme.colors.textLight} />
-            </TouchableOpacity>
+            {onClose && (
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Icon name="close" size={24} color={theme.colors.textLight} />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Progress Bar */}
@@ -850,7 +845,19 @@ export const SmartTrendSubmission: React.FC<SmartTrendSubmissionProps> = ({
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+  );
+
+  return visible !== undefined ? (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      {renderContent()}
     </Modal>
+  ) : (
+    renderContent()
   );
 };
 

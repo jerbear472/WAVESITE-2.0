@@ -75,6 +75,7 @@ export const theme = {
     xl: 16,
     round: 9999,
     wave: 30,
+    full: 9999,
   },
   
   typography: {

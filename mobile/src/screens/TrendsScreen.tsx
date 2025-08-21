@@ -24,8 +24,15 @@ interface Trend {
   id: string;
   category: string;
   description: string;
+  title: string;
   quality_score: number;
   validation_count: number;
+  approve_count: number;
+  reject_count: number;
+  trend_velocity: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining' | null;
+  trend_size: 'micro' | 'niche' | 'viral' | 'mega' | 'global' | null;
+  ai_angle: 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai' | null;
+  predicted_peak: string;
   created_at: string;
   spotter_id: string;
 }
@@ -39,7 +46,7 @@ export const TrendsScreen: React.FC = () => {
     queryFn: async () => {
       let query = supabase
         .from('trend_submissions')
-        .select('*')
+        .select('id, category, description, title, quality_score, validation_count, approve_count, reject_count, trend_velocity, trend_size, ai_angle, predicted_peak, created_at, spotter_id')
         .in('status', ['approved', 'viral'])
         .order('validation_count', { ascending: false })
         .limit(50);
@@ -74,8 +81,29 @@ export const TrendsScreen: React.FC = () => {
     console.log('Trend selected:', _trend.id);
   };
 
+  const getTrendVelocityIcon = (velocity: string | null) => {
+    switch (velocity) {
+      case 'just_starting': return '🌱';
+      case 'picking_up': return '⚡';
+      case 'viral': return '🚀';
+      case 'saturated': return '📈';
+      case 'declining': return '📉';
+      default: return '📊';
+    }
+  };
+
+  const getTrendSizeIcon = (size: string | null) => {
+    switch (size) {
+      case 'micro': return '🔍';
+      case 'niche': return '🎯';
+      case 'viral': return '💥';
+      case 'mega': return '🌟';
+      case 'global': return '🌍';
+      default: return '📱';
+    }
+  };
+
   const renderTrend = ({ item }: { item: Trend }) => {
-    const waveScore = item.quality_score * 10;
     const categoryData = categories.find(c => c.value === item.category) || categories[0];
     
     return (
@@ -98,29 +126,55 @@ export const TrendsScreen: React.FC = () => {
                   {item.category.replace('_', ' ')}
                 </Text>
               </View>
-              <View style={styles.waveScore}>
-                <LinearGradient
-                  colors={enhancedTheme.colors.primaryGradient}
-                  style={styles.waveScoreGradient}
-                >
-                  <Text style={styles.waveScoreText}>{waveScore.toFixed(1)}</Text>
-                </LinearGradient>
-                <Text style={styles.waveScoreLabel}>Wave Score</Text>
+              
+              {/* Community Validation */}
+              <View style={styles.validationStats}>
+                <View style={styles.validationItem}>
+                  <Text style={styles.validationIcon}>👍</Text>
+                  <Text style={styles.validationCount}>{item.approve_count || 0}</Text>
+                </View>
+                <View style={styles.validationItem}>
+                  <Text style={styles.validationIcon}>👎</Text>
+                  <Text style={styles.validationCount}>{item.reject_count || 0}</Text>
+                </View>
               </View>
             </View>
             
-            <Text style={styles.trendDescription} numberOfLines={3}>
+            {/* Title and Description */}
+            {item.title && (
+              <Text style={styles.trendTitle} numberOfLines={1}>
+                {item.title}
+              </Text>
+            )}
+            <Text style={styles.trendDescription} numberOfLines={2}>
               {item.description}
             </Text>
             
+            {/* User-tagged metadata */}
+            <View style={styles.trendMetadata}>
+              {item.trend_velocity && (
+                <View style={styles.metadataTag}>
+                  <Text style={styles.metadataIcon}>{getTrendVelocityIcon(item.trend_velocity)}</Text>
+                  <Text style={styles.metadataText}>{item.trend_velocity.replace('_', ' ')}</Text>
+                </View>
+              )}
+              {item.trend_size && (
+                <View style={styles.metadataTag}>
+                  <Text style={styles.metadataIcon}>{getTrendSizeIcon(item.trend_size)}</Text>
+                  <Text style={styles.metadataText}>{item.trend_size}</Text>
+                </View>
+              )}
+            </View>
+            
             <View style={styles.trendFooter}>
-              <View style={styles.footerItem}>
-                <Icon name="check-circle" size={14} color={enhancedTheme.colors.success} />
-                <Text style={styles.validationCount}>{item.validation_count} validations</Text>
-              </View>
               <Text style={styles.trendTime}>
                 {new Date(item.created_at).toLocaleDateString()}
               </Text>
+              {item.predicted_peak && (
+                <Text style={styles.peakPrediction}>
+                  Peak: {item.predicted_peak}
+                </Text>
+              )}
             </View>
           </GlassCard>
         </Pressable>
@@ -313,29 +367,59 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
     fontWeight: '600',
   },
-  waveScore: {
+  validationStats: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
-  waveScoreGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: enhancedTheme.borderRadius.md,
-    marginBottom: 4,
+  validationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  waveScoreText: {
-    ...enhancedTheme.typography.headlineSmall,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+  validationIcon: {
+    fontSize: 16,
   },
-  waveScoreLabel: {
+  validationCount: {
     ...enhancedTheme.typography.bodySmall,
-    color: enhancedTheme.colors.textTertiary,
+    color: enhancedTheme.colors.text,
+    fontWeight: '600',
+  },
+  trendTitle: {
+    ...enhancedTheme.typography.headlineSmall,
+    color: enhancedTheme.colors.text,
+    fontWeight: '700',
+    marginBottom: 8,
   },
   trendDescription: {
     ...enhancedTheme.typography.bodyMedium,
-    color: enhancedTheme.colors.text,
+    color: enhancedTheme.colors.textSecondary,
     marginBottom: 16,
     lineHeight: 22,
+  },
+  trendMetadata: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  metadataTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: enhancedTheme.colors.glass,
+    borderRadius: enhancedTheme.borderRadius.md,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  metadataIcon: {
+    fontSize: 14,
+  },
+  metadataText: {
+    ...enhancedTheme.typography.bodySmall,
+    color: enhancedTheme.colors.text,
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
   trendFooter: {
     flexDirection: 'row',
@@ -354,6 +438,11 @@ const styles = StyleSheet.create({
   trendTime: {
     ...enhancedTheme.typography.bodySmall,
     color: enhancedTheme.colors.textTertiary,
+  },
+  peakPrediction: {
+    ...enhancedTheme.typography.bodySmall,
+    color: enhancedTheme.colors.primary,
+    fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',

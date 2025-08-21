@@ -15,9 +15,9 @@ import { BlurView } from '@react-native-community/blur';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Screens
-import { DashboardScreen } from '../screens/DashboardScreen';
+import { DashboardScreenClean } from '../screens/DashboardScreenClean';
 import { TrendCaptureScreenPolished } from '../screens/TrendCaptureScreenPolished';
-import { ValidationScreenPolished } from '../screens/ValidationScreenPolished';
+import { ValidationScreenUpdated } from '../screens/ValidationScreenUpdated';
 import MyTimelineScreen from '../screens/MyTimelineScreen';
 import { ProfileScreenClean } from '../screens/ProfileScreenClean';
 import { TrendsScreen } from '../screens/TrendsScreen';
@@ -169,7 +169,7 @@ const TabNavigator: React.FC = () => {
     >
       <Tab.Screen 
         name="Home" 
-        component={DashboardScreen}
+        component={DashboardScreenClean}
         options={{ title: 'Home' }}
       />
       <Tab.Screen 
@@ -179,7 +179,7 @@ const TabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name="Validate" 
-        component={ValidationScreenPolished}
+        component={ValidationScreenUpdated}
         options={{ title: 'Validate' }}
       />
       <Tab.Screen 

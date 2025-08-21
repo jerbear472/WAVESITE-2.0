@@ -22,15 +22,16 @@ interface TrendToValidate {
   created_at: string;
   category: string;
   description: string;
+  title?: string;
   screenshot_url?: string;
   thumbnail_url?: string;
   platform?: string;
   creator_handle?: string;
   post_caption?: string;
-  likes_count?: number;
-  comments_count?: number;
-  shares_count?: number;
-  views_count?: number;
+  trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining';
+  trend_size?: 'micro' | 'niche' | 'viral' | 'mega' | 'global';
+  ai_angle?: 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai';
+  predicted_peak?: string;
   validation_count: number;
   spotter_id: string;
   hours_since_post?: number;
@@ -270,8 +271,8 @@ export const ValidationScreenUpdated: React.FC = () => {
           </Text>
           <View style={styles.statsCard}>
             <Text style={styles.statsTitle}>Today's Earnings</Text>
-            <Text style={styles.statsValue}>${stats.earnings_today.toFixed(2)}</Text>
-            <Text style={styles.statsSubtext}>{stats.validated_today} trends validated</Text>
+            <Text style={styles.statsValue}>${(stats.earnings_today || 0).toFixed(2)}</Text>
+            <Text style={styles.statsSubtext}>{stats.validated_today || 0} trends validated</Text>
           </View>
           <Button
             title="Refresh"
@@ -301,7 +302,7 @@ export const ValidationScreenUpdated: React.FC = () => {
             {currentIndex + 1} of {trends.length}
           </Text>
           <View style={styles.earningsBadge}>
-            <Text style={styles.earningsText}>+${(sessionValidations * 0.02).toFixed(2)}</Text>
+            <Text style={styles.earningsText}>+${((sessionValidations || 0) * 0.02).toFixed(2)}</Text>
           </View>
         </View>
       </View>
@@ -351,6 +352,13 @@ export const ValidationScreenUpdated: React.FC = () => {
 
           {/* Content Section */}
           <View style={styles.contentSection}>
+            {/* Title */}
+            {currentTrend.title && (
+              <Text style={styles.trendTitle}>
+                {currentTrend.title}
+              </Text>
+            )}
+
             <Text style={styles.trendDescription}>
               {currentTrend.description || 'No description provided'}
             </Text>
@@ -359,7 +367,40 @@ export const ValidationScreenUpdated: React.FC = () => {
               <Text style={styles.postCaption}>{currentTrend.post_caption}</Text>
             )}
 
-            {/* Metadata Tags */}
+            {/* User-tagged Trend Metadata */}
+            {(currentTrend.trend_velocity || currentTrend.trend_size || currentTrend.ai_angle) && (
+              <View style={styles.trendMetadataSection}>
+                <Text style={styles.metadataTitle}>Trend Characteristics</Text>
+                <View style={styles.metadataGrid}>
+                  {currentTrend.trend_velocity && (
+                    <View style={styles.metadataItem}>
+                      <Text style={styles.metadataLabel}>Velocity:</Text>
+                      <Text style={styles.metadataValue}>{currentTrend.trend_velocity.replace('_', ' ')}</Text>
+                    </View>
+                  )}
+                  {currentTrend.trend_size && (
+                    <View style={styles.metadataItem}>
+                      <Text style={styles.metadataLabel}>Size:</Text>
+                      <Text style={styles.metadataValue}>{currentTrend.trend_size}</Text>
+                    </View>
+                  )}
+                  {currentTrend.ai_angle && (
+                    <View style={styles.metadataItem}>
+                      <Text style={styles.metadataLabel}>AI Angle:</Text>
+                      <Text style={styles.metadataValue}>{currentTrend.ai_angle.replace(/_/g, ' ')}</Text>
+                    </View>
+                  )}
+                  {currentTrend.predicted_peak && (
+                    <View style={styles.metadataItem}>
+                      <Text style={styles.metadataLabel}>Predicted Peak:</Text>
+                      <Text style={styles.metadataValue}>{currentTrend.predicted_peak}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {/* Platform/Source Tags */}
             <View style={styles.tagsContainer}>
               {currentTrend.platform && (
                 <View style={[styles.tag, { backgroundColor: theme.colors.wave[100] }]}>
@@ -784,5 +825,43 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.caption.fontSize,
     fontWeight: '600',
     color: theme.colors.text,
+  },
+  trendTitle: {
+    fontSize: theme.typography.bodyLarge.fontSize,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  trendMetadataSection: {
+    backgroundColor: theme.colors.wave[50],
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+  },
+  metadataTitle: {
+    fontSize: theme.typography.bodySmall.fontSize,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  metadataGrid: {
+    gap: theme.spacing.sm,
+  },
+  metadataItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+  },
+  metadataLabel: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.textLight,
+    fontWeight: '500',
+  },
+  metadataValue: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.text,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
 });

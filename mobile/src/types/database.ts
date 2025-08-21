@@ -30,6 +30,9 @@ export interface UserProfile {
   onboarding_completed?: boolean;
   streak_days?: number;
   wave_score?: number;
+  total_xp?: number;
+  level?: number;
+  daily_streak?: number;
 }
 
 export interface TrendSubmission {
@@ -110,6 +113,9 @@ export interface DashboardStats {
   total_validations: number;
   earnings_available: number;
   earnings_total: number;
+  total_xp: number;
+  level: number;
+  daily_streak: number;
   wave_score: number;
   rank: string;
   streak_days: number;

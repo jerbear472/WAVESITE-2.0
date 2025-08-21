@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   proficiencyDescription: {
     fontSize: 14,
-    color: theme.colors.textTertiary,
+    color: theme.colors.textMuted,
   },
   proficiencyDescriptionActive: {
     color: theme.colors.textSecondary,

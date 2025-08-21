@@ -205,7 +205,7 @@ export const ScrollSession = forwardRef<ScrollSessionRef, ScrollSessionProps>(({
 
           <View style={styles.statItem}>
             <Icon name="cash" size={20} color="#4cd964" />
-            <Text style={styles.statValue}>{`$${sessionData.earnings.toFixed(2)}`}</Text>
+            <Text style={styles.statValue}>{`$${(sessionData.earnings || 0).toFixed(2)}`}</Text>
             <Text style={styles.statLabel}>Earned</Text>
           </View>
         </View>

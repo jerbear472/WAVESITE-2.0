@@ -165,6 +165,6 @@ const styles = StyleSheet.create({
   },
   selectedCountText: {
     fontSize: 14,
-    color: theme.colors.textTertiary,
+    color: theme.colors.textMuted,
   },
 });

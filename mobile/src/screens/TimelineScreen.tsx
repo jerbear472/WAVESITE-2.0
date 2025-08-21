@@ -16,9 +16,33 @@ import supabaseService from '../services/supabaseService';
 import { Card } from '../components/ui/Card';
 import { theme } from '../styles/theme';
 
+interface UserTrend {
+  id: string;
+  created_at: string;
+  description: string;
+  title?: string;
+  screenshot_url?: string;
+  thumbnail_url?: string;
+  category?: string;
+  creator_handle?: string;
+  platform?: string;
+  status?: string;
+  trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'declining';
+  trend_size?: 'micro' | 'niche' | 'viral' | 'mega' | 'global';
+  ai_angle?: 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai';
+  predicted_peak?: string;
+  approve_count?: number;
+  reject_count?: number;
+  validation_count?: number;
+  hashtags?: string[];
+  validations?: any[];
+  base_amount?: number;
+  reward_amount?: number;
+}
+
 export const TimelineScreen: React.FC = () => {
   const { user } = useAuth();
-  const [trends, setTrends] = useState<any[]>([]);
+  const [trends, setTrends] = useState<UserTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -142,7 +166,47 @@ export const TimelineScreen: React.FC = () => {
                 />
               )}
 
+              {/* Title */}
+              {trend.title && (
+                <Text style={styles.trendTitle}>
+                  {trend.title}
+                </Text>
+              )}
+
               <Text style={styles.trendDescription}>{trend.description}</Text>
+
+              {/* User-tagged Trend Metadata */}
+              {(trend.trend_velocity || trend.trend_size || trend.ai_angle) && (
+                <View style={styles.trendMetadataSection}>
+                  <Text style={styles.metadataTitle}>Trend Characteristics</Text>
+                  <View style={styles.metadataGrid}>
+                    {trend.trend_velocity && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataLabel}>Velocity:</Text>
+                        <Text style={styles.metadataValue}>{trend.trend_velocity.replace('_', ' ')}</Text>
+                      </View>
+                    )}
+                    {trend.trend_size && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataLabel}>Size:</Text>
+                        <Text style={styles.metadataValue}>{trend.trend_size}</Text>
+                      </View>
+                    )}
+                    {trend.ai_angle && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataLabel}>AI Angle:</Text>
+                        <Text style={styles.metadataValue}>{trend.ai_angle.replace(/_/g, ' ')}</Text>
+                      </View>
+                    )}
+                    {trend.predicted_peak && (
+                      <View style={styles.metadataItem}>
+                        <Text style={styles.metadataLabel}>Predicted Peak:</Text>
+                        <Text style={styles.metadataValue}>{trend.predicted_peak}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              )}
 
               {trend.creator_handle && (
                 <View style={styles.creatorInfo}>
@@ -157,49 +221,17 @@ export const TimelineScreen: React.FC = () => {
                 </View>
               )}
 
+              {/* Community Validation */}
               <View style={styles.trendStats}>
                 <View style={styles.stat}>
-                  <Text style={styles.statIcon}>👁</Text>
-                  <Text style={styles.statValue}>
-                    {trend.views_count ? 
-                      (trend.views_count >= 1000000 ? `${(trend.views_count / 1000000).toFixed(1)}M` :
-                       trend.views_count >= 1000 ? `${(trend.views_count / 1000).toFixed(1)}K` :
-                       trend.views_count.toString()) : '0'}
-                  </Text>
-                  <Text style={styles.statLabel}>Views</Text>
+                  <Text style={styles.statIcon}>👍</Text>
+                  <Text style={styles.statValue}>{trend.approve_count || 0}</Text>
+                  <Text style={styles.statLabel}>Approvals</Text>
                 </View>
                 <View style={styles.stat}>
-                  <Text style={styles.statIcon}>❤️</Text>
-                  <Text style={styles.statValue}>
-                    {trend.likes_count ? 
-                      (trend.likes_count >= 1000000 ? `${(trend.likes_count / 1000000).toFixed(1)}M` :
-                       trend.likes_count >= 1000 ? `${(trend.likes_count / 1000).toFixed(1)}K` :
-                       trend.likes_count.toString()) : '0'}
-                  </Text>
-                  <Text style={styles.statLabel}>Likes</Text>
-                </View>
-                <View style={styles.stat}>
-                  <Text style={styles.statIcon}>👥</Text>
-                  <Text style={styles.statValue}>
-                    {trend.follower_count ? 
-                      (trend.follower_count >= 1000000 ? `${(trend.follower_count / 1000000).toFixed(1)}M` :
-                       trend.follower_count >= 1000 ? `${(trend.follower_count / 1000).toFixed(1)}K` :
-                       trend.follower_count.toString()) : '0'}
-                  </Text>
-                  <Text style={styles.statLabel}>Audience</Text>
-                </View>
-              </View>
-
-              <View style={styles.trendStats}>
-                <View style={styles.stat}>
-                  <Text style={styles.statIcon}>🌊</Text>
-                  <Text style={styles.statValue}>{trend.wave_score || 0}</Text>
-                  <Text style={styles.statLabel}>Wave Score</Text>
-                </View>
-                <View style={styles.stat}>
-                  <Text style={styles.statIcon}>✓</Text>
-                  <Text style={styles.statValue}>{trend.validation_count || 0}</Text>
-                  <Text style={styles.statLabel}>Validations</Text>
+                  <Text style={styles.statIcon}>👎</Text>
+                  <Text style={styles.statValue}>{trend.reject_count || 0}</Text>
+                  <Text style={styles.statLabel}>Rejections</Text>
                 </View>
                 <View style={styles.stat}>
                   <Text style={styles.statIcon}>💰</Text>
@@ -439,5 +471,43 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.caption.fontSize,
     color: theme.colors.wave[600],
     fontWeight: '500',
+  },
+  trendTitle: {
+    fontSize: theme.typography.bodyLarge.fontSize,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  trendMetadataSection: {
+    backgroundColor: theme.colors.wave[50],
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.md,
+  },
+  metadataTitle: {
+    fontSize: theme.typography.bodySmall.fontSize,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  metadataGrid: {
+    gap: theme.spacing.sm,
+  },
+  metadataItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+  },
+  metadataLabel: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.textLight,
+    fontWeight: '500',
+  },
+  metadataValue: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.colors.text,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
 });
