@@ -35,7 +35,28 @@ interface TrendToValidate {
   submitted_at: string;
   spotter_username: string;
   validation_count: number;
+  // Additional metadata fields
+  trend_velocity?: string;
+  trend_size?: string;
+  ai_angle?: string;
+  sentiment?: number;
+  audience_age?: string[];
+  hashtags?: string[];
+  views_count?: number;
+  likes_count?: number;
+  comments_count?: number;
+  wave_score?: number;
 }
+
+// Utility function to format numbers
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1)}M`;
+  } else if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toString();
+};
 
 export default function ValidatePage() {
   const { user } = useAuth();
@@ -121,7 +142,18 @@ export default function ValidatePage() {
         category: trend.category || 'general',
         submitted_at: trend.created_at,
         spotter_username: 'Trend Spotter',
-        validation_count: trend.validation_count || 0
+        validation_count: trend.validation_count || 0,
+        // Include metadata
+        trend_velocity: trend.trend_velocity,
+        trend_size: trend.trend_size,
+        ai_angle: trend.ai_angle,
+        sentiment: trend.sentiment,
+        audience_age: trend.audience_age,
+        hashtags: trend.hashtags,
+        views_count: trend.views_count,
+        likes_count: trend.likes_count,
+        comments_count: trend.comments_count,
+        wave_score: trend.wave_score
       })) || [];
 
       setTrendQueue(formattedTrends);
@@ -322,8 +354,8 @@ export default function ValidatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8">
-      <div className="max-w-md mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 py-6">
+      <div className="max-w-lg mx-auto px-4">
         {/* Header Stats */}
         <div className="mb-6 flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -383,8 +415,8 @@ export default function ValidatePage() {
           </motion.div>
         )}
 
-        {/* Swipe Card */}
-        <div className="relative h-[600px]">
+        {/* Swipe Card - Adjusted height for better balance */}
+        <div className="relative h-[650px]">
           <AnimatePresence>
             {showFeedback && (
               <motion.div
@@ -426,10 +458,10 @@ export default function ValidatePage() {
             }}
             className="absolute inset-0 cursor-grab active:cursor-grabbing"
           >
-            <div className="h-full bg-white rounded-2xl shadow-xl overflow-hidden">
-              {/* Trend Image/Thumbnail */}
+            <div className="h-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+              {/* Trend Image/Thumbnail - Optimized height */}
               {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
-                <div className="h-56 bg-gray-100 relative">
+                <div className="h-48 bg-gray-100 relative flex-shrink-0">
                   <img 
                     src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
                     alt={currentTrend.title}
@@ -441,7 +473,7 @@ export default function ValidatePage() {
                   </div>
                 </div>
               ) : (
-                <div className="h-56 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
                   <div className="text-center text-white">
                     <div className="text-6xl mb-2">{getPlatformEmoji(currentTrend.platform)}</div>
                     <p className="font-medium">{currentTrend.platform}</p>
@@ -449,54 +481,176 @@ export default function ValidatePage() {
                 </div>
               )}
 
-              {/* Trend Content */}
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  {currentTrend.title}
-                </h3>
-                
-                {currentTrend.description && (
-                  <p className="text-gray-600 mb-4 line-clamp-3">
-                    {currentTrend.description}
-                  </p>
-                )}
+              {/* Trend Content - Redesigned with better spacing */}
+              <div className="flex-1 p-5 space-y-3 overflow-y-auto">
+                {/* Title and Category */}
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between">
+                    <h3 className="text-xl font-bold text-gray-900 flex-1">
+                      {currentTrend.title}
+                    </h3>
+                    <span className="ml-2 px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                      {currentTrend.category.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  
+                  {currentTrend.description && (
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      {currentTrend.description}
+                    </p>
+                  )}
+                </div>
 
-                {currentTrend.creator_handle && (
-                  <div className="flex items-center space-x-2 mb-4">
-                    <Users className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">@{currentTrend.creator_handle}</span>
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Velocity */}
+                  {currentTrend.trend_velocity && (
+                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <TrendingUp className="h-3.5 w-3.5 text-purple-600" />
+                        <span className="text-xs font-medium text-purple-900">Velocity</span>
+                      </div>
+                      <p className="text-xs text-purple-700 mt-0.5 capitalize">
+                        {currentTrend.trend_velocity.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Size */}
+                  {currentTrend.trend_size && (
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <Users className="h-3.5 w-3.5 text-blue-600" />
+                        <span className="text-xs font-medium text-blue-900">Size</span>
+                      </div>
+                      <p className="text-xs text-blue-700 mt-0.5 capitalize">
+                        {currentTrend.trend_size.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Wave Score */}
+                  {currentTrend.wave_score !== undefined && (
+                    <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <Zap className="h-3.5 w-3.5 text-green-600" />
+                        <span className="text-xs font-medium text-green-900">Wave Score</span>
+                      </div>
+                      <p className="text-xs text-green-700 mt-0.5">
+                        {currentTrend.wave_score}/100
+                      </p>
+                    </div>
+                  )}
+
+                  {/* AI Angle */}
+                  {currentTrend.ai_angle && (
+                    <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-xs">🤖</span>
+                        <span className="text-xs font-medium text-amber-900">AI Angle</span>
+                      </div>
+                      <p className="text-xs text-amber-700 mt-0.5 capitalize">
+                        {currentTrend.ai_angle.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Audience Age if present */}
+                {currentTrend.audience_age && currentTrend.audience_age.length > 0 && (
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-indigo-50 rounded-lg">
+                    <span className="text-xs font-medium text-indigo-900">Audience:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {currentTrend.audience_age.map((age, idx) => (
+                        <span key={idx} className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-md">
+                          {age}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center space-x-1">
-                    <Eye className="h-4 w-4" />
-                    <span>Spotted by {currentTrend.spotter_username}</span>
+                {/* Engagement Stats */}
+                {(currentTrend.views_count || currentTrend.likes_count || currentTrend.comments_count) && (
+                  <div className="flex items-center justify-around py-2 bg-gray-50 rounded-lg">
+                    {currentTrend.views_count !== undefined && (
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatNumber(currentTrend.views_count)}
+                        </p>
+                        <p className="text-xs text-gray-500">views</p>
+                      </div>
+                    )}
+                    {currentTrend.likes_count !== undefined && (
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatNumber(currentTrend.likes_count)}
+                        </p>
+                        <p className="text-xs text-gray-500">likes</p>
+                      </div>
+                    )}
+                    {currentTrend.comments_count !== undefined && (
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatNumber(currentTrend.comments_count)}
+                        </p>
+                        <p className="text-xs text-gray-500">comments</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-4 w-4" />
+                )}
+
+                {/* Hashtags */}
+                {currentTrend.hashtags && currentTrend.hashtags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {currentTrend.hashtags.slice(0, 5).map((tag, idx) => (
+                      <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Creator and Timestamp */}
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    {currentTrend.creator_handle && (
+                      <div className="flex items-center space-x-1">
+                        <Users className="h-3 w-3" />
+                        <span>@{currentTrend.creator_handle}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-1">
+                      <Eye className="h-3 w-3" />
+                      <span>Spotted by {currentTrend.spotter_username}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1 text-xs text-gray-500">
+                    <Clock className="h-3 w-3" />
                     <span>{new Date(currentTrend.submitted_at).toLocaleDateString()}</span>
                   </div>
                 </div>
 
-                {/* Question */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-center font-medium text-gray-900">
-                    Is this actually trending?
-                  </p>
+                {/* Validation Question */}
+                <div className="mt-auto pt-4">
+                  <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+                    <p className="text-center font-semibold text-gray-900 text-sm">
+                      Is this actually trending?
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Swipe Indicators */}
-              <div className="absolute inset-x-0 bottom-0 p-6">
+              {/* Swipe Indicators - Overlaid on validation question */}
+              <div className="absolute inset-x-0 bottom-6 px-6">
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2 text-red-500">
-                    <X className="h-8 w-8" />
-                    <span className="font-bold">NO</span>
+                  <div className="flex items-center space-x-2 text-red-500 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
+                    <X className="h-6 w-6" />
+                    <span className="font-semibold text-sm">REJECT</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-green-500">
-                    <span className="font-bold">YES</span>
-                    <Check className="h-8 w-8" />
+                  <div className="flex items-center space-x-2 text-green-500 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
+                    <span className="font-semibold text-sm">VALIDATE</span>
+                    <Check className="h-6 w-6" />
                   </div>
                 </div>
               </div>
