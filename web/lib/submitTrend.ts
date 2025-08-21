@@ -207,6 +207,28 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       }
     }
     
+    // Award XP for trend submission
+    try {
+      console.log('🎯 Awarding XP for trend submission...');
+      const { data: xpData, error: xpError } = await supabase
+        .rpc('award_xp', {
+          p_user_id: userId,
+          p_amount: paymentAmount,
+          p_reason: 'trend_submission',
+          p_metadata: { trend_id: submission.id }
+        });
+      
+      if (xpError) {
+        console.warn('Failed to award XP:', xpError);
+        // Don't fail the submission if XP awarding fails
+      } else {
+        console.log('✅ XP awarded successfully:', xpData);
+      }
+    } catch (xpError) {
+      console.warn('XP awarding error:', xpError);
+      // Continue even if XP fails
+    }
+    
     // NOTE: Earnings entry is now created by database trigger
     // Removing manual creation to prevent duplicate entries
     console.log('💰 Earnings will be created by database trigger');
