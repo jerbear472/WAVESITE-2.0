@@ -52,7 +52,7 @@ export default function Home() {
           </div>
           
           <p className="mt-8 text-sm text-gray-500 dark:text-gray-500">
-            Join 1,000+ cultural analysts already calling the future
+            Join 1,000+ players already competing to call the future
           </p>
         </div>
       </section>
@@ -137,7 +137,7 @@ export default function Home() {
             
             <div className="text-center">
               <div className="text-4xl mb-4">📈</div>
-              <h3 className="text-lg font-semibold mb-3">Predict the Peak</h3>
+              <h3 className="text-lg font-semibold mb-3">Make Your Play</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Call when trends will explode. Stake your reputation on 48-hour spikes.
               </p>
@@ -145,9 +145,9 @@ export default function Home() {
             
             <div className="text-center">
               <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-lg font-semibold mb-3">Prove Your Call</h3>
+              <h3 className="text-lg font-semibold mb-3">Score & Dominate</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Submit evidence. Get validated. Watch your accuracy score grow.
+                Submit evidence. Get validated. Watch your leaderboard rank rise.
               </p>
             </div>
           </div>

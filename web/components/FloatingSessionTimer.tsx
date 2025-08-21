@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from '@/contexts/SessionContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePathname } from 'next/navigation';
 import { 
   Clock, 
   Flame, 
@@ -16,6 +18,8 @@ import {
 
 export default function FloatingSessionTimer() {
   const { session, startSession, pauseSession, resumeSession, endSession, isSessionActive } = useSession();
+  const { user } = useAuth();
+  const pathname = usePathname();
   const [isMinimized, setIsMinimized] = useState(false);
   const [isHidden, setIsHidden] = useState(() => {
     // Check localStorage to persist hidden state
@@ -30,8 +34,13 @@ export default function FloatingSessionTimer() {
     return null;
   }
 
-  // Always show the timer if we're on a page where sessions matter
-  // (Don't hide it completely when session is inactive)
+  // Only show on authenticated pages where sessions matter
+  const isPublicPage = ['/', '/login', '/register', '/privacy', '/terms', '/contact', '/about'].includes(pathname || '');
+  
+  // Don't show on public pages or if user is not logged in
+  if (isPublicPage || !user) {
+    return null;
+  }
 
   // Format time helper function
   const formatTime = (seconds: number): string => {
