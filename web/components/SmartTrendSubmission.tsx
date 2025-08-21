@@ -1765,7 +1765,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           </div>
         </div>
       </motion.div>
-      </AnimatePresence>
     </>
   );
 }
