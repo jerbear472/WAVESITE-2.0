@@ -91,12 +91,10 @@ export default function ValidatePage() {
       // Get trends that need validation (less than 3 votes)
       const { data: trends, error } = await supabase
         .from('trend_submissions')
-        .select(`
-          *,
-          spotter:users!trend_submissions_spotter_id_fkey(username)
-        `)
-        .lt('validation_count', 3)
-        .not('spotter_id', 'eq', user.id) // Don't show user's own trends
+        .select('*')
+        .or('validation_count.is.null,validation_count.lt.3')
+        .neq('spotter_id', user.id) // Don't show user's own trends
+        .in('status', ['submitted', 'validating']) // Show submitted and validating trends
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -113,7 +111,7 @@ export default function ValidatePage() {
         creator_handle: trend.creator_handle,
         category: trend.category || 'general',
         submitted_at: trend.created_at,
-        spotter_username: trend.spotter?.username || 'Anonymous',
+        spotter_username: 'Trend Spotter',
         validation_count: trend.validation_count || 0
       })) || [];
 

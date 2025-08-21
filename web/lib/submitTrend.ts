@@ -72,6 +72,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       title: data.title || 'Untitled Trend',
       status: 'submitted',
       payment_amount: paymentAmount,
+      validation_count: 0,
       
       // Optional fields
       platform: data.platform,

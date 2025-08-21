@@ -950,9 +950,15 @@ export default function Timeline() {
                               <div className="flex items-center gap-2">
                                 {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
                                   <div className="flex items-center gap-1.5 text-xs bg-white rounded-lg px-2 py-1 border border-gray-200">
-                                    <span className="text-green-600 font-medium">👍 {trend.approve_count || 0}</span>
-                                    <span className="text-gray-400">·</span>
-                                    <span className="text-red-500 font-medium">👎 {trend.reject_count || 0}</span>
+                                    {trend.approve_count && trend.approve_count > 0 && (
+                                      <span className="text-green-600 font-medium">👍 {trend.approve_count}</span>
+                                    )}
+                                    {trend.approve_count && trend.approve_count > 0 && trend.reject_count && trend.reject_count > 0 && (
+                                      <span className="text-gray-400">·</span>
+                                    )}
+                                    {trend.reject_count && trend.reject_count > 0 && (
+                                      <span className="text-red-500 font-medium">👎 {trend.reject_count}</span>
+                                    )}
                                   </div>
                                 )}
                                 {trend.validation_status && trend.validation_status !== 'pending' && (
@@ -975,7 +981,7 @@ export default function Timeline() {
                                     : 'bg-yellow-100 text-yellow-600 border-yellow-200'
                                 }`}>
                                   <ZapIcon className="w-3 h-3" />
-                                  <span>{trend.xp_amount || 0} XP</span>
+                                  <span>{trend.xp_amount} XP</span>
                                 </div>
                               )}
                             </div>
@@ -1179,7 +1185,7 @@ export default function Timeline() {
                                     : 'bg-yellow-100 text-yellow-600 border-yellow-200'
                                 }`}>
                                   <ZapIcon className="w-4 h-4" />
-                                  <span>{trend.xp_amount || 0} XP</span>
+                                  <span>{trend.xp_amount} XP</span>
                                 </div>
                               )}
                             </div>
