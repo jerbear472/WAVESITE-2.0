@@ -30,6 +30,18 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
   console.log('📤 [START] Submitting trend for user:', userId, 'at', new Date().toISOString());
   
   try {
+    // First, test database connection
+    console.log('🔌 Testing database connection...');
+    const { data: testData, error: testError } = await supabase
+      .from('trend_submissions')
+      .select('id')
+      .limit(1);
+    
+    if (testError) {
+      console.error('❌ Database connection test failed:', testError);
+      throw new Error('Unable to connect to database. Please try again.');
+    }
+    console.log('✅ Database connection successful');
     
     // Get user profile for earnings calculation
     // Use 'id' column which matches auth.users.id
@@ -110,12 +122,12 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       submissionData.velocity_metrics = data.velocityMetrics;
     }
     
-    // Add evidence field for backwards compatibility
-    submissionData.evidence = {
-      url: data.url || '',
-      title: data.title || 'Untitled Trend',
-      payment_amount: paymentAmount
-    };
+    // Remove evidence field - might be causing issues
+    // submissionData.evidence = {
+    //   url: data.url || '',
+    //   title: data.title || 'Untitled Trend',
+    //   payment_amount: paymentAmount
+    // };
     
     console.log(`💾 [2] Saving to database at ${Date.now() - startTime}ms...`);
     console.log('Submission data keys:', Object.keys(submissionData));
@@ -148,7 +160,18 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
         hint: submitError.hint,
         code: submitError.code
       });
-      throw submitError;
+      
+      // Provide more specific error message based on error type
+      if (submitError.message?.includes('duplicate key')) {
+        throw new Error('You have already submitted this trend');
+      } else if (submitError.message?.includes('foreign key')) {
+        throw new Error('Authentication error. Please log in again.');
+      } else if (submitError.message?.includes('column')) {
+        console.error('Missing column error. Attempted to insert:', submissionData);
+        throw new Error('Database schema error. Please contact support.');
+      } else {
+        throw submitError;
+      }
     }
     
     console.log('✅ Trend submitted:', submission?.id);

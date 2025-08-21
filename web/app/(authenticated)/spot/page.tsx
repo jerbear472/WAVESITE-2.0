@@ -36,6 +36,7 @@ import XPPenaltyIndicator from '@/components/XPPenaltyIndicator';
 import { supabase } from '@/lib/supabase';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { submitTrend } from '@/lib/submitTrend';
+import { testSubmitTrend } from '@/lib/testSubmitTrend';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { calculateQualityScore } from '@/lib/calculateQualityScore';
 import { calculateAudienceSize } from '@/lib/calculateAudienceSize';
@@ -233,6 +234,42 @@ export default function SpotPage() {
     window.open(platform.url, platform.id, 'width=1200,height=800,left=200,top=100');
   };
 
+  // Test diagnostic function
+  const runSubmissionDiagnostic = async () => {
+    if (!user || !user.id) {
+      alert('Please log in to run diagnostics');
+      return;
+    }
+    
+    console.log('🧪 Running submission diagnostic...');
+    setIsSubmitting(true);
+    
+    try {
+      const result = await testSubmitTrend(user.id);
+      console.log('Diagnostic result:', result);
+      
+      if (result.success) {
+        setSubmitMessage({ 
+          type: 'success', 
+          text: `✅ All submission tests passed! Database is working correctly.` 
+        });
+      } else {
+        setSubmitMessage({ 
+          type: 'error', 
+          text: `❌ Diagnostic failed: ${result.error}. Check console for details.` 
+        });
+      }
+    } catch (error: any) {
+      console.error('Diagnostic error:', error);
+      setSubmitMessage({ 
+        type: 'error', 
+        text: `Diagnostic exception: ${error.message}` 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleTrendSubmit = async (formData: any) => {
     if (!user || !user.id) {
       setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
@@ -338,7 +375,18 @@ export default function SpotPage() {
               <h1 className="text-xl font-bold text-gray-900">Trend Scanner</h1>
             </div>
             
-            <div className="w-40 flex justify-end min-h-[44px] items-center">
+            <div className="w-40 flex justify-end gap-2 min-h-[44px] items-center">
+              {/* Diagnostic Button - Hidden by default, show with ?debug=true */}
+              {typeof window !== 'undefined' && window.location.search.includes('debug=true') && (
+                <button
+                  onClick={runSubmissionDiagnostic}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                  title="Run submission diagnostic"
+                >
+                  🧪 Test
+                </button>
+              )}
               {user && (
                 <XPLevelDisplay userId={user.id} compact={true} />
               )}

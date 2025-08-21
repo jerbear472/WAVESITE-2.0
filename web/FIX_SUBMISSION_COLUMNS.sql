@@ -77,6 +77,10 @@ ADD COLUMN IF NOT EXISTS hashtags TEXT[] DEFAULT '{}';
 ALTER TABLE trend_submissions 
 ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'other';
 
+-- Add evidence column as JSONB if missing (for backwards compatibility)
+ALTER TABLE trend_submissions 
+ADD COLUMN IF NOT EXISTS evidence JSONB;
+
 -- Check the columns again after adding
 SELECT column_name, data_type 
 FROM information_schema.columns 
