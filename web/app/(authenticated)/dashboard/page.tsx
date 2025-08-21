@@ -10,7 +10,7 @@ import StreakDisplay from '@/components/StreakDisplay';
 import { motion } from 'framer-motion';
 import { getCurrentLevel } from '@/lib/XP_REWARDS';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
-import { getTrendSubmissionMessage, getAudienceSize, WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
+import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
 import { 
   Trophy,
   TrendingUp,
@@ -246,17 +246,12 @@ export default function Dashboard() {
         console.log('✅ Submission successful, showing XP notification...');
         // Show XP notification
         try {
-          const audienceSize = getAudienceSize(data);
-          const message = getTrendSubmissionMessage({
-            xpAmount: 10,
-            audienceSize: audienceSize
-          });
           showXPNotification(
             10, 
-            message, 
+            WAVESIGHT_MESSAGES.SUBMISSION_MESSAGE, 
             'submission',
             WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
-            WAVESIGHT_MESSAGES.VALIDATION_NOTE
+            WAVESIGHT_MESSAGES.VALIDATION_BONUS
           );
         } catch (notificationError) {
           console.warn('XP notification error:', notificationError);

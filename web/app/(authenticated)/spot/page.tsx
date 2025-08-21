@@ -35,7 +35,7 @@ import { useXPNotification } from '@/contexts/XPNotificationContext';
 import WaveLogo from '@/components/WaveLogo';
 import XPPenaltyIndicator from '@/components/XPPenaltyIndicator';
 import { supabase } from '@/lib/supabase';
-import { getTrendSubmissionMessage, getAudienceSize, WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
+import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { submitTrend } from '@/lib/submitTrend';
 import { testSubmitTrend } from '@/lib/testSubmitTrend';
@@ -310,25 +310,15 @@ export default function SpotPage() {
         setShowSubmissionForm(false);
         setTrendUrl('');
         
-        const xpAmount = result.earnings || 100;
+        const xpAmount = result.earnings || 10;
         
         // Show animated XP notification with WaveSight branding
-        const audienceSize = getAudienceSize({
-          wave_score: formData.wave_score,
-          trendVelocity: formData.trendVelocity,
-          trendSize: formData.trendSize,
-          views_count: formData.views_count
-        });
-        const message = getTrendSubmissionMessage({
-          xpAmount: xpAmount,
-          audienceSize: audienceSize
-        });
         showXPNotification(
           xpAmount, 
-          message, 
+          `You earned ${xpAmount} XP`, 
           'submission',
           WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
-          WAVESIGHT_MESSAGES.VALIDATION_NOTE
+          WAVESIGHT_MESSAGES.VALIDATION_BONUS
         );
         
         await loadTodaysStats();
