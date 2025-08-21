@@ -13,11 +13,11 @@ import {
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
 import { calculateWaveScore } from '@/lib/calculateWaveScore';
-import TrendWritingHelper from './TrendWritingHelper';
 import { 
   Link as LinkIcon,
   Send as SendIcon,
   X as XIcon,
+  X,
   Loader as LoaderIcon,
   ChevronRight as ChevronRightIcon,
   TrendingUp as TrendingUpIcon,
@@ -44,8 +44,126 @@ import {
   Trophy as TrophyIcon,
   Briefcase as BriefcaseIcon,
   Heart as HealthIcon,
-  Trash2 as TrashIcon
+  Trash2 as TrashIcon,
+  Coins
 } from 'lucide-react';
+
+// Quality scoring functions
+const calculateDescriptionQuality = (description: string): number => {
+  let score = 0;
+  
+  // Length bonus (10-30 points)
+  const wordCount = description.split(/\s+/).length;
+  if (wordCount >= 10) score += 10;
+  if (wordCount >= 20) score += 10;
+  if (wordCount >= 30) score += 10;
+  
+  // Specificity checks (20 points)
+  const hasNumbers = /\d+/.test(description);
+  const hasPlatform = /tiktok|instagram|youtube|twitter|reddit|threads|x\.com/i.test(description);
+  if (hasNumbers) score += 10;
+  if (hasPlatform) score += 10;
+  
+  // Action verbs (20 points)
+  const actionVerbs = ['pranking', 'dancing', 'creating', 'posting', 'sharing', 'remixing', 
+                       'jumping', 'reacting', 'building', 'launching', 'going', 'making',
+                       'flooding', 'exploding', 'surging', 'transforming', 'disrupting'];
+  const hasActionVerb = actionVerbs.some(verb => description.toLowerCase().includes(verb));
+  if (hasActionVerb) score += 20;
+  
+  // Humor/Personality (10 points)
+  const humorWords = ['hilarious', 'funny', 'lol', 'crazy', 'wild', 'insane', 'unhinged',
+                      'chaotic', 'legendary', 'iconic', 'viral', 'broke the internet'];
+  const hasHumor = humorWords.some(word => description.toLowerCase().includes(word));
+  if (hasHumor) score += 10;
+  
+  // Explanation quality (10 points)
+  const hasWhy = /because|since|due to|thanks to|after/i.test(description);
+  if (hasWhy) score += 10;
+  
+  return Math.min(score, 100);
+};
+
+// Quality Indicators Component
+const QualityIndicators = ({ description }: { description: string }) => {
+  const wordCount = description.split(/\s+/).length;
+  const hasNumbers = /\d+/.test(description);
+  const hasPlatform = /tiktok|instagram|youtube|twitter|reddit|threads|x\.com/i.test(description);
+  const actionVerbs = ['pranking', 'dancing', 'creating', 'posting', 'sharing', 'remixing', 
+                       'jumping', 'reacting', 'building', 'launching', 'going', 'making',
+                       'flooding', 'exploding', 'surging', 'transforming', 'disrupting'];
+  const hasActionVerb = actionVerbs.some(verb => description.toLowerCase().includes(verb));
+  const humorWords = ['hilarious', 'funny', 'lol', 'crazy', 'wild', 'insane', 'unhinged',
+                      'chaotic', 'legendary', 'iconic', 'viral', 'broke the internet'];
+  const hasHumor = humorWords.some(word => description.toLowerCase().includes(word));
+  const hasWhy = /because|since|due to|thanks to|after/i.test(description);
+  
+  const qualityScore = calculateDescriptionQuality(description);
+  const xpBonus = Math.floor(qualityScore / 2); // Up to 50 bonus XP
+  
+  return (
+    <div className="space-y-2">
+      {/* XP Preview */}
+      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg border border-blue-800/30">
+        <div className="flex items-center gap-2">
+          <Coins className="w-5 h-5 text-yellow-400" />
+          <span className="text-sm font-medium text-white">Quality Bonus XP</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-bold text-yellow-400">+{xpBonus}</span>
+          <span className="text-xs text-gray-400">/ 50 max</span>
+        </div>
+      </div>
+      
+      {/* Quality Checklist */}
+      <div className="grid grid-cols-2 gap-2">
+        <QualityCheck 
+          met={wordCount >= 20} 
+          label="20+ words" 
+          icon={<Hash className="w-3 h-3" />}
+        />
+        <QualityCheck 
+          met={hasPlatform} 
+          label="Platform mentioned" 
+          icon={<Globe className="w-3 h-3" />}
+        />
+        <QualityCheck 
+          met={hasActionVerb} 
+          label="Action verb" 
+          icon={<Zap className="w-3 h-3" />}
+        />
+        <QualityCheck 
+          met={hasNumbers} 
+          label="Specific numbers" 
+          icon={<TrendingUp className="w-3 h-3" />}
+        />
+        <QualityCheck 
+          met={hasHumor} 
+          label="Personality/Humor" 
+          icon={<Sparkles className="w-3 h-3" />}
+        />
+        <QualityCheck 
+          met={hasWhy} 
+          label="Explains why" 
+          icon={<AlertCircle className="w-3 h-3" />}
+        />
+      </div>
+    </div>
+  );
+};
+
+const QualityCheck = ({ met, label, icon }: { met: boolean; label: string; icon: React.ReactNode }) => (
+  <div className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
+    met ? 'bg-green-900/20 border border-green-800/30' : 'bg-gray-800/30 border border-gray-700/30'
+  }`}>
+    <div className={`${met ? 'text-green-400' : 'text-gray-500'}`}>
+      {met ? <CheckIcon className="w-4 h-4" /> : icon}
+    </div>
+    <span className={`text-xs ${met ? 'text-green-400' : 'text-gray-500'}`}>
+      {label}
+    </span>
+  </div>
+);
 
 interface SmartTrendSubmissionProps {
   onClose: () => void;
@@ -636,8 +754,8 @@ export default function SmartTrendSubmission({
           setError('Please enter a valid URL');
           return false;
         }
-        if (!formData.title) {
-          setError('Please add a title for this trend');
+        if (!formData.title || formData.title.trim().length < 10) {
+          setError('Please add a quality description (at least 10 characters)');
           return false;
         }
         break;
@@ -752,9 +870,15 @@ export default function SmartTrendSubmission({
       };
       
       // Calculate XP for trend submission
-      const baseXP = 100;
-      const streakMultiplier = 1 + (userProfile.current_streak * 0.1);
-      const xpAmount = Math.round(baseXP * streakMultiplier);
+      const baseXP = 30;
+      const qualityBonus = Math.floor(calculateDescriptionQuality(formData.title) / 2); // Up to 50 XP
+      const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
+      const predictionBonus = formData.predictedPeak ? 15 : 0;
+      const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
+      const streakMultiplier = 1 + (Math.min(userProfile.current_streak, 10) * 0.05); // Cap at 50% bonus
+      
+      const totalBaseXP = baseXP + qualityBonus + velocityBonus + predictionBonus + categoryBonus;
+      const xpAmount = Math.round(totalBaseXP * streakMultiplier);
       
       // Get thumbnail if not already captured
       let thumbnailUrl = formData.thumbnail_url;
@@ -927,6 +1051,30 @@ export default function SmartTrendSubmission({
   return (
     <>
       {/* Earnings Notification - shows in bottom-left corner */}
+      <AnimatePresence>
+        {notification?.show && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-4 left-4 z-50"
+          >
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+              <Coins className="w-6 h-6" />
+              <div>
+                <p className="font-bold text-lg">+{notification.xp} XP Earned!</p>
+                <p className="text-sm opacity-90">Great spot, Cultural Anthropologist!</p>
+              </div>
+              <button
+                onClick={dismissNotification}
+                className="ml-4 p-1 hover:bg-white/20 rounded transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <motion.div 
@@ -938,17 +1086,17 @@ export default function SmartTrendSubmission({
         <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-5 border-b border-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <TrendingUpIcon className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center">
+                <Coins className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white">Submit Trend</h2>
+                <h2 className="text-lg font-bold text-white">Spot Cultural Wave</h2>
                 <p className="text-xs text-gray-400">
-                  {currentStep === 'url' && 'Add URL & Title'}
-                  {currentStep === 'velocity' && 'Trend Velocity & Size'}
-                  {currentStep === 'category' && 'Select Category'}
-                  {currentStep === 'details' && `${getSelectedCategory()?.label} Details`}
-                  {currentStep === 'review' && 'Review & Submit'}
+                  {currentStep === 'url' && 'Earn up to 200 XP'}
+                  {currentStep === 'velocity' && 'Predict the trend trajectory'}
+                  {currentStep === 'category' && 'Categorize for bonus XP'}
+                  {currentStep === 'details' && `Complete for ${getSelectedCategory()?.label} expertise`}
+                  {currentStep === 'review' && 'Finalize your submission'}
                 </p>
               </div>
             </div>
@@ -1036,9 +1184,38 @@ export default function SmartTrendSubmission({
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-4"
               >
+                {/* XP Potential Banner */}
+                <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 p-4 rounded-lg border border-yellow-800/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-yellow-400">Total XP Available</h3>
+                      <p className="text-xs text-gray-400 mt-1">Base + Quality + Accuracy Bonuses</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-yellow-400">200</div>
+                      <div className="text-xs text-gray-400">max XP</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <div className="text-yellow-400 font-semibold">30 XP</div>
+                      <div className="text-gray-400">Base submission</div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <div className="text-blue-400 font-semibold">+50 XP</div>
+                      <div className="text-gray-400">Quality bonus</div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <div className="text-purple-400 font-semibold">+120 XP</div>
+                      <div className="text-gray-400">If validated</div>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
                     Trend URL <span className="text-red-400">*</span>
+                    <span className="ml-2 text-xs text-yellow-400">+30 base XP</span>
                   </label>
                   <div className="relative">
                     <input
@@ -1161,29 +1338,33 @@ export default function SmartTrendSubmission({
                   </motion.div>
                 )}
 
-                {/* Title Input with Writing Helper */}
+                {/* Quality Description Input */}
                 <div>
                   <label className="block text-gray-300 text-sm font-medium mb-2">
-                    Write a headline-style title <span className="text-red-400">*</span>
+                    Describe this trend <span className="text-red-400">*</span>
+                    <span className="ml-2 text-xs text-blue-400">+50 XP for quality description</span>
                   </label>
                   <p className="text-xs text-gray-400 mb-2">
-                    Think like a news headline: "Retail investors are jumping on this meme stock"
+                    Be specific! Use action verbs, mention the platform, explain why it's trending
                   </p>
-                  <input
-                    type="text"
+                  <textarea
                     value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder='e.g., "Gaming community going crazy over AI-generated RPG"'
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, title: e.target.value }));
+                      // Calculate quality score as user types
+                      calculateDescriptionQuality(e.target.value);
+                    }}
+                    placeholder='e.g., "TikTok creators are pranking their pets with cucumber filters, causing millions of confused cat reactions that are going mega-viral because the cats genuinely think they're snakes"'
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none min-h-[100px] resize-y"
+                    rows={3}
                   />
                   
-                  {/* Integrated Writing Helper */}
-                  <TrendWritingHelper
-                    value={formData.title}
-                    onChange={(value) => setFormData(prev => ({ ...prev, title: value }))}
-                    category={formData.platform || 'General'}
-                    showInline={true}
-                  />
+                  {/* Quality Indicators */}
+                  {formData.title && (
+                    <div className="mt-3 space-y-2">
+                      <QualityIndicators description={formData.title} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Platform indicator */}
@@ -1502,7 +1683,56 @@ export default function SmartTrendSubmission({
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-4"
               >
-                <h3 className="text-lg font-semibold text-white mb-4">Review Your Submission</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Review & Earn XP</h3>
+                
+                {/* XP Summary */}
+                <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 p-4 rounded-lg border border-yellow-800/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-yellow-400">Your XP Breakdown</h4>
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {(() => {
+                        const qualityBonus = Math.floor(calculateDescriptionQuality(formData.title) / 2);
+                        const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
+                        const predictionBonus = formData.predictedPeak ? 15 : 0;
+                        const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
+                        return 30 + qualityBonus + velocityBonus + predictionBonus + categoryBonus;
+                      })()} XP
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Base submission</span>
+                      <span className="text-white">30 XP</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Description quality</span>
+                      <span className="text-blue-400">+{Math.floor(calculateDescriptionQuality(formData.title) / 2)} XP</span>
+                    </div>
+                    {formData.trendVelocity && formData.trendSize && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Velocity data</span>
+                        <span className="text-green-400">+20 XP</span>
+                      </div>
+                    )}
+                    {formData.predictedPeak && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Peak prediction</span>
+                        <span className="text-purple-400">+15 XP</span>
+                      </div>
+                    )}
+                    {Object.keys(formData.categoryAnswers).length >= 2 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Category details</span>
+                        <span className="text-orange-400">+15 XP</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-700">
+                    <p className="text-xs text-gray-400">
+                      <span className="text-purple-400 font-semibold">+120 XP bonus</span> if your trend gets validated by the community!
+                    </p>
+                  </div>
+                </div>
                 
                 {/* Summary cards */}
                 <div className="space-y-3">
@@ -1692,7 +1922,7 @@ export default function SmartTrendSubmission({
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 transition-all text-white font-medium flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 transition-all text-white font-medium flex items-center gap-2 disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -1701,8 +1931,14 @@ export default function SmartTrendSubmission({
                   </>
                 ) : (
                   <>
-                    <SendIcon className="w-4 h-4" />
-                    Submit Trend
+                    <Coins className="w-4 h-4" />
+                    Submit & Earn {(() => {
+                      const qualityBonus = Math.floor(calculateDescriptionQuality(formData.title) / 2);
+                      const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
+                      const predictionBonus = formData.predictedPeak ? 15 : 0;
+                      const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
+                      return 30 + qualityBonus + velocityBonus + predictionBonus + categoryBonus;
+                    })()} XP
                   </>
                 )}
               </button>
@@ -1720,7 +1956,7 @@ export default function SmartTrendSubmission({
           </div>
         </div>
       </motion.div>
-    </div>
+      </div>
     </>
   );
 }
