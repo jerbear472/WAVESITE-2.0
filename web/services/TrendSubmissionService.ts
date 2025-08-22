@@ -457,7 +457,9 @@ export class TrendSubmissionService {
         brandAdoption: trendData.brandAdoption,
         notes: trendData.notes || null,
         hashtags: metadata.hashtags || trendData.hashtags || [],
-        metadata_captured: true
+        metadata_captured: true,
+        // AI Analysis
+        ai_analysis: trendData.ai_analysis || null
       },
       // Calculate virality prediction based on spread speed
       virality_prediction: trendData.spreadSpeed === 'viral' ? 8 : 

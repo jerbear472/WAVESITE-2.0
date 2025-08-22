@@ -46,6 +46,9 @@ export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = (
 
     setNotifications(prev => [...prev, notification]);
 
+    // Dispatch custom event for real-time dashboard updates
+    window.dispatchEvent(new CustomEvent('xp-earned', { detail: { amount, type, reason } }));
+
     // Auto-remove notification after 4 seconds
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));

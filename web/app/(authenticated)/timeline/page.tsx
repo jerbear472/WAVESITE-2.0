@@ -824,13 +824,6 @@ export default function Timeline() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                   {filteredTrends.map((trend, index) => {
-                    // Debug: Log any 0 values in this trend
-                    Object.keys(trend).forEach(key => {
-                      const value = (trend as any)[key];
-                      if (value === 0 || value === '0') {
-                        console.warn(`Trend ${trend.id} has 0 value in field: ${key}`, value);
-                      }
-                    });
                     return (
                     <motion.div
                       key={trend.id}
@@ -1178,13 +1171,6 @@ export default function Timeline() {
               <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {filteredTrends.map((trend, index) => {
-                    // Debug: Log any 0 values in this trend
-                    Object.keys(trend).forEach(key => {
-                      const value = (trend as any)[key];
-                      if (value === 0 || value === '0') {
-                        console.warn(`Trend ${trend.id} has 0 value in field: ${key}`, value);
-                      }
-                    });
                     return (
                     <motion.div
                       key={trend.id}

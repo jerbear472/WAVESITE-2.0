@@ -110,6 +110,35 @@ export default function Dashboard() {
     }
   }, [user]);
 
+  // Set up real-time refresh for today's XP
+  useEffect(() => {
+    if (!user) return;
+
+    // Refresh every 30 seconds to keep today's XP current
+    const interval = setInterval(() => {
+      loadDashboardData();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Listen for XP notifications to refresh dashboard immediately
+  useEffect(() => {
+    const handleXPEarned = () => {
+      // Delay refresh slightly to ensure database is updated
+      setTimeout(() => {
+        loadDashboardData();
+      }, 1000);
+    };
+
+    // Custom event listener for XP earned
+    window.addEventListener('xp-earned', handleXPEarned);
+    
+    return () => {
+      window.removeEventListener('xp-earned', handleXPEarned);
+    };
+  }, []);
+
   const loadDashboardData = async () => {
     if (!user) return;
 
@@ -237,10 +266,20 @@ export default function Dashboard() {
   };
 
   const handleTrendSubmit = async (data: any) => {
+    console.log('🚀 Starting trend submission from dashboard...');
+    
+    if (!user) {
+      console.error('❌ No user found');
+      throw new Error('You must be logged in to submit trends');
+    }
+    
     try {
-      console.log('🚀 Starting trend submission...');
-      const result = await submitTrend(user!.id, data);
+      const result = await submitTrend(user.id, data);
       console.log('📨 Submission result:', result);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit trend');
+      }
       
       if (result.success) {
         console.log('✅ Submission successful, showing XP notification...');
@@ -254,6 +293,8 @@ export default function Dashboard() {
             WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
             WAVESIGHT_MESSAGES.VALIDATION_BONUS
           );
+          // Dispatch custom event for XP earned
+          window.dispatchEvent(new CustomEvent('xp-earned', { detail: { amount: xpEarned } }));
         } catch (notificationError) {
           console.warn('XP notification error:', notificationError);
         }
@@ -328,14 +369,42 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <motion.div 
             whileHover={{ scale: 1.02 }}
-            className="bg-white rounded-xl shadow-sm p-4"
+            className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl shadow-sm p-4 relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-2">
-              <Zap className="w-5 h-5 text-yellow-500" />
-              <span className="text-xs text-gray-500">Today</span>
+            {/* Animated background pulse for live updates */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-yellow-200/20 to-orange-200/20"
+              animate={{
+                opacity: [0, 0.5, 0],
+                scale: [1, 1.05, 1]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-2">
+                <motion.div
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 1, repeat: Infinity, repeatDelay: 3 }}
+                >
+                  <Zap className="w-5 h-5 text-yellow-600" />
+                </motion.div>
+                <span className="text-xs text-yellow-700 font-medium">Today</span>
+              </div>
+              <motion.p 
+                className="text-2xl font-bold text-gray-900"
+                key={stats.todays_xp} // Re-animate when XP changes
+                initial={{ scale: 1.2, color: "#f59e0b" }}
+                animate={{ scale: 1, color: "#111827" }}
+                transition={{ duration: 0.5 }}
+              >
+                {stats.todays_xp}
+              </motion.p>
+              <p className="text-xs text-yellow-700 font-medium">XP Earned</p>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.todays_xp}</p>
-            <p className="text-xs text-gray-600">XP Earned</p>
           </motion.div>
 
           <motion.div 

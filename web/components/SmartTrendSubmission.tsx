@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import SentimentSlider from './SentimentSlider';
+import AIAnalysis from './AIAnalysis';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
@@ -233,6 +234,7 @@ interface TrendFormData {
   audience_demographic: string;
   behavior_insight: string;
   wave_score: number;
+  ai_analysis?: string;
 }
 
 // Map UI categories to database-accepted categories
@@ -540,7 +542,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const dismissNotification = () => setNotification(null);
   
   // Form state
-  const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'category' | 'details' | 'review'>('url');
+  const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'category' | 'details' | 'review' | 'ai_analysis'>('url');
   // Autosave key
   const AUTOSAVE_KEY = 'smart_trend_submission_draft';
   
@@ -846,6 +848,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       case 'details':
         setCurrentStep('review');
         break;
+      case 'review':
+        setCurrentStep('ai_analysis');
+        break;
     }
   };
 
@@ -872,28 +877,75 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       case 'review':
         setCurrentStep('details');
         break;
+      case 'ai_analysis':
+        setCurrentStep('review');
+        break;
     }
     setError('');
   };
 
 
+  const handleAIAnalysisContinue = (analysis?: string) => {
+    // Save the AI analysis to formData
+    if (analysis) {
+      setFormData(prev => ({ ...prev, ai_analysis: analysis }));
+    }
+    // AI analysis is complete, proceed to submit
+    handleSubmit();
+  };
+
+  const handleAIAnalysisBack = () => {
+    setCurrentStep('review');
+  };
+
   const handleSubmit = async () => {
     console.log('🚀 Submit clicked from SmartTrendSubmission');
+    
+    // Prevent double submissions
+    if (loading) {
+      console.log('⚠️ Already submitting, ignoring duplicate click');
+      return;
+    }
+    
     setLoading(true);
     setError('');
     
     try {
-      if (customSubmit) {
-        console.log('📤 Calling customSubmit with data:', formData);
-        await customSubmit(formData);
-        console.log('✅ customSubmit completed successfully');
-        onClose();
+      if (!customSubmit) {
+        console.error('❌ No onSubmit handler provided');
+        setError('Configuration error: No submission handler provided');
+        return;
       }
+      
+      console.log('📤 Calling customSubmit with data:', formData);
+      
+      // Add timeout to prevent infinite hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Submission timed out after 30 seconds')), 30000)
+      );
+      
+      await Promise.race([
+        customSubmit(formData),
+        timeoutPromise
+      ]);
+      
+      console.log('✅ customSubmit completed successfully');
+      
+      // Clear the saved draft on successful submission
+      clearSavedDraft();
+      
+      // Small delay before closing to show success state
+      setTimeout(() => {
+        setLoading(false);
+        onClose();
+      }, 500);
+      
     } catch (error: any) {
       console.error('❌ Error in handleSubmit:', error);
-      setError(error.message || 'Failed to submit trend. Please try again.');
-    } finally {
-      console.log('🏁 Setting loading to false');
+      const errorMessage = error.message || 'Failed to submit trend. Please try again.';
+      setError(errorMessage);
+      
+      // Don't close on error - let user see the error and retry
       setLoading(false);
     }
   };
@@ -969,7 +1021,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   {currentStep === 'velocity' && 'Predict the trend trajectory'}
                   {currentStep === 'category' && 'Categorize the trend'}
                   {currentStep === 'details' && `Complete for ${getSelectedCategory()?.label} expertise`}
-                  {currentStep === 'review' && 'Finalize your submission'}
+                  {currentStep === 'review' && 'Review your submission'}
+                  {currentStep === 'ai_analysis' && 'AI trend analysis'}
                 </p>
               </div>
             </div>
@@ -1054,8 +1107,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 currentStep === 'velocity' ? '2' :
                 currentStep === 'category' ? '3' :
                 currentStep === 'details' ? '4' :
-                '5'
-              } of 5
+                currentStep === 'review' ? '5' :
+                '6'
+              } of 6
             </span>
             <span className="text-xs text-gray-500">
               {
@@ -1063,7 +1117,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 currentStep === 'velocity' ? 'Trend Analysis' :
                 currentStep === 'category' ? 'Category' :
                 currentStep === 'details' ? 'Details' :
-                'Review'
+                currentStep === 'review' ? 'Review' :
+                'AI Analysis'
               }
             </span>
           </div>
@@ -1072,10 +1127,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full transition-all duration-300"
               style={{ 
                 width: `${
-                  currentStep === 'url' ? '20%' :
-                  currentStep === 'velocity' ? '40%' :
-                  currentStep === 'category' ? '60%' :
-                  currentStep === 'details' ? '80%' :
+                  currentStep === 'url' ? '17%' :
+                  currentStep === 'velocity' ? '34%' :
+                  currentStep === 'category' ? '51%' :
+                  currentStep === 'details' ? '68%' :
+                  currentStep === 'review' ? '85%' :
                   '100%'
                 }%` 
               }}
@@ -1741,6 +1797,14 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 </div>
               </motion.div>
             )}
+
+            {/* Step 6: AI Analysis */}
+            <AIAnalysis
+              trendData={formData}
+              onContinue={handleAIAnalysisContinue}
+              onBack={handleAIAnalysisBack}
+              visible={currentStep === 'ai_analysis'}
+            />
           </AnimatePresence>
 
           {/* Error Message */}
@@ -1756,7 +1820,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - Hide when AI Analysis is active since it has its own buttons */}
+        {currentStep !== 'ai_analysis' && (
         <div className="p-4 sm:p-5 border-t border-gray-200 bg-gray-50 flex-shrink-0">
           {/* Error display */}
           {error && (
@@ -1790,23 +1855,16 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
             </div>
             
             <div className="flex-1 sm:flex-initial">
-              {currentStep === 'review' ? (
+              {currentStep === 'ai_analysis' ? (
+                // AI Analysis step is handled by the AIAnalysis component
+                null
+              ) : currentStep === 'review' ? (
                 <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="w-full sm:w-auto px-6 py-3 sm:py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                  onClick={handleNext}
+                  className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all text-white font-medium flex items-center justify-center gap-2"
                 >
-                  {loading ? (
-                    <>
-                      <LoaderIcon className="w-4 h-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <SendIcon className="w-4 h-4" />
-                      Submit New Trend
-                    </>
-                  )}
+                  Continue to AI Analysis
+                  <ChevronRightIcon className="w-4 h-4" />
                 </button>
               ) : currentStep === 'category' ? (
                 <p className="text-sm text-gray-500 text-center sm:text-right py-3">Select a category to continue</p>
@@ -1822,6 +1880,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
             </div>
           </div>
         </div>
+        )}
       </motion.div>
       </div>
     </>
