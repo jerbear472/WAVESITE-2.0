@@ -6,11 +6,7 @@ import AIAnalysis from './AIAnalysis';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
-import { 
-  calculateTrendEarnings, 
-  SUSTAINABLE_EARNINGS,
-  isWithinSessionWindow
-} from '@/lib/SUSTAINABLE_EARNINGS';
+// Removed unused imports from SUSTAINABLE_EARNINGS
 import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
 import { calculateWaveScore } from '@/lib/calculateWaveScore';
@@ -225,12 +221,9 @@ export default function SmartTrendSubmission({ onClose, onSuccess }: SmartTrendS
     return mapping[origin] || 'other';
   };
 
-  // Calculate potential earnings
-  const potentialEarnings = calculateTrendEarnings({
-    velocity: formData.spreadVelocity,
-    sentiment: formData.sentiment,
-    evolution: formData.evolution
-  });
+  // Calculate potential earnings - using base XP for now
+  // TODO: Calculate based on user's actual tier and multipliers
+  const potentialEarnings = 10; // Base XP for trend submission
 
   const renderStep = () => {
     switch (currentStep) {
