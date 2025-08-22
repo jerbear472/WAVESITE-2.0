@@ -100,7 +100,6 @@ export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = (
       
       {/* XP Notification Container - Bottom Left */}
       <div className="fixed bottom-6 left-6 z-50 space-y-2 pointer-events-none">
-        {notifications.length > 0 && console.log('📢 [XPNotificationContext] Rendering notifications:', notifications)}
         <AnimatePresence>
           {notifications.map((notification) => (
             <motion.div
