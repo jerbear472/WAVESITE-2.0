@@ -407,7 +407,7 @@ export default function Timeline() {
                            trend.trend_size === 'viral' ? '🔥 Viral (100K-1M)' :
                            trend.trend_size === 'mega' ? '💥 Mega (1M-10M)' :
                            trend.trend_size === 'global' ? '🌍 Global (10M+)' :
-                           trend.trend_size.replace('_', ' ')}
+                           (trend.trend_size || 'unknown').replace('_', ' ')}
                         </span>
                       </div>
                     )}
