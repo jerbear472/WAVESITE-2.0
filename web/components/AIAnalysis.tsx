@@ -196,6 +196,3 @@ targeting ${trendData.audienceAge?.join(', ') || 'broad'} demographics.
     </AnimatePresence>
   );
 }
-
-// Add missing import
-import { Clock as ClockIcon } from 'lucide-react';
