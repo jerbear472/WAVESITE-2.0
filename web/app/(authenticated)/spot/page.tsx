@@ -652,6 +652,7 @@ export default function SpotPage() {
           }
         >
           <SmartTrendSubmission
+            initialUrl={trendUrl}
             onClose={() => {
               setShowSubmissionForm(false);
               setTrendUrl('');
