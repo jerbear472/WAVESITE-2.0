@@ -641,7 +641,7 @@ export default function Dashboard() {
           onClose={() => setShowSubmissionForm(false)}
           onSuccess={() => {
             setShowSubmissionForm(false);
-            fetchDashboardData();
+            loadDashboardData();
           }}
         />
       )}
