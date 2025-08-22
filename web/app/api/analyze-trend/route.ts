@@ -49,8 +49,10 @@ Engagement: ${data.likes_count ? `${data.likes_count} likes, ${data.comments_cou
 }
 
 export async function POST(request: NextRequest) {
+  let data: any = {};
+  
   try {
-    const data = await request.json();
+    data = await request.json();
     
     // Check cache first
     const cacheKey = generateCacheKey(data);
