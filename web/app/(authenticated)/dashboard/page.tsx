@@ -198,12 +198,49 @@ export default function Dashboard() {
         xpEvents = xpEventsData;
       }
 
-      const todaysXP = xpEvents
+      let todaysXP = xpEvents
         ?.filter(e => new Date(e.created_at) >= today)
         .reduce((sum, e) => sum + e.xp_change, 0) || 0;
 
-      const weeklyXP = xpEvents
+      let weeklyXP = xpEvents
         ?.reduce((sum, e) => sum + e.xp_change, 0) || 0;
+      
+      // If no XP events found, calculate from trend submissions payment_amount as fallback
+      if (todaysXP === 0 && weeklyXP === 0) {
+        console.log('No XP events found, calculating from trend submissions...');
+        
+        // Get today's trends
+        const { data: todaysTrends } = await supabase
+          .from('trend_submissions')
+          .select('payment_amount, created_at')
+          .eq('spotter_id', user.id)
+          .gte('created_at', today.toISOString());
+        
+        todaysXP = todaysTrends?.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
+        
+        // Get weekly trends
+        const { data: weeklyTrends } = await supabase
+          .from('trend_submissions')
+          .select('payment_amount, created_at')
+          .eq('spotter_id', user.id)
+          .gte('created_at', weekAgo.toISOString());
+        
+        weeklyXP = weeklyTrends?.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
+        
+        // Create fake XP events from trends for recent activity display
+        if (weeklyTrends && weeklyTrends.length > 0) {
+          xpEvents = weeklyTrends.map(t => ({
+            id: `trend-${t.created_at}`,
+            user_id: user.id,
+            xp_change: t.payment_amount || 0,
+            event_type: 'trend_submission',
+            description: 'Trend spotted',
+            created_at: t.created_at
+          })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        }
+        
+        console.log('Calculated from trends - Today:', todaysXP, 'Weekly:', weeklyXP);
+      }
 
       // Get validation accuracy
       const { data: validations } = await supabase
@@ -225,6 +262,13 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .single();
 
+      // Get user's daily streak from profile
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('current_streak')
+        .eq('id', user.id)
+        .single();
+
       // Ensure we handle both null and undefined properly
       const totalXP = xpSummary?.total_xp ?? 0;
       
@@ -244,7 +288,7 @@ export default function Dashboard() {
         trends_rejected: xpSummary?.rejected_trends ?? 0,
         pending_validations: xpSummary?.pending_trends ?? 0,
         validation_accuracy: accuracy,
-        current_streak: 0, // Would need to calculate from profile
+        current_streak: userProfile?.current_streak || 0,
         global_rank: leaderboard?.global_rank || null
       });
       
@@ -644,15 +688,32 @@ export default function Dashboard() {
               throw new Error('Please log in to submit trends');
             }
             
+            console.log('Dashboard: Starting trend submission');
             const result = await submitTrend(user.id, data);
+            console.log('Dashboard: Submission result:', result);
             
             if (!result.success) {
               throw new Error(result.error || 'Failed to submit trend');
             }
             
+            // Show XP notification on successful submission
+            if (result.earnings) {
+              showXPNotification(
+                result.earnings,
+                'Trend spotted successfully!',
+                'submission',
+                'XP Earned',
+                result.xpBreakdown ? `Multipliers applied: ${result.xpBreakdown}` : undefined
+              );
+            }
+            
             // Close form and refresh dashboard on success
             setShowSubmissionForm(false);
-            loadDashboardData();
+            
+            // Delay refresh slightly to ensure modal closes properly
+            setTimeout(() => {
+              loadDashboardData();
+            }, 100);
             
             return result;
           }}

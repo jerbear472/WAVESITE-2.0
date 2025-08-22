@@ -15,6 +15,7 @@
     "jobs:all": "node -r dotenv/config -e 'require(\"./lib/backgroundJobs\").backgroundJobs.runAllJobs()'"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-select": "^2.0.0",
     "@supabase/auth-helpers-nextjs": "^0.8.7",

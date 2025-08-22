@@ -70,6 +70,18 @@ export default function DashboardXP() {
     }
   }, [user]);
 
+  // Listen for XP events to refresh dashboard in real-time
+  useEffect(() => {
+    const handleXPEarned = () => {
+      if (user) {
+        loadDashboardData();
+      }
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned);
+    return () => window.removeEventListener('xp-earned', handleXPEarned);
+  }, [user]);
+
   const loadDashboardData = async () => {
     if (!user) return;
 
@@ -101,6 +113,15 @@ export default function DashboardXP() {
 
       const weeklyXP = xpEvents
         ?.reduce((sum, e) => sum + e.xp_change, 0) || 0;
+
+      console.log('📊 Dashboard XP Data:', {
+        xpSummary,
+        xpEventsCount: xpEvents?.length || 0,
+        todaysXP,
+        weeklyXP,
+        today: today.toISOString(),
+        todayEvents: xpEvents?.filter(e => new Date(e.created_at) >= today)
+      });
 
       // Get validation accuracy
       const { data: validations } = await supabase

@@ -5,6 +5,7 @@ import SentimentSlider from './SentimentSlider';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
+import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { 
   calculateTrendEarnings, 
   SUSTAINABLE_EARNINGS,
@@ -222,7 +223,6 @@ interface TrendFormData {
   thumbnail_url: string;
   posted_at: string;
   category: string;
-  categoryAnswers: Record<string, string>;
   audienceAge: string[];
   predictedPeak: string;
   aiAngle: 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai' | '';
@@ -233,6 +233,11 @@ interface TrendFormData {
   audience_demographic: string;
   behavior_insight: string;
   wave_score: number;
+  
+  // New origin and evolution fields
+  drivingGeneration: 'gen_alpha' | 'gen_z' | 'millennials' | 'gen_x' | 'boomers' | '';
+  trendOrigin: 'organic' | 'influencer' | 'brand' | 'ai_generated' | '';
+  evolutionStatus: 'original' | 'variants' | 'parody' | 'meta' | 'final' | '';
 }
 
 // Map UI categories to database-accepted categories
@@ -525,6 +530,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const { onClose, onSubmit: customSubmit, initialUrl = '' } = props;
   const { user } = useAuth();
   const { logTrendSubmission, isSessionActive, session } = useSession();
+  const { showXPNotification } = useXPNotification();
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState('');
@@ -540,7 +546,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const dismissNotification = () => setNotification(null);
   
   // Form state
-  const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'category' | 'details' | 'ai_analysis' | 'review'>('url');
+  const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'origins' | 'ai_analysis' | 'review'>('url');
   // Autosave key
   const AUTOSAVE_KEY = 'smart_trend_submission_draft';
   
@@ -589,7 +595,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       
       // User inputs
       category: '',
-      categoryAnswers: {} as Record<string, string>,
       audienceAge: [] as string[],
       predictedPeak: '',
       aiAngle: '' as 'using_ai' | 'reacting_to_ai' | 'ai_tool_viral' | 'ai_technique' | 'anti_ai' | 'not_ai' | '',
@@ -603,6 +608,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       description: '',
       audience_demographic: '',
       behavior_insight: '',
+      
+      // New origin and evolution fields
+      drivingGeneration: '' as 'gen_alpha' | 'gen_z' | 'millennials' | 'gen_x' | 'boomers' | '',
+      trendOrigin: '' as 'organic' | 'influencer' | 'brand' | 'ai_generated' | '',
+      evolutionStatus: '' as 'original' | 'variants' | 'parody' | 'meta' | 'final' | '',
       
       // Calculated
       wave_score: 50
@@ -623,6 +633,15 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showSavedNotification, setShowSavedNotification] = useState(false);
   const autosaveTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Clear any lingering states when component mounts
+  useEffect(() => {
+    // Reset loading states on mount to prevent hanging
+    setLoading(false);
+    setExtracting(false);
+    setAiLoading(false);
+    setError('');
+  }, []);
 
   // Autosave effect - save form data to localStorage
   useEffect(() => {
@@ -804,11 +823,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       console.error('Error fetching analysis:', err);
       setAiError('Failed to generate analysis. Please try again.');
       // Set a fallback analysis
-      setAiAnalysis(`You've identified a **culturally resonant moment**. This ${formData.category} trend reflects deeper social currents - 
-people are seeking **authentic expression** in our hyper-connected world. The ${formData.trendVelocity} velocity indicates it's 
-tapping into **unmet emotional needs** that traditional content isn't addressing. Your early detection shows you understand 
-the **cultural zeitgeist** - you're reading the room before others even know there's a room to read. This trend signals 
-a shift in how people want to **connect and communicate** right now.`);
+      setAiAnalysis(`This ${formData.evolutionStatus || 'emerging'} trend is essentially people ${formData.trendOrigin === 'organic' ? 'spontaneously creating' : 'responding to'} content that subverts expectations through ironic authenticity 📍 Based on the ${formData.trendVelocity || 'current'} velocity, expect mainstream saturation in **2-3 weeks**, with brands attempting (and failing) to replicate by week 4. Smart creators should jump now while it's still organic - particularly those in comedy, lifestyle, and surprisingly, educational content. This is resonating because ${formData.drivingGeneration || 'younger audiences'} are exhausted by performative perfection online. The hidden angle? The intentionally "bad" versions are outperforming polished attempts by 3x because audiences crave genuine chaos over manufactured relatability 🎯`);
       
       // Still ensure minimum time for fallback
       const elapsed = Date.now() - startTime;
@@ -829,14 +844,6 @@ a shift in how people want to **connect and communicate** right now.`);
     return num.toString();
   };
 
-  const getSelectedCategory = () => {
-    return CATEGORIES.find(c => c.id === formData.category);
-  };
-
-  const handleCategorySelect = (categoryId: string) => {
-    setFormData(prev => ({ ...prev, category: categoryId, categoryAnswers: {} }));
-    setCurrentStep('details');
-  };
 
   const validateCurrentStep = (): boolean => {
     switch (currentStep) {
@@ -864,25 +871,17 @@ a shift in how people want to **connect and communicate** right now.`);
           return false;
         }
         break;
-      case 'category':
-        if (!formData.category) {
-          setError('Please select a category');
+      case 'origins':
+        if (!formData.drivingGeneration) {
+          setError('Please select which generation is driving this trend');
           return false;
         }
-        break;
-      case 'details':
-        const category = getSelectedCategory();
-        if (category) {
-          const unanswered = Object.keys(category.questions).filter(
-            key => !formData.categoryAnswers[key]
-          );
-          if (unanswered.length > 0) {
-            setError('Please answer all category questions');
-            return false;
-          }
+        if (!formData.trendOrigin) {
+          setError('Please select where this trend originated');
+          return false;
         }
-        if (formData.audienceAge.length === 0) {
-          setError('Please select at least one age group');
+        if (!formData.evolutionStatus) {
+          setError('Please select what\'s happening with this trend');
           return false;
         }
         break;
@@ -902,12 +901,9 @@ a shift in how people want to **connect and communicate** right now.`);
         setCurrentStep('velocity');
         break;
       case 'velocity':
-        setCurrentStep('category');
+        setCurrentStep('origins');
         break;
-      case 'category':
-        setCurrentStep('details');
-        break;
-      case 'details':
+      case 'origins':
         setCurrentStep('ai_analysis');
         break;
       case 'ai_analysis':
@@ -930,14 +926,11 @@ a shift in how people want to **connect and communicate** right now.`);
       case 'velocity':
         setCurrentStep('url');
         break;
-      case 'category':
+      case 'origins':
         setCurrentStep('velocity');
         break;
-      case 'details':
-        setCurrentStep('category');
-        break;
       case 'ai_analysis':
-        setCurrentStep('details');
+        setCurrentStep('origins');
         break;
       case 'review':
         setCurrentStep('ai_analysis');
@@ -946,6 +939,46 @@ a shift in how people want to **connect and communicate** right now.`);
     setError('');
   };
 
+
+  const resetForm = () => {
+    // Reset all form state to initial values
+    setFormData({
+      url: initialUrl || '',
+      platform: '',
+      title: '',
+      creator_handle: '',
+      creator_name: '',
+      description: '',
+      category: '',
+      trendVelocity: '',
+      trendSize: '',
+      sentiment: 50,
+      audienceAge: [],
+      predictedPeak: '',
+      drivingGeneration: '',
+      trendOrigin: '',
+      evolutionStatus: '',
+      categoryAnswers: {},
+      velocityMetrics: {},
+      aiAngle: '',
+      screenshot_url: '',
+      thumbnail_url: '',
+      views_count: 0,
+      likes_count: 0,
+      comments_count: 0,
+      shares_count: 0,
+      hashtags: [],
+      wave_score: 50
+    });
+    setCurrentStep('url');
+    setError('');
+    setMetadata(null);
+    setMetadataError('');
+    setAiAnalysis('');
+    setAiLoading(false);
+    setAiError('');
+    setAiAnalysisReady(false);
+  };
 
   const handleSubmit = async () => {
     console.log('🚀 Submit clicked from SmartTrendSubmission');
@@ -959,6 +992,8 @@ a shift in how people want to **connect and communicate** right now.`);
         console.log('✅ customSubmit completed successfully');
         // Clear the saved draft only after successful submission
         clearSavedDraft();
+        // Reset form for next submission
+        resetForm();
         onClose();
       }
     } catch (error: any) {
@@ -1039,8 +1074,7 @@ a shift in how people want to **connect and communicate** right now.`);
                 <p className="text-xs text-gray-500">
                   {currentStep === 'url' && 'Paste URL and describe the trend'}
                   {currentStep === 'velocity' && 'Predict the trend trajectory'}
-                  {currentStep === 'category' && 'Categorize the trend'}
-                  {currentStep === 'details' && `Complete for ${getSelectedCategory()?.label} expertise`}
+                  {currentStep === 'origins' && 'Identify origin and what\'s happening'}
                   {currentStep === 'ai_analysis' && 'AI validates your discovery'}
                   {currentStep === 'review' && 'Finalize your submission'}
                 </p>
@@ -1087,7 +1121,6 @@ a shift in how people want to **connect and communicate** right now.`);
                         thumbnail_url: '',
                         posted_at: '',
                         category: '',
-                        categoryAnswers: {},
                         audienceAge: [],
                         predictedPeak: '',
                         aiAngle: '',
@@ -1125,18 +1158,16 @@ a shift in how people want to **connect and communicate** right now.`);
               Step {
                 currentStep === 'url' ? '1' :
                 currentStep === 'velocity' ? '2' :
-                currentStep === 'category' ? '3' :
-                currentStep === 'details' ? '4' :
-                currentStep === 'ai_analysis' ? '5' :
-                '6'
-              } of 6
+                currentStep === 'origins' ? '3' :
+                currentStep === 'ai_analysis' ? '4' :
+                '5'
+              } of 5
             </span>
             <span className="text-xs text-gray-500">
               {
                 currentStep === 'url' ? 'URL & Description' :
                 currentStep === 'velocity' ? 'Trend Analysis' :
-                currentStep === 'category' ? 'Category' :
-                currentStep === 'details' ? 'Details' :
+                currentStep === 'origins' ? 'Origins & Status' :
                 currentStep === 'ai_analysis' ? 'AI Analysis' :
                 'Review'
               }
@@ -1151,29 +1182,24 @@ a shift in how people want to **connect and communicate** right now.`);
                   
                   // Base progress for each step
                   if (currentStep === 'url') progress = 5;
-                  else if (currentStep === 'velocity') progress = 20;
-                  else if (currentStep === 'category') progress = 35;
-                  else if (currentStep === 'details') progress = 50;
-                  else if (currentStep === 'ai_analysis') progress = 70;
-                  else if (currentStep === 'review') progress = 85;
+                  else if (currentStep === 'velocity') progress = 25;
+                  else if (currentStep === 'origins') progress = 50;
+                  else if (currentStep === 'ai_analysis') progress = 75;
+                  else if (currentStep === 'review') progress = 90;
                   
                   // Add progress based on form completion within current step
                   if (currentStep === 'url') {
-                    if (formData.url) progress += 5;
-                    if (formData.title && formData.title.length >= 10) progress += 10;
+                    if (formData.url) progress += 8;
+                    if (formData.title && formData.title.length >= 10) progress += 12;
                   }
                   else if (currentStep === 'velocity') {
-                    if (formData.trendVelocity) progress += 8;
-                    if (formData.trendSize) progress += 7;
+                    if (formData.trendVelocity) progress += 10;
+                    if (formData.trendSize) progress += 10;
                     if (formData.sentiment !== 50) progress += 5;
                   }
-                  else if (currentStep === 'category') {
-                    if (formData.category) progress += 15;
-                  }
-                  else if (currentStep === 'details') {
-                    if (Object.keys(formData.categoryAnswers).length > 0) progress += 8;
-                    if (formData.audienceAge.length > 0) progress += 4;
-                    if (formData.predictedPeak) progress += 3;
+                  else if (currentStep === 'origins') {
+                    if (formData.trendOrigin) progress += 12;
+                    if (formData.evolutionStatus) progress += 13;
                   }
                   else if (currentStep === 'ai_analysis') {
                     if (aiAnalysisReady) progress += 15; // Analysis ready to read
@@ -1513,155 +1539,109 @@ a shift in how people want to **connect and communicate** right now.`);
               </motion.div>
             )}
 
-            {/* Step 3: Category Selection */}
-            {currentStep === 'category' && (
+            {/* Step 3: Origins & What's Happening */}
+            {currentStep === 'origins' && (
               <motion.div
-                key="category"
+                key="origins"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
+                className="space-y-6"
               >
+                {/* Who's Driving This Trend */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">What type of trend is this?</h3>
-                  <p className="text-sm text-gray-600 mb-4">This helps us ask the right follow-up questions</p>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleCategorySelect(cat.id)}
-                      className="group relative p-4 rounded-xl border border-gray-300 hover:border-blue-500 bg-white hover:bg-blue-50 transition-all text-left"
-                    >
-                      <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${cat.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                      <div className="relative">
-                        <div className="text-2xl mb-2">{cat.icon}</div>
-                        <div className="font-medium text-gray-800 text-sm">{cat.label}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 4: Category-Specific Details */}
-            {currentStep === 'details' && (
-              <motion.div
-                key="details"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-5"
-              >
-                {/* Category header */}
-                {getSelectedCategory() && (
-                  <div className={`bg-gradient-to-r ${getSelectedCategory()!.color} p-4 rounded-lg`}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{getSelectedCategory()!.icon}</span>
-                      <div>
-                        <h3 className="text-white font-semibold text-lg">{getSelectedCategory()!.label}</h3>
-                        <p className="text-white/90 text-sm">Answer a few specific questions</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Category-specific questions */}
-                {getSelectedCategory()?.questions && (
-                  <div className="space-y-4">
-                    {Object.entries(getSelectedCategory()!.questions).map(([key, question]) => (
-                      <div key={key}>
-                        <label className="block text-gray-700 text-sm font-medium mb-2">
-                          {question.label}
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {question.options.map((option: string) => (
-                            <button
-                              key={option}
-                              type="button"
-                              onClick={() => setFormData(prev => ({
-                                ...prev,
-                                categoryAnswers: { ...prev.categoryAnswers, [key]: option }
-                              }))}
-                              className={`p-2.5 rounded-lg border text-sm transition-all ${
-                                formData.categoryAnswers[key] === option
-                                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* AI Adoption Signal - HIGH VALUE */}
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    What's the AI angle here? 🤖
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">5. Who's driving this trend?</h3>
+                  <p className="text-sm text-gray-600 mb-4">Which generation is leading this?</p>
+                  
+                  <div className="grid grid-cols-2 gap-3">
                     {[
-                      { value: 'using_ai', label: 'People using AI to create', icon: '🎨' },
-                      { value: 'reacting_to_ai', label: 'People reacting to AI', icon: '😮' },
-                      { value: 'ai_tool_viral', label: 'AI tool going viral', icon: '🚀' },
-                      { value: 'ai_technique', label: 'AI technique/prompt sharing', icon: '💡' },
-                      { value: 'anti_ai', label: 'Anti-AI backlash', icon: '🚫' },
-                      { value: 'not_ai', label: 'Not AI-related', icon: '👤' }
+                      { value: 'gen_alpha', emoji: '📱', label: 'Gen Alpha (9-14)' },
+                      { value: 'gen_z', emoji: '🎮', label: 'Gen Z (15-24)' },
+                      { value: 'millennials', emoji: '💻', label: 'Millennials (25-40)' },
+                      { value: 'gen_x', emoji: '💿', label: 'Gen X (40-55)' },
+                      { value: 'boomers', emoji: '📺', label: 'Boomers (55+)' }
                     ].map((option) => (
                       <button
                         key={option.value}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, aiAngle: option.value as any }))}
-                        className={`p-2.5 rounded-lg border text-sm transition-all flex items-center gap-2 ${
-                          formData.aiAngle === option.value
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                        onClick={() => setFormData(prev => ({ ...prev, drivingGeneration: option.value as any }))}
+                        className={`p-4 rounded-xl border-2 transition-all text-left ${
+                          formData.drivingGeneration === option.value
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 hover:border-gray-400 bg-white'
                         }`}
                       >
-                        <span>{option.icon}</span>
-                        <span className="text-left flex-1">{option.label}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{option.emoji}</span>
+                          <span className="font-medium text-gray-800 text-sm">{option.label}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Audience age */}
+                {/* Where Did This Come From */}
                 <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Who's into this? (select all that apply)
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {['Gen Alpha (9-14)', 'Gen Z (15-24)', 'Millennials (25-40)', 'Gen X+ (40+)'].map((age) => (
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Where did this trend come from?</h3>
+                  <p className="text-sm text-gray-600 mb-4">What's the origin source?</p>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { value: 'organic', emoji: '🌱', label: 'Organic/User generated' },
+                      { value: 'influencer', emoji: '⭐', label: 'Influencer/Creator pushed' },
+                      { value: 'brand', emoji: '💼', label: 'Brand/Marketing campaign' },
+                      { value: 'ai_generated', emoji: '🤖', label: 'AI/Bot generated' }
+                    ].map((option) => (
                       <button
-                        key={age}
-                        type="button"
-                        onClick={() => {
-                          setFormData(prev => ({
-                            ...prev,
-                            audienceAge: prev.audienceAge.includes(age)
-                              ? prev.audienceAge.filter(a => a !== age)
-                              : [...prev.audienceAge, age]
-                          }));
-                        }}
-                        className={`p-2.5 rounded-lg border text-sm transition-all ${
-                          formData.audienceAge.includes(age)
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                        key={option.value}
+                        onClick={() => setFormData(prev => ({ ...prev, trendOrigin: option.value as any }))}
+                        className={`p-4 rounded-xl border-2 transition-all text-left ${
+                          formData.trendOrigin === option.value
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-300 hover:border-gray-400 bg-white'
                         }`}
                       >
-                        {age}
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{option.emoji}</span>
+                          <span className="font-medium text-gray-800 text-sm">{option.label}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* What's Happening */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">6. What's Happening 🔮</h3>
+                  <p className="text-sm text-gray-600 mb-4">What's happening with this trend?</p>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      { value: 'original', emoji: '✨', label: 'Fresh/Original' },
+                      { value: 'variants', emoji: '🔄', label: 'Getting remixed' },
+                      { value: 'parody', emoji: '😂', label: 'Becoming a joke' },
+                      { value: 'meta', emoji: '🤯', label: 'Going meta' },
+                      { value: 'final', emoji: '👻', label: "Won't die" }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setFormData(prev => ({ ...prev, evolutionStatus: option.value as any }))}
+                        className={`p-4 rounded-xl border-2 transition-all text-left ${
+                          formData.evolutionStatus === option.value
+                            ? 'border-purple-500 bg-purple-50'
+                            : 'border-gray-300 hover:border-gray-400 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{option.emoji}</span>
+                          <span className="font-medium text-gray-800 text-sm">{option.label}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </motion.div>
             )}
+
 
             {/* Step 5: AI Analysis */}
             {currentStep === 'ai_analysis' && (
@@ -1685,8 +1665,8 @@ a shift in how people want to **connect and communicate** right now.`);
                       <SparklesIcon className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-800">WaveSight AI Analysis</h3>
-                      <p className="text-sm text-gray-600">Validating your trend discovery</p>
+                      <h3 className="text-xl font-bold text-gray-800">🤖 WAVESIGHT ANALYSIS</h3>
+                      <p className="text-sm text-gray-600">Your insider intelligence report</p>
                     </div>
                   </div>
                 </div>
@@ -1697,10 +1677,10 @@ a shift in how people want to **connect and communicate** right now.`);
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 flex flex-col items-center justify-center min-h-[200px]">
                       <LoaderIcon className="w-8 h-8 text-blue-600 animate-spin mb-3" />
                       <p className="text-gray-600 font-medium">
-                        {aiLoading ? 'Analyzing your discovery...' : 'Finalizing analysis...'}
+                        {aiLoading ? 'Analyzing cultural patterns...' : 'Finalizing analysis...'}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
-                        {aiLoading ? 'Examining cultural significance' : 'Making sure you have time to read!'}
+                        {aiLoading ? 'Identifying behavioral signals' : 'Preparing your intelligence report'}
                       </p>
                     </div>
                   ) : (
@@ -1718,7 +1698,7 @@ a shift in how people want to **connect and communicate** right now.`);
                         <div className="flex items-center gap-2 mb-4">
                           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-full text-sm font-medium">
                             <SparklesIcon className="w-4 h-4" />
-                            <span>DISCOVERY ANALYSIS</span>
+                            <span>CULTURAL ANALYSIS</span>
                           </div>
                           {aiError && (
                             <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">
@@ -1806,8 +1786,8 @@ a shift in how people want to **connect and communicate** right now.`);
                         const qualityBonus = Math.floor(calculateTitleCatchiness(formData.title) / 2);
                         const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
                         const predictionBonus = formData.predictedPeak ? 15 : 0;
-                        const categoryBonus = Object.keys(formData.categoryAnswers).length >= 2 ? 15 : 0;
-                        return 30 + qualityBonus + velocityBonus + predictionBonus + categoryBonus;
+                        const originsBonus = formData.drivingGeneration && formData.trendOrigin && formData.evolutionStatus ? 15 : 0;
+                        return 30 + qualityBonus + velocityBonus + predictionBonus + originsBonus;
                       })() > 0 ? 'Complete' : 'In Progress'}
                     </div>
                   </div>
@@ -1821,12 +1801,8 @@ a shift in how people want to **connect and communicate** right now.`);
                       <span className="text-gray-800">{formData.trendVelocity && formData.trendSize ? '✓' : '○'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Category & Details</span>
-                      <span className="text-gray-800">{formData.category ? '✓' : '○'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Category Questions</span>
-                      <span className="text-gray-800">{Object.keys(formData.categoryAnswers).length >= 2 ? '✓' : '○'}</span>
+                      <span className="text-gray-600">Origins & Status</span>
+                      <span className="text-gray-800">{formData.drivingGeneration && formData.trendOrigin && formData.evolutionStatus ? '✓' : '○'}</span>
                     </div>
                   </div>
                 </div>
@@ -1901,20 +1877,45 @@ a shift in how people want to **connect and communicate** right now.`);
                     )}
                   </div>
 
-                  {/* Category & answers */}
+                  {/* Origins & What's Happening */}
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-600 mb-2">Category Analysis</h4>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">{getSelectedCategory()?.icon}</span>
-                      <span className="text-gray-800 font-medium">{getSelectedCategory()?.label}</span>
-                    </div>
-                    <div className="space-y-1">
-                      {Object.entries(formData.categoryAnswers).map(([key, value]) => (
-                        <div key={key} className="text-sm">
-                          <span className="text-gray-600">{key}: </span>
-                          <span className="text-gray-700">{value}</span>
+                    <h4 className="text-sm font-medium text-gray-600 mb-2">Trend Origins</h4>
+                    <div className="space-y-2">
+                      {formData.drivingGeneration && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Driving Generation: </span>
+                          <span className="text-gray-700">
+                            {formData.drivingGeneration === 'gen_alpha' ? '📱 Gen Alpha (9-14)' :
+                             formData.drivingGeneration === 'gen_z' ? '🎮 Gen Z (15-24)' :
+                             formData.drivingGeneration === 'millennials' ? '💻 Millennials (25-40)' :
+                             formData.drivingGeneration === 'gen_x' ? '💿 Gen X (40-55)' :
+                             formData.drivingGeneration === 'boomers' ? '📺 Boomers (55+)' : formData.drivingGeneration}
+                          </span>
                         </div>
-                      ))}
+                      )}
+                      {formData.trendOrigin && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Origin: </span>
+                          <span className="text-gray-700">
+                            {formData.trendOrigin === 'organic' ? '🌱 Organic/User generated' :
+                             formData.trendOrigin === 'influencer' ? '⭐ Influencer/Creator pushed' :
+                             formData.trendOrigin === 'brand' ? '💼 Brand/Marketing campaign' :
+                             formData.trendOrigin === 'ai_generated' ? '🤖 AI/Bot generated' : formData.trendOrigin}
+                          </span>
+                        </div>
+                      )}
+                      {formData.evolutionStatus && (
+                        <div className="text-sm">
+                          <span className="text-gray-600">Status: </span>
+                          <span className="text-gray-700">
+                            {formData.evolutionStatus === 'original' ? '✨ Fresh/Original' :
+                             formData.evolutionStatus === 'variants' ? '🔄 Getting remixed' :
+                             formData.evolutionStatus === 'parody' ? '😂 Becoming a joke' :
+                             formData.evolutionStatus === 'meta' ? '🤯 Going meta' :
+                             formData.evolutionStatus === 'final' ? '👻 Won\'t die' : formData.evolutionStatus}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2046,8 +2047,6 @@ a shift in how people want to **connect and communicate** right now.`);
                   Continue to Review
                   <ChevronRightIcon className="w-4 h-4" />
                 </button>
-              ) : currentStep === 'category' ? (
-                <p className="text-sm text-gray-500 text-center sm:text-right py-3">Select a category to continue</p>
               ) : (
                 <button
                   onClick={handleNext}

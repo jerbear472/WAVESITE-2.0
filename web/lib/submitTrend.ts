@@ -150,6 +150,14 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     // };
     
     console.log(`💾 [2] Saving to database at ${Date.now() - startTime}ms...`);
+    console.log('Input data received:', {
+      hasUrl: !!data.url,
+      hasTitle: !!data.title,
+      hasDescription: !!data.description,
+      hasCategory: !!data.category,
+      platform: data.platform,
+      allFields: Object.keys(data)
+    });
     console.log('Submission data keys:', Object.keys(submissionData));
     console.log('Full submission data:', JSON.stringify(submissionData, null, 2));
     
@@ -196,6 +204,11 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     
     console.log('✅ Trend submitted:', submission?.id);
     
+    if (!submission || !submission.id) {
+      console.error('❌ Submission returned but without ID:', submission);
+      throw new Error('Submission was saved but no ID was returned');
+    }
+    
     // Update scroll session tracking
     if (submission?.id) {
       console.log('📊 Updating scroll session...');
@@ -227,10 +240,10 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       }
     }
     
-    // Award XP for trend submission
+    // Award XP for trend submission - with timeout
     try {
       console.log('🎯 Awarding XP for trend submission...');
-      const { data: xpData, error: xpError } = await supabase
+      const xpPromise = supabase
         .rpc('award_xp', {
           p_user_id: userId,
           p_amount: paymentAmount,
@@ -238,14 +251,27 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
           p_metadata: { trend_id: submission.id }
         });
       
+      const xpTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('XP award timeout')), 3000)
+      );
+      
+      const { data: xpData, error: xpError } = await Promise.race([
+        xpPromise,
+        xpTimeoutPromise
+      ]) as any;
+      
       if (xpError) {
         console.warn('Failed to award XP:', xpError);
         // Don't fail the submission if XP awarding fails
       } else {
         console.log('✅ XP awarded successfully:', xpData);
       }
-    } catch (xpError) {
+    } catch (xpError: any) {
       console.warn('XP awarding error:', xpError);
+      console.warn('XP error details:', {
+        message: xpError.message,
+        timeout: xpError.message?.includes('timeout')
+      });
       // Continue even if XP fails
     }
     
@@ -258,11 +284,18 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     return {
       success: true,
       submission,
-      earnings: paymentAmount
+      earnings: paymentAmount,
+      xpBreakdown: xpCalculation.breakdown
     };
     
   } catch (error: any) {
     console.error(`❌ [ERROR] Submit trend error after ${Date.now() - startTime}ms:`, error);
+    console.error('Full error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      details: error.details
+    });
     return {
       success: false,
       error: error.message || 'Failed to submit trend'

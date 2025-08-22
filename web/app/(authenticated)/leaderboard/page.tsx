@@ -50,6 +50,16 @@ export default function LeaderboardPage() {
     fetchLeaderboard();
   }, [timeframe]);
 
+  // Listen for XP events to refresh leaderboard in real-time
+  useEffect(() => {
+    const handleXPEarned = () => {
+      fetchLeaderboard();
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned);
+    return () => window.removeEventListener('xp-earned', handleXPEarned);
+  }, [timeframe]);
+
   const fetchLeaderboard = async () => {
     setLoading(true);
     try {

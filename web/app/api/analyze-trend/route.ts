@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// Initialize Anthropic client for Claude
+const apiKey = process.env.ANTHROPIC_API_KEY;
+console.log('Anthropic API Key exists:', !!apiKey);
+console.log('API Key first 10 chars:', apiKey?.substring(0, 10));
+
+const anthropic = new Anthropic({
+  apiKey: apiKey,
 });
 
 // Cache for similar analyses (in-memory for now, could be Redis in production)
@@ -19,31 +23,34 @@ function generateCacheKey(data: any): string {
 // Format the trend data for AI analysis
 function formatTrendContext(data: any): string {
   const context = `
-Trend: ${data.title}
-Platform: ${data.platform}
-Category: ${data.category}
-Lifecycle Stage: ${data.trendVelocity === 'just_starting' ? 'Early' : 
-                  data.trendVelocity === 'picking_up' ? 'Rising' :
-                  data.trendVelocity === 'viral' ? 'Peak' :
-                  data.trendVelocity === 'saturated' ? 'Saturated' : 'Declining'}
-Velocity: ${data.trendVelocity === 'just_starting' ? 'Slow' :
-            data.trendVelocity === 'picking_up' ? 'Steady' :
-            data.trendVelocity === 'viral' ? 'Rapid' :
-            data.trendVelocity === 'saturated' ? 'Plateau' : 'Declining'}
-Size: ${data.trendSize === 'micro' ? 'Micro (Under 10K)' :
-        data.trendSize === 'niche' ? 'Niche (10K-100K)' :
-        data.trendSize === 'viral' ? 'Viral (100K-1M)' :
-        data.trendSize === 'mega' ? 'Mega (1M-10M)' : 'Global (10M+)'}
-Demographics: ${data.audienceAge?.join(', ') || 'General'}
-Sentiment: ${data.sentiment}% positive
-AI Involvement: ${data.aiAngle === 'using_ai' ? 'AI-Generated Content' :
-                  data.aiAngle === 'reacting_to_ai' ? 'Reactions to AI' :
-                  data.aiAngle === 'ai_tool_viral' ? 'AI Tool Going Viral' :
-                  data.aiAngle === 'ai_technique' ? 'AI Technique/Hack' :
-                  data.aiAngle === 'anti_ai' ? 'Anti-AI Sentiment' : 'No AI Involvement'}
-Predicted Peak: ${data.predictedPeak}
-Context: ${data.post_caption || 'No additional context'}
-Engagement: ${data.likes_count ? `${data.likes_count} likes, ${data.comments_count} comments, ${data.views_count} views` : 'Not available'}
+Trend: ${data.title || data.description}
+Platform: ${data.platform || 'Not specified'}
+Driving Generation: ${data.drivingGeneration === 'gen_alpha' ? 'Gen Alpha (9-14)' :
+                       data.drivingGeneration === 'gen_z' ? 'Gen Z (15-24)' :
+                       data.drivingGeneration === 'millennials' ? 'Millennials (25-40)' :
+                       data.drivingGeneration === 'gen_x' ? 'Gen X (40-55)' :
+                       data.drivingGeneration === 'boomers' ? 'Boomers (55+)' : 'Not specified'}
+Origin: ${data.trendOrigin === 'organic' ? 'Organic/User generated' :
+          data.trendOrigin === 'influencer' ? 'Influencer/Creator pushed' :
+          data.trendOrigin === 'brand' ? 'Brand/Marketing campaign' :
+          data.trendOrigin === 'ai_generated' ? 'AI/Bot generated' : 'Unknown'}
+Evolution: ${data.evolutionStatus === 'original' ? 'Original' :
+             data.evolutionStatus === 'variants' ? 'Variants emerging' :
+             data.evolutionStatus === 'parody' ? 'Parody phase' :
+             data.evolutionStatus === 'meta' ? 'Meta evolution' :
+             data.evolutionStatus === 'final' ? 'Final form' : 'Unknown'}
+Velocity: ${data.trendVelocity === 'just_starting' ? 'Just Starting (1-2 days old)' :
+            data.trendVelocity === 'picking_up' ? 'Picking Up (3-7 days)' :
+            data.trendVelocity === 'viral' ? 'Going Viral (Peak momentum)' :
+            data.trendVelocity === 'saturated' ? 'Saturated (Everywhere)' : 
+            data.trendVelocity === 'declining' ? 'Declining' : 'Unknown'}
+Size Prediction: ${data.trendSize === 'micro' ? 'Micro (Under 10K)' :
+                   data.trendSize === 'niche' ? 'Niche (10K-100K)' :
+                   data.trendSize === 'viral' ? 'Viral (100K-1M)' :
+                   data.trendSize === 'mega' ? 'Mega (1M-10M)' : 
+                   data.trendSize === 'global' ? 'Global (10M+)' : 'Unknown'}
+Sentiment: ${data.sentiment || 50}% positive
+Engagement: ${data.likes_count ? `${data.likes_count} likes, ${data.comments_count} comments, ${data.views_count} views` : 'Early stage - no metrics yet'}
 `;
   return context.trim();
 }
@@ -65,38 +72,49 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate new analysis using OpenAI
+    // Generate new analysis using Claude
     const trendContext = formatTrendContext(data);
     
-    const systemPrompt = `You are WaveSight AI, a cultural analyst who understands the deeper meaning behind internet trends. 
-You're excited about early discoveries but focus on WHY trends matter culturally and socially.
-You analyze trends like an anthropologist would - looking at what they reveal about society, culture, and human behavior.
-You're smart, insightful, but still conversational. Use bold markdown (**text**) for key insights.
-Keep it to 100-120 words.`;
-
-    const userPrompt = `This user spotted an early trend. Provide cultural analysis explaining:
-
-1. **Cultural Significance**: What does this trend reveal about our current moment? What deeper need/desire/anxiety does it reflect?
-2. **Why It's Spreading**: What specific cultural tensions, generational shifts, or social movements are driving this?
-3. **Timing Context**: Why is this emerging NOW? What makes the current cultural moment ripe for this?
-4. **Early Spotter Credit**: Why catching this early shows cultural intuition
+    // Determine the lifecycle stage from velocity
+    const lifecycleStage = data.trendVelocity === 'declining' || data.trendVelocity === 'saturated' ? 'peaking/declining' :
+                           data.trendVelocity === 'viral' ? 'peaking' :
+                           data.trendVelocity === 'picking_up' ? 'rising' : 'emerging';
+    
+    const prompt = `Analyze this trend for WaveSight users:
 
 ${trendContext}
 
-Format: Write as insightful cultural commentary that makes them feel like they have great cultural radar. Focus on meaning, not just hype. Use **bold** for key cultural insights.`;
+Write a 100-120 word analysis covering:
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
+1. WHAT: Explain what this trend actually is
+2. WHY IT MATTERS: What it reveals about culture/market right now
+3. WHO SHOULD CARE: Specific brands, creators, or industries affected
+4. THE INSIGHT: One non-obvious observation about why it's working/spreading
+
+${lifecycleStage === 'peaking/declining' ? 
+  'Note: This trend is peaking/declining - focus on what happened and lessons learned, not future predictions.' : 
+  lifecycleStage === 'peaking' ?
+  'Note: This trend is at peak - focus on why it reached critical mass and what it means.' :
+  'Note: This trend is emerging/rising - focus on why its gaining traction now.'}
+
+Style: Smart cultural analyst explaining why this matters. Use emojis for structure (💡 for insight, 🎯 for who cares, etc). No predictions about timing - analyze what it means NOW.
+100-120 words ONLY.`;
+
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 250,
       temperature: 0.7,
-      max_tokens: 150,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
     });
 
-    const analysis = completion.choices[0]?.message?.content || 
-      "Unable to generate analysis. Please try again.";
+    const analysis = message.content[0].type === 'text' 
+      ? message.content[0].text
+      : "Unable to generate analysis. Please try again.";
 
     // Cache the result
     analysisCache.set(cacheKey, {
@@ -118,17 +136,21 @@ Format: Write as insightful cultural commentary that makes them feel like they h
 
   } catch (error: any) {
     console.error('Error generating trend analysis:', error);
+    console.error('Error details:', {
+      message: error.message,
+      status: error.status,
+      type: error.constructor.name
+    });
     
     // Fallback analysis if API fails
-    const fallbackAnalysis = `You've spotted something culturally significant here. This **${data.category}** trend 
-reflects our current **cultural hunger for authenticity** in an increasingly digital world. The **${data.trendVelocity}** 
-velocity suggests it's hitting a nerve - people are craving content that feels genuine and unfiltered. Your early 
-detection shows you have **strong cultural intuition** - you're sensing the underlying social currents that drive 
-viral moments. This isn't just content; it's a **cultural signal** about what people need right now.`;
+    const fallbackAnalysis = `📱 This represents a shift in how culture moves through digital spaces. 
+🎯 **Who cares:** Content creators, brand strategists, and platforms looking for the next wave
+💡 **The insight:** The speed of adoption reveals more about audience readiness than the content itself - when things spread this fast, they're filling an existing cultural vacuum.`;
 
     return NextResponse.json({ 
       analysis: fallbackAnalysis,
       error: true,
+      errorMessage: error.message,
       cached: false 
     });
   }

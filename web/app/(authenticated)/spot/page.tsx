@@ -117,14 +117,47 @@ export default function SpotPage() {
     today.setHours(0, 0, 0, 0);
     
     try {
-      // Get today's XP events
-      const { data: xpEvents } = await supabase
+      // Try xp_events first, fall back to xp_transactions if it doesn't exist
+      let xpEvents = null;
+      const { data: xpEventsData, error: eventsError } = await supabase
         .from('xp_events')
         .select('xp_change, event_type')
         .eq('user_id', user.id)
         .gte('created_at', today.toISOString());
       
-      const todaysTotal = xpEvents?.reduce((sum, e) => sum + e.xp_change, 0) || 0;
+      if (eventsError && eventsError.code === '42P01') {
+        // Table doesn't exist, try xp_transactions
+        const { data: xpTransData } = await supabase
+          .from('xp_transactions')
+          .select('amount, type')
+          .eq('user_id', user.id)
+          .gte('created_at', today.toISOString());
+        
+        // Map xp_transactions to match xp_events structure
+        xpEvents = xpTransData?.map(t => ({
+          xp_change: t.amount,
+          event_type: t.type
+        }));
+      } else {
+        xpEvents = xpEventsData;
+      }
+      
+      // Calculate from XP events if available
+      let todaysTotal = xpEvents?.reduce((sum, e) => sum + e.xp_change, 0) || 0;
+      
+      // If no XP events, calculate from trend submissions payment_amount
+      if (todaysTotal === 0) {
+        const { data: todaysTrends } = await supabase
+          .from('trend_submissions')
+          .select('payment_amount')
+          .eq('spotter_id', user.id)
+          .gte('created_at', today.toISOString());
+        
+        console.log('Today\'s trends for XP calculation:', todaysTrends);
+        todaysTotal = todaysTrends?.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
+        console.log('Calculated XP from payment_amount:', todaysTotal);
+      }
+      
       setTodaysXP(todaysTotal);
       
       // Get pending validations count
@@ -666,6 +699,17 @@ export default function SpotPage() {
               
               if (!result.success) {
                 throw new Error(result.error || 'Failed to submit trend');
+              }
+              
+              // Show XP notification on successful submission
+              if (result.earnings) {
+                showXPNotification(
+                  result.earnings,
+                  'Trend spotted successfully!',
+                  'submission',
+                  'XP Earned',
+                  result.xpBreakdown ? `Multipliers applied: ${result.xpBreakdown}` : undefined
+                );
               }
               
               // Close form and refresh stats on success

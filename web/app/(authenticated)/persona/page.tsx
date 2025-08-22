@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import PersonaBuilderEnhanced from '@/components/PersonaBuilderEnhanced';
+import PersonaBuilderSimple from '@/components/PersonaBuilderSimple';
 import MobilePersonaBuilder from '@/components/MobilePersonaBuilder';
 import { motion } from 'framer-motion';
 import { usePersona } from '@/hooks/usePersona';
@@ -153,6 +153,6 @@ Your data is safe and will sync when the issue is resolved. Please contact suppo
       initialData={personaData}
     />
   ) : (
-    <PersonaBuilderEnhanced onComplete={handlePersonaComplete} />
+    <PersonaBuilderSimple onComplete={handlePersonaComplete} />
   );
 }

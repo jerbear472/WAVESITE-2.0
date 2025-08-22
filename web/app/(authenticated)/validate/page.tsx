@@ -45,7 +45,10 @@ interface TrendToValidate {
   views_count?: number;
   likes_count?: number;
   comments_count?: number;
-  wave_score?: number;
+  // New fields from origins step
+  driving_generation?: string;
+  trend_origin?: string;
+  evolution_status?: string;
 }
 
 // Utility function to format numbers
@@ -70,10 +73,12 @@ export default function ValidatePage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [lastVote, setLastVote] = useState<'valid' | 'invalid' | null>(null);
   const [consensus, setConsensus] = useState<number | null>(null);
-  const [xpEarned, setXpEarned] = useState(0);
+  const [todaysXP, setTodaysXP] = useState(0);
   const [lastXPEarned, setLastXPEarned] = useState(5);
   const [isAnimating, setIsAnimating] = useState(false);
   const [cardKey, setCardKey] = useState(0);
+  // Track locally validated trends to prevent re-showing
+  const [localValidatedIds, setLocalValidatedIds] = useState<string[]>([]);
   
   // Swipe animation values
   const x = useMotionValue(0);
@@ -111,6 +116,18 @@ export default function ValidatePage() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentTrend, showFeedback]);
 
+  // Listen for XP events to refresh stats in real-time
+  useEffect(() => {
+    const handleXPEarned = () => {
+      if (user) {
+        loadUserStats();
+      }
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned);
+    return () => window.removeEventListener('xp-earned', handleXPEarned);
+  }, [user]);
+
 
   const loadTrendsToValidate = async () => {
     if (!user) return;
@@ -118,36 +135,47 @@ export default function ValidatePage() {
     setLoading(true);
     try {
       // First get trends the user has already validated
-      const { data: userValidations } = await supabase
+      const { data: userValidations, error: validationError } = await supabase
         .from('trend_validations')
         .select('trend_id')
         .eq('validator_id', user.id);
       
-      const validatedTrendIds = userValidations?.map(v => v.trend_id) || [];
+      if (validationError) {
+        console.error('Error fetching user validations:', validationError);
+      }
       
-      // Get trends that need quality checking (less than 3 votes, not yet quality approved)
-      let query = supabase
+      const validatedTrendIds = userValidations?.map(v => v.trend_id) || [];
+      console.log('User has already validated trends:', validatedTrendIds.length);
+      console.log('Locally validated trends:', localValidatedIds.length);
+      
+      // Combine database validated IDs with locally tracked ones
+      const allValidatedIds = [...new Set([...validatedTrendIds, ...localValidatedIds])];
+      
+      // Get all trends that need validation
+      const { data: allTrends, error } = await supabase
         .from('trend_submissions')
         .select('*')
         .or('validation_count.is.null,validation_count.lt.3')
         .neq('spotter_id', user.id) // Don't show user's own trends
         .in('status', ['submitted', 'validating']) // Only get trends not yet quality approved
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50); // Get more initially to filter client-side
       
-      // Exclude trends the user has already validated
-      if (validatedTrendIds.length > 0) {
-        query = query.not('id', 'in', `(${validatedTrendIds.join(',')})`);
-      }
-      
-      const { data: trends, error } = await query;
-
       if (error) throw error;
+      
+      // Filter out already validated trends client-side (more reliable)
+      const trends = allTrends?.filter(trend => 
+        !allValidatedIds.includes(trend.id)
+      ) || [];
+      
+      console.log(`Found ${allTrends?.length} total trends, ${trends.length} after filtering out validated ones`);
 
       const formattedTrends = trends?.map(trend => ({
         id: trend.id,
-        title: trend.title || trend.trend_headline || 'Untitled',
-        description: trend.description || trend.why_trending || '',
+        title: (trend.title && trend.title !== '0') ? trend.title : 
+               (trend.trend_headline && trend.trend_headline !== '0') ? trend.trend_headline : 'Untitled',
+        description: (trend.description && trend.description !== '0') ? trend.description : 
+                     (trend.why_trending && trend.why_trending !== '0') ? trend.why_trending : '',
         url: trend.url || trend.post_url || '',
         thumbnail_url: trend.thumbnail_url,
         screenshot_url: trend.screenshot_url,
@@ -167,7 +195,10 @@ export default function ValidatePage() {
         views_count: trend.views_count,
         likes_count: trend.likes_count,
         comments_count: trend.comments_count,
-        wave_score: trend.wave_score
+        // Origins fields
+        driving_generation: trend.driving_generation,
+        trend_origin: trend.trend_origin,
+        evolution_status: trend.evolution_status
       })) || [];
 
       setTrendQueue(formattedTrends);
@@ -183,21 +214,69 @@ export default function ValidatePage() {
     if (!user) return;
     
     try {
-      // Get user's validation streak
-      const today = new Date().toISOString().split('T')[0];
+      // Get user profile for actual streak data
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('current_streak')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setStreak(profile.current_streak || 0);
+      }
+
+      // Get today's XP - try multiple sources
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // First try xp_events
+      let { data: xpEvents } = await supabase
+        .from('xp_events')
+        .select('xp_change')
+        .eq('user_id', user.id)
+        .gte('created_at', today.toISOString());
+
+      let dailyXP = xpEvents?.reduce((sum, event) => sum + event.xp_change, 0) || 0;
+      
+      // If no XP events, try xp_transactions
+      if (dailyXP === 0) {
+        const { data: xpTransactions } = await supabase
+          .from('xp_transactions')
+          .select('amount')
+          .eq('user_id', user.id)
+          .gte('created_at', today.toISOString());
+        
+        dailyXP = xpTransactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      }
+      
+      // If still no XP, fallback to payment_amount from trend_submissions
+      if (dailyXP === 0) {
+        const { data: todaysTrends } = await supabase
+          .from('trend_submissions')
+          .select('payment_amount')
+          .eq('spotter_id', user.id)
+          .gte('created_at', today.toISOString());
+        
+        dailyXP = todaysTrends?.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
+      }
+      
+      setTodaysXP(dailyXP);
+
+      // Get today's validations count
       const { data: validations } = await supabase
         .from('trend_validations')
-        .select('created_at')
+        .select('id')
         .eq('validator_id', user.id)
-        .gte('created_at', today + 'T00:00:00')
-        .order('created_at', { ascending: false });
+        .gte('created_at', today.toISOString());
 
       setDailyValidations(validations?.length || 0);
-      
-      // Calculate streak (simplified for now)
-      if (validations && validations.length > 0) {
-        setStreak(Math.min(validations.length, 50));
-      }
+
+      console.log('📊 Validate Page Stats:', {
+        streak: profile?.current_streak || 0,
+        todaysXP: dailyXP,
+        dailyValidations: validations?.length || 0,
+        xpEventsCount: xpEvents?.length || 0
+      });
     } catch (error) {
       console.error('Error loading stats:', error);
     }
@@ -208,6 +287,9 @@ export default function ValidatePage() {
     
     const isValid = direction === 'right';
     setLastVote(isValid ? 'valid' : 'invalid');
+    
+    // Add to local validated list immediately to prevent re-showing
+    setLocalValidatedIds(prev => [...prev, currentTrend.id]);
     
     try {
       // Submit validation
@@ -249,20 +331,36 @@ export default function ValidatePage() {
       });
 
       if (!xpError) {
-        setXpEarned(prev => prev + totalXP);
+        setTodaysXP(prev => prev + totalXP);
         setLastXPEarned(totalXP);
         // Show XP notification
         const notificationText = `Trend validated! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}`;
-        showXPNotification(totalXP, notificationText, 'validation');
+        console.log('🎯 Showing validation XP notification:', totalXP, notificationText);
+        console.log('showXPNotification function exists:', typeof showXPNotification);
+        
+        try {
+          showXPNotification(totalXP, notificationText, 'validation');
+          console.log('✅ XP notification called successfully');
+        } catch (err) {
+          console.error('❌ Error calling showXPNotification:', err);
+        }
       } else {
         // Still show notification even if XP RPC fails
         console.warn('XP award failed:', xpError);
-        showXPNotification(baseXP, 'Trend validated!', 'validation');
+        console.log('🎯 Showing fallback validation XP notification:', baseXP);
+        console.log('showXPNotification function exists:', typeof showXPNotification);
+        
+        try {
+          showXPNotification(baseXP, 'Trend validated!', 'validation');
+          console.log('✅ Fallback XP notification called successfully');
+        } catch (err) {
+          console.error('❌ Error calling fallback showXPNotification:', err);
+        }
       }
 
-      // Update stats
-      setStreak(prev => prev + 1);
+      // Update stats locally
       setDailyValidations(prev => prev + 1);
+      // Note: Streak should come from the profile, not be incremented locally
 
       // Get consensus (simplified - in production, query actual votes)
       const consensusPercent = isValid ? 65 + Math.random() * 30 : 20 + Math.random() * 40;
@@ -270,6 +368,8 @@ export default function ValidatePage() {
       
       // Show feedback briefly
       setShowFeedback(true);
+      // Don't call loadUserStats here as it might overwrite the XP we just added
+      // The local state update on line 333 is sufficient
       setTimeout(() => {
         setShowFeedback(false);
         moveToNextTrend();
@@ -286,7 +386,10 @@ export default function ValidatePage() {
     
     // Animate out current card
     setTimeout(() => {
-      const newQueue = trendQueue.slice(1);
+      // Filter out any validated trends that might have slipped through
+      const newQueue = trendQueue.slice(1).filter(trend => 
+        !localValidatedIds.includes(trend.id)
+      );
       setTrendQueue(newQueue);
       setCurrentTrend(newQueue[0] || null);
       setLastVote(null);
@@ -371,7 +474,7 @@ export default function ValidatePage() {
             <div className="bg-white rounded-lg px-3 py-2 shadow-sm">
               <div className="flex items-center space-x-1">
                 <Zap className="h-5 w-5 text-yellow-500" />
-                <span className="font-bold text-gray-900">{xpEarned}</span>
+                <span className="font-bold text-gray-900">{todaysXP}</span>
                 <span className="text-xs text-gray-500">XP today</span>
               </div>
             </div>
@@ -541,15 +644,72 @@ export default function ValidatePage() {
                     </div>
                   )}
 
-                  {/* Wave Score */}
-                  {currentTrend.wave_score !== undefined && (
-                    <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-2.5">
+                  {/* Driving Generation */}
+                  {currentTrend.driving_generation && (
+                    <div className="bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-lg p-2.5">
                       <div className="flex items-center space-x-1.5">
-                        <Zap className="h-3.5 w-3.5 text-green-600" />
-                        <span className="text-xs font-medium text-green-900">Wave Score</span>
+                        <span className="text-sm">
+                          {currentTrend.driving_generation === 'gen_alpha' ? '📱' :
+                           currentTrend.driving_generation === 'gen_z' ? '🎮' :
+                           currentTrend.driving_generation === 'millennials' ? '💻' :
+                           currentTrend.driving_generation === 'gen_x' ? '💿' :
+                           currentTrend.driving_generation === 'boomers' ? '📺' : '👥'}
+                        </span>
+                        <span className="text-xs font-medium text-cyan-900">Generation</span>
                       </div>
-                      <p className="text-xs text-green-700 mt-0.5">
-                        {currentTrend.wave_score}/100
+                      <p className="text-xs text-cyan-700 mt-0.5">
+                        {currentTrend.driving_generation === 'gen_alpha' ? 'Gen Alpha' :
+                         currentTrend.driving_generation === 'gen_z' ? 'Gen Z' :
+                         currentTrend.driving_generation === 'millennials' ? 'Millennials' :
+                         currentTrend.driving_generation === 'gen_x' ? 'Gen X' :
+                         currentTrend.driving_generation === 'boomers' ? 'Boomers' :
+                         currentTrend.driving_generation?.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Trend Origin */}
+                  {currentTrend.trend_origin && (
+                    <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-sm">
+                          {currentTrend.trend_origin === 'organic' ? '🌱' :
+                           currentTrend.trend_origin === 'influencer' ? '🎭' :
+                           currentTrend.trend_origin === 'brand' ? '🏢' :
+                           currentTrend.trend_origin === 'ai_generated' ? '🤖' : '🌊'}
+                        </span>
+                        <span className="text-xs font-medium text-orange-900">Origin</span>
+                      </div>
+                      <p className="text-xs text-orange-700 mt-0.5">
+                        {currentTrend.trend_origin === 'organic' ? 'Organic' :
+                         currentTrend.trend_origin === 'influencer' ? 'Influencer' :
+                         currentTrend.trend_origin === 'brand' ? 'Brand' :
+                         currentTrend.trend_origin === 'ai_generated' ? 'AI Generated' :
+                         currentTrend.trend_origin?.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Evolution Status */}
+                  {currentTrend.evolution_status && (
+                    <div className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-sm">
+                          {currentTrend.evolution_status === 'original' ? '🧬' :
+                           currentTrend.evolution_status === 'variants' ? '🔄' :
+                           currentTrend.evolution_status === 'parody' ? '😂' :
+                           currentTrend.evolution_status === 'meta' ? '🤯' :
+                           currentTrend.evolution_status === 'final' ? '🧟' : '📈'}
+                        </span>
+                        <span className="text-xs font-medium text-pink-900">Evolution</span>
+                      </div>
+                      <p className="text-xs text-pink-700 mt-0.5">
+                        {currentTrend.evolution_status === 'original' ? 'Original' :
+                         currentTrend.evolution_status === 'variants' ? 'Variants' :
+                         currentTrend.evolution_status === 'parody' ? 'Parody' :
+                         currentTrend.evolution_status === 'meta' ? 'Meta' :
+                         currentTrend.evolution_status === 'final' ? 'Final Form' :
+                         currentTrend.evolution_status?.replace(/_/g, ' ')}
                       </p>
                     </div>
                   )}
@@ -583,9 +743,11 @@ export default function ValidatePage() {
                 )}
 
                 {/* Engagement Stats */}
-                {(currentTrend.views_count || currentTrend.likes_count || currentTrend.comments_count) && (
+                {((currentTrend.views_count && currentTrend.views_count > 0) || 
+                  (currentTrend.likes_count && currentTrend.likes_count > 0) || 
+                  (currentTrend.comments_count && currentTrend.comments_count > 0)) && (
                   <div className="flex items-center justify-around py-2 bg-gray-50 rounded-lg">
-                    {currentTrend.views_count !== undefined && (
+                    {currentTrend.views_count !== undefined && currentTrend.views_count > 0 && (
                       <div className="text-center">
                         <p className="text-sm font-semibold text-gray-900">
                           {formatNumber(currentTrend.views_count)}
@@ -593,7 +755,7 @@ export default function ValidatePage() {
                         <p className="text-xs text-gray-500">views</p>
                       </div>
                     )}
-                    {currentTrend.likes_count !== undefined && (
+                    {currentTrend.likes_count !== undefined && currentTrend.likes_count > 0 && (
                       <div className="text-center">
                         <p className="text-sm font-semibold text-gray-900">
                           {formatNumber(currentTrend.likes_count)}
@@ -601,7 +763,7 @@ export default function ValidatePage() {
                         <p className="text-xs text-gray-500">likes</p>
                       </div>
                     )}
-                    {currentTrend.comments_count !== undefined && (
+                    {currentTrend.comments_count !== undefined && currentTrend.comments_count > 0 && (
                       <div className="text-center">
                         <p className="text-sm font-semibold text-gray-900">
                           {formatNumber(currentTrend.comments_count)}
@@ -629,13 +791,9 @@ export default function ValidatePage() {
                     {currentTrend.creator_handle && (
                       <div className="flex items-center space-x-1">
                         <Users className="h-3 w-3" />
-                        <span>@{currentTrend.creator_handle}</span>
+                        <span>{currentTrend.creator_handle.startsWith('@') ? currentTrend.creator_handle : `@${currentTrend.creator_handle}`}</span>
                       </div>
                     )}
-                    <div className="flex items-center space-x-1">
-                      <Eye className="h-3 w-3" />
-                      <span>Spotted by {currentTrend.spotter_username}</span>
-                    </div>
                   </div>
                   <div className="flex items-center space-x-1 text-xs text-gray-500">
                     <Clock className="h-3 w-3" />

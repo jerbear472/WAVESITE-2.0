@@ -34,6 +34,14 @@ export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = (
   const showXPNotification = useCallback((amount: number, reason: string, type: XPNotification['type'] = 'submission', title?: string, subtitle?: string) => {
     const id = `xp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
+    console.log('📢 [XPNotificationContext] Creating notification:', {
+      amount,
+      reason,
+      type,
+      title,
+      subtitle
+    });
+    
     const notification: XPNotification = {
       id,
       amount,
@@ -44,7 +52,11 @@ export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = (
       subtitle
     };
 
-    setNotifications(prev => [...prev, notification]);
+    setNotifications(prev => {
+      const newNotifications = [...prev, notification];
+      console.log('📢 [XPNotificationContext] Total notifications:', newNotifications.length);
+      return newNotifications;
+    });
 
     // Dispatch custom event for real-time dashboard updates
     window.dispatchEvent(new CustomEvent('xp-earned', { detail: { amount, type, reason } }));
@@ -52,6 +64,7 @@ export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = (
     // Auto-remove notification after 4 seconds
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
+      console.log('📢 [XPNotificationContext] Removed notification:', id);
     }, 4000);
   }, []);
 
@@ -87,22 +100,22 @@ export const XPNotificationProvider: React.FC<{ children: React.ReactNode }> = (
       
       {/* XP Notification Container - Bottom Left */}
       <div className="fixed bottom-6 left-6 z-50 space-y-2 pointer-events-none">
+        {notifications.length > 0 && console.log('📢 [XPNotificationContext] Rendering notifications:', notifications)}
         <AnimatePresence>
           {notifications.map((notification) => (
             <motion.div
               key={notification.id}
-              initial={{ opacity: 0, x: -100, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -100, scale: 0.8 }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ 
-                type: "spring",
-                stiffness: 300,
-                damping: 30
+                duration: 0.3,
+                ease: "easeOut"
               }}
               className={`
                 bg-gradient-to-r ${getNotificationColors(notification.type)}
-                text-white rounded-xl shadow-2xl border p-4 min-w-[280px] max-w-[320px]
-                backdrop-blur-sm pointer-events-auto
+                text-white rounded-lg shadow-lg p-4 min-w-[260px] max-w-[320px]
+                pointer-events-auto
               `}
             >
               <div className="flex items-center gap-3">

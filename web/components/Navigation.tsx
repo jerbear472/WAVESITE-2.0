@@ -75,6 +75,18 @@ export default function Navigation() {
     fetchXPData();
   }, [user, pathname]); // Also refresh when pathname changes
 
+  // Listen for XP events to update navigation in real-time
+  useEffect(() => {
+    const handleXPEarned = () => {
+      if (user) {
+        fetchXPData();
+      }
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned);
+    return () => window.removeEventListener('xp-earned', handleXPEarned);
+  }, [user]);
+
   const handleLogout = async () => {
     await logout();
     router.push('/');

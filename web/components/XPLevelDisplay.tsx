@@ -62,6 +62,16 @@ export const XPLevelDisplay: React.FC<Props> = ({ userId, compact = false }) => 
     loadXPStats();
   }, [userId]);
 
+  // Listen for XP events to refresh display
+  useEffect(() => {
+    const handleXPEarned = () => {
+      loadXPStats();
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned);
+    return () => window.removeEventListener('xp-earned', handleXPEarned);
+  }, []);
+
   // Subscribe to real-time XP updates
   useEffect(() => {
     if (!userId) return;

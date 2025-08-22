@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SmartTrendSubmission from '@/components/SmartTrendSubmissionSimple';
 import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
+import { submitTrend } from '@/lib/submitTrend';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
@@ -103,7 +104,7 @@ export default function Timeline() {
   const [selectedTrend, setSelectedTrend] = useState<Trend | null>(null);
   const router = useRouter();
 
-  // Simple trend detail modal component
+  // Enhanced trend detail modal component with all metadata and AI analysis
   const TrendDetailModal = ({ trend, onClose }: { trend: Trend, onClose: () => void }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -117,104 +118,387 @@ export default function Timeline() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+        className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
       >
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                {trend.evidence?.title || 'Trend Analysis'}
-              </h2>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
-                <span>•</span>
-                <span className="capitalize">{trend.status}</span>
-                {trend.stage && (
-                  <>
+        {/* Header with thumbnail */}
+        <div className="relative">
+          {/* Thumbnail Background */}
+          {(trend.screenshot_url || trend.thumbnail_url) && (
+            <div className="relative h-48 bg-gray-100 overflow-hidden">
+              <img 
+                src={trend.screenshot_url || trend.thumbnail_url} 
+                alt="Trend visual"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            </div>
+          )}
+          
+          {/* Header Content */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold mb-2">
+                  {trend.evidence?.title || trend.description || 'Trend Analysis'}
+                </h2>
+                <div className="flex items-center gap-2 text-sm opacity-90">
+                  <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
+                  <span>•</span>
+                  <span className="capitalize">{trend.status}</span>
+                  {trend.stage && (
+                    <>
+                      <span>•</span>
+                      <span className="capitalize">{trend.stage}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          {/* Header for trends without thumbnails */}
+          {!(trend.screenshot_url || trend.thumbnail_url) && (
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold mb-2">
+                    {trend.evidence?.title || trend.description || 'Trend Analysis'}
+                  </h2>
+                  <div className="flex items-center gap-2 text-sm opacity-90">
+                    <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
                     <span>•</span>
-                    <span className="capitalize">{trend.stage}</span>
-                  </>
-                )}
+                    <span className="capitalize">{trend.status}</span>
+                    {trend.stage && (
+                      <>
+                        <span>•</span>
+                        <span className="capitalize">{trend.stage}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+          )}
         </div>
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[60vh]">
-          {/* AI Description */}
-          {trend.evidence?.ai_description && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <SparklesIcon className="w-5 h-5 text-blue-500" />
-                AI Analysis
-              </h3>
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-                <p className="text-gray-700 leading-relaxed">{trend.evidence.ai_description}</p>
-              </div>
-            </div>
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              {/* AI Analysis */}
+              {trend.evidence?.ai_description && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <SparklesIcon className="w-5 h-5 text-blue-500" />
+                    AI Cultural Analysis
+                  </h3>
+                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+                    <p className="text-gray-700 leading-relaxed">{trend.evidence.ai_description}</p>
+                  </div>
+                </div>
+              )}
 
-          {/* Original Description */}
-          {trend.description && trend.description !== '0' && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
-              <p className="text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4">{trend.description}</p>
-            </div>
-          )}
-
-          {/* Metrics */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {trend.quality_score && trend.quality_score > 0 && (
-              <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-                <div className="text-sm text-green-600 font-medium">Quality Score</div>
-                <div className="text-2xl font-bold text-green-700">{trend.quality_score}/10</div>
-              </div>
-            )}
-            {trend.virality_prediction && trend.virality_prediction > 0 && (
-              <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-                <div className="text-sm text-purple-600 font-medium">Virality Prediction</div>
-                <div className="text-2xl font-bold text-purple-700">{Math.round(trend.virality_prediction * 100)}%</div>
-              </div>
-            )}
-            {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <div className="text-sm text-gray-600 font-medium">Validation Votes</div>
-                <div className="flex items-center gap-2 mt-1">
-                  {trend.approve_count > 0 && (
-                    <span className="text-green-600 font-bold">👍 {trend.approve_count}</span>
+              {/* Origins & Evolution */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <UserIcon className="w-4 h-4" />
+                  Trend Origins
+                </h4>
+                <div className="space-y-2 text-sm">
+                  {/* These fields would come from the new submission form */}
+                  {trend.evidence?.driving_generation && (
+                    <div>
+                      <span className="text-gray-600">Driving Generation: </span>
+                      <span className="font-medium text-gray-800">
+                        {trend.evidence.driving_generation === 'gen_alpha' ? '📱 Gen Alpha (9-14)' :
+                         trend.evidence.driving_generation === 'gen_z' ? '🎮 Gen Z (15-24)' :
+                         trend.evidence.driving_generation === 'millennials' ? '💻 Millennials (25-40)' :
+                         trend.evidence.driving_generation === 'gen_x' ? '💿 Gen X (40-55)' :
+                         trend.evidence.driving_generation === 'boomers' ? '📺 Boomers (55+)' : trend.evidence.driving_generation}
+                      </span>
+                    </div>
                   )}
-                  {trend.approve_count > 0 && trend.reject_count > 0 && (
-                    <span className="text-gray-400">/</span>
+                  {trend.evidence?.trend_origin && (
+                    <div>
+                      <span className="text-gray-600">Origin: </span>
+                      <span className="font-medium text-gray-800">
+                        {trend.evidence.trend_origin === 'organic' ? '🌱 Organic/User generated' :
+                         trend.evidence.trend_origin === 'influencer' ? '⭐ Influencer/Creator pushed' :
+                         trend.evidence.trend_origin === 'brand' ? '💼 Brand/Marketing campaign' :
+                         trend.evidence.trend_origin === 'ai_generated' ? '🤖 AI/Bot generated' : trend.evidence.trend_origin}
+                      </span>
+                    </div>
                   )}
-                  {trend.reject_count > 0 && (
-                    <span className="text-red-600 font-bold">👎 {trend.reject_count}</span>
+                  {trend.evidence?.evolution_status && (
+                    <div>
+                      <span className="text-gray-600">Evolution: </span>
+                      <span className="font-medium text-gray-800">
+                        {trend.evidence.evolution_status === 'original' ? '🧬 Original' :
+                         trend.evidence.evolution_status === 'variants' ? '🔄 Variants emerging' :
+                         trend.evidence.evolution_status === 'parody' ? '😂 Parody phase' :
+                         trend.evidence.evolution_status === 'meta' ? '🤯 Meta evolution' :
+                         trend.evidence.evolution_status === 'final' ? '🧟 Final form' : trend.evidence.evolution_status}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
-            )}
-            {trend.bounty_amount && trend.bounty_amount > 0 && (
-              <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
-                <div className="text-sm text-yellow-600 font-medium">Bounty</div>
-                <div className="text-2xl font-bold text-yellow-700">${trend.bounty_amount}</div>
+
+              {/* Creator Information */}
+              {(trend.creator_handle || trend.creator_name) && (
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                  <h4 className="text-md font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                    <UserIcon className="w-4 h-4" />
+                    Creator Info
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    {trend.creator_handle && (
+                      <div>
+                        <span className="text-purple-600">Handle: </span>
+                        <span className="font-medium text-purple-800">@{trend.creator_handle}</span>
+                      </div>
+                    )}
+                    {trend.creator_name && (
+                      <div>
+                        <span className="text-purple-600">Name: </span>
+                        <span className="font-medium text-purple-800">{trend.creator_name}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Origins & Demographics */}
+              {(trend.driving_generation || trend.trend_origin || trend.evolution_status) && (
+                <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-100">
+                  <h4 className="text-md font-semibold text-cyan-800 mb-3 flex items-center gap-2">
+                    <UsersIcon className="w-4 h-4" />
+                    Origins & Demographics
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    {trend.driving_generation && (
+                      <div>
+                        <span className="text-cyan-600">Driving Generation: </span>
+                        <span className="font-medium text-cyan-800">
+                          {trend.driving_generation === 'gen_alpha' ? '📱 Gen Alpha (9-14)' :
+                           trend.driving_generation === 'gen_z' ? '🎮 Gen Z (15-24)' :
+                           trend.driving_generation === 'millennials' ? '💻 Millennials (25-40)' :
+                           trend.driving_generation === 'gen_x' ? '💿 Gen X (40-55)' :
+                           trend.driving_generation === 'boomers' ? '📺 Boomers (55+)' : trend.driving_generation}
+                        </span>
+                      </div>
+                    )}
+                    {trend.trend_origin && (
+                      <div>
+                        <span className="text-cyan-600">Origin: </span>
+                        <span className="font-medium text-cyan-800">
+                          {trend.trend_origin === 'organic' ? '🌱 Organic/User generated' :
+                           trend.trend_origin === 'influencer' ? '🎭 Influencer/Creator pushed' :
+                           trend.trend_origin === 'brand' ? '🏢 Brand/Marketing campaign' :
+                           trend.trend_origin === 'ai_generated' ? '🤖 AI/Bot generated' : trend.trend_origin}
+                        </span>
+                      </div>
+                    )}
+                    {trend.evolution_status && (
+                      <div>
+                        <span className="text-cyan-600">Evolution: </span>
+                        <span className="font-medium text-cyan-800">
+                          {trend.evolution_status === 'original' ? '🧬 Original' :
+                           trend.evolution_status === 'variants' ? '🔄 Variants emerging' :
+                           trend.evolution_status === 'parody' ? '😂 Parody phase' :
+                           trend.evolution_status === 'meta' ? '🤯 Meta evolution' :
+                           trend.evolution_status === 'final' ? '🧟 Final form' : trend.evolution_status}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Original Description */}
+              {trend.description && trend.description !== '0' && (
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-3">Spotter Description</h4>
+                  <p className="text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4 text-sm">{trend.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {trend.wave_score && (
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                    <div className="text-xs text-blue-600 font-medium">Wave Score</div>
+                    <div className="text-lg font-bold text-blue-700">{Math.round(trend.wave_score * 10)}/100</div>
+                  </div>
+                )}
+                {trend.quality_score && trend.quality_score > 0 && (
+                  <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                    <div className="text-xs text-green-600 font-medium">Quality Score</div>
+                    <div className="text-lg font-bold text-green-700">{trend.quality_score}/10</div>
+                  </div>
+                )}
+                {trend.virality_prediction && trend.virality_prediction > 0 && (
+                  <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                    <div className="text-xs text-purple-600 font-medium">Virality</div>
+                    <div className="text-lg font-bold text-purple-700">{Math.round(trend.virality_prediction * 100)}%</div>
+                  </div>
+                )}
+                {trend.xp_amount && (
+                  <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
+                    <div className="text-xs text-yellow-600 font-medium">XP Earned</div>
+                    <div className="text-lg font-bold text-yellow-700">{trend.xp_amount}</div>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Trend Velocity & Size */}
+              {(trend.trend_velocity || trend.trend_size) && (
+                <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
+                  <h4 className="text-md font-semibold text-orange-800 mb-3 flex items-center gap-2">
+                    <TrendingUpIcon className="w-4 h-4" />
+                    Trend Dynamics
+                  </h4>
+                  <div className="space-y-2">
+                    {trend.trend_velocity && (
+                      <div>
+                        <span className="text-xs text-orange-600 font-medium">Velocity:</span>
+                        <span className="ml-2 inline-block px-3 py-1 text-sm font-medium bg-orange-100 text-orange-800 rounded-full capitalize">
+                          {trend.trend_velocity === 'just_starting' ? '🚶 Just Starting' :
+                           trend.trend_velocity === 'picking_up' ? '🚴 Picking Up' :
+                           trend.trend_velocity === 'viral' ? '🚀 Going Viral' :
+                           trend.trend_velocity === 'saturated' ? '🌊 Saturated' :
+                           trend.trend_velocity === 'declining' ? '📉 Declining' :
+                           trend.trend_velocity.replace('_', ' ')}
+                        </span>
+                      </div>
+                    )}
+                    {trend.trend_size && (
+                      <div>
+                        <span className="text-xs text-orange-600 font-medium">Expected Size:</span>
+                        <span className="ml-2 inline-block px-3 py-1 text-sm font-medium bg-orange-100 text-orange-800 rounded-full capitalize">
+                          {trend.trend_size === 'micro' ? '🔬 Micro (<10K)' :
+                           trend.trend_size === 'niche' ? '🎯 Niche (10K-100K)' :
+                           trend.trend_size === 'viral' ? '🔥 Viral (100K-1M)' :
+                           trend.trend_size === 'mega' ? '💥 Mega (1M-10M)' :
+                           trend.trend_size === 'global' ? '🌍 Global (10M+)' :
+                           trend.trend_size.replace('_', ' ')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Engagement Metrics */}
+              {(trend.likes_count || trend.comments_count || trend.views_count || trend.shares_count) && (
+                <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
+                  <h4 className="text-md font-semibold text-pink-800 mb-3 flex items-center gap-2">
+                    <HeartIcon className="w-4 h-4" />
+                    Engagement
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    {trend.likes_count && (
+                      <div className="flex items-center gap-2">
+                        <HeartIcon className="w-4 h-4 text-pink-600" />
+                        <span className="font-medium">{trend.likes_count.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {trend.comments_count && (
+                      <div className="flex items-center gap-2">
+                        <MessageCircleIcon className="w-4 h-4 text-pink-600" />
+                        <span className="font-medium">{trend.comments_count.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {trend.views_count && (
+                      <div className="flex items-center gap-2">
+                        <EyeIcon className="w-4 h-4 text-pink-600" />
+                        <span className="font-medium">{trend.views_count.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {trend.shares_count && (
+                      <div className="flex items-center gap-2">
+                        <ShareIcon className="w-4 h-4 text-pink-600" />
+                        <span className="font-medium">{trend.shares_count.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Hashtags */}
+              {trend.hashtags && trend.hashtags.length > 0 && (
+                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+                  <h4 className="text-md font-semibold text-indigo-800 mb-3 flex items-center gap-2">
+                    <HashIcon className="w-4 h-4" />
+                    Hashtags
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {trend.hashtags.slice(0, 8).map((tag, index) => (
+                      <span key={index} className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded">
+                        #{tag}
+                      </span>
+                    ))}
+                    {trend.hashtags.length > 8 && (
+                      <span className="px-2 py-1 text-xs text-indigo-600">
+                        +{trend.hashtags.length - 8} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Validation Status */}
+              {((trend.approve_count > 0) || (trend.reject_count > 0)) && (
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <AwardIcon className="w-4 h-4" />
+                    Validation Votes
+                  </h4>
+                  <div className="flex items-center gap-4">
+                    {trend.approve_count > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">👍</span>
+                        <span className="font-bold text-green-600">{trend.approve_count}</span>
+                      </div>
+                    )}
+                    {trend.reject_count > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">👎</span>
+                        <span className="font-bold text-red-600">{trend.reject_count}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Original Link */}
-          {trend.evidence?.post_url && (
-            <div className="mb-4">
+          {/* Action Bar */}
+          <div className="mt-6 pt-6 border-t border-gray-200 flex items-center justify-between">
+            {/* Original Link */}
+            {(trend.evidence?.post_url || trend.post_url) && (
               <a 
-                href={trend.evidence.post_url}
+                href={trend.evidence?.post_url || trend.post_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -222,27 +506,27 @@ export default function Timeline() {
                 <ExternalLinkIcon className="w-4 h-4" />
                 View Original Post
               </a>
-            </div>
-          )}
+            )}
 
-          {/* Dates */}
-          <div className="text-sm text-gray-500">
-            <p>Submitted: {new Date(trend.created_at).toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}</p>
-            {trend.validated_at && (
-              <p>Validated: {new Date(trend.validated_at).toLocaleDateString('en-US', { 
+            {/* Dates */}
+            <div className="text-xs text-gray-500 text-right">
+              <p>Submitted: {new Date(trend.created_at).toLocaleDateString('en-US', { 
                 year: 'numeric', 
-                month: 'long', 
+                month: 'short', 
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
               })}</p>
-            )}
+              {trend.validated_at && (
+                <p>Validated: {new Date(trend.validated_at).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</p>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -319,6 +603,19 @@ export default function Timeline() {
       };
     }
   }, [user, authLoading, router]);
+
+  // Listen for XP events to refresh timeline XP display
+  useEffect(() => {
+    const handleXPEarned = () => {
+      if (user) {
+        // Just refresh the XP data, not all trends
+        fetchUserTrends(false);
+      }
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned);
+    return () => window.removeEventListener('xp-earned', handleXPEarned);
+  }, [user]);
 
   const fetchUserTrends = async (showRefreshAnimation = false) => {
     try {
@@ -633,26 +930,39 @@ export default function Timeline() {
     }
 
     try {
-      // Use the submission service
-      const submissionService = TrendSubmissionService.getInstance();
-      const result = await submissionService.submitTrend(trendData, user.id);
+      // Add timeout to prevent hanging (15 seconds)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Submission timeout - please try again')), 15000)
+      );
       
-      if (result.success) {
+      // Use the proper submitTrend function with XP calculation
+      console.log('📊 About to submit trend with data:', trendData);
+      const result = await Promise.race([
+        submitTrend(user.id, trendData),
+        timeoutPromise
+      ]) as any;
+      
+      console.log('📊 Submit result:', result);
+      
+      if (result && result.success) {
         // Close form and refresh trends
         setShowSubmitForm(false);
         await fetchUserTrends();
         
-        // Show XP notification (default 10 XP for submissions)
-        const xpEarned = 10;
+        // Show XP notification with calculated amount
+        const xpEarned = result.earnings || 10;
+        const xpBreakdown = result.xpBreakdown || [];
+        
+        console.log('🎯 Showing XP notification:', { xpEarned, xpBreakdown });
         showXPNotification(
           xpEarned, 
           `You earned ${xpEarned} XP`, 
           'submission',
           WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
-          WAVESIGHT_MESSAGES.VALIDATION_BONUS
+          xpBreakdown.length > 0 ? xpBreakdown.join(' • ') : WAVESIGHT_MESSAGES.VALIDATION_BONUS
         );
+        console.log('✅ XP notification called');
         
-        // XP will be awarded automatically
         setError('');
         return result.data;
       } else {
@@ -691,6 +1001,13 @@ export default function Timeline() {
     } catch (error: any) {
       // If main service throws, try fallback
       console.error('Main service error:', error);
+      
+      // Check for timeout error first
+      if (error.message?.includes('timeout')) {
+        showError('Submission Timeout', 'The submission is taking too long. Please check your connection and try again.');
+        return;
+      }
+      
       console.log('Attempting fallback submission...');
       
       try {
@@ -1115,27 +1432,27 @@ export default function Timeline() {
                           )}
 
                           {/* Engagement Stats - Only show if has values */}
-                          {((trend.likes_count && trend.likes_count > 0) || (trend.comments_count && trend.comments_count > 0) || (trend.shares_count && trend.shares_count > 0) || (trend.views_count && trend.views_count > 0)) && (
+                          {((trend.likes_count > 0) || (trend.comments_count > 0) || (trend.shares_count > 0) || (trend.views_count > 0)) && (
                             <div className="flex items-center gap-4 mb-4">
-                              {trend.likes_count && trend.likes_count > 0 && (
+                              {trend.likes_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <HeartIcon className="w-4 h-4 text-red-500" />
                                   <p className="text-xs text-gray-600">{formatEngagement(trend.likes_count)}</p>
                                 </div>
                               )}
-                              {trend.comments_count && trend.comments_count > 0 && (
+                              {trend.comments_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <MessageCircleIcon className="w-4 h-4 text-blue-500" />
                                   <p className="text-xs text-gray-600">{formatEngagement(trend.comments_count)}</p>
                                 </div>
                               )}
-                              {trend.shares_count && trend.shares_count > 0 && (
+                              {trend.shares_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <ShareIcon className="w-4 h-4 text-green-500" />
                                   <p className="text-xs text-gray-600">{formatEngagement(trend.shares_count)}</p>
                                 </div>
                               )}
-                              {trend.views_count && trend.views_count > 0 && (
+                              {trend.views_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <EyeIcon className="w-4 h-4 text-purple-500" />
                                   <p className="text-xs text-gray-600">{formatEngagement(trend.views_count)}</p>
@@ -1252,7 +1569,7 @@ export default function Timeline() {
                             {/* Validation & Status Row */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
+                                {((trend.approve_count > 0) || (trend.reject_count > 0)) && (
                                   <div className="flex items-center gap-1.5 text-xs bg-white rounded-lg px-2 py-1 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
                                     {trend.approve_count > 0 && (
                                       <span className="text-green-600 font-medium">👍 {trend.approve_count}</span>
@@ -1409,27 +1726,27 @@ export default function Timeline() {
                             )}
 
                             {/* Only show engagement stats if they have values */}
-                            {((trend.likes_count && trend.likes_count > 0) || (trend.comments_count && trend.comments_count > 0) || (trend.shares_count && trend.shares_count > 0) || (trend.views_count && trend.views_count > 0)) && (
+                            {((trend.likes_count > 0) || (trend.comments_count > 0) || (trend.shares_count > 0) || (trend.views_count > 0)) && (
                               <div className="flex items-center gap-6 mb-3">
-                                {trend.likes_count && trend.likes_count > 0 && (
+                                {trend.likes_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <HeartIcon className="w-4 h-4 text-red-500" />
                                     <span>{formatEngagement(trend.likes_count)}</span>
                                   </div>
                                 )}
-                                {trend.comments_count && trend.comments_count > 0 && (
+                                {trend.comments_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <MessageCircleIcon className="w-4 h-4 text-blue-600" />
                                     <span>{formatEngagement(trend.comments_count)}</span>
                                   </div>
                                 )}
-                                {trend.shares_count && trend.shares_count > 0 && (
+                                {trend.shares_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <ShareIcon className="w-4 h-4 text-green-600" />
                                     <span>{formatEngagement(trend.shares_count)}</span>
                                   </div>
                                 )}
-                                {trend.views_count && trend.views_count > 0 && (
+                                {trend.views_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <EyeIcon className="w-4 h-4 text-purple-600" />
                                     <span>{formatEngagement(trend.views_count)}</span>
@@ -1480,7 +1797,7 @@ export default function Timeline() {
                             
                             {/* Voting and Status */}
                             <div className="flex flex-wrap items-center gap-3 mb-3">
-                              {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
+                              {((trend.approve_count > 0) || (trend.reject_count > 0)) && (
                                 <div className="flex items-center gap-2 bg-gray-50/60 rounded-lg px-3 py-1.5 border border-gray-200/50">
                                   {trend.approve_count > 0 && (
                                     <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count}</span>
@@ -1764,15 +2081,15 @@ export default function Timeline() {
                                                 </div>
 
                                                 {/* Engagement Stats */}
-                                                {((trend.likes_count && trend.likes_count > 0) || (trend.views_count && trend.views_count > 0)) && (
+                                                {((trend.likes_count > 0) || (trend.views_count > 0)) && (
                                                   <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
-                                                    {trend.likes_count && trend.likes_count > 0 && (
+                                                    {trend.likes_count > 0 && (
                                                       <div className="flex items-center gap-0.5">
                                                         <HeartIcon className="w-3 h-3 text-red-500" />
                                                         <span>{formatEngagement(trend.likes_count)}</span>
                                                       </div>
                                                     )}
-                                                    {trend.views_count && trend.views_count > 0 && (
+                                                    {trend.views_count > 0 && (
                                                       <div className="flex items-center gap-0.5">
                                                         <EyeIcon className="w-3 h-3 text-purple-600" />
                                                         <span>{formatEngagement(trend.views_count)}</span>

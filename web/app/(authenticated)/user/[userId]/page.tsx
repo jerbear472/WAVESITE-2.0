@@ -124,6 +124,20 @@ export default function UserProfilePage() {
     }
   }, [userId]);
 
+  // Listen for XP events to refresh stats in real-time
+  useEffect(() => {
+    const handleXPEarned = (event: CustomEvent) => {
+      // Only refresh if it's for the current viewed user
+      if (userId) {
+        console.log('XP event detected, refreshing user stats...');
+        fetchUserData();
+      }
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned as EventListener);
+    return () => window.removeEventListener('xp-earned', handleXPEarned as EventListener);
+  }, [userId]);
+
   const fetchUserData = async (showRefreshAnimation = false) => {
     try {
       if (showRefreshAnimation) setRefreshing(true);
@@ -140,12 +154,45 @@ export default function UserProfilePage() {
         setUserProfile(profileData);
       }
 
-      // Fetch XP summary for accurate level and XP
+      // Fetch XP data - try multiple sources for accuracy
       const { data: xpSummary } = await supabase
         .from('user_xp_summary')
         .select('total_xp, level, level_title')
         .eq('user_id', userId)
         .single();
+
+      // Fallback: Get XP from user_xp table if summary doesn't exist
+      let totalXP = 0;
+      let level = 1;
+      let levelTitle = 'Observer';
+
+      if (xpSummary) {
+        totalXP = xpSummary.total_xp || 0;
+        level = xpSummary.level || 1;
+        levelTitle = xpSummary.level_title || 'Observer';
+      } else {
+        // Try user_xp table as fallback
+        const { data: userXP } = await supabase
+          .from('user_xp')
+          .select('total_xp')
+          .eq('user_id', userId)
+          .single();
+        
+        if (userXP) {
+          totalXP = userXP.total_xp || 0;
+          // Calculate level from XP
+          const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500, 6600, 8000, 10000, 12500, 15000];
+          const levelTitles = ['Observer', 'Spotter', 'Tracker', 'Scout', 'Hunter', 'Analyst', 'Expert', 'Master', 'Prophet', 'Oracle', 'Sage', 'Visionary', 'Legend', 'Mythic', 'Eternal', 'Apex'];
+          
+          for (let i = levelThresholds.length - 1; i >= 0; i--) {
+            if (totalXP >= levelThresholds[i]) {
+              level = i + 1;
+              levelTitle = levelTitles[i] || 'Observer';
+              break;
+            }
+          }
+        }
+      }
 
       // Fetch user trends
       const { data: trendsData, error: trendsError } = await supabase
@@ -157,18 +204,48 @@ export default function UserProfilePage() {
       if (!trendsError && trendsData) {
         setUserTrends(trendsData);
         
-        // Calculate stats
-        const approvedTrends = trendsData.filter(t => t.status === 'approved').length;
-        const viralTrends = trendsData.filter(t => t.stage === 'viral').length;
+        // Calculate stats with proper status checking
+        // Approved includes: 'approved', 'trending', 'viral', 'peaked'
+        const approvedStatuses = ['approved', 'trending', 'viral', 'peaked'];
+        const approvedTrends = trendsData.filter(t => 
+          approvedStatuses.includes(t.status) || 
+          (t.validation_count >= 3 && t.approve_count > t.reject_count)
+        ).length;
+        
+        const viralTrends = trendsData.filter(t => 
+          t.stage === 'viral' || 
+          t.wave_score >= 80 ||
+          (t.views_count && t.views_count > 100000)
+        ).length;
+        
+        // Calculate approval rate
+        const validatedTrends = trendsData.filter(t => 
+          t.status !== 'submitted' && t.status !== 'validating'
+        ).length;
+        
+        const approvalRate = validatedTrends > 0 
+          ? Math.round((approvedTrends / validatedTrends) * 100)
+          : 0;
         
         setUserStats({
           total_trends: trendsData.length,
-          total_xp: xpSummary?.total_xp || 0,
+          total_xp: totalXP,
           approved_trends: approvedTrends,
           viral_trends: viralTrends,
-          approval_rate: trendsData.length > 0 ? (approvedTrends / trendsData.length) * 100 : 0,
-          level: xpSummary?.level || 1,
-          level_title: xpSummary?.level_title || 'Observer'
+          approval_rate: approvalRate,
+          level: level,
+          level_title: levelTitle
+        });
+
+        console.log('📊 User Stats Calculated:', {
+          userId,
+          totalTrends: trendsData.length,
+          approvedTrends,
+          viralTrends,
+          approvalRate,
+          totalXP,
+          level,
+          levelTitle
         });
       }
     } catch (error) {
@@ -462,10 +539,10 @@ export default function UserProfilePage() {
                     <AwardIcon className="w-4 h-4 text-amber-500" />
                   </div>
                   <p className="text-2xl font-bold text-gray-800">
-                    {Math.round(userStats.approval_rate)}%
+                    {userStats.total_trends > 0 ? `${userStats.approval_rate}%` : 'N/A'}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {userStats.approved_trends} of {userStats.total_trends}
+                    {userStats.approved_trends} approved
                   </p>
                 </motion.div>
               </div>
