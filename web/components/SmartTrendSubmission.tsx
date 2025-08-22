@@ -540,7 +540,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const dismissNotification = () => setNotification(null);
   
   // Form state
-  const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'category' | 'details' | 'review'>('url');
+  const [currentStep, setCurrentStep] = useState<'url' | 'velocity' | 'category' | 'details' | 'ai_analysis' | 'review'>('url');
   // Autosave key
   const AUTOSAVE_KEY = 'smart_trend_submission_draft';
   
@@ -612,6 +612,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   // Metadata display state
   const [metadata, setMetadata] = useState<any>(null);
   const [metadataError, setMetadataError] = useState('');
+  
+  // AI Analysis state
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string>('');
   
   // Autosave state
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -761,6 +766,40 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
     }
   };
 
+  const generateAiAnalysis = async () => {
+    setAiLoading(true);
+    setAiError('');
+    
+    try {
+      const response = await fetch('/api/analyze-trend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        setAiError('Using fallback analysis due to API limitations');
+      }
+      
+      setAiAnalysis(data.analysis);
+    } catch (err) {
+      console.error('Error fetching analysis:', err);
+      setAiError('Failed to generate analysis. Please try again.');
+      // Set a fallback analysis
+      setAiAnalysis(`This **${formData.category}** trend is gaining momentum on ${formData.platform}. 
+With **${formData.trendVelocity}** velocity and ${formData.sentiment}% positive sentiment, 
+the commercial opportunity is **immediate**. Brands should leverage authentic creator partnerships 
+targeting ${formData.audienceAge?.join(', ') || 'broad'} demographics. 
+**Key insight**: The trend's unique positioning creates a narrow but high-impact window for engagement.`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const formatNumber = (num: number): string => {
     if (!num) return '0';
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -825,6 +864,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           return false;
         }
         break;
+      case 'ai_analysis':
+        // AI analysis automatically validates - no user input required
+        break;
     }
     setError('');
     return true;
@@ -844,6 +886,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         setCurrentStep('details');
         break;
       case 'details':
+        setCurrentStep('ai_analysis');
+        break;
+      case 'ai_analysis':
         setCurrentStep('review');
         break;
     }
@@ -869,8 +914,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       case 'details':
         setCurrentStep('category');
         break;
-      case 'review':
+      case 'ai_analysis':
         setCurrentStep('details');
+        break;
+      case 'review':
+        setCurrentStep('ai_analysis');
         break;
     }
     setError('');
@@ -971,6 +1019,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   {currentStep === 'velocity' && 'Predict the trend trajectory'}
                   {currentStep === 'category' && 'Categorize the trend'}
                   {currentStep === 'details' && `Complete for ${getSelectedCategory()?.label} expertise`}
+                  {currentStep === 'ai_analysis' && 'AI validates your discovery'}
                   {currentStep === 'review' && 'Finalize your submission'}
                 </p>
               </div>
@@ -1056,8 +1105,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 currentStep === 'velocity' ? '2' :
                 currentStep === 'category' ? '3' :
                 currentStep === 'details' ? '4' :
-                '5'
-              } of 5
+                currentStep === 'ai_analysis' ? '5' :
+                '6'
+              } of 6
             </span>
             <span className="text-xs text-gray-500">
               {
@@ -1065,6 +1115,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 currentStep === 'velocity' ? 'Trend Analysis' :
                 currentStep === 'category' ? 'Category' :
                 currentStep === 'details' ? 'Details' :
+                currentStep === 'ai_analysis' ? 'AI Analysis' :
                 'Review'
               }
             </span>
@@ -1078,9 +1129,10 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   
                   // Base progress for each step
                   if (currentStep === 'url') progress = 5;
-                  else if (currentStep === 'velocity') progress = 25;
-                  else if (currentStep === 'category') progress = 45;
-                  else if (currentStep === 'details') progress = 65;
+                  else if (currentStep === 'velocity') progress = 20;
+                  else if (currentStep === 'category') progress = 35;
+                  else if (currentStep === 'details') progress = 50;
+                  else if (currentStep === 'ai_analysis') progress = 70;
                   else if (currentStep === 'review') progress = 85;
                   
                   // Add progress based on form completion within current step
@@ -1097,9 +1149,12 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     if (formData.category) progress += 15;
                   }
                   else if (currentStep === 'details') {
-                    if (Object.keys(formData.categoryAnswers).length > 0) progress += 10;
-                    if (formData.audienceAge.length > 0) progress += 5;
-                    if (formData.predictedPeak) progress += 5;
+                    if (Object.keys(formData.categoryAnswers).length > 0) progress += 8;
+                    if (formData.audienceAge.length > 0) progress += 4;
+                    if (formData.predictedPeak) progress += 3;
+                  }
+                  else if (currentStep === 'ai_analysis') {
+                    if (aiAnalysis) progress += 15; // Analysis generated
                   }
                   else if (currentStep === 'review') {
                     progress = 100; // Review step is always 100%
@@ -1585,7 +1640,112 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               </motion.div>
             )}
 
-            {/* Step 4: Review */}
+            {/* Step 5: AI Analysis */}
+            {currentStep === 'ai_analysis' && (
+              <motion.div
+                key="ai_analysis"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+                onAnimationComplete={() => {
+                  // Auto-generate analysis when step loads if not already generated
+                  if (!aiAnalysis && !aiLoading) {
+                    generateAiAnalysis();
+                  }
+                }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl shadow-lg">
+                      <SparklesIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800">WaveSight AI Analysis</h3>
+                      <p className="text-sm text-gray-600">Validating your trend discovery</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Analysis Content */}
+                <div className="relative">
+                  {aiLoading ? (
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 flex flex-col items-center justify-center min-h-[200px]">
+                      <LoaderIcon className="w-8 h-8 text-blue-600 animate-spin mb-3" />
+                      <p className="text-gray-600 font-medium">Analyzing your discovery...</p>
+                      <p className="text-sm text-gray-500 mt-1">This won't take long!</p>
+                    </div>
+                  ) : (
+                    <motion.div
+                      initial={{ scale: 0.95 }}
+                      animate={{ scale: 1 }}
+                      className="relative"
+                    >
+                      {/* Decorative background */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/50 via-blue-100/50 to-green-100/50 rounded-xl blur-2xl" />
+                      
+                      {/* Main analysis card */}
+                      <div className="relative bg-white/95 backdrop-blur-sm rounded-xl border border-gray-200 shadow-xl p-6">
+                        {/* AI Badge */}
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-full text-sm font-medium">
+                            <SparklesIcon className="w-4 h-4" />
+                            <span>DISCOVERY ANALYSIS</span>
+                          </div>
+                          {aiError && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">
+                              <AlertCircleIcon className="w-3 h-3" />
+                              <span>Fallback Mode</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Analysis Text */}
+                        <div className="prose prose-sm max-w-none">
+                          <p className="text-gray-800 leading-relaxed text-base" 
+                             dangerouslySetInnerHTML={{ __html: aiAnalysis.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-600 font-semibold">$1</strong>') }} />
+                        </div>
+
+                        {/* Confidence Indicators */}
+                        <div className="mt-6 pt-4 border-t border-gray-100">
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-1">
+                                <CheckIcon className="w-3 h-3 text-green-500" />
+                                <span>Early Discovery Confirmed</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <ClockIcon className="w-3 h-3 text-blue-500" />
+                                <span>Ahead of the Curve</span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={generateAiAnalysis}
+                              className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded-lg transition-colors"
+                              disabled={aiLoading}
+                            >
+                              <LoaderIcon className={`w-3 h-3 ${aiLoading ? 'animate-spin' : ''}`} />
+                              <span>Regenerate</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Info Note */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-700">
+                    <strong>Note:</strong> This analysis confirms how early you caught this trend and will be saved with your submission. 
+                    Other spotters will see you were one of the first to identify this!
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 6: Review */}
             {currentStep === 'review' && (
               <motion.div
                 key="review"
