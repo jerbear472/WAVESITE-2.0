@@ -1442,27 +1442,27 @@ export default function Timeline() {
                           )}
 
                           {/* Engagement Stats - Only show if has values */}
-                          {((trend.likes_count > 0) || (trend.comments_count > 0) || (trend.shares_count > 0) || (trend.views_count > 0)) && (
+                          {((trend.likes_count && trend.likes_count > 0) || (trend.comments_count && trend.comments_count > 0) || (trend.shares_count && trend.shares_count > 0) || (trend.views_count && trend.views_count > 0)) && (
                             <div className="flex items-center gap-4 mb-4">
-                              {trend.likes_count > 0 && (
+                              {trend.likes_count && trend.likes_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <HeartIcon className="w-4 h-4 text-red-500" />
                                   <p className="text-xs text-gray-600">{formatEngagement(trend.likes_count)}</p>
                                 </div>
                               )}
-                              {trend.comments_count > 0 && (
+                              {trend.comments_count && trend.comments_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <MessageCircleIcon className="w-4 h-4 text-blue-500" />
                                   <p className="text-xs text-gray-600">{formatEngagement(trend.comments_count)}</p>
                                 </div>
                               )}
-                              {trend.shares_count > 0 && (
+                              {trend.shares_count && trend.shares_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <ShareIcon className="w-4 h-4 text-green-500" />
                                   <p className="text-xs text-gray-600">{formatEngagement(trend.shares_count)}</p>
                                 </div>
                               )}
-                              {trend.views_count > 0 && (
+                              {trend.views_count && trend.views_count > 0 && (
                                 <div className="flex items-center gap-1">
                                   <EyeIcon className="w-4 h-4 text-purple-500" />
                                   <p className="text-xs text-gray-600">{formatEngagement(trend.views_count)}</p>
@@ -1736,27 +1736,27 @@ export default function Timeline() {
                             )}
 
                             {/* Only show engagement stats if they have values */}
-                            {((trend.likes_count > 0) || (trend.comments_count > 0) || (trend.shares_count > 0) || (trend.views_count > 0)) && (
+                            {((trend.likes_count && trend.likes_count > 0) || (trend.comments_count && trend.comments_count > 0) || (trend.shares_count && trend.shares_count > 0) || (trend.views_count && trend.views_count > 0)) && (
                               <div className="flex items-center gap-6 mb-3">
-                                {trend.likes_count > 0 && (
+                                {trend.likes_count && trend.likes_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <HeartIcon className="w-4 h-4 text-red-500" />
                                     <span>{formatEngagement(trend.likes_count)}</span>
                                   </div>
                                 )}
-                                {trend.comments_count > 0 && (
+                                {trend.comments_count && trend.comments_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <MessageCircleIcon className="w-4 h-4 text-blue-600" />
                                     <span>{formatEngagement(trend.comments_count)}</span>
                                   </div>
                                 )}
-                                {trend.shares_count > 0 && (
+                                {trend.shares_count && trend.shares_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <ShareIcon className="w-4 h-4 text-green-600" />
                                     <span>{formatEngagement(trend.shares_count)}</span>
                                   </div>
                                 )}
-                                {trend.views_count > 0 && (
+                                {trend.views_count && trend.views_count > 0 && (
                                   <div className="flex items-center gap-1 text-sm text-gray-600">
                                     <EyeIcon className="w-4 h-4 text-purple-600" />
                                     <span>{formatEngagement(trend.views_count)}</span>
@@ -2091,15 +2091,15 @@ export default function Timeline() {
                                                 </div>
 
                                                 {/* Engagement Stats */}
-                                                {((trend.likes_count > 0) || (trend.views_count > 0)) && (
+                                                {((trend.likes_count && trend.likes_count > 0) || (trend.views_count && trend.views_count > 0)) && (
                                                   <div className="flex items-center gap-2 mb-2 text-xs text-gray-600">
-                                                    {trend.likes_count > 0 && (
+                                                    {trend.likes_count && trend.likes_count > 0 && (
                                                       <div className="flex items-center gap-0.5">
                                                         <HeartIcon className="w-3 h-3 text-red-500" />
                                                         <span>{formatEngagement(trend.likes_count)}</span>
                                                       </div>
                                                     )}
-                                                    {trend.views_count > 0 && (
+                                                    {trend.views_count && trend.views_count > 0 && (
                                                       <div className="flex items-center gap-0.5">
                                                         <EyeIcon className="w-3 h-3 text-purple-600" />
                                                         <span>{formatEngagement(trend.views_count)}</span>
