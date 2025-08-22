@@ -14,9 +14,6 @@ import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
-import EnhancedTrendTile from '@/components/EnhancedTrendTile';
-import LazyTrendTile from '@/components/LazyTrendTile';
-import TrendDetailModal from '@/components/TrendDetailModal';
 // Removed formatCurrency import - using XP display instead
 import { 
   TrendingUp as TrendingUpIcon,
@@ -104,8 +101,153 @@ export default function Timeline() {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [totalXP, setTotalXP] = useState(0);
   const [selectedTrend, setSelectedTrend] = useState<Trend | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const router = useRouter();
+
+  // Simple trend detail modal component
+  const TrendDetailModal = ({ trend, onClose }: { trend: Trend, onClose: () => void }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+      >
+        {/* Header */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                {trend.evidence?.title || 'Trend Analysis'}
+              </h2>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
+                <span>•</span>
+                <span className="capitalize">{trend.status}</span>
+                {trend.stage && (
+                  <>
+                    <span>•</span>
+                    <span className="capitalize">{trend.stage}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          {/* AI Description */}
+          {trend.evidence?.ai_description && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <SparklesIcon className="w-5 h-5 text-blue-500" />
+                AI Analysis
+              </h3>
+              <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                <p className="text-gray-700 leading-relaxed">{trend.evidence.ai_description}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Original Description */}
+          {trend.description && trend.description !== '0' && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+              <p className="text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4">{trend.description}</p>
+            </div>
+          )}
+
+          {/* Metrics */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {trend.quality_score && trend.quality_score > 0 && (
+              <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                <div className="text-sm text-green-600 font-medium">Quality Score</div>
+                <div className="text-2xl font-bold text-green-700">{trend.quality_score}/10</div>
+              </div>
+            )}
+            {trend.virality_prediction && trend.virality_prediction > 0 && (
+              <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                <div className="text-sm text-purple-600 font-medium">Virality Prediction</div>
+                <div className="text-2xl font-bold text-purple-700">{Math.round(trend.virality_prediction * 100)}%</div>
+              </div>
+            )}
+            {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="text-sm text-gray-600 font-medium">Validation Votes</div>
+                <div className="flex items-center gap-2 mt-1">
+                  {trend.approve_count > 0 && (
+                    <span className="text-green-600 font-bold">👍 {trend.approve_count}</span>
+                  )}
+                  {trend.approve_count > 0 && trend.reject_count > 0 && (
+                    <span className="text-gray-400">/</span>
+                  )}
+                  {trend.reject_count > 0 && (
+                    <span className="text-red-600 font-bold">👎 {trend.reject_count}</span>
+                  )}
+                </div>
+              </div>
+            )}
+            {trend.bounty_amount && trend.bounty_amount > 0 && (
+              <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
+                <div className="text-sm text-yellow-600 font-medium">Bounty</div>
+                <div className="text-2xl font-bold text-yellow-700">${trend.bounty_amount}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Original Link */}
+          {trend.evidence?.post_url && (
+            <div className="mb-4">
+              <a 
+                href={trend.evidence.post_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <ExternalLinkIcon className="w-4 h-4" />
+                View Original Post
+              </a>
+            </div>
+          )}
+
+          {/* Dates */}
+          <div className="text-sm text-gray-500">
+            <p>Submitted: {new Date(trend.created_at).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}</p>
+            {trend.validated_at && (
+              <p>Validated: {new Date(trend.validated_at).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
 
   // Use navigation refresh hook to reload data on route changes
   useNavigationRefresh(() => {
@@ -824,28 +966,8 @@ export default function Timeline() {
           </motion.div>
         ) : (
           <>
-            {/* Grid View - Using Enhanced Trend Tiles */}
+            {/* Grid View */}
             {viewMode === 'grid' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <AnimatePresence mode="popLayout">
-                  {filteredTrends.map((trend, index) => (
-                    <LazyTrendTile
-                      key={trend.id}
-                      trend={trend}
-                      animationDelay={index * 0.1}
-                      viewMode="grid"
-                      onExpand={() => {
-                        setSelectedTrend(trend);
-                        setShowDetailModal(true);
-                      }}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Original Grid View (Hidden) */}
-            {viewMode === 'grid-old' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                   {filteredTrends.map((trend, index) => {
@@ -861,7 +983,10 @@ export default function Timeline() {
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       
-                      <div className="relative bg-white/95 backdrop-blur-md rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-all duration-300">
+                      <div 
+                        className="relative bg-white/95 backdrop-blur-md rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-xl transition-all duration-300 shadow-lg cursor-pointer"
+                        onClick={() => setSelectedTrend(trend)}
+                      >
                         {/* Thumbnail */}
                         <div className="relative h-48 bg-gray-100 overflow-hidden">
                           {(trend.thumbnail_url || trend.screenshot_url || trend.post_url) ? (
@@ -904,9 +1029,9 @@ export default function Timeline() {
                                 <span className="capitalize">{trend.status}</span>
                               </div>
                               {trend.stage && (
-                                <div className={`flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium shadow-lg border border-gray-200 ${
-                                  trend.stage === 'viral' ? 'text-red-600' :
-                                  trend.stage === 'trending' ? 'text-green-600' :
+                                <div className={`flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium shadow-lg border border-gray-200 hover:scale-105 transition-transform duration-200 ${
+                                  trend.stage === 'viral' ? 'text-red-600 animate-bounce' :
+                                  trend.stage === 'trending' ? 'text-green-600 animate-pulse' :
                                   trend.stage === 'validating' ? 'text-blue-600' :
                                   trend.stage === 'declining' ? 'text-orange-600' :
                                   'text-gray-600'
@@ -927,7 +1052,7 @@ export default function Timeline() {
 
                             {/* Category Badge */}
                             <div className="absolute bottom-3 left-3">
-                              <div className="flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-gray-700 text-xs border border-gray-200">
+                              <div className="flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-gray-700 text-xs border border-gray-200 hover:bg-white transition-colors duration-200">
                                 <span className="text-base">{getCategoryEmoji(trend.category)}</span>
                                 <span>{getCategoryLabel(trend.category)}</span>
                               </div>
@@ -955,7 +1080,7 @@ export default function Timeline() {
                                 <UserIcon className="w-4 h-4 text-blue-600" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                {trend.creator_handle && trend.evidence?.platform ? (
+                                {trend.creator_handle && trend.creator_handle !== '0' && trend.evidence?.platform ? (
                                   <a 
                                     href={getCreatorProfileUrl(trend.evidence.platform, trend.creator_handle)}
                                     target="_blank"
@@ -967,7 +1092,7 @@ export default function Timeline() {
                                   </a>
                                 ) : (
                                   <p className="text-sm font-medium text-gray-700 truncate">
-                                    {trend.creator_handle || trend.creator_name}
+                                    {(trend.creator_handle && trend.creator_handle !== '0') ? trend.creator_handle : (trend.creator_name && trend.creator_name !== '0') ? trend.creator_name : ''}
                                   </p>
                                 )}
                                 <p className="text-xs text-gray-400" title={formatFullDate(trend.created_at)}>
@@ -1128,14 +1253,14 @@ export default function Timeline() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
-                                  <div className="flex items-center gap-1.5 text-xs bg-white rounded-lg px-2 py-1 border border-gray-200">
-                                    {trend.approve_count && trend.approve_count > 0 && (
+                                  <div className="flex items-center gap-1.5 text-xs bg-white rounded-lg px-2 py-1 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                    {trend.approve_count > 0 && (
                                       <span className="text-green-600 font-medium">👍 {trend.approve_count}</span>
                                     )}
-                                    {trend.approve_count && trend.approve_count > 0 && trend.reject_count && trend.reject_count > 0 && (
+                                    {trend.approve_count > 0 && trend.reject_count > 0 && (
                                       <span className="text-gray-400">·</span>
                                     )}
-                                    {trend.reject_count && trend.reject_count > 0 && (
+                                    {trend.reject_count > 0 && (
                                       <span className="text-red-500 font-medium">👎 {trend.reject_count}</span>
                                     )}
                                   </div>
@@ -1152,7 +1277,7 @@ export default function Timeline() {
                                 )}
                               </div>
                               
-                              {trend.xp_amount > 0 && (
+                              {trend.xp_amount && trend.xp_amount > 0 && (
                                 <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${
                                   trend.xp_awarded 
                                     ? 'bg-green-100 text-green-600 border-green-200' 
@@ -1191,28 +1316,8 @@ export default function Timeline() {
               </div>
             )}
 
-            {/* List View - Using Enhanced Trend Tiles */}
+            {/* List View */}
             {viewMode === 'list' && (
-              <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                  {filteredTrends.map((trend, index) => (
-                    <LazyTrendTile
-                      key={trend.id}
-                      trend={trend}
-                      animationDelay={index * 0.05}
-                      viewMode="list"
-                      onExpand={() => {
-                        setSelectedTrend(trend);
-                        setShowDetailModal(true);
-                      }}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {/* Original List View (Hidden) */}
-            {viewMode === 'list-old' && (
               <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {filteredTrends.map((trend, index) => {
@@ -1225,7 +1330,10 @@ export default function Timeline() {
                       transition={{ delay: index * 0.05 }}
                       className="group"
                     >
-                      <div className="relative bg-white/95 backdrop-blur-md rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-300 shadow-lg hover:shadow-xl">
+                      <div 
+                        className="relative bg-white/95 backdrop-blur-md rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer"
+                        onClick={() => setSelectedTrend(trend)}
+                      >
                         <div className="flex items-start gap-4">
                           {/* Thumbnail */}
                           {(trend.thumbnail_url || trend.screenshot_url) && (
@@ -1263,7 +1371,7 @@ export default function Timeline() {
                                   {(trend.creator_handle || trend.creator_name) && (
                                     <span className="flex items-center gap-1">
                                       <UserIcon className="w-3 h-3" />
-                                      {trend.creator_handle && trend.evidence?.platform ? (
+                                      {trend.creator_handle && trend.creator_handle !== '0' && trend.evidence?.platform ? (
                                         <a 
                                           href={getCreatorProfileUrl(trend.evidence.platform, trend.creator_handle)}
                                           target="_blank"
@@ -1274,7 +1382,7 @@ export default function Timeline() {
                                           {trend.creator_handle}
                                         </a>
                                       ) : (
-                                        trend.creator_handle || trend.creator_name
+                                        (trend.creator_handle && trend.creator_handle !== '0') ? trend.creator_handle : (trend.creator_name && trend.creator_name !== '0') ? trend.creator_name : ''
                                       )}
                                     </span>
                                   )}
@@ -1374,13 +1482,13 @@ export default function Timeline() {
                             <div className="flex flex-wrap items-center gap-3 mb-3">
                               {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
                                 <div className="flex items-center gap-2 bg-gray-50/60 rounded-lg px-3 py-1.5 border border-gray-200/50">
-                                  {trend.approve_count && trend.approve_count > 0 && (
+                                  {trend.approve_count > 0 && (
                                     <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count}</span>
                                   )}
-                                  {trend.approve_count && trend.approve_count > 0 && trend.reject_count && trend.reject_count > 0 && (
+                                  {trend.approve_count > 0 && trend.reject_count > 0 && (
                                     <span className="text-sm text-gray-300">·</span>
                                   )}
-                                  {trend.reject_count && trend.reject_count > 0 && (
+                                  {trend.reject_count > 0 && (
                                     <span className="text-sm text-gray-500 font-medium">👎 {trend.reject_count}</span>
                                   )}
                                 </div>
@@ -1396,7 +1504,7 @@ export default function Timeline() {
                                    ''}
                                 </div>
                               )}
-                              {trend.xp_amount > 0 && (
+                              {trend.xp_amount && trend.xp_amount > 0 && (
                                 <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border ${
                                   trend.xp_awarded 
                                     ? 'bg-green-100 text-green-600 border-green-200' 
@@ -1575,7 +1683,8 @@ export default function Timeline() {
                                                }}>
                                             <motion.div
                                               whileHover={{ scale: 1.02 }}
-                                              className="relative w-72 bg-white/95 backdrop-blur-sm rounded-xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-all duration-200 shadow-lg hover:shadow-xl"
+                                              className="relative w-72 bg-white/95 backdrop-blur-sm rounded-xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-all duration-200 shadow-lg hover:shadow-xl cursor-pointer"
+                                              onClick={() => setSelectedTrend(trend)}
                                             >
                                               {/* Status Badge */}
                                               <div className="absolute top-2 right-2 z-10">
@@ -1638,7 +1747,7 @@ export default function Timeline() {
                                                     <div className="flex items-center gap-1">
                                                       <UserIcon className="w-3 h-3" />
                                                       <span className="truncate max-w-[120px]">
-                                                        {trend.creator_handle || trend.creator_name}
+                                                        {(trend.creator_handle && trend.creator_handle !== '0') ? trend.creator_handle : (trend.creator_name && trend.creator_name !== '0') ? trend.creator_name : ''}
                                                       </span>
                                                     </div>
                                                   )}
@@ -1687,7 +1796,7 @@ export default function Timeline() {
                                                       </>
                                                     )}
                                                   </div>
-                                                  {trend.xp_amount > 0 && (
+                                                  {trend.xp_amount && trend.xp_amount > 0 && (
                                                     <div className={`px-2 py-0.5 rounded-full ${
                                                       trend.xp_awarded 
                                                         ? 'bg-green-100 text-green-600' 
@@ -1726,28 +1835,16 @@ export default function Timeline() {
           onSubmit={handleTrendSubmit}
         />
       )}
-      
+
       {/* Trend Detail Modal */}
-      {selectedTrend && (
-        <TrendDetailModal
-          trend={selectedTrend}
-          isOpen={showDetailModal}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedTrend(null);
-          }}
-          onValidate={async (trendId, vote) => {
-            // Handle validation vote
-            console.log('Vote:', trendId, vote);
-            // You can implement the actual validation API call here
-            await fetchUserTrends();
-          }}
-          onShare={(trendId) => {
-            // Handle share action
-            console.log('Share trend:', trendId);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {selectedTrend && (
+          <TrendDetailModal 
+            trend={selectedTrend} 
+            onClose={() => setSelectedTrend(null)} 
+          />
+        )}
+      </AnimatePresence>
       
       {/* XP notifications handled by global system */}
     </div>
