@@ -42,8 +42,7 @@ import {
   Droplet as DropletIcon,
   Sun as SunIcon,
   Moon as MoonIcon,
-  Cloud as CloudIcon,
-  Lightning as LightningIcon
+  Cloud as CloudIcon
 } from 'lucide-react'
 
 interface EnhancedTrendTileProps {
@@ -165,7 +164,7 @@ const velocityConfig = {
   },
   'peaked': { 
     text: 'At Peak', 
-    icon: LightningIcon,
+    icon: ZapIcon,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/20',
     animation: 'ping',
@@ -228,14 +227,15 @@ export default function EnhancedTrendTile({
   const rotateX = useTransform(y, [-100, 100], [10, -10])
   const rotateY = useTransform(x, [-100, 100], [-10, 10])
 
-  // Get configurations
+  // Get configurations with safe fallbacks
   const category = categoryConfig[trend.category as keyof typeof categoryConfig] || categoryConfig['behavior_pattern']
-  const velocity = velocityConfig[trend.trend_velocity || 'just_starting']
+  const velocityKey = trend.trend_velocity || 'just_starting'
+  const velocity = velocityConfig[velocityKey as keyof typeof velocityConfig] || velocityConfig['just_starting']
   const status = statusConfig[trend.status as keyof typeof statusConfig] || statusConfig['pending']
   
-  const CategoryIcon = category.icon
-  const VelocityIcon = velocity.icon
-  const StatusIcon = status.icon
+  const CategoryIcon = category?.icon || TrendingUpIcon
+  const VelocityIcon = velocity?.icon || SparklesIcon
+  const StatusIcon = status?.icon || ClockIcon
 
   // Format utilities
   const formatDate = (dateString: string) => {

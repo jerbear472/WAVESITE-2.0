@@ -639,7 +639,7 @@ export default function Dashboard() {
       {showSubmissionForm && (
         <SmartTrendSubmission
           onClose={() => setShowSubmissionForm(false)}
-          onSuccess={() => {
+          onSubmit={() => {
             setShowSubmissionForm(false);
             loadDashboardData();
           }}

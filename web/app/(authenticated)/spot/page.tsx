@@ -656,7 +656,7 @@ export default function SpotPage() {
               setShowSubmissionForm(false);
               setTrendUrl('');
             }}
-            onSuccess={() => {
+            onSubmit={() => {
               setShowSubmissionForm(false);
               setTrendUrl('');
               // Refresh stats
