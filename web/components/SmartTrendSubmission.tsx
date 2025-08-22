@@ -1997,6 +1997,14 @@ targeting ${formData.audienceAge?.join(', ') || 'broad'} demographics.
                     </>
                   )}
                 </button>
+              ) : currentStep === 'ai_analysis' ? (
+                <button
+                  onClick={handleNext}
+                  className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 transition-all text-white font-medium flex items-center justify-center gap-2"
+                >
+                  Continue to Review
+                  <ChevronRightIcon className="w-4 h-4" />
+                </button>
               ) : currentStep === 'category' ? (
                 <p className="text-sm text-gray-500 text-center sm:text-right py-3">Select a category to continue</p>
               ) : (
