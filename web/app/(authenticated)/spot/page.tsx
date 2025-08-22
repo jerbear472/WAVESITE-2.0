@@ -657,11 +657,23 @@ export default function SpotPage() {
               setShowSubmissionForm(false);
               setTrendUrl('');
             }}
-            onSubmit={() => {
+            onSubmit={async (data) => {
+              if (!user?.id) {
+                throw new Error('Please log in to submit trends');
+              }
+              
+              const result = await submitTrend(user.id, data);
+              
+              if (!result.success) {
+                throw new Error(result.error || 'Failed to submit trend');
+              }
+              
+              // Close form and refresh stats on success
               setShowSubmissionForm(false);
               setTrendUrl('');
-              // Refresh stats
               loadTodaysStats();
+              
+              return result;
             }}
           />
         </ErrorBoundary>

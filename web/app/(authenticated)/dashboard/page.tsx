@@ -639,9 +639,22 @@ export default function Dashboard() {
       {showSubmissionForm && (
         <SmartTrendSubmission
           onClose={() => setShowSubmissionForm(false)}
-          onSubmit={() => {
+          onSubmit={async (data) => {
+            if (!user?.id) {
+              throw new Error('Please log in to submit trends');
+            }
+            
+            const result = await submitTrend(user.id, data);
+            
+            if (!result.success) {
+              throw new Error(result.error || 'Failed to submit trend');
+            }
+            
+            // Close form and refresh dashboard on success
             setShowSubmissionForm(false);
             loadDashboardData();
+            
+            return result;
           }}
         />
       )}
