@@ -80,6 +80,7 @@ interface Trend {
   posted_at?: string;
   wave_score?: number;
   trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'peaked' | 'declining';
+  trend_size?: 'micro' | 'niche' | 'viral' | 'mega' | 'global';
   // Origins and demographics fields
   driving_generation?: string;
   trend_origin?: string;
