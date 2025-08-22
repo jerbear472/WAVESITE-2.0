@@ -1071,15 +1071,42 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1.5">
             <div 
-              className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 rounded-full transition-all duration-500 ease-out"
               style={{ 
-                width: `${
-                  currentStep === 'url' ? '20%' :
-                  currentStep === 'velocity' ? '40%' :
-                  currentStep === 'category' ? '60%' :
-                  currentStep === 'details' ? '80%' :
-                  '100%'
-                }%` 
+                width: `${(() => {
+                  let progress = 0;
+                  
+                  // Base progress for each step
+                  if (currentStep === 'url') progress = 5;
+                  else if (currentStep === 'velocity') progress = 25;
+                  else if (currentStep === 'category') progress = 45;
+                  else if (currentStep === 'details') progress = 65;
+                  else if (currentStep === 'review') progress = 85;
+                  
+                  // Add progress based on form completion within current step
+                  if (currentStep === 'url') {
+                    if (formData.url) progress += 5;
+                    if (formData.title && formData.title.length >= 10) progress += 10;
+                  }
+                  else if (currentStep === 'velocity') {
+                    if (formData.trendVelocity) progress += 8;
+                    if (formData.trendSize) progress += 7;
+                    if (formData.sentiment !== 50) progress += 5;
+                  }
+                  else if (currentStep === 'category') {
+                    if (formData.category) progress += 15;
+                  }
+                  else if (currentStep === 'details') {
+                    if (Object.keys(formData.categoryAnswers).length > 0) progress += 10;
+                    if (formData.audienceAge.length > 0) progress += 5;
+                    if (formData.predictedPeak) progress += 5;
+                  }
+                  else if (currentStep === 'review') {
+                    progress = 100; // Review step is always 100%
+                  }
+                  
+                  return Math.min(progress, 100);
+                })()}%` 
               }}
             />
           </div>
