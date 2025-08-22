@@ -204,7 +204,7 @@ const QualityCheck = ({ met, label, icon }: { met: boolean; label: string; icon:
 
 interface SmartTrendSubmissionProps {
   onClose: () => void;
-  onSubmit?: (data: any) => Promise<void>;
+  onSubmit?: (data: any) => Promise<any>;
   initialUrl?: string;
 }
 
