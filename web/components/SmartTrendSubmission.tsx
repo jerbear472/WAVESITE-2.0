@@ -964,7 +964,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       views_count: 0,
       likes_count: 0,
       comments_count: 0,
-      shares_count: 0,
       hashtags: [],
       wave_score: 50,
       posted_at: '',
