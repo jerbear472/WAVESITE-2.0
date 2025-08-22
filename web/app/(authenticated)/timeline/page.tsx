@@ -14,6 +14,9 @@ import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
+import EnhancedTrendTile from '@/components/EnhancedTrendTile';
+import LazyTrendTile from '@/components/LazyTrendTile';
+import TrendDetailModal from '@/components/TrendDetailModal';
 // Removed formatCurrency import - using XP display instead
 import { 
   TrendingUp as TrendingUpIcon,
@@ -100,6 +103,8 @@ export default function Timeline() {
   const [refreshing, setRefreshing] = useState(false);
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [totalXP, setTotalXP] = useState(0);
+  const [selectedTrend, setSelectedTrend] = useState<Trend | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const router = useRouter();
 
   // Use navigation refresh hook to reload data on route changes
@@ -819,8 +824,28 @@ export default function Timeline() {
           </motion.div>
         ) : (
           <>
-            {/* Grid View */}
+            {/* Grid View - Using Enhanced Trend Tiles */}
             {viewMode === 'grid' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AnimatePresence mode="popLayout">
+                  {filteredTrends.map((trend, index) => (
+                    <LazyTrendTile
+                      key={trend.id}
+                      trend={trend}
+                      animationDelay={index * 0.1}
+                      viewMode="grid"
+                      onExpand={() => {
+                        setSelectedTrend(trend);
+                        setShowDetailModal(true);
+                      }}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Original Grid View (Hidden) */}
+            {viewMode === 'grid-old' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                   {filteredTrends.map((trend, index) => {
@@ -1166,8 +1191,28 @@ export default function Timeline() {
               </div>
             )}
 
-            {/* List View */}
+            {/* List View - Using Enhanced Trend Tiles */}
             {viewMode === 'list' && (
+              <div className="space-y-4">
+                <AnimatePresence mode="popLayout">
+                  {filteredTrends.map((trend, index) => (
+                    <LazyTrendTile
+                      key={trend.id}
+                      trend={trend}
+                      animationDelay={index * 0.05}
+                      viewMode="list"
+                      onExpand={() => {
+                        setSelectedTrend(trend);
+                        setShowDetailModal(true);
+                      }}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Original List View (Hidden) */}
+            {viewMode === 'list-old' && (
               <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {filteredTrends.map((trend, index) => {
@@ -1679,6 +1724,28 @@ export default function Timeline() {
         <SmartTrendSubmission
           onClose={() => setShowSubmitForm(false)}
           onSubmit={handleTrendSubmit}
+        />
+      )}
+      
+      {/* Trend Detail Modal */}
+      {selectedTrend && (
+        <TrendDetailModal
+          trend={selectedTrend}
+          isOpen={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedTrend(null);
+          }}
+          onValidate={async (trendId, vote) => {
+            // Handle validation vote
+            console.log('Vote:', trendId, vote);
+            // You can implement the actual validation API call here
+            await fetchUserTrends();
+          }}
+          onShare={(trendId) => {
+            // Handle share action
+            console.log('Share trend:', trendId);
+          }}
         />
       )}
       
