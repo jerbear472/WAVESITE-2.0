@@ -402,12 +402,16 @@ export default function Timeline() {
                       <div>
                         <span className="text-xs text-orange-600 font-medium">Expected Size:</span>
                         <span className="ml-2 inline-block px-3 py-1 text-sm font-medium bg-orange-100 text-orange-800 rounded-full capitalize">
-                          {trend.trend_size === 'micro' ? '🔬 Micro (<10K)' :
-                           trend.trend_size === 'niche' ? '🎯 Niche (10K-100K)' :
-                           trend.trend_size === 'viral' ? '🔥 Viral (100K-1M)' :
-                           trend.trend_size === 'mega' ? '💥 Mega (1M-10M)' :
-                           trend.trend_size === 'global' ? '🌍 Global (10M+)' :
-                           (trend.trend_size || 'unknown').replace('_', ' ')}
+                          {(() => {
+                            switch(trend.trend_size) {
+                              case 'micro': return '🔬 Micro (<10K)';
+                              case 'niche': return '🎯 Niche (10K-100K)';
+                              case 'viral': return '🔥 Viral (100K-1M)';
+                              case 'mega': return '💥 Mega (1M-10M)';
+                              case 'global': return '🌍 Global (10M+)';
+                              default: return String(trend.trend_size).replace('_', ' ');
+                            }
+                          })()}
                         </span>
                       </div>
                     )}
