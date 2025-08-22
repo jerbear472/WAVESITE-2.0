@@ -790,11 +790,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       console.error('Error fetching analysis:', err);
       setAiError('Failed to generate analysis. Please try again.');
       // Set a fallback analysis
-      setAiAnalysis(`This **${formData.category}** trend is gaining momentum on ${formData.platform}. 
-With **${formData.trendVelocity}** velocity and ${formData.sentiment}% positive sentiment, 
-the commercial opportunity is **immediate**. Brands should leverage authentic creator partnerships 
-targeting ${formData.audienceAge?.join(', ') || 'broad'} demographics. 
-**Key insight**: The trend's unique positioning creates a narrow but high-impact window for engagement.`);
+      setAiAnalysis(`You've identified a **culturally resonant moment**. This ${formData.category} trend reflects deeper social currents - 
+people are seeking **authentic expression** in our hyper-connected world. The ${formData.trendVelocity} velocity indicates it's 
+tapping into **unmet emotional needs** that traditional content isn't addressing. Your early detection shows you understand 
+the **cultural zeitgeist** - you're reading the room before others even know there's a room to read. This trend signals 
+a shift in how people want to **connect and communicate** right now.`);
     } finally {
       setAiLoading(false);
     }

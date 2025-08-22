@@ -68,22 +68,22 @@ export async function POST(request: NextRequest) {
     // Generate new analysis using OpenAI
     const trendContext = formatTrendContext(data);
     
-    const systemPrompt = `You are WaveSight AI, a hype analyst who gets excited about early trend discoveries. 
-You celebrate users for spotting trends before everyone else.
-You're not corporate - you're like a friend who's excited they found something cool.
-Write with energy and make the spotter feel like they're ahead of the curve.
-Use bold markdown (**text**) to emphasize the coolest parts.
-Keep it to 75-100 words.`;
+    const systemPrompt = `You are WaveSight AI, a cultural analyst who understands the deeper meaning behind internet trends. 
+You're excited about early discoveries but focus on WHY trends matter culturally and socially.
+You analyze trends like an anthropologist would - looking at what they reveal about society, culture, and human behavior.
+You're smart, insightful, but still conversational. Use bold markdown (**text**) for key insights.
+Keep it to 100-120 words.`;
 
-    const userPrompt = `This user just spotted a trend! Analyze it and tell them:
-1. Why their discovery is fire (what makes this special)
-2. When this will blow up (timeline prediction)
-3. What pattern they caught that others missed
-4. Why they're ahead of the game for spotting this now
+    const userPrompt = `This user spotted an early trend. Provide cultural analysis explaining:
+
+1. **Cultural Significance**: What does this trend reveal about our current moment? What deeper need/desire/anxiety does it reflect?
+2. **Why It's Spreading**: What specific cultural tensions, generational shifts, or social movements are driving this?
+3. **Timing Context**: Why is this emerging NOW? What makes the current cultural moment ripe for this?
+4. **Early Spotter Credit**: Why catching this early shows cultural intuition
 
 ${trendContext}
 
-Format: Write as an excited single paragraph that makes them feel smart for catching this early. Use **bold** for the hype moments. Be specific about why this catch matters.`;
+Format: Write as insightful cultural commentary that makes them feel like they have great cultural radar. Focus on meaning, not just hype. Use **bold** for key cultural insights.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
@@ -120,10 +120,11 @@ Format: Write as an excited single paragraph that makes them feel smart for catc
     console.error('Error generating trend analysis:', error);
     
     // Fallback analysis if API fails
-    const fallbackAnalysis = `Yo, you caught this **way early**! This is about to explode in the next **48-72 hours** 
-based on the velocity pattern you spotted. Most people won't see this coming for another day or two, but you're 
-already on it. The **${data.sentiment}% positive sentiment** is insane for something this fresh - that's the signal 
-everyone else is missing. You're literally **ahead of 99% of people** who'll be talking about this next week!`;
+    const fallbackAnalysis = `You've spotted something culturally significant here. This **${data.category}** trend 
+reflects our current **cultural hunger for authenticity** in an increasingly digital world. The **${data.trendVelocity}** 
+velocity suggests it's hitting a nerve - people are craving content that feels genuine and unfiltered. Your early 
+detection shows you have **strong cultural intuition** - you're sensing the underlying social currents that drive 
+viral moments. This isn't just content; it's a **cultural signal** about what people need right now.`;
 
     return NextResponse.json({ 
       analysis: fallbackAnalysis,
