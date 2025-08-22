@@ -36,6 +36,7 @@ import {
   Award as AwardIcon,
   ExternalLink as ExternalLinkIcon,
   User as UserIcon,
+  Users as UsersIcon,
   Zap as ZapIcon
 } from 'lucide-react';
 
