@@ -617,6 +617,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string>('');
+  const [aiAnalysisReady, setAiAnalysisReady] = useState(false);
   
   // Autosave state
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -769,6 +770,10 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const generateAiAnalysis = async () => {
     setAiLoading(true);
     setAiError('');
+    setAiAnalysisReady(false);
+    
+    const startTime = Date.now();
+    const minDisplayTime = 3000; // Minimum 3 seconds to ensure user can read
     
     try {
       const response = await fetch('/api/analyze-trend', {
@@ -786,6 +791,15 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       }
       
       setAiAnalysis(data.analysis);
+      
+      // Ensure minimum display time for users to read
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, minDisplayTime - elapsed);
+      
+      setTimeout(() => {
+        setAiAnalysisReady(true);
+      }, remainingTime);
+      
     } catch (err) {
       console.error('Error fetching analysis:', err);
       setAiError('Failed to generate analysis. Please try again.');
@@ -795,6 +809,14 @@ people are seeking **authentic expression** in our hyper-connected world. The ${
 tapping into **unmet emotional needs** that traditional content isn't addressing. Your early detection shows you understand 
 the **cultural zeitgeist** - you're reading the room before others even know there's a room to read. This trend signals 
 a shift in how people want to **connect and communicate** right now.`);
+      
+      // Still ensure minimum time for fallback
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, minDisplayTime - elapsed);
+      
+      setTimeout(() => {
+        setAiAnalysisReady(true);
+      }, remainingTime);
     } finally {
       setAiLoading(false);
     }
@@ -1154,7 +1176,8 @@ a shift in how people want to **connect and communicate** right now.`);
                     if (formData.predictedPeak) progress += 3;
                   }
                   else if (currentStep === 'ai_analysis') {
-                    if (aiAnalysis) progress += 15; // Analysis generated
+                    if (aiAnalysisReady) progress += 15; // Analysis ready to read
+                    else if (aiAnalysis) progress += 8; // Analysis generated but still in reading time
                   }
                   else if (currentStep === 'review') {
                     progress = 100; // Review step is always 100%
@@ -1670,11 +1693,15 @@ a shift in how people want to **connect and communicate** right now.`);
 
                 {/* Analysis Content */}
                 <div className="relative">
-                  {aiLoading ? (
+                  {aiLoading || !aiAnalysisReady ? (
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 flex flex-col items-center justify-center min-h-[200px]">
                       <LoaderIcon className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-                      <p className="text-gray-600 font-medium">Analyzing your discovery...</p>
-                      <p className="text-sm text-gray-500 mt-1">This won't take long!</p>
+                      <p className="text-gray-600 font-medium">
+                        {aiLoading ? 'Analyzing your discovery...' : 'Finalizing analysis...'}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {aiLoading ? 'Examining cultural significance' : 'Making sure you have time to read!'}
+                      </p>
                     </div>
                   ) : (
                     <motion.div
@@ -1703,8 +1730,22 @@ a shift in how people want to **connect and communicate** right now.`);
 
                         {/* Analysis Text */}
                         <div className="prose prose-sm max-w-none">
-                          <p className="text-gray-800 leading-relaxed text-base" 
-                             dangerouslySetInnerHTML={{ __html: aiAnalysis.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-600 font-semibold">$1</strong>') }} />
+                          <motion.p 
+                            initial={{ opacity: 0.7 }}
+                            animate={{ opacity: aiAnalysisReady ? 1 : 0.7 }}
+                            className="text-gray-800 leading-relaxed text-base" 
+                            dangerouslySetInnerHTML={{ __html: aiAnalysis.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-600 font-semibold">$1</strong>') }} 
+                          />
+                          {aiAnalysisReady && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="mt-3 flex items-center gap-2 text-sm text-green-600"
+                            >
+                              <CheckIcon className="w-4 h-4" />
+                              <span>Analysis complete - take your time to read!</span>
+                            </motion.div>
+                          )}
                         </div>
 
                         {/* Confidence Indicators */}
