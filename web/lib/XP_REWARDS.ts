@@ -5,7 +5,7 @@
  * while ensuring consistency across all platforms.
  */
 
-import { UNIFIED_XP_CONFIG } from '@/../../shared/src/config/UNIFIED_XP_CONFIG';
+import { UNIFIED_XP_CONFIG } from '../../shared/src/config/UNIFIED_XP_CONFIG';
 
 // Re-export with legacy name for backward compatibility
 export const XP_REWARDS = {
@@ -32,7 +32,7 @@ export const XP_REWARDS = {
 } as const;
 
 // Re-export types and functions from unified config
-export type { Level, Achievement, UserXPProfile } from '@/../../shared/src/config/UNIFIED_XP_CONFIG';
+export type { Level, Achievement, UserXPProfile } from '../../shared/src/config/UNIFIED_XP_CONFIG';
 export { 
   getCurrentLevel,
   getProgressToNextLevel,
@@ -44,7 +44,7 @@ export {
   formatXP,
   checkAchievements,
   applyXPDecay
-} from '@/../../shared/src/config/UNIFIED_XP_CONFIG';
+} from '../../shared/src/config/UNIFIED_XP_CONFIG';
 
 // Legacy function exports for backward compatibility
 // These are wrappers around the unified functions
