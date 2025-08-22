@@ -273,99 +273,7 @@ export default function SpotPage() {
     }
   };
 
-  const handleTrendSubmit = async (formData: any) => {
-    if (!user || !user.id) {
-      setSubmitMessage({ type: 'error', text: 'Please log in to submit trends' });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setRetryStatus('');
-    
-    try {
-      const result = await submitTrend(user.id, {
-        url: formData.url,
-        title: formData.trendName || formData.title,
-        description: formData.explanation || formData.trendName,
-        category: formData.categories?.[0] || formData.category,
-        platform: formData.platform,
-        trendVelocity: formData.trendVelocity,
-        trendSize: formData.trendSize,
-        sentiment: formData.sentiment || formData.wave_score,
-        audienceAge: formData.audienceAge,
-        categoryAnswers: formData.categoryAnswers,
-        velocityMetrics: formData.velocityMetrics,
-        aiAngle: formData.aiAngle,
-        screenshot_url: formData.screenshot_url,
-        thumbnail_url: formData.thumbnail_url,
-        creator_handle: formData.creator_handle,
-        views_count: formData.views_count,
-        likes_count: formData.likes_count,
-        comments_count: formData.comments_count,
-        hashtags: formData.hashtags,
-        wave_score: formData.wave_score || formData.sentiment
-      });
-      
-      if (result.success) {
-        setShowSubmissionForm(false);
-        setTrendUrl('');
-        
-        const xpAmount = result.earnings || 10;
-        
-        // Show animated XP notification with WaveSight branding
-        showXPNotification(
-          xpAmount, 
-          `You earned ${xpAmount} XP`, 
-          'submission',
-          WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
-          WAVESIGHT_MESSAGES.VALIDATION_BONUS
-        );
-        
-        await loadTodaysStats();
-        await refreshUser();
-        
-        // Session tracking handled by context
-        if (session.isActive) {
-          logTrendSubmission();
-        }
-        
-        const audienceSize = formData.trendSize ? 
-          calculateAudienceSize(formData.trendSize) : 
-          '0';
-        
-        setSubmitMessage({ 
-          type: 'success', 
-          text: `Trend submitted! You earned ${xpAmount} XP • Potential Audience: ${audienceSize}` 
-        });
-        
-        setTimeout(() => setSubmitMessage(null), 5000);
-        
-        setTodaysXP(prev => prev + xpAmount);
-        setTrendsLoggedToday(prev => prev + 1);
-        
-        if (refreshUser) {
-          await refreshUser();
-        }
-        
-        await loadTodaysStats();
-        
-      } else {
-        throw new Error(result.error || 'Submission failed');
-      }
-      
-    } catch (error: any) {
-      console.error('Submission error:', error);
-      setShowSubmissionForm(false);
-      setSubmitMessage({ 
-        type: 'error', 
-        text: `Error: ${error?.message || 'Failed to submit trend'}` 
-      });
-      setTimeout(() => setSubmitMessage(null), 5000);
-    } finally {
-      setIsSubmitting(false);
-      setRetryStatus(null);
-    }
-  };
+  // handleTrendSubmit removed - SmartTrendSubmission handles everything internally now
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -748,8 +656,12 @@ export default function SpotPage() {
               setShowSubmissionForm(false);
               setTrendUrl('');
             }}
-            onSubmit={handleTrendSubmit}
-            initialUrl={trendUrl}
+            onSuccess={() => {
+              setShowSubmissionForm(false);
+              setTrendUrl('');
+              // Refresh stats
+              loadTodaysStats();
+            }}
           />
         </ErrorBoundary>
       )}
