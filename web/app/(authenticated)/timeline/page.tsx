@@ -79,6 +79,10 @@ interface Trend {
   posted_at?: string;
   wave_score?: number;
   trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'peaked' | 'declining';
+  // Origins and demographics fields
+  driving_generation?: string;
+  trend_origin?: string;
+  evolution_status?: string;
 }
 
 // Add new types for filtering and sorting
