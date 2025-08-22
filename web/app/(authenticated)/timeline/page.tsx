@@ -478,23 +478,23 @@ export default function Timeline() {
               )}
 
               {/* Validation Status */}
-              {((trend.approve_count > 0) || (trend.reject_count > 0)) && (
+              {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                   <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
                     <AwardIcon className="w-4 h-4" />
                     Validation Votes
                   </h4>
                   <div className="flex items-center gap-4">
-                    {trend.approve_count > 0 && (
+                    {trend.approve_count && trend.approve_count > 0 && (
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">👍</span>
-                        <span className="font-bold text-green-600">{trend.approve_count}</span>
+                        <span className="font-bold text-green-600">{trend.approve_count || 0}</span>
                       </div>
                     )}
-                    {trend.reject_count > 0 && (
+                    {trend.reject_count && trend.reject_count > 0 && (
                       <div className="flex items-center gap-2">
                         <span className="text-2xl">👎</span>
-                        <span className="font-bold text-red-600">{trend.reject_count}</span>
+                        <span className="font-bold text-red-600">{trend.reject_count || 0}</span>
                       </div>
                     )}
                   </div>
@@ -1579,16 +1579,16 @@ export default function Timeline() {
                             {/* Validation & Status Row */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                {((trend.approve_count > 0) || (trend.reject_count > 0)) && (
+                                {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
                                   <div className="flex items-center gap-1.5 text-xs bg-white rounded-lg px-2 py-1 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                    {trend.approve_count > 0 && (
-                                      <span className="text-green-600 font-medium">👍 {trend.approve_count}</span>
+                                    {trend.approve_count && trend.approve_count > 0 && (
+                                      <span className="text-green-600 font-medium">👍 {trend.approve_count || 0}</span>
                                     )}
-                                    {trend.approve_count > 0 && trend.reject_count > 0 && (
+                                    {trend.approve_count && trend.approve_count > 0 && trend.reject_count && trend.reject_count > 0 && (
                                       <span className="text-gray-400">·</span>
                                     )}
-                                    {trend.reject_count > 0 && (
-                                      <span className="text-red-500 font-medium">👎 {trend.reject_count}</span>
+                                    {trend.reject_count && trend.reject_count > 0 && (
+                                      <span className="text-red-500 font-medium">👎 {trend.reject_count || 0}</span>
                                     )}
                                   </div>
                                 )}
@@ -1809,14 +1809,14 @@ export default function Timeline() {
                             <div className="flex flex-wrap items-center gap-3 mb-3">
                               {((trend.approve_count > 0) || (trend.reject_count > 0)) && (
                                 <div className="flex items-center gap-2 bg-gray-50/60 rounded-lg px-3 py-1.5 border border-gray-200/50">
-                                  {trend.approve_count > 0 && (
-                                    <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count}</span>
+                                  {trend.approve_count && trend.approve_count > 0 && (
+                                    <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count || 0}</span>
                                   )}
                                   {trend.approve_count > 0 && trend.reject_count > 0 && (
                                     <span className="text-sm text-gray-300">·</span>
                                   )}
-                                  {trend.reject_count > 0 && (
-                                    <span className="text-sm text-gray-500 font-medium">👎 {trend.reject_count}</span>
+                                  {trend.reject_count && trend.reject_count > 0 && (
+                                    <span className="text-sm text-gray-500 font-medium">👎 {trend.reject_count || 0}</span>
                                   )}
                                 </div>
                               )}
