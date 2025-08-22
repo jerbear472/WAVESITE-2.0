@@ -958,8 +958,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       drivingGeneration: '',
       trendOrigin: '',
       evolutionStatus: '',
-      categoryAnswers: {},
-      velocityMetrics: {},
       aiAngle: '',
       screenshot_url: '',
       thumbnail_url: '',
@@ -968,7 +966,10 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       comments_count: 0,
       shares_count: 0,
       hashtags: [],
-      wave_score: 50
+      wave_score: 50,
+      posted_at: '',
+      audience_demographic: '',
+      behavior_insight: ''
     });
     setCurrentStep('url');
     setError('');
