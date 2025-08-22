@@ -1807,12 +1807,12 @@ export default function Timeline() {
                             
                             {/* Voting and Status */}
                             <div className="flex flex-wrap items-center gap-3 mb-3">
-                              {((trend.approve_count > 0) || (trend.reject_count > 0)) && (
+                              {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
                                 <div className="flex items-center gap-2 bg-gray-50/60 rounded-lg px-3 py-1.5 border border-gray-200/50">
                                   {trend.approve_count && trend.approve_count > 0 && (
                                     <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count || 0}</span>
                                   )}
-                                  {trend.approve_count > 0 && trend.reject_count > 0 && (
+                                  {trend.approve_count && trend.approve_count > 0 && trend.reject_count && trend.reject_count > 0 && (
                                     <span className="text-sm text-gray-300">·</span>
                                   )}
                                   {trend.reject_count && trend.reject_count > 0 && (
