@@ -265,51 +265,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleTrendSubmit = async (data: any) => {
-    console.log('🚀 Starting trend submission from dashboard...');
-    
-    if (!user) {
-      console.error('❌ No user found');
-      throw new Error('You must be logged in to submit trends');
-    }
-    
-    try {
-      const result = await submitTrend(user.id, data);
-      console.log('📨 Submission result:', result);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to submit trend');
-      }
-      
-      if (result.success) {
-        console.log('✅ Submission successful, showing XP notification...');
-        // Show XP notification with actual XP earned (including multipliers)
-        const xpEarned = result.earnings || 10;
-        try {
-          showXPNotification(
-            xpEarned, 
-            `You earned ${xpEarned} XP`, 
-            'submission',
-            WAVESIGHT_MESSAGES.SUBMISSION_TITLE,
-            WAVESIGHT_MESSAGES.VALIDATION_BONUS
-          );
-          // Dispatch custom event for XP earned
-          window.dispatchEvent(new CustomEvent('xp-earned', { detail: { amount: xpEarned } }));
-        } catch (notificationError) {
-          console.warn('XP notification error:', notificationError);
-        }
-        setShowSubmissionForm(false);
-        // Reload dashboard data to show new stats
-        loadDashboardData();
-      } else {
-        console.error('❌ Submission failed:', result.error);
-        throw new Error(result.error || 'Failed to submit trend');
-      }
-    } catch (error) {
-      console.error('❌ Trend submission error:', error);
-      throw error; // Re-throw to let SmartTrendSubmission handle the error
-    }
-  };
+  // handleTrendSubmit removed - SmartTrendSubmission handles everything internally now
 
   const getLevelProgress = () => {
     // Calculate progress to next level
@@ -683,7 +639,10 @@ export default function Dashboard() {
       {showSubmissionForm && (
         <SmartTrendSubmission
           onClose={() => setShowSubmissionForm(false)}
-          onSubmit={handleTrendSubmit}
+          onSuccess={() => {
+            setShowSubmissionForm(false);
+            fetchDashboardData();
+          }}
         />
       )}
     </div>
