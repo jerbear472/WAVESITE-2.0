@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { GoogleTrendsService } from '@/services/GoogleTrendsService';
-import { MetadataExtractor } from '@/lib/metadataExtractor';
+import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import {
   Link as LinkIcon,
   TrendingUp as TrendingUpIcon,

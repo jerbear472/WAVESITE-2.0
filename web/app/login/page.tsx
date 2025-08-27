@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import WaveSightLogo from '@/components/WaveSightLogo';
 import Header from '@/components/Header';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +15,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [showTimeout, setShowTimeout] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout>();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -43,7 +46,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[LOGIN PAGE] Form submitted'); // Debug log
+    console.log('[LOGIN PAGE] Form submitted');
     
     if (!formData.email || !formData.password) {
       setError('Please enter both email and password');
@@ -51,32 +54,71 @@ export default function LoginPage() {
     }
     
     setError('');
+    setShowTimeout(false);
     setLoading(true);
-    console.log('[LOGIN PAGE] Attempting login with email:', formData.email); // Debug log
+    console.log('[LOGIN PAGE] Attempting login with email:', formData.email);
+
+    // Set timeout warning after 5 seconds
+    timeoutRef.current = setTimeout(() => {
+      setShowTimeout(true);
+    }, 5000);
 
     try {
       await login(formData.email, formData.password);
-      console.log('[LOGIN PAGE] Login successful, redirecting...'); // Debug log
+      console.log('[LOGIN PAGE] Login successful, redirecting...');
+      
+      // Clear timeout warning
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       
       // Small delay to ensure session is set
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       const from = searchParams?.get('from') || '/dashboard';
-      console.log('[LOGIN PAGE] Redirecting to:', from); // Debug log
+      console.log('[LOGIN PAGE] Redirecting to:', from);
       
-      // Use Next.js router for client-side navigation
       router.push(from);
     } catch (err: any) {
-      console.error('[LOGIN PAGE] Login error details:', {
-        message: err.message,
-        stack: err.stack,
-        fullError: err
-      }); // Enhanced debug log
-      setError(err.message || 'Invalid email or password');
+      console.error('[LOGIN PAGE] Login error:', err.message);
+      
+      // Clear timeout warning
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Check for specific error types
+      if (err.message?.includes('timeout')) {
+        setError('Connection timeout. Please check your internet connection and try again.');
+        setRetryCount(prev => prev + 1);
+      } else if (err.message?.includes('Invalid email or password')) {
+        setError('Invalid email or password. Please check your credentials.');
+      } else if (err.message?.includes('confirm your email')) {
+        setError('Please confirm your email address before logging in. Check your inbox for the confirmation email.');
+      } else {
+        setError(err.message || 'An error occurred during login. Please try again.');
+        setRetryCount(prev => prev + 1);
+      }
     } finally {
       setLoading(false);
+      setShowTimeout(false);
     }
   };
+
+  const handleRetry = () => {
+    setError('');
+    setRetryCount(0);
+    handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+  };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -127,9 +169,28 @@ export default function LoginPage() {
               />
             </div>
 
+            {showTimeout && !error && (
+              <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 text-sm flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>This is taking longer than expected. Please wait...</span>
+              </div>
+            )}
+
             {error && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
-                {error}
+              <div className="space-y-2">
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
+                  {error}
+                </div>
+                {retryCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleRetry}
+                    className="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Try again
+                  </button>
+                )}
               </div>
             )}
 

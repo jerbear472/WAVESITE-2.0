@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { VercelSafeMetadataExtractor } from '@/lib/vercelSafeMetadataExtractor';
+import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     console.log('[DEBUG-THUMBNAIL] Processing URL:', url);
     
     // Extract metadata
-    const metadata = await VercelSafeMetadataExtractor.extractFromUrl(url);
+    const metadata = await MetadataExtractor.extractFromUrl(url);
     
     console.log('[DEBUG-THUMBNAIL] Extracted metadata:', metadata);
     

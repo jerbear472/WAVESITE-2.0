@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import Navigation from '@/components/Navigation';
+import SPANavigation from '@/components/SPANavigation';
 import XPLossNotification from '@/components/XPLossNotification';
+import PageTransition from '@/components/PageTransition';
+import ClientOnlyProvider from '@/components/ClientOnlyProvider';
 
 export default function AuthenticatedLayout({
   children,
@@ -64,14 +66,18 @@ export default function AuthenticatedLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-      <main className="flex-1 overflow-x-hidden" key={pathname}>
-        <div className="min-h-full">
-          {children}
-        </div>
-      </main>
-      <XPLossNotification />
-    </div>
+    <ClientOnlyProvider>
+      <div className="min-h-screen flex flex-col">
+        <SPANavigation />
+        <main className="flex-1 overflow-x-hidden pt-20">
+          <PageTransition>
+            <div className="min-h-full">
+              {children}
+            </div>
+          </PageTransition>
+        </main>
+        <XPLossNotification />
+      </div>
+    </ClientOnlyProvider>
   );
 }

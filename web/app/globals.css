@@ -5,6 +5,9 @@
 /* Import responsive fixes */
 @import '../styles/responsive-fixes.css';
 
+/* Import performance optimizations */
+@import '../styles/performance.css';
+
 /* Prevent horizontal scrolling */
 @layer base {
   html, body {
@@ -25,6 +28,25 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari and Opera */
   }
+}
+
+/* Loading animation */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1s ease-in-out infinite;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255,255,255,0.3) 50%, 
+    transparent 100%
+  );
 }
 
 /* Custom slider styles for Wave Score */

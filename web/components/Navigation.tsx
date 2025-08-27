@@ -103,78 +103,103 @@ export default function Navigation() {
   ];
 
   return (
-    <nav className="bg-white border-b border-gray-100">
+    <>
+      <style jsx>{`
+        .nav-scroll::-webkit-scrollbar {
+          height: 6px;
+        }
+        .nav-scroll::-webkit-scrollbar-track {
+          background: #f3f4f6;
+          border-radius: 3px;
+        }
+        .nav-scroll::-webkit-scrollbar-thumb {
+          background: #d1d5db;
+          border-radius: 3px;
+        }
+        .nav-scroll::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
+        }
+      `}</style>
+      <nav className="bg-white border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20">
-          <div className="flex items-center space-x-8">
-            <Link href="/dashboard" className="flex items-center">
-              <WaveSightLogo className="h-8 w-auto" />
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center space-x-4 flex-1">
+            <Link href="/dashboard" className="flex items-center flex-shrink-0">
+              <WaveSightLogo className="h-7 w-auto" />
             </Link>
 
-            <div className="hidden md:flex items-center space-x-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    pathname === item.href
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-                  }`}
-                >
-                  <span className="text-base">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+            {/* Desktop Navigation with Horizontal Scroll */}
+            <div className="hidden md:block flex-1 overflow-hidden">
+              <div 
+                className="nav-scroll flex items-center space-x-1 overflow-x-auto pb-1"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#d1d5db #f3f4f6',
+                }}
+              >
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                      pathname === item.href
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+                    }`}
+                  >
+                    <span className="text-base">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Desktop Stats & Logout */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Desktop Stats & Logout - More Compact */}
+          <div className="hidden md:flex items-center space-x-2 flex-shrink-0">
             {/* XP Display */}
-            <div className="flex items-center space-x-1">
-              <span className="text-yellow-500">⚡</span>
-              <span className="text-sm font-medium text-gray-700">{userXP.toLocaleString()}</span>
-              <span className="text-sm text-gray-500">XP</span>
+            <div className="flex items-center bg-gradient-to-r from-yellow-50 to-orange-50 px-2.5 py-1 rounded-md border border-yellow-200">
+              <span className="text-yellow-500 text-xs mr-1">⚡</span>
+              <span className="text-xs font-bold text-gray-700">{userXP.toLocaleString()}</span>
+              <span className="text-xs text-gray-500 ml-0.5">XP</span>
             </div>
-
-            {/* Level Badge */}
-            {userLevel !== 'Observer' && (
-              <div className="text-sm font-medium text-purple-600">
-                {userLevel}
+            
+            {/* Rank Display - Only if in top 100 */}
+            {globalRank && globalRank <= 100 && (
+              <div className="flex items-center bg-gradient-to-r from-green-50 to-emerald-50 px-2.5 py-1 rounded-md border border-green-200">
+                <span className="text-xs font-bold text-green-700">#{globalRank}</span>
               </div>
             )}
-
-            {/* Rank Display */}
-            {globalRank && globalRank <= 100 && (
-              <div className="flex items-center space-x-1">
-                <span className="text-sm">🏅</span>
-                <span className="text-sm font-medium text-green-600">#{globalRank}</span>
+            
+            {/* Level Display - Only if not Observer */}
+            {userLevel && userLevel !== 'Observer' && (
+              <div className="hidden lg:flex items-center bg-gradient-to-r from-purple-50 to-pink-50 px-2.5 py-1 rounded-md border border-purple-200">
+                <span className="text-xs font-bold text-purple-700">{userLevel}</span>
               </div>
             )}
 
             <button
               onClick={handleLogout}
-              className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              className="text-gray-500 hover:text-gray-700 p-1.5 rounded-md hover:bg-gray-100 transition-colors ml-1"
               title="Logout"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
           </div>
 
           {/* Mobile menu button + XP display */}
-          <div className="md:hidden flex items-center space-x-3">
-            {/* Mobile XP - Compact */}
-            <div className="flex items-center space-x-1">
-              <span className="text-yellow-500 text-sm">⚡</span>
-              <span className="text-xs font-medium text-gray-700">{userXP.toLocaleString()}</span>
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Mobile XP - Very Compact */}
+            <div className="flex items-center bg-yellow-50 px-2 py-0.5 rounded-md">
+              <span className="text-yellow-500 text-xs">⚡</span>
+              <span className="text-xs font-bold text-gray-700">{userXP > 999 ? `${Math.floor(userXP/1000)}k` : userXP}</span>
             </div>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="p-1.5 rounded-md hover:bg-gray-50 transition-colors"
             >
               <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {mobileMenuOpen ? (
@@ -232,7 +257,7 @@ export default function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <span className="text-lg">{item.icon}</span>
-                <span>{item.label}</span>
+                <span>{typeof item.label === 'string' ? item.label : item.label}</span>
               </Link>
             ))}
 
@@ -253,5 +278,6 @@ export default function Navigation() {
         </div>
       )}
     </nav>
+    </>
   );
 }

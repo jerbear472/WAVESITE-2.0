@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
+import { cleanTrendData } from '@/lib/cleanTrendData';
 
 // Custom hook that ensures Supabase client always uses the correct user session
 export function useAuthenticatedSupabase() {
@@ -105,13 +106,13 @@ export async function fetchUserTrends(userId: string) {
             validation_status = 'rejected';
           }
           
-          return {
+          return cleanTrendData({
             ...trend,
             approve_count,
             reject_count,
             validation_status,
             trend_validations: undefined // Remove raw data
-          };
+          });
         });
         return { data: processedData, error: null };
       }
@@ -120,7 +121,7 @@ export async function fetchUserTrends(userId: string) {
     }
 
     // If columns exist, they'll be in the data. If not, ensure defaults
-    const processedData = data?.map(trend => ({
+    const processedData = data?.map(trend => cleanTrendData({
       ...trend,
       approve_count: trend.approve_count || 0,
       reject_count: trend.reject_count || 0,

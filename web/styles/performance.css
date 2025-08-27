@@ -1,0 +1,148 @@
+/* Performance Optimizations */
+
+/* Enable hardware acceleration for smooth animations */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize transform and opacity animations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* GPU acceleration for frequently animated elements */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Reduce repaints for fixed elements */
+.fixed-optimized {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimize scrolling performance */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-container {
+  contain: layout style paint;
+}
+
+/* Reduce layout thrashing */
+.layout-optimized {
+  contain: layout;
+}
+
+/* Optimize image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Optimize font rendering */
+body {
+  text-rendering: optimizeLegibility;
+}
+
+/* Reduce paint areas for hover effects */
+.hover-optimized {
+  isolation: isolate;
+}
+
+/* Optimize mobile touch interactions */
+@media (hover: none) and (pointer: coarse) {
+  button, a, .clickable {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* Prevent layout shift during loading */
+.skeleton {
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  50% {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  100% {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Optimize transitions */
+.transition-optimized {
+  transition-property: transform, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* Reduce reflows for frequently updated elements */
+.reflow-optimized {
+  position: absolute;
+  contain: strict;
+}
+
+/* CSS containment for better performance */
+.contain-paint {
+  contain: paint;
+}
+
+.contain-layout {
+  contain: layout;
+}
+
+.contain-strict {
+  contain: strict;
+}
+
+/* Optimize list rendering */
+.virtual-list-item {
+  contain: content;
+  content-visibility: auto;
+}
+
+/* Reduce composite layers */
+.layer-optimized {
+  will-change: auto;
+}
+
+/* Progressive enhancement for modern browsers */
+@supports (content-visibility: auto) {
+  .lazy-render {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+  }
+}
+
+/* Optimize backdrop filters */
+@supports (backdrop-filter: blur(10px)) {
+  .backdrop-optimized {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* Reduce animation overhead on low-end devices */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

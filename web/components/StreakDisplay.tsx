@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Zap, Calendar, TrendingUp, Clock, Award } from 'lucide-react';
+import { Flame, Zap, Calendar, TrendingUp, Clock, Award, Sparkles } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -104,90 +104,89 @@ export default function StreakDisplay() {
     <div className="relative">
       {/* Compact Streak Display */}
       <motion.div
-        className="flex items-center gap-3 bg-white dark:bg-neutral-900 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-neutral-700 cursor-pointer overflow-hidden"
+        className="bg-white dark:bg-neutral-900 rounded-xl shadow-sm p-6 cursor-pointer overflow-hidden"
         onClick={() => setShowDetails(!showDetails)}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
       >
-        {/* Session Streak */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="relative flex-shrink-0">
-            <Zap className={`w-5 h-5 ${session.currentStreak > 0 ? 'text-yellow-400' : 'text-gray-600'}`} />
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Streak Tracker</h3>
+          <span className="text-xs text-gray-500">Click for details</span>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4">
+          {/* Session Streak */}
+          <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-lg p-3 border border-yellow-200">
+            <div className="flex items-center gap-2 mb-1">
+              <Zap className={`w-4 h-4 ${session.currentStreak > 0 ? 'text-yellow-600' : 'text-gray-400'}`} />
+              <span className="text-xs font-medium text-gray-600">Session</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xl font-bold text-gray-900">{session.currentStreak}</span>
+              {session.currentStreak > 0 && (
+                <span className="text-xs font-medium text-yellow-600">
+                  {getSessionMultiplier()}x
+                </span>
+              )}
+            </div>
             {session.currentStreak >= 5 && (
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute -inset-1 bg-yellow-400/20 rounded-full blur-sm"
+                className="w-full h-1 bg-gradient-to-r from-yellow-400 to-amber-400 rounded-full mt-2"
               />
             )}
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Session</p>
-            <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center">
-              <span>{session.currentStreak}</span>
-              {session.currentStreak > 0 && (
-                <span className="text-yellow-400 ml-1 text-xs">({getSessionMultiplier()}x)</span>
+
+          {/* Daily Streak */}
+          <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-3 border border-orange-200">
+            <div className="flex items-center gap-2 mb-1">
+              <Flame className={`w-4 h-4 ${dailyStreak.current > 0 ? 'text-orange-600' : 'text-gray-400'}`} />
+              <span className="text-xs font-medium text-gray-600">Daily</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xl font-bold text-gray-900">{dailyStreak.current}</span>
+              {dailyStreak.current > 0 && (
+                <span className="text-xs font-medium text-orange-600">
+                  {getDailyMultiplier()}x
+                </span>
               )}
-            </p>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-8 bg-gray-200 dark:bg-neutral-700 flex-shrink-0" />
-
-        {/* Daily Streak */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="relative flex-shrink-0">
-            <Flame className={`w-5 h-5 ${dailyStreak.current > 0 ? 'text-orange-400' : 'text-gray-600'}`} />
+            </div>
             {dailyStreak.current >= 7 && (
               <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ repeat: Infinity, duration: 3 }}
-                className="absolute -inset-1 bg-orange-400/20 rounded-full blur-sm"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="w-full h-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-full mt-2"
               />
             )}
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Daily</p>
-            <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center">
-              <span>{dailyStreak.current}d</span>
-              {dailyStreak.current > 0 && (
-                <span className="text-orange-400 ml-1 text-xs">({getDailyMultiplier()}x)</span>
-              )}
-            </p>
+
+          {/* Total Multiplier */}
+          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-3 border border-purple-200">
+            <div className="flex items-center gap-2 mb-1">
+              <Award className="w-4 h-4 text-purple-600" />
+              <span className="text-xs font-medium text-gray-600">Total</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xl font-bold text-purple-700">{getTotalMultiplier()}x</span>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+              >
+                <Sparkles className="w-4 h-4 text-purple-500" />
+              </motion.div>
+            </div>
+            <div className="w-full h-1 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full mt-2" />
           </div>
         </div>
-
-        {/* Divider */}
-        <div className="w-px h-8 bg-gray-200 dark:bg-neutral-700 flex-shrink-0" />
-
-        {/* Level Multiplier */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="relative flex-shrink-0">
-            <Award className={`w-5 h-5 ${getLevelMult() > 1 ? 'text-purple-400' : 'text-gray-600'}`} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Lvl {userLevel}</p>
-            <p className="text-sm font-bold">
-              <span className="text-purple-400 text-xs">({getLevelMult()}x)</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Total Multiplier */}
-        <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-lg border border-blue-500/20 flex-shrink-0">
-          <TrendingUp className="w-4 h-4 text-blue-400 flex-shrink-0" />
-          <div className="min-w-0">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
-            <p className="text-sm font-bold text-blue-400">{getTotalMultiplier()}x</p>
-          </div>
-        </div>
-
-        {/* Streak Timer */}
+        
+        {/* Streak Timer - at the bottom */}
         {session.streakTimeRemaining > 0 && (
-          <div className="flex items-center gap-1 text-xs flex-shrink-0">
-            <Clock className="w-3 h-3 text-gray-400" />
-            <span className="text-gray-400">{formatTimeRemaining(session.streakTimeRemaining)}</span>
+          <div className="flex items-center justify-center gap-2 mt-4 p-2 bg-gray-50 rounded-lg">
+            <Clock className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">
+              Keep streak: {formatTimeRemaining(session.streakTimeRemaining)}
+            </span>
           </div>
         )}
       </motion.div>

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { MetadataExtractor } from '@/lib/metadataExtractor';
+import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import SentimentSlider from './SentimentSlider';
 import { 
   TrendIntelligenceData,

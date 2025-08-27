@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import SentimentSlider from './SentimentSlider';
+import TrendResonanceAnalysis from './TrendResonanceAnalysis';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSession } from '@/contexts/SessionContext';
@@ -238,6 +239,9 @@ interface TrendFormData {
   drivingGeneration: 'gen_alpha' | 'gen_z' | 'millennials' | 'gen_x' | 'boomers' | '';
   trendOrigin: 'organic' | 'influencer' | 'brand' | 'ai_generated' | '';
   evolutionStatus: 'original' | 'variants' | 'parody' | 'meta' | 'final' | '';
+  
+  // Optional trending explanation
+  whyTrending?: string;
 }
 
 // Map UI categories to database-accepted categories
@@ -614,6 +618,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       trendOrigin: '' as 'organic' | 'influencer' | 'brand' | 'ai_generated' | '',
       evolutionStatus: '' as 'original' | 'variants' | 'parody' | 'meta' | 'final' | '',
       
+      // Optional trending explanation
+      whyTrending: '',
+      
       // Calculated
       wave_score: 50
     };
@@ -634,13 +641,26 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const [showSavedNotification, setShowSavedNotification] = useState(false);
   const autosaveTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Clear any lingering states when component mounts
+  // Clear any lingering states when component mounts and unmounts
   useEffect(() => {
     // Reset loading states on mount to prevent hanging
     setLoading(false);
     setExtracting(false);
     setAiLoading(false);
     setError('');
+    
+    // Cleanup on unmount
+    return () => {
+      setLoading(false);
+      setExtracting(false);
+      setAiLoading(false);
+      if (extractionTimeoutRef.current) {
+        clearTimeout(extractionTimeoutRef.current);
+      }
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Autosave effect - save form data to localStorage
@@ -968,7 +988,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       wave_score: 50,
       posted_at: '',
       audience_demographic: '',
-      behavior_insight: ''
+      behavior_insight: '',
+      whyTrending: ''
     });
     setCurrentStep('url');
     setError('');
@@ -982,26 +1003,49 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
   const handleSubmit = async () => {
     console.log('🚀 Submit clicked from SmartTrendSubmission');
+    
+    // Prevent double submission
+    if (loading) {
+      console.log('⚠️ Already submitting, ignoring click');
+      return;
+    }
+    
     setLoading(true);
     setError('');
     
     try {
-      if (customSubmit) {
-        console.log('📤 Calling customSubmit with data:', formData);
-        await customSubmit(formData);
-        console.log('✅ customSubmit completed successfully');
-        // Clear the saved draft only after successful submission
-        clearSavedDraft();
-        // Reset form for next submission
-        resetForm();
-        onClose();
+      if (!customSubmit) {
+        throw new Error('No submit handler provided');
       }
+      
+      // Add timeout to prevent hanging
+      const submitTimeout = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Submission timed out. Please try again.')), 15000);
+      });
+      
+      console.log('📤 Calling customSubmit with data:', formData);
+      
+      // Race between submission and timeout
+      await Promise.race([
+        customSubmit(formData),
+        submitTimeout
+      ]);
+      
+      console.log('✅ customSubmit completed successfully');
+      
+      // Success - clean up
+      clearSavedDraft();
+      resetForm();
+      
+      // Small delay before closing to show success
+      setTimeout(() => {
+        onClose();
+      }, 500);
+      
     } catch (error: any) {
       console.error('❌ Error in handleSubmit:', error);
       setError(error.message || 'Failed to submit trend. Please try again.');
-    } finally {
-      console.log('🏁 Setting loading to false');
-      setLoading(false);
+      setLoading(false); // Reset loading on error
     }
   };
 
@@ -1481,60 +1525,22 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   </div>
                 </div>
 
-                {/* Peak Prediction */}
+                {/* Why is this trending? (Optional) */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">When will this trend peak? 📊</h3>
-                  <p className="text-sm text-gray-600 mb-4">Your prediction helps us track trend lifecycles</p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Why is this trending? (Optional)</h3>
+                  <p className="text-sm text-gray-600 mb-3">Help us understand what makes this trend special</p>
                   
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { value: '24_hours', label: '⚡ Next 24 hours', desc: 'Viral flash trend' },
-                      { value: '3_days', label: '🔥 2-3 days', desc: 'Quick burn' },
-                      { value: '1_week', label: '📈 Within a week', desc: 'Standard cycle' },
-                      { value: '2_weeks', label: '🎯 1-2 weeks', desc: 'Building momentum' },
-                      { value: '1_month', label: '🚀 2-4 weeks', desc: 'Sustained growth' },
-                      { value: '3_months', label: '💫 1-3 months', desc: 'Long-term trend' },
-                      { value: '6_months', label: '🌊 3-6 months', desc: 'Cultural shift' },
-                      { value: 'already_peaked', label: '📉 Already peaked', desc: 'Past prime' }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setFormData(prev => ({ ...prev, predictedPeak: option.value }))}
-                        className={`p-3 rounded-lg border-2 transition-all text-left ${
-                          formData.predictedPeak === option.value
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-300 hover:border-gray-400 bg-white'
-                        }`}
-                      >
-                        <div className="flex flex-col">
-                          <div className="font-medium text-gray-800 text-sm">{option.label}</div>
-                          <div className="text-xs text-gray-600 mt-0.5">{option.desc}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Prediction confidence indicator */}
-                  {formData.predictedPeak && (
-                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center gap-2">
-                        <ClockIcon className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm text-blue-700">
-                          Peak prediction recorded: {
-                            formData.predictedPeak === '24_hours' ? 'Next 24 hours' :
-                            formData.predictedPeak === '3_days' ? '2-3 days' :
-                            formData.predictedPeak === '1_week' ? 'Within a week' :
-                            formData.predictedPeak === '2_weeks' ? '1-2 weeks' :
-                            formData.predictedPeak === '1_month' ? '2-4 weeks' :
-                            formData.predictedPeak === '3_months' ? '1-3 months' :
-                            formData.predictedPeak === '6_months' ? '3-6 months' :
-                            'Already peaked'
-                          }
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1">
-                        We'll track this prediction and show your accuracy over time
-                      </p>
+                  <textarea
+                    value={formData.whyTrending || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, whyTrending: e.target.value }))}
+                    placeholder="E.g., It's relatable to millennials struggling with work-life balance, uses a catchy audio that's easy to replicate, connects to a current news event..."
+                    className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none transition-colors"
+                    rows={3}
+                  />
+                  
+                  {formData.whyTrending && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      <span className="font-medium text-green-600">Great insight!</span> This helps our AI better understand trend patterns.
                     </div>
                   )}
                 </div>
@@ -1646,126 +1652,25 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
             )}
 
 
-            {/* Step 5: AI Analysis */}
+            {/* Step 5: AI Analysis - Deep Resonance Analysis */}
             {currentStep === 'ai_analysis' && (
               <motion.div
                 key="ai_analysis"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-                onAnimationComplete={() => {
-                  // Auto-generate analysis when step loads if not already generated
-                  if (!aiAnalysis && !aiLoading) {
-                    generateAiAnalysis();
-                  }
-                }}
+                className="h-full"
               >
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl shadow-lg">
-                      <SparklesIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800">🤖 WAVESIGHT ANALYSIS</h3>
-                      <p className="text-sm text-gray-600">Your insider intelligence report</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Analysis Content */}
-                <div className="relative">
-                  {aiLoading || !aiAnalysisReady ? (
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8 flex flex-col items-center justify-center min-h-[200px]">
-                      <LoaderIcon className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-                      <p className="text-gray-600 font-medium">
-                        {aiLoading ? 'Analyzing cultural patterns...' : 'Finalizing analysis...'}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {aiLoading ? 'Identifying behavioral signals' : 'Preparing your intelligence report'}
-                      </p>
-                    </div>
-                  ) : (
-                    <motion.div
-                      initial={{ scale: 0.95 }}
-                      animate={{ scale: 1 }}
-                      className="relative"
-                    >
-                      {/* Decorative background */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-100/50 via-blue-100/50 to-green-100/50 rounded-xl blur-2xl" />
-                      
-                      {/* Main analysis card */}
-                      <div className="relative bg-white/95 backdrop-blur-sm rounded-xl border border-gray-200 shadow-xl p-6">
-                        {/* AI Badge */}
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-full text-sm font-medium">
-                            <SparklesIcon className="w-4 h-4" />
-                            <span>CULTURAL ANALYSIS</span>
-                          </div>
-                          {aiError && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">
-                              <AlertCircleIcon className="w-3 h-3" />
-                              <span>Fallback Mode</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Analysis Text */}
-                        <div className="prose prose-sm max-w-none">
-                          <motion.p 
-                            initial={{ opacity: 0.7 }}
-                            animate={{ opacity: aiAnalysisReady ? 1 : 0.7 }}
-                            className="text-gray-800 leading-relaxed text-base" 
-                            dangerouslySetInnerHTML={{ __html: aiAnalysis.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-600 font-semibold">$1</strong>') }} 
-                          />
-                          {aiAnalysisReady && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="mt-3 flex items-center gap-2 text-sm text-green-600"
-                            >
-                              <CheckIcon className="w-4 h-4" />
-                              <span>Analysis complete - take your time to read!</span>
-                            </motion.div>
-                          )}
-                        </div>
-
-                        {/* Confidence Indicators */}
-                        <div className="mt-6 pt-4 border-t border-gray-100">
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-1">
-                                <CheckIcon className="w-3 h-3 text-green-500" />
-                                <span>Early Discovery Confirmed</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <ClockIcon className="w-3 h-3 text-blue-500" />
-                                <span>Ahead of the Curve</span>
-                              </div>
-                            </div>
-                            <button
-                              onClick={generateAiAnalysis}
-                              className="flex items-center gap-1 px-2 py-1 hover:bg-gray-100 rounded-lg transition-colors"
-                              disabled={aiLoading}
-                            >
-                              <LoaderIcon className={`w-3 h-3 ${aiLoading ? 'animate-spin' : ''}`} />
-                              <span>Regenerate</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Info Note */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs text-blue-700">
-                    <strong>Note:</strong> This analysis confirms how early you caught this trend and will be saved with your submission. 
-                    Other spotters will see you were one of the first to identify this!
-                  </p>
-                </div>
+                <TrendResonanceAnalysis 
+                  formData={formData}
+                  onAnalysisComplete={(analysis) => {
+                    // Store the key insight as the main analysis
+                    setAiAnalysis(analysis.keyInsight || 'Analysis complete');
+                    setAiAnalysisReady(true);
+                    // Don't block - user can continue even if analysis is still loading
+                    setLoading(false);
+                  }}
+                />
               </motion.div>
             )}
 
@@ -2045,10 +1950,20 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               ) : currentStep === 'ai_analysis' ? (
                 <button
                   onClick={handleNext}
-                  className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 transition-all text-white font-medium flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 transition-all text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  Continue to Review
-                  <ChevronRightIcon className="w-4 h-4" />
+                  {loading ? (
+                    <>
+                      <LoaderIcon className="w-4 h-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      Continue to Review
+                      <ChevronRightIcon className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               ) : (
                 <button

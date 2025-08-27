@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { getCurrentLevel } from '@/lib/XP_REWARDS';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
+import { cleanTrendData } from '@/lib/cleanTrendData';
 import { 
   Trophy,
   TrendingUp,
@@ -53,6 +54,12 @@ interface XPEvent {
   xp_change: number;
   description: string;
   created_at: string;
+  reference_id?: string;
+  reference_type?: string;
+  trend?: {
+    name: string;
+    category?: string;
+  };
 }
 
 // 15-level cultural anthropologist progression system
@@ -179,6 +186,12 @@ export default function Dashboard() {
         .gte('created_at', weekAgo.toISOString())
         .order('created_at', { ascending: false });
       
+      console.log('📊 XP Events Query Result:', { 
+        data: xpEventsData, 
+        error: eventsError,
+        userId: user.id 
+      });
+      
       if (eventsError && eventsError.code === '42P01') {
         // Table doesn't exist, try xp_transactions
         const { data: xpTransData } = await supabase
@@ -196,6 +209,33 @@ export default function Dashboard() {
         }));
       } else {
         xpEvents = xpEventsData;
+      }
+
+      // Fetch trend details for events with reference_id
+      if (xpEvents && xpEvents.length > 0) {
+        const trendIds = xpEvents
+          .filter(e => e.reference_id && e.reference_type === 'trend_submission')
+          .map(e => e.reference_id);
+        
+        console.log('🔍 Looking for trends with IDs:', trendIds);
+        
+        if (trendIds.length > 0) {
+          const { data: trends, error: trendsError } = await supabase
+            .from('trend_submissions')
+            .select('id, name, category')
+            .in('id', trendIds);
+          
+          console.log('📚 Trend lookup result:', { trends, error: trendsError });
+          
+          if (trends) {
+            const trendMap = new Map(trends.map(t => [t.id, t]));
+            xpEvents = xpEvents.map(event => ({
+              ...event,
+              trend: event.reference_id ? trendMap.get(event.reference_id) : undefined
+            }));
+            console.log('✅ XP Events with trends:', xpEvents.slice(0, 2));
+          }
+        }
       }
 
       let todaysXP = xpEvents
@@ -216,7 +256,9 @@ export default function Dashboard() {
           .eq('spotter_id', user.id)
           .gte('created_at', today.toISOString());
         
-        todaysXP = todaysTrends?.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
+        // Clean trend data before using
+        const cleanedTodaysTrends = todaysTrends?.map(cleanTrendData) || [];
+        todaysXP = cleanedTodaysTrends.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
         
         // Get weekly trends
         const { data: weeklyTrends } = await supabase
@@ -225,11 +267,13 @@ export default function Dashboard() {
           .eq('spotter_id', user.id)
           .gte('created_at', weekAgo.toISOString());
         
-        weeklyXP = weeklyTrends?.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
+        // Clean trend data before using
+        const cleanedWeeklyTrends = weeklyTrends?.map(cleanTrendData) || [];
+        weeklyXP = cleanedWeeklyTrends.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
         
         // Create fake XP events from trends for recent activity display
-        if (weeklyTrends && weeklyTrends.length > 0) {
-          xpEvents = weeklyTrends.map(t => ({
+        if (cleanedWeeklyTrends && cleanedWeeklyTrends.length > 0) {
+          xpEvents = cleanedWeeklyTrends.map(t => ({
             id: `trend-${t.created_at}`,
             user_id: user.id,
             xp_change: t.payment_amount || 0,
@@ -444,47 +488,71 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
+        {/* Main Two-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Activity */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent XP Activity</h3>
-            
-            {recentEvents.length > 0 ? (
-              <div className="space-y-3">
-                {recentEvents.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {getEventIcon(event.event_type)}
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{event.description}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(event.created_at).toLocaleDateString()}
-                        </p>
+          {/* Left Column - Takes 2/3 on desktop */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Recent Activity */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent XP Activity</h3>
+              
+              {recentEvents.length > 0 ? (
+                <div className="space-y-3">
+                  {recentEvents.map((event) => (
+                    <div key={event.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        {getEventIcon(event.event_type)}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {event.description}
+                            {event.trend?.name && (
+                              <span className="ml-2 text-purple-600 font-semibold">
+                                "{event.trend.name}"
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(event.created_at).toLocaleDateString()}
+                            {event.trend?.category && (
+                              <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
+                                {event.trend.category}
+                              </span>
+                            )}
+                          </p>
+                        </div>
                       </div>
+                      <span className={`text-sm font-bold ${
+                        event.xp_change > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {event.xp_change > 0 ? '+' : ''}{event.xp_change} XP
+                      </span>
                     </div>
-                    <span className={`text-sm font-bold ${
-                      event.xp_change > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {event.xp_change > 0 ? '+' : ''}{event.xp_change} XP
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-8">No recent activity</p>
-            )}
-            
-            <Link
-              href="/timeline"
-              className="mt-4 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              View All Activity
-              <ChevronRight className="w-4 h-4" />
-            </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">No recent activity</p>
+              )}
+              
+              <Link
+                href="/timeline"
+                className="mt-4 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                View All Activity
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Streak Display */}
+            <StreakDisplay />
+
+            {/* Pending Validations */}
+            <PendingValidations />
           </div>
 
-          {/* XP & Level Progress */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          {/* Right Column - Takes 1/3 on desktop */}
+          <div className="space-y-6">
+            {/* XP & Level Progress */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Your Progress</h3>
               <Link
@@ -666,16 +734,7 @@ export default function Dashboard() {
               </Link>
             </div>
           </div>
-        </div>
-
-        {/* Streak Display - Separate Section */}
-        <div className="mt-6">
-          <StreakDisplay />
-        </div>
-
-        {/* Pending Validations */}
-        <div className="mt-6">
-          <PendingValidations />
+          </div>
         </div>
       </div>
 

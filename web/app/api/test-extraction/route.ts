@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MetadataExtractor } from '@/lib/metadataExtractor';
-import { TikTokDirectExtractor } from '@/lib/tiktokDirectExtractor';
+import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
+import { getUltraSimpleThumbnail } from '@/lib/ultraSimpleThumbnail';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   
   try {
     // Test direct extraction
-    const directData = TikTokDirectExtractor.extract(url);
+    const directData = await getUltraSimpleThumbnail(url);
     console.log('Direct extraction result:', directData);
     
     // Test full metadata extraction

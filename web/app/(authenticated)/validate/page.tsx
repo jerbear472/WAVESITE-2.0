@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import { useAuth } from '@/contexts/AuthContext';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
+import { cleanTrendData } from '@/lib/cleanTrendData';
+import SimpleVoteDisplay from '@/components/SimpleVoteDisplay';
 import { 
   X, 
   Check, 
@@ -170,39 +172,43 @@ export default function ValidatePage() {
       
       console.log(`Found ${allTrends?.length} total trends, ${trends.length} after filtering out validated ones`);
 
-      const formattedTrends = trends?.map(trend => ({
-        id: trend.id,
-        title: (trend.title && trend.title !== '0') ? trend.title : 
-               (trend.trend_headline && trend.trend_headline !== '0') ? trend.trend_headline : 'Untitled',
-        description: (trend.description && trend.description !== '0') ? trend.description : 
-                     (trend.why_trending && trend.why_trending !== '0') ? trend.why_trending : '',
-        url: trend.url || trend.post_url || '',
-        thumbnail_url: trend.thumbnail_url,
-        screenshot_url: trend.screenshot_url,
-        platform: trend.platform || 'unknown',
-        creator_handle: trend.creator_handle,
-        category: trend.category || 'general',
-        submitted_at: trend.created_at,
-        spotter_username: 'Trend Spotter',
-        validation_count: trend.validation_count || 0,
-        // Include metadata
-        trend_velocity: trend.trend_velocity,
-        trend_size: trend.trend_size,
-        ai_angle: trend.ai_angle,
-        sentiment: trend.sentiment,
-        audience_age: trend.audience_age,
-        hashtags: trend.hashtags,
-        views_count: trend.views_count,
-        likes_count: trend.likes_count,
-        comments_count: trend.comments_count,
-        // Origins fields
-        driving_generation: trend.driving_generation,
-        trend_origin: trend.trend_origin,
-        evolution_status: trend.evolution_status
-      })) || [];
+      const formattedTrends = trends?.map(trend => {
+        // Clean the trend data first to remove problematic values
+        const cleaned = cleanTrendData(trend);
+        
+        return {
+          id: cleaned.id,
+          title: cleaned.title || cleaned.trend_headline || 'Untitled',
+          description: cleaned.description || cleaned.why_trending || '',
+          url: cleaned.url || cleaned.post_url || '',
+          thumbnail_url: cleaned.thumbnail_url,
+          screenshot_url: cleaned.screenshot_url,
+          platform: cleaned.platform || 'unknown',
+          creator_handle: cleaned.creator_handle,
+          category: cleaned.category || 'general',
+          submitted_at: cleaned.created_at,
+          spotter_username: 'Trend Spotter',
+          validation_count: cleaned.validation_count || 0,
+          // Include metadata
+          trend_velocity: cleaned.trend_velocity,
+          trend_size: cleaned.trend_size,
+          ai_angle: cleaned.ai_angle,
+          sentiment: cleaned.sentiment,
+          audience_age: cleaned.audience_age,
+          hashtags: cleaned.hashtags,
+          views_count: cleaned.views_count,
+          likes_count: cleaned.likes_count,
+          comments_count: cleaned.comments_count,
+          // Origins fields
+          driving_generation: cleaned.driving_generation,
+          trend_origin: cleaned.trend_origin,
+          evolution_status: cleaned.evolution_status
+        };
+      }) || [];
 
       setTrendQueue(formattedTrends);
       setCurrentTrend(formattedTrends[0] || null);
+      
     } catch (error) {
       console.error('Error loading trends:', error);
     } finally {
@@ -283,7 +289,12 @@ export default function ValidatePage() {
   };
 
   const handleSwipe = async (direction: 'left' | 'right') => {
-    if (!currentTrend || !user) return;
+    console.log('🔄 handleSwipe called:', { direction, currentTrend: !!currentTrend, user: !!user });
+    
+    if (!currentTrend || !user) {
+      console.log('❌ Missing requirements:', { currentTrend: !!currentTrend, user: !!user });
+      return;
+    }
     
     const isValid = direction === 'right';
     setLastVote(isValid ? 'valid' : 'invalid');
@@ -292,6 +303,13 @@ export default function ValidatePage() {
     setLocalValidatedIds(prev => [...prev, currentTrend.id]);
     
     try {
+      console.log('📝 Submitting validation:', {
+        trend_id: currentTrend.id,
+        validator_id: user.id,
+        is_valid: isValid,
+        validation_score: isValid ? 1 : -1
+      });
+
       // Submit validation
       const { error: validationError } = await supabase
         .from('trend_validations')
@@ -302,7 +320,12 @@ export default function ValidatePage() {
           validation_score: isValid ? 1 : -1
         });
 
-      if (validationError) throw validationError;
+      if (validationError) {
+        console.error('❌ Validation error:', validationError);
+        throw validationError;
+      }
+      
+      console.log('✅ Validation submitted successfully');
 
       // Update validation count and status
       const newValidationCount = currentTrend.validation_count + 1;
@@ -316,19 +339,50 @@ export default function ValidatePage() {
 
       if (updateError) throw updateError;
 
-      // Award XP using unified XP system
+      // Award XP directly to ensure it works
       const baseXP = 5;
       const streakBonus = Math.floor(streak / 10) * 2;
       const totalXP = baseXP + streakBonus;
       
-      const { error: xpError } = await supabase.rpc('award_xp', {
-        p_user_id: user.id,
-        p_amount: totalXP,
-        p_type: 'validation',
-        p_description: `Validated trend: ${currentTrend.title}`,
-        p_reference_id: currentTrend.id,
-        p_reference_type: 'trend_submission'
+      console.log('🎮 Awarding validation XP:', {
+        user_id: user.id,
+        baseXP,
+        streakBonus,
+        totalXP,
+        trend_id: currentTrend.id,
+        trend_title: currentTrend.title
       });
+
+      // Insert XP directly into user_xp table
+      const { data: currentXP } = await supabase
+        .from('user_xp')
+        .select('total_xp')
+        .eq('user_id', user.id)
+        .single();
+
+      const newTotal = (currentXP?.total_xp || 0) + totalXP;
+
+      const { error: xpError } = await supabase
+        .from('user_xp')
+        .upsert({
+          user_id: user.id,
+          total_xp: newTotal,
+          updated_at: new Date().toISOString()
+        });
+
+      // Also create XP event record
+      const { error: eventError } = await supabase
+        .from('xp_events')
+        .insert({
+          user_id: user.id,
+          event_type: 'validation',
+          xp_change: totalXP,
+          description: `Validated trend: ${currentTrend.title && currentTrend.title !== '0' ? currentTrend.title : 'Untitled Trend'}`,
+          reference_id: currentTrend.id,
+          reference_type: 'trend_submission'
+        });
+      
+      console.log('🎮 XP Award Result:', { xpError, eventError, newTotal });
 
       if (!xpError) {
         setTodaysXP(prev => prev + totalXP);
@@ -336,26 +390,14 @@ export default function ValidatePage() {
         // Show XP notification
         const notificationText = `Trend validated! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}`;
         console.log('🎯 Showing validation XP notification:', totalXP, notificationText);
-        console.log('showXPNotification function exists:', typeof showXPNotification);
         
-        try {
-          showXPNotification(totalXP, notificationText, 'validation');
-          console.log('✅ XP notification called successfully');
-        } catch (err) {
-          console.error('❌ Error calling showXPNotification:', err);
-        }
+        showXPNotification(totalXP, notificationText, 'validation');
+        console.log('✅ XP awarded successfully');
       } else {
-        // Still show notification even if XP RPC fails
-        console.warn('XP award failed:', xpError);
-        console.log('🎯 Showing fallback validation XP notification:', baseXP);
-        console.log('showXPNotification function exists:', typeof showXPNotification);
-        
-        try {
-          showXPNotification(baseXP, 'Trend validated!', 'validation');
-          console.log('✅ Fallback XP notification called successfully');
-        } catch (err) {
-          console.error('❌ Error calling fallback showXPNotification:', err);
-        }
+        console.error('❌ XP award failed:', xpError);
+        // Still show notification even if XP database update fails
+        const notificationText = `Trend validated! ${streakBonus > 0 ? `+${streakBonus} streak bonus` : ''}`;
+        showXPNotification(totalXP, notificationText, 'validation');
       }
 
       // Update stats locally
@@ -368,11 +410,12 @@ export default function ValidatePage() {
       
       // Show feedback briefly
       setShowFeedback(true);
-      // Don't call loadUserStats here as it might overwrite the XP we just added
-      // The local state update on line 333 is sufficient
+      // Refresh user stats after a delay to ensure XP is recorded
       setTimeout(() => {
         setShowFeedback(false);
         moveToNextTrend();
+        // Refresh stats to ensure XP is properly reflected
+        loadUserStats();
       }, 1500);
       
     } catch (error) {
@@ -480,6 +523,7 @@ export default function ValidatePage() {
             </div>
           </div>
         </div>
+
 
         {/* Swipe Card Container */}
         <div className="relative">
@@ -801,6 +845,19 @@ export default function ValidatePage() {
                   </div>
                 </div>
 
+                {/* Vote Display */}
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <SimpleVoteDisplay 
+                    trendId={currentTrend.id}
+                    initialVotes={{
+                      wave: 0,
+                      fire: 0,
+                      declining: 0,
+                      dead: 0
+                    }}
+                  />
+                </div>
+
                 {/* Validation Question */}
                 <div className="mt-auto pt-4">
                   <div className="space-y-2">
@@ -853,6 +910,7 @@ export default function ValidatePage() {
             <span className="text-sm font-medium text-gray-700">Real Trend</span>
           </button>
         </motion.div>
+
 
         {/* Queue indicator and keyboard hint */}
         <motion.div 

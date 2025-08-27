@@ -87,9 +87,9 @@ ${trendContext}
 Write a 100-120 word analysis covering:
 
 1. WHAT: Explain what this trend actually is
-2. WHY IT MATTERS: What it reveals about culture/market right now
-3. WHO SHOULD CARE: Specific brands, creators, or industries affected
-4. THE INSIGHT: One non-obvious observation about why it's working/spreading
+2. WHY IT RESONATES: The human psychology and cultural moment behind it
+3. WHO'S PARTICIPATING: What types of people/creators are driving this
+4. THE INSIGHT: One non-obvious observation about why it's spreading now
 
 ${lifecycleStage === 'peaking/declining' ? 
   'Note: This trend is peaking/declining - focus on what happened and lessons learned, not future predictions.' : 
@@ -97,7 +97,7 @@ ${lifecycleStage === 'peaking/declining' ?
   'Note: This trend is at peak - focus on why it reached critical mass and what it means.' :
   'Note: This trend is emerging/rising - focus on why its gaining traction now.'}
 
-Style: Smart cultural analyst explaining why this matters. Use emojis for structure (💡 for insight, 🎯 for who cares, etc). No predictions about timing - analyze what it means NOW.
+Style: Cultural anthropologist explaining human behavior patterns. Use emojis for structure (💡 for insight, 👥 for who's participating, etc). Focus on creativity, self-expression, and cultural dynamics - NOT corporate opportunities. Keep it real and relatable.
 100-120 words ONLY.`;
 
     const message = await anthropic.messages.create({
@@ -143,9 +143,9 @@ Style: Smart cultural analyst explaining why this matters. Use emojis for struct
     });
     
     // Fallback analysis if API fails
-    const fallbackAnalysis = `📱 This represents a shift in how culture moves through digital spaces. 
-🎯 **Who cares:** Content creators, brand strategists, and platforms looking for the next wave
-💡 **The insight:** The speed of adoption reveals more about audience readiness than the content itself - when things spread this fast, they're filling an existing cultural vacuum.`;
+    const fallbackAnalysis = `📱 This represents how people are expressing themselves in new ways online. 
+👥 **Who's in:** Early adopters, creative communities, and anyone looking to connect authentically
+💡 **The insight:** The speed of adoption shows we were all feeling the same thing but didn't have a way to express it - until now.`;
 
     return NextResponse.json({ 
       analysis: fallbackAnalysis,

@@ -247,8 +247,10 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
         .rpc('award_xp', {
           p_user_id: userId,
           p_amount: paymentAmount,
-          p_reason: 'trend_submission',
-          p_metadata: { trend_id: submission.id }
+          p_type: 'trend_submission',
+          p_description: `Submitted trend: ${data.title || 'Untitled'}`,
+          p_reference_id: submission.id,
+          p_reference_type: 'trend_submission'
         });
       
       const xpTimeoutPromise = new Promise((_, reject) => 

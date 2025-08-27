@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import TrendSubmissionFormEnhanced from '@/components/TrendSubmissionFormEnhanced';
+import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 
 // Simple category mapping - no complex logic
 const CATEGORY_MAP: Record<string, string> = {
@@ -126,7 +126,7 @@ export default function SimpleSubmitPage() {
 
       {/* Trend Form Modal */}
       {showForm && (
-        <TrendSubmissionFormEnhanced
+        <SmartTrendSubmission
           onClose={() => setShowForm(false)}
           onSubmit={handleTrendSubmit}
         />

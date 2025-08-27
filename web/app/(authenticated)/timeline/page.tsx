@@ -7,10 +7,11 @@ import { useRouter } from 'next/navigation';
 import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import { supabaseCache } from '@/lib/supabaseCache';
 import { motion, AnimatePresence } from 'framer-motion';
-import SmartTrendSubmission from '@/components/SmartTrendSubmissionSimple';
+import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import { TrendSubmissionService } from '@/services/TrendSubmissionService';
 import { FallbackSubmission } from '@/services/FallbackSubmission';
 import { submitTrend } from '@/lib/submitTrend';
+import SimpleVoteDisplay from '@/components/SimpleVoteDisplay';
 import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
@@ -81,10 +82,13 @@ interface Trend {
   wave_score?: number;
   trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'peaked' | 'declining';
   trend_size?: 'micro' | 'niche' | 'viral' | 'mega' | 'global';
+  sentiment?: number;
   // Origins and demographics fields
   driving_generation?: string;
   trend_origin?: string;
   evolution_status?: string;
+  // Optional trending explanation
+  why_trending?: string;
 }
 
 // Add new types for filtering and sorting
@@ -345,16 +349,35 @@ export default function Timeline() {
                   <p className="text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-4 text-sm">{trend.description}</p>
                 </div>
               )}
+
+              {/* Why is this trending? */}
+              {trend.why_trending && (
+                <div>
+                  <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span className="text-lg">💡</span>
+                    Why is this trending?
+                  </h4>
+                  <p className="text-gray-700 leading-relaxed bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 text-sm border border-yellow-200">
+                    {trend.why_trending}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Right Column */}
             <div className="space-y-6">
               {/* Metrics Grid */}
               <div className="grid grid-cols-2 gap-3">
-                {trend.wave_score && (
+                {(trend.wave_score ?? 0) > 0 && (
                   <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
                     <div className="text-xs text-blue-600 font-medium">Wave Score</div>
-                    <div className="text-lg font-bold text-blue-700">{Math.round(trend.wave_score * 10)}/100</div>
+                    <div className="text-lg font-bold text-blue-700">{Math.round((trend.wave_score ?? 0) * 10)}/100</div>
+                  </div>
+                )}
+                {trend.sentiment !== undefined && trend.sentiment !== null && (
+                  <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                    <div className="text-xs text-indigo-600 font-medium">Sentiment Score</div>
+                    <div className="text-lg font-bold text-indigo-700">{trend.sentiment}/100</div>
                   </div>
                 )}
                 {trend.quality_score && trend.quality_score > 0 && (
@@ -369,7 +392,7 @@ export default function Timeline() {
                     <div className="text-lg font-bold text-purple-700">{Math.round(trend.virality_prediction * 100)}%</div>
                   </div>
                 )}
-                {trend.xp_amount && (
+                {trend.xp_amount > 0 && (
                   <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
                     <div className="text-xs text-yellow-600 font-medium">XP Earned</div>
                     <div className="text-lg font-bold text-yellow-700">{trend.xp_amount}</div>
@@ -427,28 +450,28 @@ export default function Timeline() {
                     Engagement
                   </h4>
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    {trend.likes_count && (
+                    {(trend.likes_count ?? 0) > 0 && (
                       <div className="flex items-center gap-2">
                         <HeartIcon className="w-4 h-4 text-pink-600" />
-                        <span className="font-medium">{trend.likes_count.toLocaleString()}</span>
+                        <span className="font-medium">{(trend.likes_count ?? 0).toLocaleString()}</span>
                       </div>
                     )}
-                    {trend.comments_count && (
+                    {(trend.comments_count ?? 0) > 0 && (
                       <div className="flex items-center gap-2">
                         <MessageCircleIcon className="w-4 h-4 text-pink-600" />
-                        <span className="font-medium">{trend.comments_count.toLocaleString()}</span>
+                        <span className="font-medium">{(trend.comments_count ?? 0).toLocaleString()}</span>
                       </div>
                     )}
-                    {trend.views_count && (
+                    {(trend.views_count ?? 0) > 0 && (
                       <div className="flex items-center gap-2">
                         <EyeIcon className="w-4 h-4 text-pink-600" />
-                        <span className="font-medium">{trend.views_count.toLocaleString()}</span>
+                        <span className="font-medium">{(trend.views_count ?? 0).toLocaleString()}</span>
                       </div>
                     )}
-                    {trend.shares_count && (
+                    {(trend.shares_count ?? 0) > 0 && (
                       <div className="flex items-center gap-2">
                         <ShareIcon className="w-4 h-4 text-pink-600" />
-                        <span className="font-medium">{trend.shares_count.toLocaleString()}</span>
+                        <span className="font-medium">{(trend.shares_count ?? 0).toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -1530,12 +1553,48 @@ export default function Timeline() {
                                     <span className="text-xs text-gray-400">AI Signal</span>
                                   </div>
                                 )}
-                                {(trend as any).audience_age && Array.isArray((trend as any).audience_age) && (trend as any).audience_age.length > 0 && (
-                                  <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
-                                    <span className="text-xs font-medium text-gray-600">
-                                      {(trend as any).audience_age.slice(0, 2).join(', ')}{(trend as any).audience_age.length > 2 ? '+' : ''}
+                                {((trend as any).audience_age && Array.isArray((trend as any).audience_age) && (trend as any).audience_age.length > 0) || (trend as any).driving_generation ? (
+                                  <div className="flex flex-col items-center bg-amber-50/60 rounded-lg px-2 py-1.5 border border-amber-200/50">
+                                    <span className="text-xs font-medium text-amber-700">
+                                      {(trend as any).driving_generation ? (
+                                        (trend as any).driving_generation === 'gen_alpha' ? '📱 Gen Alpha' :
+                                        (trend as any).driving_generation === 'gen_z' ? '🎮 Gen Z' :
+                                        (trend as any).driving_generation === 'millennials' ? '💻 Millennials' :
+                                        (trend as any).driving_generation === 'gen_x' ? '💿 Gen X' :
+                                        (trend as any).driving_generation === 'boomers' ? '📺 Boomers' :
+                                        (trend as any).audience_age?.slice(0, 2).join(', ')
+                                      ) : (trend as any).audience_age?.slice(0, 2).join(', ')}
                                     </span>
-                                    <span className="text-xs text-gray-400">Audience</span>
+                                    <span className="text-xs text-amber-500">Who's Driving</span>
+                                  </div>
+                                ) : null}
+                              </div>
+                            )}
+                            
+                            {/* Trend Origin & Evolution Status */}
+                            {((trend as any).trend_origin || (trend as any).evolution_status) && (
+                              <div className="flex items-center gap-2 mt-2">
+                                {(trend as any).trend_origin && (
+                                  <div className="flex items-center gap-1 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg px-2 py-1 border border-teal-200/50">
+                                    <span className="text-xs font-medium text-teal-700">
+                                      {(trend as any).trend_origin === 'organic' ? '🌱 Organic' :
+                                       (trend as any).trend_origin === 'influencer' ? '⭐ Influencer' :
+                                       (trend as any).trend_origin === 'brand' ? '💼 Brand' :
+                                       (trend as any).trend_origin === 'ai_generated' ? '🤖 AI' :
+                                       '🔍 Origin'}
+                                    </span>
+                                  </div>
+                                )}
+                                {(trend as any).evolution_status && (
+                                  <div className="flex items-center gap-1 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg px-2 py-1 border border-purple-200/50">
+                                    <span className="text-xs font-medium text-purple-700">
+                                      {(trend as any).evolution_status === 'original' ? '✨ Original' :
+                                       (trend as any).evolution_status === 'variants' ? '🔄 Remixing' :
+                                       (trend as any).evolution_status === 'parody' ? '😂 Parody' :
+                                       (trend as any).evolution_status === 'meta' ? '🤯 Meta' :
+                                       (trend as any).evolution_status === 'final' ? '👻 Won\'t Die' :
+                                       '📊 Status'}
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -1634,6 +1693,20 @@ export default function Timeline() {
                                 </div>
                               </div>
                             )}
+                            
+                            {/* Vote Display */}
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <SimpleVoteDisplay 
+                                trendId={trend.id}
+                                initialVotes={{
+                                  wave: 0,
+                                  fire: 0,
+                                  declining: 0,
+                                  dead: 0
+                                }}
+                                compact={true}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1906,6 +1979,20 @@ export default function Timeline() {
                                 </div>
                               </div>
                             )}
+                            
+                            {/* Vote Display */}
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <SimpleVoteDisplay 
+                                trendId={trend.id}
+                                initialVotes={{
+                                  wave: 0,
+                                  fire: 0,
+                                  declining: 0,
+                                  dead: 0
+                                }}
+                                compact={false}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>

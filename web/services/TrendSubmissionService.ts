@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { TrendDuplicateChecker } from '@/lib/trendDuplicateChecker';
-import { MetadataExtractor } from '@/lib/metadataExtractor';
+import { MetadataExtractor } from '@/lib/metadataExtractorSafe';
 import { mapCategoryToEnum } from '@/lib/categoryMapper';
 
 // Circuit breaker pattern for external services

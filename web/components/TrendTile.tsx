@@ -21,8 +21,15 @@ interface TrendTileProps {
     lastContentDate: string
     contentItems?: ContentItem[]
     sentiment?: 'positive' | 'negative' | 'neutral' | 'mixed'
+    sentimentScore?: number
     moods?: string[]
     viralityPrediction?: number
+    audienceAge?: string[]
+    trendVelocity?: string
+    aiAngle?: string
+    trendSize?: string
+    creator_handle?: string
+    creator_name?: string
   }
   onAddContent: (trendId: string) => void
   onContentClick: (contentId: string) => void
@@ -184,7 +191,9 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
             </button>
             
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{trend.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {trend.title && trend.title !== '0' ? trend.title : 'Untitled Trend'}
+              </h3>
                 
                 {/* Tags Row */}
                 <div className="flex items-center flex-wrap gap-2 mb-2">
@@ -205,10 +214,52 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
                     Wave: {trend.waveScore * 10}/100
                   </span>
                   
+                  {/* Sentiment Score Tag */}
+                  {trend.sentimentScore !== undefined && (
+                    <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">
+                      Sentiment: {trend.sentimentScore}/100
+                    </span>
+                  )}
+                  
                   {/* Sentiment Tag */}
                   {trend.sentiment && (
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${sentimentColors[trend.sentiment]}`}>
                       {trend.sentiment}
+                    </span>
+                  )}
+                  
+                  {/* Trend Velocity Tag */}
+                  {trend.trendVelocity && (
+                    <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
+                      🚀 {trend.trendVelocity.replace('_', ' ')}
+                    </span>
+                  )}
+                  
+                  {/* Trend Size Tag */}
+                  {trend.trendSize && (
+                    <span className="px-2 py-1 text-xs font-medium bg-teal-100 text-teal-800 rounded-full">
+                      📏 {trend.trendSize}
+                    </span>
+                  )}
+                  
+                  {/* AI Angle Tag */}
+                  {trend.aiAngle && trend.aiAngle !== 'not_ai' && (
+                    <span className="px-2 py-1 text-xs font-medium bg-pink-100 text-pink-800 rounded-full">
+                      🤖 {trend.aiAngle.replace(/_/g, ' ')}
+                    </span>
+                  )}
+                  
+                  {/* Audience Age Tags */}
+                  {trend.audienceAge && trend.audienceAge.length > 0 && (
+                    <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">
+                      👥 {trend.audienceAge.join(', ')}
+                    </span>
+                  )}
+                  
+                  {/* Creator Tag */}
+                  {trend.creator_handle && (
+                    <span className="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">
+                      @{trend.creator_handle}
                     </span>
                   )}
                   
@@ -227,8 +278,19 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
                   ))}
                 </div>
               
-              {trend.description && (
+              {trend.description && trend.description !== '0' && (
                 <p className="text-sm text-gray-600 mb-3">{trend.description}</p>
+              )}
+              
+              {/* Who's Driving This Section */}
+              {(trend.audienceAge || trend.creator_name) && (
+                <div className="text-sm text-gray-600 mb-2">
+                  <span className="font-medium">Who's driving this: </span>
+                  {trend.creator_name && <span>{trend.creator_name} </span>}
+                  {trend.audienceAge && trend.audienceAge.length > 0 && (
+                    <span>• Audience: {trend.audienceAge.join(', ')}</span>
+                  )}
+                </div>
               )}
               
               {/* Metrics Row */}
@@ -286,14 +348,14 @@ export default function TrendTile({ trend, onAddContent, onContentClick, onMerge
               <span className="text-xs text-gray-600">{count}</span>
             </div>
           ))}
-          {trend.isCollaborative && (
+          {trend.isCollaborative ? (
             <div className="ml-auto flex items-center space-x-1 text-xs text-purple-600">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
               </svg>
               <span>Collaborative</span>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
       

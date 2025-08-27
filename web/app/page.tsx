@@ -51,30 +51,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Opening Hook Section */}
-      <section className="py-20 bg-gray-50 dark:bg-neutral-900">
-        <div className="container-custom">
-          <h2 className="text-3xl md:text-4xl font-light text-center mb-12">
-            The Question That <span className="text-gradient font-normal">Changes Everything</span>
-          </h2>
-          
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <p className="text-lg text-gray-600 dark:text-gray-400">
-              Every trend that moves markets, shapes culture, or breaks the internet follows predictable patterns.
-            </p>
-            
-            <p className="text-gray-500 dark:text-gray-500">
-              The Roman Empire memes. Stanley Cups. Girl Dinner. GameStop.<br/>
-              They all started as whispers before becoming roars.
-            </p>
-            
-            <p className="text-2xl font-light text-gray-900 dark:text-gray-100 pt-4">
-              <span className="font-normal">What if you could see them coming?</span>
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* Science Section */}
       <section className="py-20">
         <div className="container-custom">
@@ -218,44 +194,6 @@ export default function Home() {
                 <p>12 evolution chains forming</p>
                 <p>239 predictions pending</p>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Community Proof Section */}
-      <section className="py-20 bg-gray-50 dark:bg-neutral-900">
-        <div className="container-custom">
-          <h2 className="text-3xl md:text-4xl font-light text-center mb-12">
-            The First Wave of <span className="text-gradient font-normal">Analysts</span>
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <div className="card p-6">
-              <p className="text-gray-600 dark:text-gray-400 italic mb-3">
-                "Called the Roman Empire meme 3 weeks early. My WaveSight score is now part of my LinkedIn."
-              </p>
-              <p className="text-sm font-semibold text-gray-500 dark:text-gray-500">
-                — Sarah K., Level 23 Analyst
-              </p>
-            </div>
-            
-            <div className="card p-6">
-              <p className="text-gray-600 dark:text-gray-400 italic mb-3">
-                "Mapped 12 evolution chains last month. Won $300 in the tournament. This is addictively fun."
-              </p>
-              <p className="text-sm font-semibold text-gray-500 dark:text-gray-500">
-                — Marcus T., August Champion
-              </p>
-            </div>
-            
-            <div className="card p-6">
-              <p className="text-gray-600 dark:text-gray-400 italic mb-3">
-                "Finally, a place where overanalyzing TikTok is a valuable skill."
-              </p>
-              <p className="text-sm font-semibold text-gray-500 dark:text-gray-500">
-                — Alex P., 87% Accuracy Rate
-              </p>
             </div>
           </div>
         </div>

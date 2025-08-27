@@ -8,6 +8,16 @@ const nextConfig = {
   },
   images: {
     domains: ['aicahushpcslwjwrlqbo.supabase.co'], // NEW Supabase instance
+    minimumCacheTTL: 60, // Cache images for 60 seconds
+    formats: ['image/webp'], // Use WebP format for better performance
+  },
+  // Performance optimizations
+  experimental: {
+    optimizeCss: false, // Disabled to avoid critters issues
+    optimizePackageImports: ['lucide-react', 'framer-motion'], // Optimize specific packages
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production', // Remove console logs in production
   },
   typescript: {
     // Enable TypeScript checking during build
