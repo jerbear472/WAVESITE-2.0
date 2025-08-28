@@ -160,7 +160,7 @@ export default function OptimizedNavigation() {
                     }`}
                   >
                     <span className="text-base">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span className="whitespace-nowrap">{item.label}</span>
                   </Link>
                 ))}
               </div>

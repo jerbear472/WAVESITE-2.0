@@ -124,7 +124,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 sm:px-6 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 sm:px-6 py-8 pt-12 max-w-6xl">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

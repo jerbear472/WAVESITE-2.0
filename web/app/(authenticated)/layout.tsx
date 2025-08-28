@@ -69,7 +69,7 @@ export default function AuthenticatedLayout({
     <ClientOnlyProvider>
       <div className="min-h-screen flex flex-col">
         <SPANavigation />
-        <main className="flex-1 overflow-x-hidden pt-20">
+        <main className="flex-1 overflow-x-hidden pt-14">
           <PageTransition>
             <div className="min-h-full">
               {children}

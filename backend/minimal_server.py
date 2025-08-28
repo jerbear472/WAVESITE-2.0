@@ -125,7 +125,7 @@ class APIHandler(BaseHTTPRequestHandler):
         # Custom logging
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {format % args}")
 
-def run_server(port=8001):
+def run_server(port=8002):
     server_address = ('', port)
     httpd = HTTPServer(server_address, APIHandler)
     print(f"WaveSight API Server running on http://localhost:{port}")

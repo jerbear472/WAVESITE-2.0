@@ -8,8 +8,8 @@ import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import PendingValidations from '@/components/PendingValidations';
 import StreakDisplay from '@/components/StreakDisplay';
 import { motion } from 'framer-motion';
-import { getCurrentLevel } from '@/lib/XP_REWARDS';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
+import { XP_LEVELS, calculateLevelProgress, getLevelTitle } from '@/lib/xpLevels';
 import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
 import { cleanTrendData } from '@/lib/cleanTrendData';
 import { 
@@ -63,23 +63,7 @@ interface XPEvent {
 }
 
 // 15-level cultural anthropologist progression system
-const XP_LEVELS = [
-  { level: 1, title: 'Observer', emoji: '👁️', threshold: 0, color: 'text-gray-600', benefit: 'Begin your journey as a cultural observer' },
-  { level: 2, title: 'Recorder', emoji: '📝', threshold: 100, color: 'text-blue-600', benefit: 'Document emerging cultural patterns' },
-  { level: 3, title: 'Tracker', emoji: '🔍', threshold: 300, color: 'text-blue-700', benefit: 'Track trends across multiple platforms' },
-  { level: 4, title: 'Spotter', emoji: '📍', threshold: 600, color: 'text-green-600', benefit: 'Spot trends before they peak' },
-  { level: 5, title: 'Analyst', emoji: '📊', threshold: 1000, color: 'text-green-700', benefit: 'Analyze cultural movement patterns' },
-  { level: 6, title: 'Interpreter', emoji: '🔬', threshold: 1500, color: 'text-purple-600', benefit: 'Interpret deeper cultural meanings' },
-  { level: 7, title: 'Specialist', emoji: '🎯', threshold: 2100, color: 'text-purple-700', benefit: 'Specialize in trend prediction' },
-  { level: 8, title: 'Expert', emoji: '🧠', threshold: 2800, color: 'text-orange-600', benefit: 'Expert in cultural wave mechanics' },
-  { level: 9, title: 'Scholar', emoji: '📚', threshold: 3600, color: 'text-orange-700', benefit: 'Scholar of cultural anthropology' },
-  { level: 10, title: 'Researcher', emoji: '🔬', threshold: 4500, color: 'text-red-600', benefit: 'Lead cultural research initiatives' },
-  { level: 11, title: 'Authority', emoji: '👑', threshold: 5500, color: 'text-red-700', benefit: 'Recognized cultural authority' },
-  { level: 12, title: 'Pioneer', emoji: '🚀', threshold: 6600, color: 'text-yellow-600', benefit: 'Pioneer new cultural territories' },
-  { level: 13, title: 'Visionary', emoji: '✨', threshold: 8000, color: 'text-yellow-700', benefit: 'Visionary cultural insights' },
-  { level: 14, title: 'Master', emoji: '🏆', threshold: 10000, color: 'text-amber-600', benefit: 'Master of cultural wave science' },
-  { level: 15, title: 'Legend', emoji: '⭐', threshold: 12500, color: 'text-amber-700', benefit: 'Legendary cultural anthropologist' }
-];
+// XP_LEVELS imported from lib/xpLevels.ts for consistency
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -316,10 +300,9 @@ export default function Dashboard() {
       // Ensure we handle both null and undefined properly
       const totalXP = xpSummary?.total_xp ?? 0;
       
-      // Calculate level using the same function that works correctly on scroll page
-      const currentLevelData = getCurrentLevel(totalXP);
-      const currentLevel = currentLevelData.level;
-      const levelTitle = currentLevelData.title;
+      // Use unified level system
+      const currentLevel = xpSummary?.level || 1;
+      const levelTitle = getLevelTitle(currentLevel);
       
       setStats({
         total_xp: totalXP,
@@ -356,15 +339,7 @@ export default function Dashboard() {
   // handleTrendSubmit removed - SmartTrendSubmission handles everything internally now
 
   const getLevelProgress = () => {
-    // Calculate progress to next level
-    const levelThresholds = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500, 6600, 8000, 10000, 12500, 15000];
-    const currentThreshold = levelThresholds[stats.current_level - 1] || 0;
-    const nextThreshold = levelThresholds[stats.current_level] || 15000;
-    const progress = ((stats.total_xp - currentThreshold) / (nextThreshold - currentThreshold)) * 100;
-    return {
-      progress: Math.min(Math.max(progress, 0), 100),
-      xpToNext: nextThreshold - stats.total_xp
-    };
+    return calculateLevelProgress(stats.total_xp, stats.current_level);
   };
 
   const getEventIcon = (eventType: string) => {

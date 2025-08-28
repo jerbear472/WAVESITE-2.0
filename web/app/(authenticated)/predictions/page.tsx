@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
-import VoteButtons from '@/components/VoteButtons';
 import { 
   Heart,
   MessageCircle,
@@ -34,48 +33,113 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Custom Vote Button Components
-const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient }: any) => {
+// Custom Vote Button Components - Updated to handle vote changes properly
+const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient, userVote, onVote, allCounts, setAllCounts }: any) => {
   const { user } = useAuth();
   const { showXPNotification } = useXPNotification();
   const [voting, setVoting] = useState(false);
-  const [localCount, setLocalCount] = useState(count);
-  const [hasVoted, setHasVoted] = useState(false);
+  const hasVoted = userVote === type;
+  
+  // Use count from allCounts to ensure proper updates
+  const displayCount = allCounts?.[type] ?? count;
   
   const handleVote = async () => {
     if (!user || voting) return;
     
-    console.log('🗳️ Side Vote:', { type, trendId, value, user: user.id });
+    console.log('🗳️ Vote:', { type, trendId, value, user: user.id, currentVote: userVote });
     setVoting(true);
+    
+    // Store previous vote type and counts
+    const previousVote = userVote;
+    const prevCounts = { ...allCounts };
+    
     try {
-      const response = await fetch('/api/vote-trend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          trend_id: trendId,
-          vote_type: type,
-          vote_value: value,
-          user_id: user.id
-        })
+      // Optimistically update UI
+      if (previousVote && previousVote !== type) {
+        // Decrease count on previous vote
+        setAllCounts({
+          ...prevCounts,
+          [previousVote]: Math.max(0, (prevCounts[previousVote] || 0) - 1),
+          [type]: (prevCounts[type] || 0) + 1
+        });
+      } else if (!previousVote) {
+        // New vote
+        setAllCounts({
+          ...prevCounts,
+          [type]: (prevCounts[type] || 0) + 1
+        });
+      }
+      
+      onVote(type); // Update parent component about the vote
+      
+      // Save vote to localStorage for persistence
+      const storedVotes = JSON.parse(localStorage.getItem('userTrendVotes') || '{}');
+      storedVotes[trendId] = type;
+      localStorage.setItem('userTrendVotes', JSON.stringify(storedVotes));
+      
+      // Call API
+      const { data, error } = await supabase.rpc('cast_trend_vote', {
+        p_user_id: user.id,
+        p_trend_id: trendId,
+        p_vote_type: type,
+        p_vote_value: value
       });
       
-      const data = await response.json();
-      console.log('🗳️ Side Vote Response:', { status: response.status, data });
-      
-      if (data.success) {
-        setLocalCount(data[`${type}_votes`]);
-        setHasVoted(true);
-        console.log('✅ Side Vote Success');
-        if (data.xp_earned && showXPNotification) {
-          showXPNotification(data.xp_earned, `Voted: ${type}`);
+      if (!error && data) {
+        // Update with actual counts from server
+        setAllCounts({
+          wave: data.wave_votes || 0,
+          fire: data.fire_votes || 0,
+          declining: data.declining_votes || 0,
+          dead: data.dead_votes || 0
+        });
+        
+        // Award XP for voting
+        const xpEarned = !previousVote ? 10 : 5;
+        
+        // Save XP to database
+        await supabase.from('xp_transactions').insert({
+          user_id: user.id,
+          amount: xpEarned,
+          type: 'vote',
+          description: `Voted ${label} on trend`,
+          reference_id: trendId,
+          reference_type: 'trend',
+          created_at: new Date().toISOString()
+        });
+        
+        // Update user_xp table
+        const { data: currentXP } = await supabase
+          .from('user_xp')
+          .select('total_xp')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (currentXP) {
+          await supabase
+            .from('user_xp')
+            .update({ 
+              total_xp: currentXP.total_xp + xpEarned,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id);
+        }
+        
+        if (showXPNotification) {
+          showXPNotification(xpEarned, `Voted: ${label}`, 'prediction');
+          console.log('🏆 XP awarded for voting:', xpEarned);
         }
       } else {
-        console.error('❌ Side Vote Failed:', data);
-        alert(`Vote failed: ${data.error || 'Unknown error'}`);
+        // Revert on error
+        setAllCounts(prevCounts);
+        onVote(previousVote);
+        console.error('❌ Vote Failed:', error);
       }
     } catch (error) {
-      console.error('❌ Side Vote Error:', error);
-      alert(`Vote error: ${error}`);
+      // Revert on error
+      setAllCounts(prevCounts);
+      onVote(previousVote);
+      console.error('❌ Vote Error:', error);
     } finally {
       setVoting(false);
     }
@@ -87,65 +151,128 @@ const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient }: 
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       disabled={voting}
-      className={`group relative w-14 h-14 rounded-full bg-white shadow-lg border-2 transition-all ${
+      className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-full bg-white shadow-lg border-2 transition-all ${
         hasVoted ? `bg-gradient-to-r ${gradient} border-transparent` : 'border-gray-200 hover:border-gray-300'
       } ${voting ? 'opacity-50' : ''}`}
     >
-      <div className="flex flex-col items-center justify-center">
-        <span className="text-xl">{icon}</span>
-        <span className={`text-xs font-bold ${hasVoted ? 'text-white' : 'text-gray-700'}`}>
-          {localCount}
-        </span>
-      </div>
+      <span className="text-xl">{icon}</span>
+      <span className={`text-xs font-bold ${hasVoted ? 'text-white' : 'text-gray-700'}`}>
+        {displayCount}
+      </span>
       {/* Tooltip */}
-      <div className="absolute left-full ml-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-        {label} ({value > 0 ? '+' : ''}{value})
+      <div className="absolute left-full ml-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
+        {label}
       </div>
     </motion.button>
   );
 };
 
-const VoteMobileButton = ({ type, trendId, count, icon, value, gradient }: any) => {
+const VoteMobileButton = ({ type, trendId, count, icon, label, value, gradient, userVote, onVote, allCounts, setAllCounts }: any) => {
   const { user } = useAuth();
   const { showXPNotification } = useXPNotification();
   const [voting, setVoting] = useState(false);
-  const [localCount, setLocalCount] = useState(count);
-  const [hasVoted, setHasVoted] = useState(false);
+  const hasVoted = userVote === type;
+  
+  // Use count from allCounts to ensure proper updates
+  const displayCount = allCounts?.[type] ?? count;
   
   const handleVote = async () => {
     if (!user || voting) return;
     
     console.log('📱 Mobile Vote:', { type, trendId, value, user: user.id });
     setVoting(true);
+    
+    // Store previous vote type and counts
+    const previousVote = userVote;
+    const prevCounts = { ...allCounts };
+    
     try {
-      const response = await fetch('/api/vote-trend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          trend_id: trendId,
-          vote_type: type,
-          vote_value: value,
-          user_id: user.id
-        })
+      // Optimistically update UI
+      if (previousVote && previousVote !== type) {
+        // Decrease count on previous vote
+        setAllCounts({
+          ...prevCounts,
+          [previousVote]: Math.max(0, (prevCounts[previousVote] || 0) - 1),
+          [type]: (prevCounts[type] || 0) + 1
+        });
+      } else if (!previousVote) {
+        // New vote
+        setAllCounts({
+          ...prevCounts,
+          [type]: (prevCounts[type] || 0) + 1
+        });
+      }
+      
+      onVote(type); // Update parent component about the vote
+      
+      // Save vote to localStorage for persistence
+      const storedVotes = JSON.parse(localStorage.getItem('userTrendVotes') || '{}');
+      storedVotes[trendId] = type;
+      localStorage.setItem('userTrendVotes', JSON.stringify(storedVotes));
+      
+      // Call API
+      const { data, error } = await supabase.rpc('cast_trend_vote', {
+        p_user_id: user.id,
+        p_trend_id: trendId,
+        p_vote_type: type,
+        p_vote_value: value
       });
       
-      const data = await response.json();
-      console.log('📱 Mobile Vote Response:', { status: response.status, data });
-      
-      if (data.success) {
-        setLocalCount(data[`${type}_votes`]);
-        setHasVoted(true);
-        console.log('✅ Mobile Vote Success');
-        if (data.xp_earned && showXPNotification) {
-          showXPNotification(data.xp_earned, `Voted: ${type}`);
+      if (!error && data) {
+        // Update with actual counts from server
+        setAllCounts({
+          wave: data.wave_votes || 0,
+          fire: data.fire_votes || 0,
+          declining: data.declining_votes || 0,
+          dead: data.dead_votes || 0
+        });
+        
+        // Award XP for voting
+        const xpEarned = !previousVote ? 10 : 5;
+        
+        // Save XP to database
+        await supabase.from('xp_transactions').insert({
+          user_id: user.id,
+          amount: xpEarned,
+          type: 'vote',
+          description: `Voted ${label} on trend`,
+          reference_id: trendId,
+          reference_type: 'trend',
+          created_at: new Date().toISOString()
+        });
+        
+        // Update user_xp table
+        const { data: currentXP } = await supabase
+          .from('user_xp')
+          .select('total_xp')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (currentXP) {
+          await supabase
+            .from('user_xp')
+            .update({ 
+              total_xp: currentXP.total_xp + xpEarned,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id);
+        }
+        
+        if (showXPNotification) {
+          showXPNotification(xpEarned, `Voted: ${label}`, 'prediction');
+          console.log('🏆 XP awarded for voting:', xpEarned);
         }
       } else {
-        console.error('❌ Mobile Vote Failed:', data);
-        alert(`Vote failed: ${data.error || 'Unknown error'}`);
+        // Revert on error
+        setAllCounts(prevCounts);
+        onVote(previousVote);
+        console.error('❌ Mobile Vote Failed:', error);
       }
     } catch (error) {
+      // Revert on error  
+      setAllCounts(prevCounts);
+      onVote(previousVote);
       console.error('❌ Mobile Vote Error:', error);
-      alert(`Vote error: ${error}`);
     } finally {
       setVoting(false);
     }
@@ -156,14 +283,13 @@ const VoteMobileButton = ({ type, trendId, count, icon, value, gradient }: any) 
       onClick={handleVote}
       whileTap={{ scale: 0.95 }}
       disabled={voting}
-      className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-md transition-all ${
+      className={`flex flex-col items-center justify-center w-20 h-20 rounded-xl shadow-md transition-all ${
         hasVoted ? `bg-gradient-to-r ${gradient} text-white` : 'bg-white text-gray-700 border border-gray-200'
       } ${voting ? 'opacity-50' : ''}`}
     >
-      <span className="text-lg">{icon}</span>
-      <span className="font-bold text-sm">{localCount}</span>
-      <span className={`text-xs ${hasVoted ? 'text-white/80' : 'text-gray-500'}`}>
-        {value > 0 ? '+' : ''}{value}
+      <span className="text-2xl mb-1">{icon}</span>
+      <span className={`font-bold text-sm ${hasVoted ? 'text-white' : 'text-gray-700'}`}>
+        {displayCount}
       </span>
     </motion.button>
   );
@@ -195,6 +321,9 @@ interface TrendWithEngagement {
   fire_votes?: number;
   declining_votes?: number;
   dead_votes?: number;
+  user_vote_type?: string; // Track user's vote type for this trend
+  is_validated?: boolean; // True if wave_votes >= 3
+  is_rejected?: boolean; // True if dead_votes >= 3
   
   // Prediction breakdown
   prediction_breakdown: {
@@ -278,6 +407,8 @@ export default function EnhancedPredictionsPage() {
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [activeCommentTrend, setActiveCommentTrend] = useState<TrendWithEngagement | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [userVotes, setUserVotes] = useState<Record<string, string>>({});
+  const [voteCounts, setVoteCounts] = useState<Record<string, Record<string, number>>>({});
   
   // User Stats
   const [userStats, setUserStats] = useState<UserStats>({
@@ -310,8 +441,23 @@ export default function EnhancedPredictionsPage() {
       loadTrends();
       loadUserStats();
       loadFollowerActivity();
+      loadUserVotes(); // Load user's existing votes
     }
   }, [user, filterType, timeFilter, categoryFilter]);
+
+  // Load saved votes from localStorage on mount
+  useEffect(() => {
+    const savedVotes = localStorage.getItem('userTrendVotes');
+    if (savedVotes) {
+      try {
+        const votesData = JSON.parse(savedVotes);
+        setUserVotes(votesData);
+        console.log('Loaded saved votes from localStorage:', votesData);
+      } catch (error) {
+        console.error('Error parsing saved votes:', error);
+      }
+    }
+  }, []);
 
   const loadUserStats = async () => {
     if (!user) return;
@@ -394,6 +540,35 @@ export default function EnhancedPredictionsPage() {
         rank: 0,
         rank_change: 0
       });
+    }
+  };
+
+  // Load user's existing votes from database
+  const loadUserVotes = async () => {
+    if (!user) return;
+    
+    try {
+      // Get user's votes from trend_user_votes table
+      const { data: votes, error } = await supabase
+        .from('trend_user_votes')
+        .select('trend_id, vote_type')
+        .eq('user_id', user.id);
+      
+      if (!error && votes) {
+        const votesMap: Record<string, string> = {};
+        votes.forEach(vote => {
+          votesMap[vote.trend_id] = vote.vote_type;
+        });
+        setUserVotes(prevVotes => ({ ...prevVotes, ...votesMap }));
+        
+        // Also save to localStorage
+        const currentSaved = JSON.parse(localStorage.getItem('userTrendVotes') || '{}');
+        localStorage.setItem('userTrendVotes', JSON.stringify({ ...currentSaved, ...votesMap }));
+        
+        console.log('Loaded user votes from database:', votesMap);
+      }
+    } catch (error) {
+      console.error('Error loading user votes:', error);
     }
   };
 
@@ -510,7 +685,64 @@ export default function EnhancedPredictionsPage() {
     try {
       setLoading(true);
       
-      // Using dummy data for development
+      // Load trends that are either submitted (awaiting validation) or validated
+      // Rejected trends are NOT shown on predictions page
+      const { data: realTrends, error } = await supabase
+        .from('trend_submissions')
+        .select('*')
+        .in('status', ['submitted', 'validated', 'validating'])  // Show all except rejected
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!error && realTrends && realTrends.length > 0) {
+        // Map real trends to the component format
+        const formattedTrends: TrendWithEngagement[] = realTrends.map(trend => ({
+          id: trend.id,
+          title: trend.title || 'Untitled Trend',
+          description: trend.description || 'No description',
+          platform: trend.platform || 'unknown',
+          category: trend.category || 'Other',
+          url: trend.url || '',
+          thumbnail_url: trend.thumbnail_url,
+          creator_handle: trend.creator_handle,
+          submitted_at: trend.created_at,
+          spotter_id: trend.spotter_id,
+          spotter_username: trend.spotter_username || 'Anonymous',
+          
+          // Engagement metrics (with defaults)
+          likes_count: trend.likes_count || 0,
+          comments_count: trend.comments_count || 0,
+          predictions_count: trend.predictions_count || 0,
+          heat_score: trend.heat_score || 0,
+          user_has_liked: false,
+          user_has_predicted: false,
+          
+          // Voting data
+          wave_votes: trend.wave_votes || 0,
+          fire_votes: trend.fire_votes || 0,
+          declining_votes: trend.declining_votes || 0,
+          dead_votes: trend.dead_votes || 0,
+          is_validated: (trend.wave_votes || 0) >= 3,
+          is_rejected: (trend.dead_votes || 0) >= 3,
+          
+          // Default prediction breakdown
+          prediction_breakdown: {
+            '24hrs': 0,
+            '3days': 0,
+            '1week': 0,
+            '2weeks': 0,
+            'peaked': 0
+          },
+          
+          comments: []
+        }));
+        
+        setTrends(formattedTrends);
+        setLoading(false);
+        return;
+      }
+      
+      // Fallback to dummy data if no real trends
       const allDummyTrends: TrendWithEngagement[] = [
         {
           id: '550e8400-e29b-41d4-a716-446655440001',
@@ -773,7 +1005,28 @@ export default function EnhancedPredictionsPage() {
         filteredTrends = filteredTrends.filter(t => t.heat_score > 80);
       }
       
-      filteredTrends.sort((a, b) => b.heat_score - a.heat_score);
+      // Filter out rejected trends
+      filteredTrends = filteredTrends.filter(t => !t.is_rejected);
+      
+      // Sort validated trends to top
+      filteredTrends.sort((a, b) => {
+        if (a.is_validated && !b.is_validated) return -1;
+        if (!a.is_validated && b.is_validated) return 1;
+        return b.heat_score - a.heat_score;
+      });
+      
+      // Initialize vote counts for each trend
+      const initialCounts: Record<string, Record<string, number>> = {};
+      filteredTrends.forEach(trend => {
+        initialCounts[trend.id] = {
+          wave: trend.wave_votes || 0,
+          fire: trend.fire_votes || 0,
+          declining: trend.declining_votes || 0,
+          dead: trend.dead_votes || 0
+        };
+      });
+      setVoteCounts(initialCounts);
+      
       setTrends(filteredTrends);
     } catch (error) {
       console.error('Error loading trends:', error);
@@ -1019,7 +1272,7 @@ export default function EnhancedPredictionsPage() {
 
             {/* Trends Feed */}
             <div className="space-y-8">
-              {trends.map((trend, index) => (
+              {trends.filter(t => !t.is_rejected).map((trend, index) => (
                 <motion.div
                   key={trend.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -1027,16 +1280,29 @@ export default function EnhancedPredictionsPage() {
                   transition={{ delay: index * 0.1 }}
                   className="relative"
                 >
-                  {/* Desktop Side Voting Buttons - Left */}
+                  {/* Desktop Side Voting Buttons - Left Side */}
                   <div className="hidden lg:flex absolute -left-20 top-1/2 -translate-y-1/2 flex-col gap-2 z-10">
                     <VoteSideButton 
                       type="wave" 
                       trendId={trend.id}
                       count={trend.wave_votes || 0}
                       icon="🌊"
-                      label="Wave"
+                      label="Validate"
                       value={2}
                       gradient="from-blue-400 to-cyan-500"
+                      userVote={userVotes[trend.id]}
+                      onVote={(type: string) => {
+                        setUserVotes(prev => ({ ...prev, [trend.id]: type }));
+                        // Check for validation
+                        const newCount = (voteCounts[trend.id]?.wave || 0) + 1;
+                        if (newCount >= 3) {
+                          setTrends(prev => prev.map(t => 
+                            t.id === trend.id ? { ...t, is_validated: true } : t
+                          ));
+                        }
+                      }}
+                      allCounts={voteCounts[trend.id]}
+                      setAllCounts={(counts: any) => setVoteCounts(prev => ({ ...prev, [trend.id]: counts }))}
                     />
                     <VoteSideButton 
                       type="fire" 
@@ -1046,10 +1312,14 @@ export default function EnhancedPredictionsPage() {
                       label="Fire"
                       value={1}
                       gradient="from-orange-400 to-red-500"
+                      userVote={userVotes[trend.id]}
+                      onVote={(type: string) => setUserVotes(prev => ({ ...prev, [trend.id]: type }))}
+                      allCounts={voteCounts[trend.id]}
+                      setAllCounts={(counts: any) => setVoteCounts(prev => ({ ...prev, [trend.id]: counts }))}
                     />
                   </div>
                   
-                  {/* Desktop Side Voting Buttons - Right */}
+                  {/* Desktop Side Voting Buttons - Right Side */}
                   <div className="hidden lg:flex absolute -right-20 top-1/2 -translate-y-1/2 flex-col gap-2 z-10">
                     <VoteSideButton 
                       type="declining" 
@@ -1059,35 +1329,102 @@ export default function EnhancedPredictionsPage() {
                       label="Declining"
                       value={-1}
                       gradient="from-yellow-400 to-amber-500"
+                      userVote={userVotes[trend.id]}
+                      onVote={(type: string) => setUserVotes(prev => ({ ...prev, [trend.id]: type }))}
+                      allCounts={voteCounts[trend.id]}
+                      setAllCounts={(counts: any) => setVoteCounts(prev => ({ ...prev, [trend.id]: counts }))}
                     />
                     <VoteSideButton 
                       type="dead" 
                       trendId={trend.id}
                       count={trend.dead_votes || 0}
                       icon="💀"
-                      label="Dead"
+                      label="Reject"
                       value={-2}
                       gradient="from-gray-400 to-gray-600"
+                      userVote={userVotes[trend.id]}
+                      onVote={(type: string) => {
+                        setUserVotes(prev => ({ ...prev, [trend.id]: type }));
+                        // Check for rejection
+                        const newCount = (voteCounts[trend.id]?.dead || 0) + 1;
+                        if (newCount >= 3) {
+                          setTrends(prev => prev.filter(t => t.id !== trend.id));
+                        }
+                      }}
+                      allCounts={voteCounts[trend.id]}
+                      setAllCounts={(counts: any) => setVoteCounts(prev => ({ ...prev, [trend.id]: counts }))}
                     />
                   </div>
                   
-                  {/* Mobile Top Voting Buttons */}
-                  <div className="lg:hidden flex justify-center gap-3 mb-2">
+                  {/* Mobile Voting Buttons - All Four in One Row */}
+                  <div className="lg:hidden flex justify-center gap-2 mb-2">
                     <VoteMobileButton 
                       type="wave" 
                       trendId={trend.id}
                       count={trend.wave_votes || 0}
                       icon="🌊"
+                      label="Validate"
                       value={2}
                       gradient="from-blue-400 to-cyan-500"
+                      userVote={userVotes[trend.id]}
+                      onVote={(type: string) => {
+                        setUserVotes(prev => ({ ...prev, [trend.id]: type }));
+                        // Check for validation
+                        const newCount = (voteCounts[trend.id]?.wave || 0) + 1;
+                        if (newCount >= 3) {
+                          setTrends(prev => prev.map(t => 
+                            t.id === trend.id ? { ...t, is_validated: true } : t
+                          ));
+                        }
+                      }}
+                      allCounts={voteCounts[trend.id]}
+                      setAllCounts={(counts: any) => setVoteCounts(prev => ({ ...prev, [trend.id]: counts }))}
                     />
                     <VoteMobileButton 
                       type="fire" 
                       trendId={trend.id}
                       count={trend.fire_votes || 0}
                       icon="🔥"
+                      label="Fire"
                       value={1}
                       gradient="from-orange-400 to-red-500"
+                      userVote={userVotes[trend.id]}
+                      onVote={(type: string) => setUserVotes(prev => ({ ...prev, [trend.id]: type }))}
+                      allCounts={voteCounts[trend.id]}
+                      setAllCounts={(counts: any) => setVoteCounts(prev => ({ ...prev, [trend.id]: counts }))}
+                    />
+                    <VoteMobileButton 
+                      type="declining" 
+                      trendId={trend.id}
+                      count={trend.declining_votes || 0}
+                      icon="📉"
+                      label="Declining"
+                      value={-1}
+                      gradient="from-yellow-400 to-amber-500"
+                      userVote={userVotes[trend.id]}
+                      onVote={(type: string) => setUserVotes(prev => ({ ...prev, [trend.id]: type }))}
+                      allCounts={voteCounts[trend.id]}
+                      setAllCounts={(counts: any) => setVoteCounts(prev => ({ ...prev, [trend.id]: counts }))}
+                    />
+                    <VoteMobileButton 
+                      type="dead" 
+                      trendId={trend.id}
+                      count={trend.dead_votes || 0}
+                      icon="💀"
+                      label="Reject"
+                      value={-2}
+                      gradient="from-gray-400 to-gray-600"
+                      userVote={userVotes[trend.id]}
+                      onVote={(type: string) => {
+                        setUserVotes(prev => ({ ...prev, [trend.id]: type }));
+                        // Check for rejection
+                        const newCount = (voteCounts[trend.id]?.dead || 0) + 1;
+                        if (newCount >= 3) {
+                          setTrends(prev => prev.filter(t => t.id !== trend.id));
+                        }
+                      }}
+                      allCounts={voteCounts[trend.id]}
+                      setAllCounts={(counts: any) => setVoteCounts(prev => ({ ...prev, [trend.id]: counts }))}
                     />
                   </div>
                   
@@ -1109,9 +1446,16 @@ export default function EnhancedPredictionsPage() {
                       <div className="flex-1">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                              {formatHeatScore(trend.heat_score)} {trend.title}
-                            </h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              {trend.is_validated && (
+                                <span className="px-2 py-0.5 bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs font-bold rounded-full">
+                                  ✓ VALIDATED
+                                </span>
+                              )}
+                              <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                {formatHeatScore(trend.heat_score)} {trend.title}
+                              </h3>
+                            </div>
                             <p className="text-sm text-gray-600 mb-2">{trend.description}</p>
                             <div className="flex items-center gap-3 text-xs text-gray-500">
                               <span className="flex items-center gap-1">
@@ -1209,59 +1553,10 @@ export default function EnhancedPredictionsPage() {
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Original Vote Buttons Hidden on Mobile */}
-                    <div className="hidden lg:block mt-4 pt-4 border-t border-gray-100">
-                      <VoteButtons
-                        trendId={trend.id}
-                        initialHeatScore={trend.heat_score}
-                        initialVotes={{
-                          wave: trend.wave_votes || 0,
-                          fire: trend.fire_votes || 0,
-                          declining: trend.declining_votes || 0,
-                          dead: trend.dead_votes || 0
-                        }}
-                        onVoteUpdate={(data) => {
-                          // Update the trend in state with new vote data
-                          setTrends(prevTrends => 
-                            prevTrends.map(t => 
-                              t.id === trend.id 
-                                ? { 
-                                    ...t, 
-                                    heat_score: data.heat_score,
-                                    wave_votes: data.wave_votes,
-                                    fire_votes: data.fire_votes,
-                                    declining_votes: data.declining_votes,
-                                    dead_votes: data.dead_votes
-                                  }
-                                : t
-                            )
-                          );
-                        }}
-                      />
-                    </div>
+                    {/* Removed duplicate VoteButtons component */}
                   </div>
                   </div>
-                  
-                  {/* Mobile Bottom Voting Buttons */}
-                  <div className="lg:hidden flex justify-center gap-3 mt-2">
-                    <VoteMobileButton 
-                      type="declining" 
-                      trendId={trend.id}
-                      count={trend.declining_votes || 0}
-                      icon="📉"
-                      value={-1}
-                      gradient="from-yellow-400 to-amber-500"
-                    />
-                    <VoteMobileButton 
-                      type="dead" 
-                      trendId={trend.id}
-                      count={trend.dead_votes || 0}
-                      icon="💀"
-                      value={-2}
-                      gradient="from-gray-400 to-gray-600"
-                    />
-                  </div>
+                  {/* Removed duplicate mobile voting buttons */}
                 </motion.div>
               ))}
             </div>

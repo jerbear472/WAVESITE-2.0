@@ -67,6 +67,13 @@ interface Trend {
   approve_count?: number;
   reject_count?: number;
   validation_status?: 'pending' | 'approved' | 'rejected';
+  // New voting system from predictions page
+  wave_votes?: number;
+  fire_votes?: number;
+  declining_votes?: number;
+  dead_votes?: number;
+  is_validated?: boolean;
+  is_rejected?: boolean;
   // Social media metadata
   creator_handle?: string;
   creator_name?: string;
@@ -500,24 +507,41 @@ export default function Timeline() {
                 </div>
               )}
 
-              {/* Validation Status */}
-              {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
+              {/* Validation Status - Updated for new voting system */}
+              {(trend.is_validated || ((trend.wave_votes ?? 0) > 0) || ((trend.fire_votes ?? 0) > 0) || ((trend.declining_votes ?? 0) > 0) || ((trend.dead_votes ?? 0) > 0)) && (
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                   <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center gap-2">
                     <AwardIcon className="w-4 h-4" />
-                    Validation Votes
+                    Community Votes
                   </h4>
-                  <div className="flex items-center gap-4">
-                    {trend.approve_count && trend.approve_count > 0 && (
+                  {trend.is_validated && (
+                    <div className="mb-3 px-3 py-1.5 bg-gradient-to-r from-green-400 to-emerald-500 text-white text-sm font-bold rounded-full inline-flex items-center gap-1">
+                      <span>✓</span> VALIDATED BY COMMUNITY
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {(trend.wave_votes ?? 0) > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl">👍</span>
-                        <span className="font-bold text-green-600">{trend.approve_count || 0}</span>
+                        <span className="text-2xl">🌊</span>
+                        <span className="font-bold text-blue-600">{trend.wave_votes}</span>
                       </div>
                     )}
-                    {trend.reject_count && trend.reject_count > 0 && (
+                    {(trend.fire_votes ?? 0) > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl">👎</span>
-                        <span className="font-bold text-red-600">{trend.reject_count || 0}</span>
+                        <span className="text-2xl">🔥</span>
+                        <span className="font-bold text-orange-600">{trend.fire_votes}</span>
+                      </div>
+                    )}
+                    {(trend.declining_votes ?? 0) > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">📉</span>
+                        <span className="font-bold text-yellow-600">{trend.declining_votes}</span>
+                      </div>
+                    )}
+                    {(trend.dead_votes ?? 0) > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">💀</span>
+                        <span className="font-bold text-gray-600">{trend.dead_votes}</span>
                       </div>
                     )}
                   </div>
@@ -701,7 +725,15 @@ export default function Timeline() {
           }
         });
       }
-      setTrends(data || []);
+      
+      // Process trends to set validation/rejection status and filter rejected ones
+      const processedTrends = (data || []).map(trend => ({
+        ...trend,
+        is_validated: (trend.wave_votes ?? 0) >= 3,
+        is_rejected: (trend.dead_votes ?? 0) >= 3
+      })).filter(trend => !trend.is_rejected); // Filter out rejected trends
+      
+      setTrends(processedTrends);
 
       // Fetch total XP from user_xp_summary view (same as Navigation)
       const { data: xpSummary, error: xpError } = await supabase

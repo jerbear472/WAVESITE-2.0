@@ -3,20 +3,41 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
+    // Get the authorization header
+    const authorization = request.headers.get('authorization');
+    if (!authorization) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Use service role key for server-side operations
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const { trend_id, vote_type, vote_value, user_id } = await request.json();
+    // Get authenticated user using the token
+    const token = authorization.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const { trend_id, vote_type, vote_value } = await request.json();
 
     // Validate input
-    if (!trend_id || !vote_type || !user_id || vote_value === undefined) {
+    if (!trend_id || !vote_type || vote_value === undefined) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
+
+    // Use authenticated user ID instead of client-provided user_id
+    const user_id = user.id;
 
     // Cast the vote using the database function
     const { data, error } = await supabase

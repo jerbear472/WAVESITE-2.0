@@ -148,7 +148,7 @@ export default function Navigation() {
                     }`}
                   >
                     <span className="text-base">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
                   </Link>
                 ))}
               </div>
@@ -158,10 +158,10 @@ export default function Navigation() {
           {/* Desktop Stats & Logout - More Compact */}
           <div className="hidden md:flex items-center space-x-2 flex-shrink-0">
             {/* XP Display */}
-            <div className="flex items-center bg-gradient-to-r from-yellow-50 to-orange-50 px-2.5 py-1 rounded-md border border-yellow-200">
+            <div className="flex items-center bg-gradient-to-r from-yellow-50 to-orange-50 px-2.5 py-1 rounded-md border border-yellow-200 whitespace-nowrap">
               <span className="text-yellow-500 text-xs mr-1">⚡</span>
-              <span className="text-xs font-bold text-gray-700">{userXP.toLocaleString()}</span>
-              <span className="text-xs text-gray-500 ml-0.5">XP</span>
+              <span className="text-xs font-bold text-gray-700 whitespace-nowrap">{userXP.toLocaleString()}</span>
+              <span className="text-xs text-gray-500 ml-0.5 whitespace-nowrap">XP</span>
             </div>
             
             {/* Rank Display - Only if in top 100 */}
@@ -192,9 +192,9 @@ export default function Navigation() {
           {/* Mobile menu button + XP display */}
           <div className="md:hidden flex items-center space-x-2">
             {/* Mobile XP - Very Compact */}
-            <div className="flex items-center bg-yellow-50 px-2 py-0.5 rounded-md">
+            <div className="flex items-center bg-yellow-50 px-2 py-0.5 rounded-md whitespace-nowrap">
               <span className="text-yellow-500 text-xs">⚡</span>
-              <span className="text-xs font-bold text-gray-700">{userXP > 999 ? `${Math.floor(userXP/1000)}k` : userXP}</span>
+              <span className="text-xs font-bold text-gray-700 whitespace-nowrap">{userXP > 999 ? `${Math.floor(userXP/1000)}k` : userXP}</span>
             </div>
 
             <button
@@ -220,9 +220,9 @@ export default function Navigation() {
             {/* Mobile User Stats */}
             <div className="flex items-center justify-between py-3 px-3 bg-gray-50 rounded-lg mb-3">
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center space-x-1 whitespace-nowrap">
                   <span className="text-yellow-500">⚡</span>
-                  <span className="text-sm font-semibold text-gray-700">{userXP.toLocaleString()} XP</span>
+                  <span className="text-sm font-semibold text-gray-700 whitespace-nowrap">{userXP.toLocaleString()} XP</span>
                 </div>
                 {userLevel !== 'Observer' && (
                   <>
@@ -257,7 +257,7 @@ export default function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <span className="text-lg">{item.icon}</span>
-                <span>{typeof item.label === 'string' ? item.label : item.label}</span>
+                <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
               </Link>
             ))}
 
