@@ -11,10 +11,10 @@ export const UNIFIED_XP_CONFIG = {
   // Base XP rewards for actions (same across all platforms)
   base: {
     // Core Actions
-    trendSubmission: 25,        // Base XP per trend submission
+    trendSubmission: 10,        // Base XP per trend submission
     validationVote: 5,          // XP per validation vote
     approvalBonus: 50,          // Bonus when trend gets approved (3+ YES votes)
-    rejectionPenalty: -10,      // XP penalty when trend gets rejected
+    rejectionPenalty: -15,      // XP penalty when trend gets rejected
     accurateValidation: 15,     // Bonus XP for voting with majority
     
     // Engagement Actions
