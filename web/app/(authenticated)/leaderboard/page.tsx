@@ -141,7 +141,7 @@ export default function LeaderboardPage() {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Leaderboard</h1>
-          <p className="text-gray-600">Top Cultural Anthropologists</p>
+          <p className="text-gray-600">Top Trend Spotters</p>
         </motion.div>
 
         {/* Minimal Stats Cards */}

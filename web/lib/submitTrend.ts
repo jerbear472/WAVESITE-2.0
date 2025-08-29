@@ -95,10 +95,26 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       finalXP: paymentAmount
     });
     
+    // Validate and prepare category
+    const safeCategory = getSafeCategory(data.category);
+    console.log(`📁 Category validation: input="${data.category}" -> safe="${safeCategory}"`);
+    
+    // List of valid categories from ReliableTrendSubmission service
+    const validCategories = [
+      'technology', 'fashion', 'food', 'travel', 'fitness', 'entertainment',
+      'gaming', 'sports', 'music', 'art', 'education', 'business', 'health',
+      'science', 'politics', 'comedy', 'lifestyle', 'beauty', 'diy', 'pets',
+      'automotive', 'finance', 'realestate', 'crypto', 'other'
+    ];
+    
+    // Final validation to ensure we use a valid enum value
+    const finalCategory = validCategories.includes(safeCategory) ? safeCategory : 'lifestyle';
+    console.log(`📁 Final category: "${finalCategory}"`);
+    
     // Prepare submission data - only include essential columns first
     const submissionData: any = {
       spotter_id: userId,  // Use spotter_id as that's what the table expects
-      category: getSafeCategory(data.category),
+      category: finalCategory,
       description: (data.description && data.description !== '0') ? data.description : 
                    (data.title && data.title !== '0') ? data.title : 'Untitled Trend',
       status: 'submitted',
@@ -159,6 +175,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       allFields: Object.keys(data)
     });
     console.log('Submission data keys:', Object.keys(submissionData));
+    console.log('Category being submitted:', submissionData.category);
     console.log('Full submission data:', JSON.stringify(submissionData, null, 2));
     
     // Insert the trend submission with timeout

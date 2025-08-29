@@ -161,37 +161,40 @@ export default function Dashboard() {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
 
-      // Try xp_events first, fall back to xp_transactions if it doesn't exist
+      // Use xp_transactions as the primary source for XP data
       let xpEvents = null;
-      const { data: xpEventsData, error: eventsError } = await supabase
-        .from('xp_events')
+      const { data: xpTransData, error: transError } = await supabase
+        .from('xp_transactions')
         .select('*')
         .eq('user_id', user.id)
         .gte('created_at', weekAgo.toISOString())
         .order('created_at', { ascending: false });
       
-      console.log('📊 XP Events Query Result:', { 
-        data: xpEventsData, 
-        error: eventsError,
+      console.log('📊 XP Transactions Query Result:', { 
+        data: xpTransData, 
+        error: transError,
         userId: user.id 
       });
       
-      if (eventsError && eventsError.code === '42P01') {
-        // Table doesn't exist, try xp_transactions
-        const { data: xpTransData } = await supabase
-          .from('xp_transactions')
+      if (!transError && xpTransData) {
+        // Map xp_transactions to match expected structure
+        xpEvents = xpTransData.map(t => ({
+          ...t,
+          xp_change: t.amount,
+          event_type: t.type,
+          reference_type: t.reference_type || 'trend_submission',
+          reference_id: t.reference_id
+        }));
+      } else if (transError) {
+        console.error('Error fetching XP transactions:', transError);
+        // Try xp_events as fallback if xp_transactions fails
+        const { data: xpEventsData } = await supabase
+          .from('xp_events')
           .select('*')
           .eq('user_id', user.id)
           .gte('created_at', weekAgo.toISOString())
           .order('created_at', { ascending: false });
         
-        // Map xp_transactions to match xp_events structure
-        xpEvents = xpTransData?.map(t => ({
-          ...t,
-          xp_change: t.amount,
-          event_type: t.type
-        }));
-      } else {
         xpEvents = xpEventsData;
       }
 
@@ -229,46 +232,12 @@ export default function Dashboard() {
       let weeklyXP = xpEvents
         ?.reduce((sum, e) => sum + e.xp_change, 0) || 0;
       
-      // If no XP events found, calculate from trend submissions payment_amount as fallback
-      if (todaysXP === 0 && weeklyXP === 0) {
-        console.log('No XP events found, calculating from trend submissions...');
-        
-        // Get today's trends
-        const { data: todaysTrends } = await supabase
-          .from('trend_submissions')
-          .select('payment_amount, created_at')
-          .eq('spotter_id', user.id)
-          .gte('created_at', today.toISOString());
-        
-        // Clean trend data before using
-        const cleanedTodaysTrends = todaysTrends?.map(cleanTrendData) || [];
-        todaysXP = cleanedTodaysTrends.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
-        
-        // Get weekly trends
-        const { data: weeklyTrends } = await supabase
-          .from('trend_submissions')
-          .select('payment_amount, created_at')
-          .eq('spotter_id', user.id)
-          .gte('created_at', weekAgo.toISOString());
-        
-        // Clean trend data before using
-        const cleanedWeeklyTrends = weeklyTrends?.map(cleanTrendData) || [];
-        weeklyXP = cleanedWeeklyTrends.reduce((sum, t) => sum + (t.payment_amount || 0), 0) || 0;
-        
-        // Create fake XP events from trends for recent activity display
-        if (cleanedWeeklyTrends && cleanedWeeklyTrends.length > 0) {
-          xpEvents = cleanedWeeklyTrends.map(t => ({
-            id: `trend-${t.created_at}`,
-            user_id: user.id,
-            xp_change: t.payment_amount || 0,
-            event_type: 'trend_submission',
-            description: 'Trend spotted',
-            created_at: t.created_at
-          })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        }
-        
-        console.log('Calculated from trends - Today:', todaysXP, 'Weekly:', weeklyXP);
-      }
+      console.log('📊 XP Calculations:', {
+        todaysXP,
+        weeklyXP,
+        todayEvents: xpEvents?.filter(e => new Date(e.created_at) >= today),
+        totalEvents: xpEvents?.length
+      });
 
       // Get validation accuracy
       const { data: validations } = await supabase

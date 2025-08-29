@@ -248,7 +248,7 @@ interface TrendFormData {
 const mapCategoryToDatabase = (uiCategory: string): string => {
   // Now we use the actual category names directly
   // since we've removed the deprecated field mappings
-  return uiCategory || 'general';
+  return uiCategory || 'lifestyle';
 };
 
 // Category configuration with icons and specific questions

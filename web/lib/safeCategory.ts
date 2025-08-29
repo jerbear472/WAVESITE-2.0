@@ -82,9 +82,9 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     return displayCategory;
   }
   
-  // Default fallback - use general category
-  console.log('[getSafeCategory] Fallback to: general');
-  return 'general';
+  // Default fallback - use lifestyle category (a valid enum)
+  console.log('[getSafeCategory] Fallback to: lifestyle');
+  return 'lifestyle';
 }
 
 // Safe status function to ensure we NEVER use 'pending'

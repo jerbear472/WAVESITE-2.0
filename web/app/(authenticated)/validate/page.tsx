@@ -201,7 +201,7 @@ export default function ValidatePage() {
           screenshot_url: cleaned.screenshot_url,
           platform: cleaned.platform || 'unknown',
           creator_handle: cleaned.creator_handle,
-          category: cleaned.category || 'general',
+          category: cleaned.category || 'lifestyle',
           submitted_at: cleaned.created_at,
           spotter_username: 'Trend Spotter',
           validation_count: cleaned.validation_count || 0,

@@ -107,7 +107,7 @@ export default function PredictionsPage() {
         title: trend.title || trend.trend_headline || 'Untitled',
         description: trend.description || trend.why_trending || '',
         platform: trend.platform || 'unknown',
-        category: trend.category || 'general',
+        category: trend.category || 'lifestyle',
         url: trend.url || trend.post_url || '',
         thumbnail_url: trend.thumbnail_url,
         creator_handle: trend.creator_handle,

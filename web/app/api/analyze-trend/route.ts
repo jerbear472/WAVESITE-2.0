@@ -3,12 +3,11 @@ import Anthropic from '@anthropic-ai/sdk';
 
 // Initialize Anthropic client for Claude
 const apiKey = process.env.ANTHROPIC_API_KEY;
-console.log('Anthropic API Key exists:', !!apiKey);
-console.log('API Key first 10 chars:', apiKey?.substring(0, 10));
 
-const anthropic = new Anthropic({
+// Only create the client if we have an API key
+const anthropic = apiKey ? new Anthropic({
   apiKey: apiKey,
-});
+}) : null;
 
 // Cache for similar analyses (in-memory for now, could be Redis in production)
 const analysisCache = new Map<string, { analysis: string; timestamp: number }>();
@@ -100,8 +99,16 @@ ${lifecycleStage === 'peaking/declining' ?
 Style: Cultural anthropologist explaining human behavior patterns. Use emojis for structure (💡 for insight, 👥 for who's participating, etc). Focus on creativity, self-expression, and cultural dynamics - NOT corporate opportunities. Keep it real and relatable.
 100-120 words ONLY.`;
 
+    // Check if we have the Anthropic client
+    if (!anthropic) {
+      console.warn('⚠️ Anthropic API key not configured, using fallback');
+      throw new Error('Anthropic API key not configured');
+    }
+    
+    console.log('🤖 Calling Claude API with model: claude-3-haiku-20240307');
+    
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 250,
       temperature: 0.7,
       messages: [
@@ -111,6 +118,8 @@ Style: Cultural anthropologist explaining human behavior patterns. Use emojis fo
         }
       ]
     });
+    
+    console.log('✅ Claude API responded successfully');
 
     const analysis = message.content[0].type === 'text' 
       ? message.content[0].text
@@ -139,18 +148,31 @@ Style: Cultural anthropologist explaining human behavior patterns. Use emojis fo
     console.error('Error details:', {
       message: error.message,
       status: error.status,
-      type: error.constructor.name
+      type: error.constructor.name,
+      error: error.error
     });
     
-    // Fallback analysis if API fails
-    const fallbackAnalysis = `📱 This represents how people are expressing themselves in new ways online. 
-👥 **Who's in:** Early adopters, creative communities, and anyone looking to connect authentically
-💡 **The insight:** The speed of adoption shows we were all feeling the same thing but didn't have a way to express it - until now.`;
+    // Provide detailed fallback based on the trend data
+    const trendName = data?.title || data?.trend_name || 'this trend';
+    const platform = data?.platform || 'social media';
+    const category = data?.category || 'lifestyle';
+    
+    const fallbackAnalysis = `📱 ${trendName} is gaining traction on ${platform} as people discover new ways to express themselves. 
+👥 **Who's in:** Early adopters in the ${category} space are leading the charge, with mainstream audiences starting to take notice.
+💡 **The insight:** The rapid spread suggests this taps into something we've all been feeling - perfect timing meets genuine need for connection and self-expression.`;
 
+    // Determine if it's a model issue or API key issue
+    const isModelError = error.message?.includes('model') || error.message?.includes('not_found');
+    const isAuthError = error.message?.includes('authentication') || error.message?.includes('API key');
+    
+    const errorDetail = isModelError ? 'Model configuration issue' : 
+                       isAuthError ? 'API authentication issue' : 
+                       'Service temporarily unavailable';
+    
     return NextResponse.json({ 
       analysis: fallbackAnalysis,
       error: true,
-      errorMessage: error.message,
+      errorMessage: `AI analysis unavailable: ${errorDetail}`,
       cached: false 
     });
   }
