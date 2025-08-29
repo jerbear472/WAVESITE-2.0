@@ -132,7 +132,7 @@ const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient, us
           .eq('trend_id', trendId);
         
         // Count votes by type
-        const counts = {
+        const counts: Record<string, number> = {
           wave: 0,
           fire: 0,
           declining: 0,
@@ -140,7 +140,7 @@ const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient, us
         };
         
         allVotes?.forEach(vote => {
-          if (counts.hasOwnProperty(vote.vote_type)) {
+          if (vote.vote_type && counts.hasOwnProperty(vote.vote_type)) {
             counts[vote.vote_type]++;
           }
         });
@@ -326,7 +326,7 @@ const VoteMobileButton = ({ type, trendId, count, icon, label, value, gradient, 
           .eq('trend_id', trendId);
         
         // Count votes by type
-        const counts = {
+        const counts: Record<string, number> = {
           wave: 0,
           fire: 0,
           declining: 0,
@@ -334,7 +334,7 @@ const VoteMobileButton = ({ type, trendId, count, icon, label, value, gradient, 
         };
         
         allVotes?.forEach(vote => {
-          if (counts.hasOwnProperty(vote.vote_type)) {
+          if (vote.vote_type && counts.hasOwnProperty(vote.vote_type)) {
             counts[vote.vote_type]++;
           }
         });

@@ -601,6 +601,8 @@ export default function ValidatePage() {
       
       // Add consensus bonus to XP if user is with majority
       const finalConsensusBonus = inConsensus ? 5 : 0;
+      const baseXP = 10;
+      const streakBonus = Math.min(streak * 2, 20);
       totalXP = baseXP + streakBonus + finalConsensusBonus;
       
       // Update the XP display
