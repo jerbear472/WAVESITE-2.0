@@ -13,7 +13,7 @@ export default function Home() {
           {/* Main Message */}
           <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6 leading-tight">
             See The Wave<br/>
-            Before It Breaks
+            <span className="text-blue-500">Before It Breaks</span>
           </h1>
           
           {/* Subtitle */}
