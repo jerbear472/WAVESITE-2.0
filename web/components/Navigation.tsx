@@ -200,6 +200,7 @@ export default function Navigation() {
     { href: '/validate', label: 'Validate', icon: '✅' },
     { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
     { href: '/profile', label: 'Profile', icon: '👤' },
+    { href: '/settings', label: 'Settings', icon: '⚙️' },
   ];
 
   return (

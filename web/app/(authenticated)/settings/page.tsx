@@ -214,41 +214,59 @@ export default function ImprovedSettingsPage() {
       setSaving(true);
       setErrors({});
       
-      // Update profile data - try user_profiles first, then profiles
+      // Update profile data - build update object dynamically
+      const updateData: any = {
+        username: profile.username,
+        email: profile.email
+      };
+      
+      // Add optional fields that might not exist in all deployments
+      const optionalFields = [
+        { key: 'bio', value: profile.bio },
+        { key: 'website', value: profile.website },
+        { key: 'avatar_url', value: profile.avatar_url },
+        { key: 'notification_preferences', value: profile.notifications },
+        { key: 'privacy_settings', value: profile.privacy },
+        { key: 'theme', value: profile.theme },
+        { key: 'language', value: profile.language }
+      ];
+      
+      // First, try updating with all fields
       let { error } = await supabase
         .from('user_profiles')
         .update({
-          username: profile.username,
-          email: profile.email,
-          bio: profile.bio,
-          website: profile.website,
-          avatar_url: profile.avatar_url,
-          notification_preferences: profile.notifications,
-          privacy_settings: profile.privacy,
-          theme: profile.theme,
-          // language: profile.language, // Removed - column doesn't exist in database
-          updated_at: new Date().toISOString()
+          ...updateData,
+          ...optionalFields.reduce((acc, field) => {
+            if (field.value !== undefined) {
+              acc[field.key] = field.value;
+            }
+            return acc;
+          }, {} as any)
         })
         .eq('id', user?.id);
       
-      // If user_profiles doesn't exist, try profiles table
-      if (error?.code === '42P01') {
-        const profilesResult = await supabase
-          .from('profiles')
-          .update({
-            username: profile.username,
-            email: profile.email,
-            bio: profile.bio,
-            website: profile.website,
-            avatar_url: profile.avatar_url,
-            notification_preferences: profile.notifications,
-            privacy_settings: profile.privacy,
-            theme: profile.theme,
-            // language: profile.language, // Removed - column doesn't exist in database
-            updated_at: new Date().toISOString()
-          })
+      // If column doesn't exist error, try with only basic fields
+      if (error?.message?.includes('column') || error?.message?.includes('notification_preferences')) {
+        console.log('Some columns missing, updating only basic fields');
+        const { error: basicError } = await supabase
+          .from('user_profiles')
+          .update(updateData)
           .eq('id', user?.id);
-        error = profilesResult.error;
+        
+        if (!basicError) {
+          console.log('Basic profile update successful');
+        }
+        error = basicError;
+      }
+      
+      // If user_profiles table doesn't exist, try profiles table
+      if (error?.code === '42P01') {
+        console.log('user_profiles table not found, trying profiles table');
+        const { error: profilesError } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', user?.id);
+        error = profilesError;
       }
       
       if (error) throw error;
