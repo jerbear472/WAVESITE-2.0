@@ -10,14 +10,6 @@ export default function Home() {
       {/* Hero Section */}
       <section className="flex-1 flex items-center justify-center px-4 py-20 pt-32">
         <div className="text-center max-w-4xl mx-auto animate-fade-in">
-          {/* Opening Hook */}
-          <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-2">
-            Every trend you've ever seen started with one person spotting it early.
-          </p>
-          <p className="text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-8">
-            That person could be you.
-          </p>
-          
           {/* Main Message */}
           <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-8 leading-tight">
             WaveSight is where people compete to spot trends first,<br/>
