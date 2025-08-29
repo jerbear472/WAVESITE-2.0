@@ -32,6 +32,8 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import TrendPredictionChart from '@/components/TrendPredictionChart';
+import { addDays } from 'date-fns';
 
 // Custom Vote Button Components - Updated to handle vote changes properly
 const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient, userVote, onVote, allCounts, setAllCounts }: any) => {
@@ -1534,96 +1536,140 @@ export default function EnhancedPredictionsPage() {
         )}
       </AnimatePresence>
 
-      {/* Prediction Modal */}
+      {/* Enhanced Prediction Modal with Interactive Chart */}
       <AnimatePresence>
         {showPredictionModal && selectedTrend && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto"
             onClick={() => setShowPredictionModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl p-6 max-w-md w-full"
+              className="bg-white rounded-xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Make Your Prediction</h3>
-              <p className="text-gray-600 mb-4">{selectedTrend.title}</p>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  When will this peak?
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: '24hrs', label: '24 hours', icon: '⚡' },
-                    { value: '3days', label: '3 days', icon: '🔥' },
-                    { value: '1week', label: '1 week', icon: '📈' },
-                    { value: '2weeks', label: '2 weeks', icon: '🚀' },
-                    { value: 'peaked', label: 'Already peaked', icon: '📉' },
-                    { value: 'here_to_stay', label: 'Here to stay', icon: '🧬' }
-                  ].map(option => (
-                    <button
-                      key={option.value}
-                      onClick={() => setPeakPrediction(option.value)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        peakPrediction === option.value
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white scale-105'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <span className="mr-1">{option.icon}</span>
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  How confident are you?
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: 'very' as const, label: 'Very', xp: '+20 XP', color: 'from-green-500 to-emerald-500' },
-                    { value: 'somewhat' as const, label: 'Somewhat', xp: '+15 XP', color: 'from-blue-500 to-cyan-500' },
-                    { value: 'guess' as const, label: 'Guessing', xp: '+10 XP', color: 'from-gray-500 to-gray-600' }
-                  ].map(option => (
-                    <button
-                      key={option.value}
-                      onClick={() => setConfidence(option.value)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                        confidence === option.value
-                          ? `bg-gradient-to-r ${option.color} text-white scale-105`
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <div>{option.label}</div>
-                      <div className="text-xs opacity-75">{option.xp}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-gray-900">Predict the Wave</h3>
                 <button
                   onClick={() => setShowPredictionModal(false)}
-                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePredict}
-                  disabled={!peakPrediction}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Lock In Prediction
+                  <X className="w-5 h-5" />
                 </button>
               </div>
+
+              <TrendPredictionChart
+                trendId={selectedTrend.id}
+                trendTitle={selectedTrend.title}
+                historicalData={[]} // Could add historical data if available
+                existingPredictions={[]} // Could add other users' predictions
+                onSavePrediction={async (prediction) => {
+                  if (!user) return;
+
+                  try {
+                    // Calculate XP based on confidence
+                    const baseXP = 20;
+                    const confidenceBonus = Math.round(prediction.confidence * 0.3);
+                    const totalXP = baseXP + confidenceBonus;
+
+                    // Save prediction to database
+                    const peakTimeframe = (() => {
+                      const daysUntilPeak = Math.round((prediction.peakDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                      if (daysUntilPeak <= 1) return '24_hours';
+                      if (daysUntilPeak <= 3) return '3_days';
+                      if (daysUntilPeak <= 7) return '1_week';
+                      if (daysUntilPeak <= 14) return '2_weeks';
+                      if (daysUntilPeak <= 30) return '1_month';
+                      return '3_months';
+                    })();
+
+                    // Save prediction curve data
+                    const { error: predError } = await supabase
+                      .from('trend_predictions')
+                      .insert({
+                        trend_submission_id: selectedTrend.id,
+                        user_id: user.id,
+                        predicted_peak_timeframe: peakTimeframe,
+                        predicted_peak_date: prediction.peakDate.toISOString(),
+                        trend_name: selectedTrend.title,
+                        platform: selectedTrend.platform,
+                        category: selectedTrend.category,
+                        google_trends_data: {
+                          curve: prediction.curve.map(p => ({
+                            date: p.date.toISOString(),
+                            value: p.value,
+                            confidence: p.confidence
+                          })),
+                          peakValue: prediction.peakValue,
+                          reasoning: prediction.reasoning
+                        },
+                        confidence_score: prediction.confidence
+                      });
+
+                    if (predError) {
+                      console.error('Error saving prediction:', predError);
+                      // Continue anyway to update UI
+                    }
+
+                    // Award XP
+                    await supabase.from('xp_transactions').insert({
+                      user_id: user.id,
+                      amount: totalXP,
+                      type: 'prediction',
+                      description: `Predicted trend: ${selectedTrend.title}`,
+                      reference_id: selectedTrend.id,
+                      reference_type: 'trend',
+                      created_at: new Date().toISOString()
+                    });
+
+                    // Update user_xp table
+                    const { data: currentXP } = await supabase
+                      .from('user_xp')
+                      .select('total_xp')
+                      .eq('user_id', user.id)
+                      .single();
+                      
+                    if (currentXP) {
+                      await supabase
+                        .from('user_xp')
+                        .update({ 
+                          total_xp: currentXP.total_xp + totalXP,
+                          updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', user.id);
+                    }
+
+                    showXPNotification(
+                      totalXP, 
+                      `Prediction locked in! ${prediction.confidence >= 80 ? '🔥 Bold prediction!' : ''}`, 
+                      'prediction'
+                    );
+
+                    // Update local state
+                    setTrends(prev => prev.map(trend => {
+                      if (trend.id === selectedTrend.id) {
+                        return {
+                          ...trend,
+                          user_has_predicted: true,
+                          predictions_count: trend.predictions_count + 1
+                        };
+                      }
+                      return trend;
+                    }));
+
+                    setShowPredictionModal(false);
+                    setSelectedTrend(null);
+                  } catch (error) {
+                    console.error('Error saving prediction:', error);
+                    alert('Failed to save prediction. Please try again.');
+                  }
+                }}
+              />
             </motion.div>
           </motion.div>
         )}

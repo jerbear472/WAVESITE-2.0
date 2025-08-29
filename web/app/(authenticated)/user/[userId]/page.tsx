@@ -758,28 +758,28 @@ export default function UserProfilePage() {
                           )}
 
                           {/* Engagement Stats */}
-                          {(trend.views_count || trend.likes_count || trend.comments_count) && (
+                          {(trend.views_count || trend.likes_count || trend.comments_count) ? (
                             <div className="flex items-center gap-3 text-xs text-gray-600 mb-3">
-                              {trend.views_count && trend.views_count > 0 && (
+                              {trend.views_count && trend.views_count > 0 ? (
                                 <div className="flex items-center gap-1">
                                   <EyeIcon className="w-3 h-3" />
                                   <span>{formatEngagement(trend.views_count)}</span>
                                 </div>
-                              )}
-                              {trend.likes_count && trend.likes_count > 0 && (
+                              ) : null}
+                              {trend.likes_count && trend.likes_count > 0 ? (
                                 <div className="flex items-center gap-1">
                                   <HeartIcon className="w-3 h-3" />
                                   <span>{formatEngagement(trend.likes_count)}</span>
                                 </div>
-                              )}
-                              {trend.comments_count && trend.comments_count > 0 && (
+                              ) : null}
+                              {trend.comments_count && trend.comments_count > 0 ? (
                                 <div className="flex items-center gap-1">
                                   <MessageCircleIcon className="w-3 h-3" />
                                   <span>{formatEngagement(trend.comments_count)}</span>
                                 </div>
-                              )}
+                              ) : null}
                             </div>
-                          )}
+                          ) : null}
 
                           {/* Creator Info */}
                           {trend.creator_handle && (
@@ -876,28 +876,28 @@ export default function UserProfilePage() {
                           )}
                           
                           {/* Engagement Stats */}
-                          {(trend.views_count || trend.likes_count || trend.comments_count) && (
+                          {(trend.views_count || trend.likes_count || trend.comments_count) ? (
                             <div className="flex items-center gap-3 text-xs text-gray-600">
-                              {trend.views_count && trend.views_count > 0 && (
+                              {trend.views_count && trend.views_count > 0 ? (
                                 <div className="flex items-center gap-1">
                                   <EyeIcon className="w-3 h-3" />
                                   <span>{formatEngagement(trend.views_count)}</span>
                                 </div>
-                              )}
-                              {trend.likes_count && trend.likes_count > 0 && (
+                              ) : null}
+                              {trend.likes_count && trend.likes_count > 0 ? (
                                 <div className="flex items-center gap-1">
                                   <HeartIcon className="w-3 h-3" />
                                   <span>{formatEngagement(trend.likes_count)}</span>
                                 </div>
-                              )}
-                              {trend.comments_count && trend.comments_count > 0 && (
+                              ) : null}
+                              {trend.comments_count && trend.comments_count > 0 ? (
                                 <div className="flex items-center gap-1">
                                   <MessageCircleIcon className="w-3 h-3" />
                                   <span>{formatEngagement(trend.comments_count)}</span>
                                 </div>
-                              )}
+                              ) : null}
                             </div>
-                          )}
+                          ) : null}
 
                           {/* XP Awarded */}
                           {trend.xp_awarded && trend.xp_amount > 0 && (

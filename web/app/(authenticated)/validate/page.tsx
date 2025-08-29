@@ -348,7 +348,7 @@ export default function ValidatePage() {
         .insert({
           trend_id: currentTrend.id,
           validator_id: user.id,
-          vote: isValid ? 'verify' : 'reject',  // Use vote field expected by trigger
+          vote: isValid ? 'wave' : 'dead',  // Use correct vote types for database trigger
           is_valid: isValid,  // Keep for backward compatibility
           validation_score: isValid ? 1 : -1,
           created_at: new Date().toISOString()
@@ -399,15 +399,24 @@ export default function ValidatePage() {
         xpAwarded = true; // Set to true to skip XP award but continue with flow
       } else {
         const baseXP = 10; // Base XP for validation
-        const streakBonus = Math.min(streak * 2, 20); // Streak bonus (before this validation)
-        const consensusBonus = 0; // Will be calculated after we know consensus
-        totalXP = baseXP + streakBonus; // Initial XP without consensus bonus
+        
+        // Calculate streak multiplier: Every 10 validations increases multiplier by 0.1
+        // First 10 validations (1-10): 1.0x multiplier
+        // Second 10 validations (11-20): 1.1x multiplier  
+        // Third 10 validations (21-30): 1.2x multiplier, etc.
+        const currentValidationCount = dailyValidations; // This is before we increment it
+        const streakLevel = Math.floor(currentValidationCount / 10); // 0 for first 10, 1 for second 10, etc.
+        const streakMultiplier = 1.0 + (streakLevel * 0.1); // 1.0, 1.1, 1.2, etc.
+        
+        // Apply multiplier to base XP
+        totalXP = Math.round(baseXP * streakMultiplier);
         
         console.log('🎮 XP Calculation:', {
           user_id: user.id,
           baseXP,
-          streakBonus,
-          consensusBonus,
+          currentValidationCount,
+          streakLevel,
+          streakMultiplier,
           totalXP,
           trend_id: currentTrend.id,
           trend_title: currentTrend.title
@@ -539,11 +548,16 @@ export default function ValidatePage() {
         setFloatingXP({ amount: totalXP, id: Date.now() });
         setTimeout(() => setFloatingXP(null), 1500);
         
-        // Show XP notification with detailed breakdown (will update after consensus is calculated)
+        // Show XP notification with detailed breakdown
         const baseXP = 10;
-        const streakBonus = totalXP - baseXP;
-        const notificationParts = [`Validation: +${baseXP} XP`];
-        if (streakBonus > 0) notificationParts.push(`Streak: +${streakBonus}`);
+        const currentValidationCount = dailyValidations - 1; // We already incremented it
+        const streakLevel = Math.floor(currentValidationCount / 10);
+        const streakMultiplier = 1.0 + (streakLevel * 0.1);
+        
+        const notificationParts = [`Validation: +${totalXP} XP`];
+        if (streakMultiplier > 1.0) {
+          notificationParts.push(`Streak ${streakMultiplier.toFixed(1)}x`);
+        }
         
         console.log('🎯 Showing validation XP notification:', totalXP, notificationParts.join(' | '));
         showXPNotification(totalXP, notificationParts.join(' | '), 'validation');
@@ -658,6 +672,7 @@ export default function ValidatePage() {
         // Refresh stats to ensure everything is synced
         loadUserStats();
       }, 3000); // Increased to 3 seconds so user can see XP clearly
+      
     } catch (error) {
       console.error('🔥 CRITICAL ERROR in handleSwipe:', error);
       console.error('🔥 Error stack:', error instanceof Error ? error.stack : 'No stack');
@@ -742,19 +757,40 @@ export default function ValidatePage() {
         <div className="mb-6 flex justify-between items-center relative">
           <div className="flex items-center space-x-4">
             <motion.div 
-              className="bg-white rounded-lg px-3 py-2 shadow-sm relative"
+              className="bg-white rounded-lg px-4 py-2 shadow-sm relative"
               animate={{
                 scale: streakAnimation ? [1, 1.2, 1] : 1,
               }}
               transition={{ duration: 0.3 }}
             >
-              <div className="flex items-center space-x-1">
-                <Flame className={`h-5 w-5 transition-colors ${
-                  streakAnimation === 'reset' ? 'text-gray-400' : 
-                  streak > 0 ? 'text-orange-500' : 'text-gray-400'
-                } ${streakAnimation === 'increase' ? 'animate-pulse' : ''}`} />
-                <span className="font-bold text-gray-900">{streak}</span>
-                <span className="text-xs text-gray-500">streak</span>
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-1">
+                  <Flame className={`h-5 w-5 transition-colors ${
+                    streakAnimation === 'reset' ? 'text-gray-400' : 
+                    dailyValidations > 0 ? 'text-orange-500' : 'text-gray-400'
+                  } ${streakAnimation === 'increase' ? 'animate-pulse' : ''}`} />
+                  <span className="font-bold text-gray-900">{dailyValidations}</span>
+                  <span className="text-xs text-gray-500">validations</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <div className="text-xs text-gray-600">
+                    {(() => {
+                      const streakLevel = Math.floor(dailyValidations / 10);
+                      const nextMilestone = (streakLevel + 1) * 10;
+                      const progressInLevel = dailyValidations % 10;
+                      const multiplier = 1.0 + (streakLevel * 0.1);
+                      
+                      return (
+                        <>
+                          <span className="font-medium text-purple-600">{multiplier.toFixed(1)}x</span>
+                          <span className="text-gray-500 ml-1">
+                            ({progressInLevel}/10 to {(multiplier + 0.1).toFixed(1)}x)
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
               </div>
               {streakAnimation === 'increase' && (
                 <motion.div
@@ -828,45 +864,7 @@ export default function ValidatePage() {
         </div>
 
 
-        {/* Feedback Popup - Completely separate with forced opacity */}
-        {showFeedback && (
-          <div className="fixed left-[60%] top-1/2 transform -translate-y-1/2 z-[9999]" style={{ opacity: '1 !important', filter: 'none' }}>
-            <motion.div
-              initial={{ opacity: 0, x: 30, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 30, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className="bg-white rounded-2xl p-6 shadow-2xl text-center border-2 border-gray-200 min-w-[280px]"
-              style={{ 
-                backgroundColor: '#ffffff',
-                opacity: '1 !important',
-                filter: 'none',
-                isolation: 'isolate'
-              }}
-            >
-              <div className={`text-5xl mb-3 ${lastVote === 'valid' ? 'text-green-500' : 'text-red-500'}`}>
-                {lastVote === 'valid' ? '✓' : '✗'}
-              </div>
-              <p className="text-lg font-bold text-gray-900 mb-2">
-                {lastVote === 'valid' ? 'Trend Confirmed!' : 'Not a Trend'}
-              </p>
-              {consensus && (
-                <p className="text-sm text-gray-600 mb-3">
-                  {consensus}% of validators agree
-                </p>
-              )}
-              <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 rounded-full shadow-xl border-2 border-white">
-                <Zap className="w-5 h-5 text-white drop-shadow" />
-                <span className="text-white font-bold text-lg drop-shadow">+{lastXPEarned} XP</span>
-              </div>
-              {lastVote === 'valid' && currentTrend && currentTrend.validation_count >= 2 && (
-                <p className="text-xs text-blue-600 mt-2 font-medium">
-                  ✨ Moved to Predictions!
-                </p>
-              )}
-            </motion.div>
-          </div>
-        )}
+        {/* Trend Confirmed notification removed per user request - showing XP only via notification system */}
 
         {/* Swipe Card Container */}
         <div className="relative">
@@ -1185,31 +1183,35 @@ export default function ValidatePage() {
 
         {/* Action Buttons - Below card stack */}
         <motion.div 
-          className="flex justify-center space-x-8 mt-[680px]"
+          className="flex justify-center space-x-8 mt-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
+          {/* Reject Button */}
           <button
             onClick={() => handleSwipe('left')}
-            className="flex flex-col items-center group"
+            className="group relative"
             disabled={showFeedback}
           >
-            <div className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-red-500 mb-2">
-              <X className="h-8 w-8 text-red-500 group-hover:scale-110 transition-transform" />
+            <div className="flex items-center space-x-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 hover:from-red-600 hover:to-red-700">
+              <X className="h-6 w-6" />
+              <span className="text-lg font-semibold">Reject</span>
             </div>
-            <span className="text-sm font-medium text-gray-700">Not a Trend</span>
+            <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">Not a real trend</span>
           </button>
           
+          {/* Approve Button */}
           <button
             onClick={() => handleSwipe('right')}
-            className="flex flex-col items-center group"
+            className="group relative"
             disabled={showFeedback}
           >
-            <div className="bg-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all hover:scale-110 border-2 border-green-500 mb-2">
-              <Check className="h-8 w-8 text-green-500 group-hover:scale-110 transition-transform" />
+            <div className="flex items-center space-x-3 bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 hover:from-green-600 hover:to-green-700">
+              <Check className="h-6 w-6" />
+              <span className="text-lg font-semibold">Approve</span>
             </div>
-            <span className="text-sm font-medium text-gray-700">Real Trend</span>
+            <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">Valid trend</span>
           </button>
         </motion.div>
 
@@ -1225,7 +1227,7 @@ export default function ValidatePage() {
             {trendQueue.length - 1} more trends to review
           </p>
           <p className="text-xs text-gray-400">
-            💡 Tip: Use ← → arrow keys • Left = Not a Trend • Right = Real Trend
+            💡 Tip: Use ← → arrow keys • Left = Reject • Right = Approve
           </p>
           <div className="mt-3 p-3 bg-blue-50 rounded-lg">
             <p className="text-xs text-blue-700">
