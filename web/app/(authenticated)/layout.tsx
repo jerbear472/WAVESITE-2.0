@@ -7,6 +7,8 @@ import SPANavigation from '@/components/SPANavigation';
 import XPLossNotification from '@/components/XPLossNotification';
 import PageTransition from '@/components/PageTransition';
 import ClientOnlyProvider from '@/components/ClientOnlyProvider';
+import StabilityMonitor from '@/components/StabilityMonitor';
+import '@/lib/errorRecovery'; // Initialize global error handlers
 
 export default function AuthenticatedLayout({
   children,
@@ -77,6 +79,7 @@ export default function AuthenticatedLayout({
           </PageTransition>
         </main>
         <XPLossNotification />
+        <StabilityMonitor />
       </div>
     </ClientOnlyProvider>
   );

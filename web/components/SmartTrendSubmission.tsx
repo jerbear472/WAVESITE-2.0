@@ -986,6 +986,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
     setAiLoading(false);
     setAiError('');
     setAiAnalysisReady(false);
+    setLoading(false); // Ensure loading is reset
+    setExtracting(false); // Reset extraction state
   };
 
   const handleSubmit = async () => {
@@ -1031,8 +1033,24 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       
     } catch (error: any) {
       console.error('❌ Error in handleSubmit:', error);
-      setError(error.message || 'Failed to submit trend. Please try again.');
-      setLoading(false); // Reset loading on error
+      
+      // Better error messages
+      let errorMessage = 'Failed to submit trend. Please try again.';
+      
+      if (error.message?.includes('timeout')) {
+        errorMessage = 'Submission is taking longer than expected. Please try again.';
+      } else if (error.message?.includes('category')) {
+        errorMessage = 'Invalid category selected. Please choose a different category.';
+      } else if (error.message?.includes('auth') || error.message?.includes('login')) {
+        errorMessage = 'Session expired. Please refresh the page and log in again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      // Always reset loading state
+      setLoading(false);
     }
   };
 
