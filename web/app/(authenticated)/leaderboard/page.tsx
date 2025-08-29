@@ -149,7 +149,7 @@ export default function LeaderboardPage() {
           {[
             { label: 'Active Spotters', value: leaderboard.length, icon: Users, color: 'text-blue-600' },
             { label: 'Highest Level', value: leaderboard[0]?.current_level || 0, icon: Trophy, color: 'text-amber-600' },
-            { label: 'Total Waves', value: formatNumber(leaderboard.reduce((sum, e) => sum + (e.waves_spotted || 0), 0)), icon: Activity, color: 'text-emerald-600' },
+            { label: 'Validated Trends', value: formatNumber(leaderboard.reduce((sum, e) => sum + (e.trends_validated || e.waves_spotted || 0), 0)), icon: Activity, color: 'text-emerald-600' },
             { label: 'Your Rank', value: userRank ? `#${userRank}` : '-', icon: Target, color: 'text-purple-600' }
           ].map((stat, idx) => (
             <motion.div
@@ -195,7 +195,7 @@ export default function LeaderboardPage() {
             <div className="col-span-4 text-xs font-medium text-gray-500 uppercase tracking-wider">User</div>
             <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Level</div>
             <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Total XP</div>
-            <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Waves</div>
+            <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Validated</div>
             <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Accuracy</div>
             <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Trend</div>
           </div>
@@ -296,10 +296,10 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
 
-                  {/* Waves */}
+                  {/* Validated Trends */}
                   <div className="col-span-1 text-center">
                     <span className="font-medium text-gray-700">
-                      {entry.waves_spotted || 0}
+                      {entry.trends_validated || entry.waves_spotted || 0}
                     </span>
                   </div>
 
