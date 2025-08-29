@@ -84,10 +84,13 @@ export default function RegisterPage() {
       // Handle different error types
       if (err.message?.includes('fetch')) {
         setError('Network error: Unable to connect to server. Please check your connection and try again.');
-      } else if (err.message?.includes('already registered')) {
+      } else if (err.message?.includes('already registered') || err.message?.includes('already exists')) {
         setError('This email is already registered. Please use a different email or login.');
       } else if (err.message?.includes('Invalid')) {
         setError(err.message);
+      } else if (err.message?.includes('Database error')) {
+        setError('There was an issue creating your account. Please try again or contact support if the problem persists.');
+        console.error('Database error details:', err);
       } else {
         setError(err.message || 'Failed to create account. Please try again.');
       }

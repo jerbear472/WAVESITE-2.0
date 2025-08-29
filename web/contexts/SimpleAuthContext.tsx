@@ -176,26 +176,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }) => {
     setError(null);
     
-    const { data, error } = await supabase.auth.signUp({
-      email: userData.email.trim().toLowerCase(),
-      password: userData.password,
-      options: {
-        data: {
-          username: userData.username,
-          birthday: userData.birthday,
-          ...userData.demographics,
-          ...userData.interests,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email.trim().toLowerCase(),
+        password: userData.password,
+        options: {
+          data: {
+            username: userData.username.trim(),
+            birthday: userData.birthday,
+            ...userData.demographics,
+            ...userData.interests,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    
-    if (error) {
-      setError(error.message);
-      throw error;
+      });
+      
+      if (error) {
+        console.error('Supabase signup error:', error);
+        setError(error.message);
+        throw error;
+      }
+      
+      // Check if user was created successfully
+      if (data?.user) {
+        console.log('User created successfully:', data.user.id);
+        
+        // Try to check if profile was created
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('id, username')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profileError) {
+          console.error('Profile creation may have failed:', profileError);
+          // Don't throw here - user was created, profile issue can be fixed
+        } else {
+          console.log('Profile created successfully:', profile);
+        }
+      }
+      
+      return { needsEmailConfirmation: true };
+    } catch (err: any) {
+      console.error('Registration error in auth context:', err);
+      throw err;
     }
-    
-    return { needsEmailConfirmation: true };
   };
 
   const logout = async () => {
