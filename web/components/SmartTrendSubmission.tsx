@@ -792,9 +792,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
     setAiError('');
     setAiAnalysisReady(false);
     
-    const startTime = Date.now();
-    const minDisplayTime = 3000; // Minimum 3 seconds to ensure user can read
-    
     try {
       const response = await fetch('/api/analyze-trend', {
         method: 'POST',
@@ -807,32 +804,21 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       const data = await response.json();
       
       if (data.error) {
-        setAiError('Using fallback analysis due to API limitations');
+        setAiError('Using contextual analysis');
       }
       
       setAiAnalysis(data.analysis);
       
-      // Ensure minimum display time for users to read
-      const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, minDisplayTime - elapsed);
-      
-      setTimeout(() => {
-        setAiAnalysisReady(true);
-      }, remainingTime);
+      // Quick display - no artificial delay
+      setAiAnalysisReady(true);
       
     } catch (err) {
       console.error('Error fetching analysis:', err);
-      setAiError('Failed to generate analysis. Please try again.');
-      // Set a fallback analysis
-      setAiAnalysis(`This ${formData.evolutionStatus || 'emerging'} trend is essentially people ${formData.trendOrigin === 'organic' ? 'spontaneously creating' : 'responding to'} content that subverts expectations through ironic authenticity 📍 Based on the ${formData.trendVelocity || 'current'} velocity, expect mainstream saturation in **2-3 weeks**, with brands attempting (and failing) to replicate by week 4. Smart creators should jump now while it's still organic - particularly those in comedy, lifestyle, and surprisingly, educational content. This is resonating because ${formData.drivingGeneration || 'younger audiences'} are exhausted by performative perfection online. The hidden angle? The intentionally "bad" versions are outperforming polished attempts by 3x because audiences crave genuine chaos over manufactured relatability 🎯`);
-      
-      // Still ensure minimum time for fallback
-      const elapsed = Date.now() - startTime;
-      const remainingTime = Math.max(0, minDisplayTime - elapsed);
-      
-      setTimeout(() => {
-        setAiAnalysisReady(true);
-      }, remainingTime);
+      // Provide immediate fallback - don't block submission
+      setAiAnalysis(`📱 This trend is gaining momentum as people discover new ways to express themselves.
+👥 **Who's in:** Early adopters are leading the charge, creating variations that keep it fresh.
+💡 **The insight:** Perfect timing meets genuine need for connection and self-expression.`);
+      setAiAnalysisReady(true);
     } finally {
       setAiLoading(false);
     }
@@ -879,10 +865,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         }
         if (!formData.trendOrigin) {
           setError('Please select where this trend originated');
-          return false;
-        }
-        if (!formData.evolutionStatus) {
-          setError('Please select what\'s happening with this trend');
           return false;
         }
         break;
@@ -1007,9 +989,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         throw new Error('No submit handler provided');
       }
       
-      // Add timeout to prevent hanging
+      // Add reasonable timeout to prevent hanging
       const submitTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Submission timed out. Please try again.')), 15000);
+        setTimeout(() => reject(new Error('Submission timed out. Please try again.')), 30000); // 30 seconds
       });
       
       console.log('📤 Calling customSubmit with data:', formData);
@@ -1622,37 +1604,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     ))}
                   </div>
                 </div>
-
-                {/* What's Happening */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">6. What's Happening 🔮</h3>
-                  <p className="text-sm text-gray-600 mb-4">What's happening with this trend?</p>
-                  
-                  <div className="grid grid-cols-1 gap-3">
-                    {[
-                      { value: 'original', emoji: '✨', label: 'Fresh/Original' },
-                      { value: 'variants', emoji: '🔄', label: 'Getting remixed' },
-                      { value: 'parody', emoji: '😂', label: 'Becoming a joke' },
-                      { value: 'meta', emoji: '🤯', label: 'Going meta' },
-                      { value: 'final', emoji: '👻', label: "Won't die" }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setFormData(prev => ({ ...prev, evolutionStatus: option.value as any }))}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          formData.evolutionStatus === option.value
-                            ? 'border-purple-500 bg-purple-50'
-                            : 'border-gray-300 hover:border-gray-400 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{option.emoji}</span>
-                          <span className="font-medium text-gray-800 text-sm">{option.label}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -1699,7 +1650,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         const qualityBonus = Math.floor(calculateTitleCatchiness(formData.title) / 2);
                         const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
                         const predictionBonus = formData.predictedPeak ? 15 : 0;
-                        const originsBonus = formData.drivingGeneration && formData.trendOrigin && formData.evolutionStatus ? 15 : 0;
+                        const originsBonus = formData.drivingGeneration && formData.trendOrigin ? 15 : 0;
                         return 30 + qualityBonus + velocityBonus + predictionBonus + originsBonus;
                       })() > 0 ? 'Complete' : 'In Progress'}
                     </div>
@@ -1714,8 +1665,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       <span className="text-gray-800">{formData.trendVelocity && formData.trendSize ? '✓' : '○'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Origins & Status</span>
-                      <span className="text-gray-800">{formData.drivingGeneration && formData.trendOrigin && formData.evolutionStatus ? '✓' : '○'}</span>
+                      <span className="text-gray-600">Origins</span>
+                      <span className="text-gray-800">{formData.drivingGeneration && formData.trendOrigin ? '✓' : '○'}</span>
                     </div>
                   </div>
                 </div>
@@ -1814,18 +1765,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                              formData.trendOrigin === 'influencer' ? '⭐ Influencer/Creator pushed' :
                              formData.trendOrigin === 'brand' ? '💼 Brand/Marketing campaign' :
                              formData.trendOrigin === 'ai_generated' ? '🤖 AI/Bot generated' : formData.trendOrigin}
-                          </span>
-                        </div>
-                      )}
-                      {formData.evolutionStatus && (
-                        <div className="text-sm">
-                          <span className="text-gray-600">Status: </span>
-                          <span className="text-gray-700">
-                            {formData.evolutionStatus === 'original' ? '✨ Fresh/Original' :
-                             formData.evolutionStatus === 'variants' ? '🔄 Getting remixed' :
-                             formData.evolutionStatus === 'parody' ? '😂 Becoming a joke' :
-                             formData.evolutionStatus === 'meta' ? '🤯 Going meta' :
-                             formData.evolutionStatus === 'final' ? '👻 Won\'t die' : formData.evolutionStatus}
                           </span>
                         </div>
                       )}
