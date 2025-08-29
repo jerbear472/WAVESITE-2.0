@@ -73,6 +73,7 @@ export default function TrendPredictionChart({
   onSavePrediction,
   existingPredictions = []
 }: TrendPredictionChartProps) {
+  const [trendIntensity, setTrendIntensity] = useState(85);
   const [controlPoints, setControlPoints] = useState<ControlPoint[]>([
     { x: 0, y: 30, type: 'start' },
     { x: 25, y: 60, type: 'control' },
@@ -272,6 +273,7 @@ export default function TrendPredictionChart({
   };
 
   const resetPrediction = () => {
+    setTrendIntensity(85);
     setControlPoints([
       { x: 0, y: 30, type: 'start' },
       { x: 25, y: 60, type: 'control' },
@@ -353,6 +355,38 @@ export default function TrendPredictionChart({
               <option value="sigmoid">⚡ S-Curve</option>
               <option value="custom">✏️ Custom</option>
             </select>
+          </div>
+
+          {/* Trend Intensity slider */}
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-1 block">
+              Trend Intensity: {trendIntensity}%
+            </label>
+            <input
+              type="range"
+              min="10"
+              max="100"
+              value={trendIntensity}
+              onChange={(e) => {
+                const newIntensity = parseInt(e.target.value);
+                setTrendIntensity(newIntensity);
+                // Update the peak point
+                setControlPoints(prev => prev.map((point, index) => {
+                  if (point.type === 'peak') {
+                    return { ...point, y: newIntensity };
+                  }
+                  // Adjust control points proportionally
+                  if (index === 1) { // First control point
+                    return { ...point, y: Math.round(newIntensity * 0.7) };
+                  }
+                  if (index === 3) { // Second control point
+                    return { ...point, y: Math.round(newIntensity * 0.47) };
+                  }
+                  return point;
+                }));
+              }}
+              className="w-full h-6 accent-purple-500"
+            />
           </div>
 
           {/* Confidence slider */}

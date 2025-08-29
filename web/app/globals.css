@@ -558,4 +558,26 @@
     background-size: 200% 200%;
     animation: gradient 3s ease infinite;
   }
+
+  /* Wave animation for landing page */
+  @keyframes wave-flow {
+    0% {
+      transform: translateX(-100%) translateY(0px);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(100%) translateY(0px);
+      opacity: 0;
+    }
+  }
+
+  .wave-animation {
+    animation: wave-flow 6s ease-in-out infinite;
+  }
 }

@@ -2,63 +2,64 @@
 export function getSafeCategory(displayCategory: string | undefined | null): string {
   console.log('[getSafeCategory] Input:', displayCategory);
   
-  // Map UI categories to VALID database enum values only
-  // Valid enums: meme_format, visual_style, behavior_pattern, audio_music, 
-  // creator_technique, product_brand, cultural_reference, platform_mechanic,
-  // storytelling_format, editing_technique
+  // Map UI categories to actual category values
+  // We now use the actual category names instead of deprecated field names
   const mapping: Record<string, string> = {
     // Direct mappings from SmartTrendSubmission component IDs
-    'meme': 'meme_format',
-    'fashion': 'visual_style',  // Fashion is visual
-    'food': 'behavior_pattern',  // Food trends are behaviors
-    'music': 'audio_music',
-    'lifestyle': 'behavior_pattern',
-    'tech': 'creator_technique',  // Tech is about creation techniques
-    'technology': 'creator_technique',  // Handle both tech and technology
-    'finance': 'behavior_pattern',  // Finance trends are behaviors
-    'sports': 'behavior_pattern',  // Sports trends are behaviors
-    'political': 'cultural_reference',  // Political is cultural
-    'cars': 'product_brand',  // Cars are products
-    'animals': 'behavior_pattern',  // Animal videos are behaviors
-    'travel': 'behavior_pattern',  // Travel trends are behaviors
-    'education': 'creator_technique',  // Education is technique
-    'health': 'behavior_pattern',  // Health trends are behaviors
-    'product': 'product_brand',
+    'meme': 'meme',
+    'fashion': 'fashion',
+    'food': 'food',
+    'music': 'music',
+    'lifestyle': 'lifestyle',
+    'tech': 'tech',
+    'technology': 'tech',
+    'finance': 'finance',
+    'sports': 'sports',
+    'political': 'political',
+    'cars': 'cars',
+    'animals': 'animals',
+    'travel': 'travel',
+    'education': 'education',
+    'science': 'science',
+    'entertainment': 'entertainment',
+    'art': 'art',
+    'relationships': 'relationships',
+    'health': 'health',
     
     // Label mappings (what user sees in the UI)
-    'Meme/Humor': 'meme_format',
-    'Fashion/Beauty': 'visual_style',
-    'Food/Drink': 'behavior_pattern',
-    'Music/Dance': 'audio_music',
-    'Lifestyle': 'behavior_pattern',
-    'Tech/Gaming': 'creator_technique',
-    'Finance/Crypto': 'behavior_pattern',
-    'Sports/Fitness': 'behavior_pattern',
-    'Political/Social': 'cultural_reference',
-    'Cars & Machines': 'product_brand',
-    'Animals & Pets': 'behavior_pattern',
-    'Travel & Places': 'behavior_pattern',
-    'Education & Learning': 'creator_technique',
-    'Health & Wellness': 'behavior_pattern',
-    'Product/Shopping': 'product_brand',
+    'Meme/Humor': 'meme',
+    'Fashion/Beauty': 'fashion',
+    'Food/Drink': 'food',
+    'Music/Dance': 'music',
+    'Lifestyle': 'lifestyle',
+    'Tech/Gaming': 'tech',
+    'Finance/Crypto': 'finance',
+    'Sports/Fitness': 'sports',
+    'Political/Social': 'political',
+    'Cars & Machines': 'cars',
+    'Animals & Pets': 'animals',
+    'Travel & Places': 'travel',
+    'Education & Learning': 'education',
+    'Science & Tech': 'science',
+    'Entertainment': 'entertainment',
+    'Art & Design': 'art',
+    'Relationships': 'relationships',
+    'Health & Wellness': 'health',
     
-    // Legacy mappings (for backward compatibility)
-    'Fashion & Beauty': 'visual_style',
-    'Food & Drink': 'behavior_pattern',
-    'Humor & Memes': 'meme_format',
-    'Politics & Social Issues': 'cultural_reference',
-    'Music & Dance': 'audio_music',
-    'Sports & Fitness': 'behavior_pattern',
-    'Tech & Gaming': 'creator_technique',
-    'Art & Creativity': 'visual_style',
-    'Education & Science': 'creator_technique',
+    // Legacy mappings (for backward compatibility with any old data)
+    'meme_format': 'meme',
+    'visual_style': 'art',
+    'audio_music': 'music',
+    'creator_technique': 'entertainment',
+    'product_brand': 'lifestyle',
+    'behavior_pattern': 'lifestyle',
     
     // Lowercase versions (for flexible input handling)
-    'cars & machines': 'product_brand',
-    'animals & pets': 'behavior_pattern',
-    'travel & places': 'behavior_pattern',
-    'education & learning': 'creator_technique',
-    'health & wellness': 'behavior_pattern'
+    'cars & machines': 'cars',
+    'animals & pets': 'animals',
+    'travel & places': 'travel',
+    'education & learning': 'education',
+    'health & wellness': 'health'
   };
   
   // Try to map the category
@@ -70,26 +71,26 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     return mapped;
   }
   
-  // Check if it's already a valid enum (ONLY the actual valid database enums)
-  const validEnums = [
-    'meme_format', 'visual_style', 'behavior_pattern', 'audio_music',
-    'creator_technique', 'product_brand', 'cultural_reference',
-    'platform_mechanic', 'storytelling_format', 'editing_technique'
+  // Check if it's already a valid category
+  const validCategories = [
+    'meme', 'fashion', 'food', 'music', 'lifestyle', 'tech', 
+    'finance', 'sports', 'political', 'cars', 'animals', 'travel',
+    'education', 'science', 'entertainment', 'art', 'relationships', 'health'
   ];
-  if (displayCategory && validEnums.includes(displayCategory)) {
+  if (displayCategory && validCategories.includes(displayCategory)) {
     console.log('[getSafeCategory] Already valid:', displayCategory);
     return displayCategory;
   }
   
-  // Default fallback - use behavior_pattern as it's the most general
-  console.log('[getSafeCategory] Fallback to: behavior_pattern');
-  return 'behavior_pattern';
+  // Default fallback - use general category
+  console.log('[getSafeCategory] Fallback to: general');
+  return 'general';
 }
 
 // Safe status function to ensure we NEVER use 'pending'
 export function getSafeStatus(status: string | undefined | null): string {
   // ONLY valid enum values from the RLS policies
-  const validStatuses = ['submitted', 'validating', 'approved', 'rejected', 'viral'];
+  const validStatuses = ['submitted', 'validating', 'validated', 'rejected', 'viral'];
   
   // If status is 'pending', change it to 'submitted'
   if (status === 'pending') {
@@ -110,11 +111,11 @@ export function getSafeStatus(status: string | undefined | null): string {
 if (typeof window !== 'undefined') {
   (window as any).testSafeCategory = () => {
     console.log('Testing getSafeCategory...');
-    console.log('Humor & Memes:', getSafeCategory('Humor & Memes'));
-    console.log('Fashion & Beauty:', getSafeCategory('Fashion & Beauty'));
+    console.log('Meme/Humor:', getSafeCategory('Meme/Humor'));
+    console.log('Fashion/Beauty:', getSafeCategory('Fashion/Beauty'));
     console.log('invalid:', getSafeCategory('invalid'));
     console.log('null:', getSafeCategory(null));
-    console.log('visual_style:', getSafeCategory('visual_style'));
+    console.log('meme:', getSafeCategory('meme'));
   };
   
   (window as any).testSafeStatus = () => {

@@ -319,14 +319,6 @@ export default function UserProfilePage() {
 
   const getCategoryEmoji = (category: string) => {
     const emojiMap: Record<string, string> = {
-      // Old categories (for backwards compatibility)
-      'visual_style': '🎨',
-      'audio_music': '🎵',
-      'creator_technique': '🎬',
-      'meme_format': '😂',
-      'product_brand': '🛍️',
-      'behavior_pattern': '📊',
-      // New categories
       'meme': '😂',
       'fashion': '👗',
       'food': '🍔',
@@ -340,8 +332,11 @@ export default function UserProfilePage() {
       'animals': '🐾',
       'travel': '✈️',
       'education': '📚',
-      'health': '💊',
-      'product': '🛍️'
+      'science': '🔬',
+      'entertainment': '🎭',
+      'art': '🎨',
+      'relationships': '❤️',
+      'health': '💊'
     };
     return emojiMap[category] || '📌';
   };

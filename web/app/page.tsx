@@ -11,14 +11,13 @@ export default function Home() {
       <section className="flex-1 flex items-center justify-center px-4 py-20 pt-32">
         <div className="text-center max-w-4xl mx-auto animate-fade-in">
           {/* Main Message */}
-          <h1 className="text-4xl md:text-6xl font-light tracking-tight mb-8 leading-tight">
-            WaveSight is where people compete to spot trends first,<br/>
-            call when they'll peak, and <span className="text-gradient font-normal">prove they saw it coming</span>.
+          <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6 leading-tight">
+            See the wave before it breaks
           </h1>
           
-          {/* Competitive Hook */}
-          <p className="text-2xl md:text-3xl font-normal text-gray-800 dark:text-gray-200 mb-8">
-            The future has a leaderboard. Where do you rank?
+          {/* Subtitle */}
+          <p className="text-2xl md:text-3xl font-normal text-gray-600 dark:text-gray-400 mb-12">
+            The App for people who spot trends first
           </p>
           
           {/* CTA Buttons */}

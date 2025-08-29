@@ -889,14 +889,6 @@ export default function Timeline() {
 
   const getCategoryEmoji = (category: string) => {
     const emojiMap: Record<string, string> = {
-      // Old categories (for backwards compatibility)
-      'visual_style': '🎨',
-      'audio_music': '🎵',
-      'creator_technique': '🎬',
-      'meme_format': '😂',
-      'product_brand': '🛍️',
-      'behavior_pattern': '📊',
-      // New categories from SmartTrendSubmission
       'meme': '😂',
       'fashion': '👗',
       'food': '🍔',
@@ -910,22 +902,17 @@ export default function Timeline() {
       'animals': '🐾',
       'travel': '✈️',
       'education': '📚',
-      'health': '💊',
-      'product': '🛍️'
+      'science': '🔬',
+      'entertainment': '🎭',
+      'art': '🎨',
+      'relationships': '❤️',
+      'health': '💊'
     };
     return emojiMap[category] || '📌';
   };
 
   const getCategoryLabel = (category: string) => {
     const labelMap: Record<string, string> = {
-      // Old categories (for backwards compatibility)
-      'visual_style': 'Visual Style',
-      'audio_music': 'Audio/Music',
-      'creator_technique': 'Creator Technique',
-      'meme_format': 'Meme Format',
-      'product_brand': 'Product/Brand',
-      'behavior_pattern': 'Behavior Pattern',
-      // New categories from SmartTrendSubmission
       'meme': 'Meme/Humor',
       'fashion': 'Fashion/Beauty',
       'food': 'Food/Drink',
@@ -1643,7 +1630,7 @@ export default function Timeline() {
                                     value !== undefined && 
                                     value !== '' &&
                                     // Exclude old category fields that shouldn't be displayed
-                                    !['creator_technique', 'behavior_pattern', 'visual_style', 'audio_music', 'meme_format', 'product_brand'].includes(key)
+                                    true // Show all metadata fields now that deprecated ones are removed
                                   ) : [];
                               
                               if (validAnswers.length > 0) {
@@ -1959,7 +1946,7 @@ export default function Timeline() {
                                     value !== undefined && 
                                     value !== '' &&
                                     // Exclude old category fields that shouldn't be displayed
-                                    !['creator_technique', 'behavior_pattern', 'visual_style', 'audio_music', 'meme_format', 'product_brand'].includes(key)
+                                    true // Show all metadata fields now that deprecated ones are removed
                                   ) : [];
                               
                               if (validAnswers.length > 0) {

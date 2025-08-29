@@ -103,12 +103,24 @@ export default function Timeline({
 
   const getCategoryEmoji = (category: string) => {
     const emojiMap: Record<string, string> = {
-      'visual_style': '🎨',
-      'audio_music': '🎵',
-      'creator_technique': '🎬',
-      'meme_format': '😂',
-      'product_brand': '🛍️',
-      'behavior_pattern': '📊'
+      'meme': '😂',
+      'music': '🎵',
+      'fashion': '👗',
+      'food': '🍔',
+      'lifestyle': '✨',
+      'tech': '💻',
+      'finance': '💰',
+      'sports': '⚽',
+      'political': '🏛️',
+      'cars': '🚗',
+      'animals': '🐾',
+      'travel': '✈️',
+      'education': '📚',
+      'science': '🔬',
+      'entertainment': '🎭',
+      'art': '🎨',
+      'relationships': '❤️',
+      'health': '💪'
     };
     return emojiMap[category] || '📌';
   };

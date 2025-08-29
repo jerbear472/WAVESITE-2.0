@@ -246,28 +246,9 @@ interface TrendFormData {
 
 // Map UI categories to database-accepted categories
 const mapCategoryToDatabase = (uiCategory: string): string => {
-  const mapping: Record<string, string> = {
-    'meme': 'meme_format',
-    'fashion': 'visual_style',
-    'food': 'behavior_pattern',
-    'music': 'audio_music',
-    'lifestyle': 'behavior_pattern',
-    'tech': 'creator_technique',
-    'finance': 'behavior_pattern',
-    'sports': 'behavior_pattern',
-    'political': 'behavior_pattern',
-    'cars': 'product_brand',
-    'animals': 'behavior_pattern',
-    'travel': 'behavior_pattern',
-    'education': 'creator_technique',
-    'science': 'creator_technique',
-    'entertainment': 'visual_style',
-    'art': 'visual_style',
-    'relationships': 'behavior_pattern',
-    'health': 'behavior_pattern',
-  };
-  
-  return mapping[uiCategory] || 'behavior_pattern'; // Default to behavior_pattern
+  // Now we use the actual category names directly
+  // since we've removed the deprecated field mappings
+  return uiCategory || 'general';
 };
 
 // Category configuration with icons and specific questions

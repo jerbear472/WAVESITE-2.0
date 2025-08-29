@@ -140,7 +140,7 @@ export default function ValidatePage() {
   // Animate XP counter when value changes
   useEffect(() => {
     const animation = animate(xpMotionValue, todaysXP, {
-      duration: 0.5,
+      duration: 0.8,
       ease: "easeOut"
     });
     return animation.stop;

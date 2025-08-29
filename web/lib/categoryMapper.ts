@@ -1,14 +1,12 @@
 // Category mapper to convert frontend display values to database enum values
 
-// Map of frontend display values to database enum values
-// Database enum values: 'visual_style', 'audio_music', 'creator_technique', 'meme_format', 'product_brand', 'behavior_pattern'
 export const CATEGORY_MAP: Record<string, string> = {
   // Direct mappings from SmartTrendSubmission component IDs
   'meme': 'meme_format',
   'fashion': 'fashion',
   'food': 'food_drink',
   'music': 'audio_music',
-  'lifestyle': 'behavior_pattern',
+  'lifestyle': 'lifestyle',
   'tech': 'technology',
   'finance': 'finance',
   'sports': 'sports',
@@ -24,7 +22,7 @@ export const CATEGORY_MAP: Record<string, string> = {
   'Fashion/Beauty': 'fashion',
   'Food/Drink': 'food_drink',
   'Music/Dance': 'audio_music',
-  'Lifestyle': 'behavior_pattern',
+  'Lifestyle': 'lifestyle',
   'Tech/Gaming': 'technology',
   'Finance/Crypto': 'finance',
   'Sports/Fitness': 'sports',
@@ -43,23 +41,17 @@ export const CATEGORY_MAP: Record<string, string> = {
   'Music & Dance': 'audio_music',
   'Sports & Fitness': 'sports',
   'Tech & Gaming': 'technology',
-  'Art & Creativity': 'visual_style',
+  'Art & Creativity': 'art',
   'Education & Science': 'education',
-  'Entertainment': 'audio_music',
-  'Business': 'behavior_pattern',
+  'Entertainment': 'entertainment',
+  'Business': 'business',
   'Pets & Animals': 'animals_pets',
   'Luxury': 'product_brand',
-  'Celebrity': 'behavior_pattern',
+  'Celebrity': 'celebrity',
   'Meme Coin': 'meme_format',
   'Meme Stock': 'meme_format',
   
-  // Direct database enum values (pass-through) - only ones not already mapped above
-  'visual_style': 'visual_style',
-  'audio_music': 'audio_music',
-  'creator_technique': 'creator_technique',
-  'meme_format': 'meme_format',
-  'product_brand': 'product_brand',
-  'behavior_pattern': 'behavior_pattern',
+  // Direct database enum values (pass-through)
   'news_events': 'news_events',
   'relationship': 'relationship',
   'dance': 'dance',

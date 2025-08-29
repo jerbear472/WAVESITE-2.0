@@ -73,15 +73,26 @@ export default function TrendingSection() {
 
   const getCategoryEmoji = (category: string): string => {
     const emojiMap: Record<string, string> = {
-      'meme_format': '😂',
-      'audio_music': '🎵',
-      'visual_style': '🎨',
-      'behavior_pattern': '💫',
-      'creator_technique': '🎬',
-      'product_placement': '🛍️',
+      'meme': '😂',
+      'music': '🎵',
+      'fashion': '👗',
+      'food': '🍔',
+      'lifestyle': '✨',
+      'tech': '💻',
+      'finance': '💰',
+      'sports': '⚽',
+      'political': '🏛️',
+      'cars': '🚗',
+      'animals': '🐾',
+      'travel': '✈️',
+      'education': '📚',
+      'science': '🔬',
+      'entertainment': '🎭',
+      'art': '🎨',
+      'relationships': '❤️',
+      'health': '💪',
       'dance_move': '💃',
       'challenge': '🏆',
-      'educational': '📚',
       'social_cause': '🌍'
     };
     return emojiMap[category] || '📱';
