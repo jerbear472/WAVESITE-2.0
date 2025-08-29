@@ -12,7 +12,8 @@ export default function Home() {
         <div className="text-center max-w-4xl mx-auto animate-fade-in">
           {/* Main Message */}
           <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6 leading-tight">
-            See the wave before it breaks
+            See The Wave<br/>
+            Before It Breaks
           </h1>
           
           {/* Subtitle */}

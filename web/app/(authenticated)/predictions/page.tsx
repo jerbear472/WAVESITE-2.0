@@ -1288,13 +1288,19 @@ export default function EnhancedPredictionsPage() {
                             
                             // Decrease previous vote count if changing vote
                             if (isChangingVote && previousVote) {
-                              const prevKey = `${previousVote}_votes` as keyof typeof t;
-                              updated[prevKey] = Math.max(0, (t[prevKey] as number || 0) - 1);
+                              const prevKey = `${previousVote}_votes`;
+                              if (prevKey === 'wave_votes') updated.wave_votes = Math.max(0, (t.wave_votes || 0) - 1);
+                              else if (prevKey === 'fire_votes') updated.fire_votes = Math.max(0, (t.fire_votes || 0) - 1);
+                              else if (prevKey === 'declining_votes') updated.declining_votes = Math.max(0, (t.declining_votes || 0) - 1);
+                              else if (prevKey === 'dead_votes') updated.dead_votes = Math.max(0, (t.dead_votes || 0) - 1);
                             }
                             
                             // Increase new vote count
-                            const newKey = `${voteType}_votes` as keyof typeof t;
-                            updated[newKey] = ((t[newKey] as number) || 0) + 1;
+                            const newKey = `${voteType}_votes`;
+                            if (newKey === 'wave_votes') updated.wave_votes = (t.wave_votes || 0) + 1;
+                            else if (newKey === 'fire_votes') updated.fire_votes = (t.fire_votes || 0) + 1;
+                            else if (newKey === 'declining_votes') updated.declining_votes = (t.declining_votes || 0) + 1;
+                            else if (newKey === 'dead_votes') updated.dead_votes = (t.dead_votes || 0) + 1;
                             
                             // Recalculate wave score
                             updated.wave_score = ((updated.wave_votes || 0) * 2 + (updated.fire_votes || 0)) - 
@@ -1389,12 +1395,18 @@ export default function EnhancedPredictionsPage() {
                             const updated = { ...t };
                             
                             if (isChangingVote && previousVote) {
-                              const prevKey = `${previousVote}_votes` as keyof typeof t;
-                              updated[prevKey] = Math.max(0, (t[prevKey] as number || 0) - 1);
+                              const prevKey = `${previousVote}_votes`;
+                              if (prevKey === 'wave_votes') updated.wave_votes = Math.max(0, (t.wave_votes || 0) - 1);
+                              else if (prevKey === 'fire_votes') updated.fire_votes = Math.max(0, (t.fire_votes || 0) - 1);
+                              else if (prevKey === 'declining_votes') updated.declining_votes = Math.max(0, (t.declining_votes || 0) - 1);
+                              else if (prevKey === 'dead_votes') updated.dead_votes = Math.max(0, (t.dead_votes || 0) - 1);
                             }
                             
-                            const newKey = `${voteType}_votes` as keyof typeof t;
-                            updated[newKey] = ((t[newKey] as number) || 0) + 1;
+                            const newKey = `${voteType}_votes`;
+                            if (newKey === 'wave_votes') updated.wave_votes = (t.wave_votes || 0) + 1;
+                            else if (newKey === 'fire_votes') updated.fire_votes = (t.fire_votes || 0) + 1;
+                            else if (newKey === 'declining_votes') updated.declining_votes = (t.declining_votes || 0) + 1;
+                            else if (newKey === 'dead_votes') updated.dead_votes = (t.dead_votes || 0) + 1;
                             
                             updated.wave_score = ((updated.wave_votes || 0) * 2 + (updated.fire_votes || 0)) - 
                                                ((updated.declining_votes || 0) + (updated.dead_votes || 0) * 2);

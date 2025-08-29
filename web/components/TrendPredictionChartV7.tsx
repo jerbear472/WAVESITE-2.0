@@ -379,7 +379,10 @@ export default function TrendPredictionChartV7({
   // Custom draggable dot
   const CustomDot = (props: any) => {
     const { cx, cy, payload } = props;
-    if (!payload.isPeak) return null;
+    // Always return an element for Area component compatibility
+    if (!payload?.isPeak) {
+      return <circle cx={cx} cy={cy} r={0} fill="transparent" />;
+    }
     
     return (
       <g style={{ cursor: 'move' }}>
