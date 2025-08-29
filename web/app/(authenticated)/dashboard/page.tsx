@@ -9,7 +9,7 @@ import PendingValidations from '@/components/PendingValidations';
 import StreakDisplay from '@/components/StreakDisplay';
 import { motion } from 'framer-motion';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
-import { XP_LEVELS, calculateLevelProgress, getLevelTitle } from '@/lib/xpLevels';
+import { XP_LEVELS, calculateLevelProgress, getLevelTitle, getLevelByXP } from '@/lib/xpLevels';
 import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
 import { cleanTrendData } from '@/lib/cleanTrendData';
 import { 
@@ -300,9 +300,10 @@ export default function Dashboard() {
       // Ensure we handle both null and undefined properly
       const totalXP = xpSummary?.total_xp ?? 0;
       
-      // Use unified level system
-      const currentLevel = xpSummary?.level || 1;
-      const levelTitle = getLevelTitle(currentLevel);
+      // Calculate level based on XP (don't trust database level)
+      const calculatedLevel = getLevelByXP(totalXP);
+      const currentLevel = calculatedLevel.level;
+      const levelTitle = calculatedLevel.title;
       
       setStats({
         total_xp: totalXP,

@@ -205,10 +205,10 @@ export default function UserProfilePage() {
         setUserTrends(trendsData);
         
         // Calculate stats with proper status checking
-        // Approved includes: 'approved', 'trending', 'viral', 'peaked'
-        const approvedStatuses = ['approved', 'trending', 'viral', 'peaked'];
+        // Validated includes: 'validated', 'approved' (for backwards compat), 'trending', 'viral', 'peaked'
+        const validatedStatuses = ['validated', 'approved', 'trending', 'viral', 'peaked'];
         const approvedTrends = trendsData.filter(t => 
-          approvedStatuses.includes(t.status) || 
+          validatedStatuses.includes(t.status) || 
           (t.validation_count >= 3 && t.approve_count > t.reject_count)
         ).length;
         
@@ -319,30 +319,51 @@ export default function UserProfilePage() {
 
   const getCategoryEmoji = (category: string) => {
     const emojiMap: Record<string, string> = {
+      // Old categories (for backwards compatibility)
       'visual_style': '🎨',
       'audio_music': '🎵',
       'creator_technique': '🎬',
       'meme_format': '😂',
       'product_brand': '🛍️',
-      'behavior_pattern': '📊'
+      'behavior_pattern': '📊',
+      // New categories
+      'meme': '😂',
+      'fashion': '👗',
+      'food': '🍔',
+      'music': '🎵',
+      'lifestyle': '🏡',
+      'tech': '🎮',
+      'finance': '💰',
+      'sports': '⚽',
+      'political': '⚖️',
+      'cars': '🚗',
+      'animals': '🐾',
+      'travel': '✈️',
+      'education': '📚',
+      'health': '💊',
+      'product': '🛍️'
     };
     return emojiMap[category] || '📌';
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'from-green-500 to-emerald-600';
+      case 'validated': return 'from-green-500 to-emerald-600';
+      case 'approved': return 'from-green-500 to-emerald-600'; // backwards compat
       case 'rejected': return 'from-red-500 to-rose-600';
       case 'validating': return 'from-yellow-500 to-amber-600';
+      case 'submitted': return 'from-blue-500 to-blue-600';
       default: return 'from-gray-500 to-slate-600';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved': return <SparklesIcon className="w-4 h-4" />;
+      case 'validated': return <SparklesIcon className="w-4 h-4" />;
+      case 'approved': return <SparklesIcon className="w-4 h-4" />; // backwards compat
       case 'rejected': return <ClockIcon className="w-4 h-4" />;
       case 'validating': return <EyeIcon className="w-4 h-4" />;
+      case 'submitted': return <TrendingUpIcon className="w-4 h-4" />;
       default: return <TrendingUpIcon className="w-4 h-4" />;
     }
   };
@@ -684,17 +705,112 @@ export default function UserProfilePage() {
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       
                       <div className="relative bg-white/95 backdrop-blur-md rounded-2xl border border-gray-100 overflow-hidden hover:border-gray-200 transition-all duration-300">
-                        {/* Trend card content - same as timeline page */}
-                        <div className="p-6">
-                          <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                            {trend.description || 'Untitled Trend'}
-                          </h3>
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <span>{getCategoryEmoji(trend.category)}</span>
-                            <span>{trend.category.replace(/_/g, ' ')}</span>
-                            <span>•</span>
-                            <span>{formatDate(trend.created_at)}</span>
+                        {/* Thumbnail if available */}
+                        {(trend.thumbnail_url || trend.screenshot_url) && (
+                          <div className="relative h-48 overflow-hidden bg-gray-100">
+                            <img 
+                              src={trend.thumbnail_url || trend.screenshot_url}
+                              alt={trend.description || 'Trend'}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute top-3 right-3">
+                              <div className={`px-2.5 py-1 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold shadow-lg flex items-center gap-1`}>
+                                {getStatusIcon(trend.status)}
+                                <span className="capitalize">{trend.status}</span>
+                              </div>
+                            </div>
                           </div>
+                        )}
+                        
+                        {/* Trend Details */}
+                        <div className="p-5">
+                          {/* Title and Category */}
+                          <div className="mb-3">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-1 line-clamp-2">
+                              {trend.description || 'Untitled Trend'}
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <span>{getCategoryEmoji(trend.category)}</span>
+                              <span className="capitalize">{trend.category.replace(/_/g, ' ')}</span>
+                              <span>•</span>
+                              <span>{formatDate(trend.created_at)}</span>
+                            </div>
+                          </div>
+
+                          {/* Velocity and Size */}
+                          {(trend.trend_velocity || trend.trend_size) && (
+                            <div className="flex gap-2 mb-3">
+                              {trend.trend_velocity && (
+                                <div className={`px-2 py-1 rounded-md text-xs font-medium ${getVelocityDisplay(trend.trend_velocity).color} bg-gray-50`}>
+                                  {getVelocityDisplay(trend.trend_velocity).text}
+                                </div>
+                              )}
+                              {trend.trend_size && (
+                                <div className="px-2 py-1 bg-purple-50 text-purple-700 rounded-md text-xs font-medium">
+                                  {trend.trend_size === 'micro' ? '🔬 Micro' :
+                                   trend.trend_size === 'niche' ? '🎯 Niche' :
+                                   trend.trend_size === 'viral' ? '🔥 Viral' :
+                                   trend.trend_size === 'mega' ? '💥 Mega' :
+                                   trend.trend_size === 'global' ? '🌍 Global' : '📏 ' + trend.trend_size}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Engagement Stats */}
+                          {(trend.views_count || trend.likes_count || trend.comments_count) && (
+                            <div className="flex items-center gap-3 text-xs text-gray-600 mb-3">
+                              {trend.views_count > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <EyeIcon className="w-3 h-3" />
+                                  <span>{formatEngagement(trend.views_count)}</span>
+                                </div>
+                              )}
+                              {trend.likes_count > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <HeartIcon className="w-3 h-3" />
+                                  <span>{formatEngagement(trend.likes_count)}</span>
+                                </div>
+                              )}
+                              {trend.comments_count > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <MessageCircleIcon className="w-3 h-3" />
+                                  <span>{formatEngagement(trend.comments_count)}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Creator Info */}
+                          {trend.creator_handle && (
+                            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Users className="w-3 h-3" />
+                                <span>@{trend.creator_handle.replace('@', '')}</span>
+                              </div>
+                              {trend.post_url && (
+                                <a 
+                                  href={trend.post_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:text-blue-600"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <ExternalLinkIcon className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Status Badge if no thumbnail */}
+                          {!trend.thumbnail_url && !trend.screenshot_url && (
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <div className={`inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold`}>
+                                {getStatusIcon(trend.status)}
+                                <span className="capitalize">{trend.status}</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -703,7 +819,7 @@ export default function UserProfilePage() {
               </div>
             )}
 
-            {/* List View - simplified for brevity */}
+            {/* List View - Enhanced with details */}
             {viewMode === 'list' && (
               <div className="space-y-4">
                 {filteredTrends.map((trend, index) => (
@@ -712,20 +828,99 @@ export default function UserProfilePage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white/95 backdrop-blur-md rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all"
+                    className="bg-white/95 backdrop-blur-md rounded-xl border border-gray-200 hover:border-gray-300 transition-all overflow-hidden"
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                          {trend.description || 'Untitled Trend'}
-                        </h3>
-                        <div className="flex items-center gap-3 text-sm text-gray-600">
-                          <span>{getCategoryEmoji(trend.category)} {trend.category.replace(/_/g, ' ')}</span>
-                          <span>{formatDate(trend.created_at)}</span>
+                    <div className="flex">
+                      {/* Thumbnail */}
+                      {(trend.thumbnail_url || trend.screenshot_url) && (
+                        <div className="w-48 h-32 flex-shrink-0 bg-gray-100">
+                          <img 
+                            src={trend.thumbnail_url || trend.screenshot_url}
+                            alt={trend.description || 'Trend'}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
-                      </div>
-                      <div className={`px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold`}>
-                        {trend.status}
+                      )}
+                      
+                      {/* Content */}
+                      <div className="flex-1 p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                              {trend.description || 'Untitled Trend'}
+                            </h3>
+                            <div className="flex items-center gap-3 text-sm text-gray-600">
+                              <span>{getCategoryEmoji(trend.category)} {trend.category.replace(/_/g, ' ')}</span>
+                              <span>•</span>
+                              <span>{formatDate(trend.created_at)}</span>
+                              {trend.creator_handle && (
+                                <>
+                                  <span>•</span>
+                                  <span>@{trend.creator_handle.replace('@', '')}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className={`px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold flex items-center gap-1`}>
+                            {getStatusIcon(trend.status)}
+                            <span className="capitalize">{trend.status}</span>
+                          </div>
+                        </div>
+
+                        {/* Metadata Row */}
+                        <div className="flex flex-wrap items-center gap-3">
+                          {trend.trend_velocity && (
+                            <div className={`px-2 py-1 rounded-md text-xs font-medium ${getVelocityDisplay(trend.trend_velocity).color} bg-gray-50`}>
+                              {getVelocityDisplay(trend.trend_velocity).text}
+                            </div>
+                          )}
+                          
+                          {/* Engagement Stats */}
+                          {(trend.views_count || trend.likes_count || trend.comments_count) && (
+                            <div className="flex items-center gap-3 text-xs text-gray-600">
+                              {trend.views_count > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <EyeIcon className="w-3 h-3" />
+                                  <span>{formatEngagement(trend.views_count)}</span>
+                                </div>
+                              )}
+                              {trend.likes_count > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <HeartIcon className="w-3 h-3" />
+                                  <span>{formatEngagement(trend.likes_count)}</span>
+                                </div>
+                              )}
+                              {trend.comments_count > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <MessageCircleIcon className="w-3 h-3" />
+                                  <span>{formatEngagement(trend.comments_count)}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* XP Awarded */}
+                          {trend.xp_awarded && trend.xp_amount > 0 && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 rounded-md text-xs font-medium">
+                              <ZapIcon className="w-3 h-3" />
+                              <span>+{trend.xp_amount} XP</span>
+                            </div>
+                          )}
+
+                          {/* External Link */}
+                          {trend.post_url && (
+                            <a 
+                              href={trend.post_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-blue-500 hover:text-blue-600 text-xs"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLinkIcon className="w-3 h-3" />
+                              <span>View Post</span>
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </motion.div>

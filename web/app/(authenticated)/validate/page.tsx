@@ -314,23 +314,47 @@ export default function ValidatePage() {
     console.log('🎯 Starting validation process...');
     
     try {
+      // First check if user already validated this trend
+      const { data: existingVote, error: checkError } = await supabase
+        .from('trend_validations')
+        .select('id, vote')
+        .eq('trend_id', currentTrend.id)
+        .eq('validator_id', user.id)
+        .single();
+
+      if (existingVote) {
+        console.log('⚠️ User already validated this trend:', existingVote);
+        // Skip to next trend without error
+        setShowFeedback(true);
+        setConsensus(100); // Show they already voted
+        setTimeout(() => {
+          setShowFeedback(false);
+          moveToNextTrend();
+        }, 1500);
+        return;
+      }
+
       console.log('📝 Submitting validation:', {
         trend_id: currentTrend.id,
         validator_id: user.id,
+        vote: isValid ? 'verify' : 'reject',
         is_valid: isValid,
         validation_score: isValid ? 1 : -1
       });
 
       // Submit validation with proper vote field
-      const { error: validationError } = await supabase
+      const { data: validationData, error: validationError } = await supabase
         .from('trend_validations')
         .insert({
           trend_id: currentTrend.id,
           validator_id: user.id,
           vote: isValid ? 'verify' : 'reject',  // Use vote field expected by trigger
           is_valid: isValid,  // Keep for backward compatibility
-          validation_score: isValid ? 1 : -1
-        });
+          validation_score: isValid ? 1 : -1,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
       if (validationError) {
         console.error('❌ Validation error:', validationError);
@@ -355,139 +379,153 @@ export default function ValidatePage() {
         }
       }
 
-      // Award XP for validation
+      // Award XP for validation (only if first time validating this trend)
       console.log('💎 STARTING XP AWARD PROCESS');
       
-      const baseXP = 10; // Base XP for validation
-      const streakBonus = Math.min(streak * 2, 20); // Streak bonus (before this validation)
-      const consensusBonus = 0; // Will be calculated after we know consensus
-      let totalXP = baseXP + streakBonus; // Initial XP without consensus bonus
-      
-      console.log('🎮 XP Calculation:', {
-        user_id: user.id,
-        baseXP,
-        streakBonus,
-        consensusBonus,
-        totalXP,
-        trend_id: currentTrend.id,
-        trend_title: currentTrend.title
-      });
-
-      // Award XP using the correct table structure
-      let xpAwarded = false;
-      
-      console.log('💰 Attempting to award XP:', {
-        user_id: user.id,
-        amount: totalXP,
-        type: 'validation'
-      });
-      
-      // Method 1: Insert into xp_transactions (this works!)
-      const { data: xpTransData, error: xpTransError } = await supabase
+      // Check if XP was already awarded for this trend
+      const { data: existingXP, error: xpCheckError } = await supabase
         .from('xp_transactions')
-        .insert({
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('reference_id', currentTrend.id)
+        .eq('type', 'validation')
+        .single();
+
+      let xpAwarded = false;
+      let totalXP = 0;
+      
+      if (existingXP) {
+        console.log('⚠️ XP already awarded for this trend validation');
+        xpAwarded = true; // Set to true to skip XP award but continue with flow
+      } else {
+        const baseXP = 10; // Base XP for validation
+        const streakBonus = Math.min(streak * 2, 20); // Streak bonus (before this validation)
+        const consensusBonus = 0; // Will be calculated after we know consensus
+        totalXP = baseXP + streakBonus; // Initial XP without consensus bonus
+        
+        console.log('🎮 XP Calculation:', {
+          user_id: user.id,
+          baseXP,
+          streakBonus,
+          consensusBonus,
+          totalXP,
+          trend_id: currentTrend.id,
+          trend_title: currentTrend.title
+        });
+
+        console.log('💰 Attempting to award XP:', {
           user_id: user.id,
           amount: totalXP,
-          type: 'validation', // Note: 'type' not 'transaction_type'
-          description: `Validated trend: ${currentTrend.title && currentTrend.title !== '0' ? currentTrend.title : 'Untitled Trend'}`,
-          reference_id: currentTrend.id,
-          reference_type: 'trend',
-          created_at: new Date().toISOString()
-        })
-        .select();
+          type: 'validation'
+        });
+        
+        // Insert into xp_transactions
+        const { data: xpTransData, error: xpTransError } = await supabase
+          .from('xp_transactions')
+          .insert({
+            user_id: user.id,
+            amount: totalXP,
+            type: 'validation',
+            description: `Validated trend: ${currentTrend.title && currentTrend.title !== '0' ? currentTrend.title : 'Untitled Trend'}`,
+            reference_id: currentTrend.id,
+            reference_type: 'trend',
+            created_at: new Date().toISOString()
+          })
+          .select();
       
-      console.log('💰 XP Transaction Result:', {
-        data: xpTransData,
-        error: xpTransError
-      });
-      
-      if (!xpTransError) {
-        xpAwarded = true;
-        console.log('✅ XP transaction recorded successfully!');
-        console.log('✅ XP Transaction ID:', xpTransData?.[0]?.id);
+        console.log('💰 XP Transaction Result:', {
+          data: xpTransData,
+          error: xpTransError
+        });
         
-        // Method 2: Update user_xp table for total XP
-        console.log('📊 Updating user_xp table...');
-        const { data: currentUserXP, error: fetchError } = await supabase
-          .from('user_xp')
-          .select('total_xp, current_level, xp_to_next_level')
-          .eq('user_id', user.id)
-          .single();
-        
-        console.log('📊 Current user_xp:', { data: currentUserXP, error: fetchError });
-        
-        if (currentUserXP) {
-          const newTotalXP = currentUserXP.total_xp + totalXP;
+        if (!xpTransError) {
+          xpAwarded = true;
+          console.log('✅ XP transaction recorded successfully!');
+          console.log('✅ XP Transaction ID:', xpTransData?.[0]?.id);
           
-          // Calculate new level if needed
-          let newLevel = currentUserXP.current_level;
-          let xpToNext = currentUserXP.xp_to_next_level - totalXP;
-          
-          if (xpToNext <= 0) {
-            newLevel += 1;
-            xpToNext = 500 + (newLevel * 100); // Example level scaling
-          }
-          
-          const { error: updateError } = await supabase
+          // Method 2: Update user_xp table for total XP
+          console.log('📊 Updating user_xp table...');
+          const { data: currentUserXP, error: fetchError } = await supabase
             .from('user_xp')
-            .update({
-              total_xp: newTotalXP,
-              current_level: newLevel,
-              xp_to_next_level: xpToNext,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id);
+            .select('total_xp, current_level, xp_to_next_level')
+            .eq('user_id', user.id)
+            .single();
           
-          if (updateError) {
-            console.log('⚠️ user_xp update failed:', updateError);
+          console.log('📊 Current user_xp:', { data: currentUserXP, error: fetchError });
+          
+          if (currentUserXP) {
+            const newTotalXP = currentUserXP.total_xp + totalXP;
+            
+            // Calculate new level if needed
+            let newLevel = currentUserXP.current_level;
+            let xpToNext = currentUserXP.xp_to_next_level - totalXP;
+            
+            if (xpToNext <= 0) {
+              newLevel += 1;
+              xpToNext = 500 + (newLevel * 100); // Example level scaling
+            }
+            
+            const { error: updateError } = await supabase
+              .from('user_xp')
+              .update({
+                total_xp: newTotalXP,
+                current_level: newLevel,
+                xp_to_next_level: xpToNext,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id);
+            
+            if (updateError) {
+              console.log('⚠️ user_xp update failed:', updateError);
+            } else {
+              console.log('✅ user_xp updated - Total XP:', newTotalXP);
+            }
           } else {
-            console.log('✅ user_xp updated - Total XP:', newTotalXP);
+            // Create user_xp record if it doesn't exist
+            await supabase
+              .from('user_xp')
+              .insert({
+                user_id: user.id,
+                total_xp: totalXP,
+                current_level: 1,
+                xp_to_next_level: 500,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
           }
         } else {
-          // Create user_xp record if it doesn't exist
-          await supabase
-            .from('user_xp')
-            .insert({
-              user_id: user.id,
-              total_xp: totalXP,
-              current_level: 1,
-              xp_to_next_level: 500,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+          console.log('❌ XP TRANSACTION FAILED!');
+          console.log('❌ Error details:', xpTransError);
+          console.log('❌ Full error object:', JSON.stringify(xpTransError, null, 2));
+        
+          // Fallback: Try via API endpoint that we know works
+          console.log('🔄 Trying fallback API method...');
+          try {
+            const response = await fetch('/api/simple-xp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                userId: user.id,
+                amount: totalXP,
+                type: 'validation'
+              })
             });
-        }
-      } else {
-        console.log('❌ XP TRANSACTION FAILED!');
-        console.log('❌ Error details:', xpTransError);
-        console.log('❌ Full error object:', JSON.stringify(xpTransError, null, 2));
-        
-        // Fallback: Try via API endpoint that we know works
-        console.log('🔄 Trying fallback API method...');
-        try {
-          const response = await fetch('/api/simple-xp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              userId: user.id,
-              amount: totalXP,
-              type: 'validation'
-            })
-          });
-          
-          const result = await response.json();
-          if (result.success) {
-            xpAwarded = true;
-            console.log('✅ XP awarded via API fallback!');
-          } else {
-            console.log('❌ API fallback also failed:', result.error);
+            
+            const result = await response.json();
+            if (result.success) {
+              xpAwarded = true;
+              console.log('✅ XP awarded via API fallback!');
+            } else {
+              console.log('❌ API fallback also failed:', result.error);
+            }
+          } catch (apiError) {
+            console.log('❌ API fallback error:', apiError);
           }
-        } catch (apiError) {
-          console.log('❌ API fallback error:', apiError);
         }
-      }
+      } // End of else block for XP not already awarded
       
-      if (xpAwarded) {
-        
+      if (xpAwarded && totalXP > 0) {
+        // Only show XP animations if new XP was actually awarded
         // Update local XP immediately for responsive UI
         const previousXP = todaysXP;
         setTodaysXP(prev => prev + totalXP);
@@ -502,6 +540,8 @@ export default function ValidatePage() {
         setTimeout(() => setFloatingXP(null), 1500);
         
         // Show XP notification with detailed breakdown (will update after consensus is calculated)
+        const baseXP = 10;
+        const streakBonus = totalXP - baseXP;
         const notificationParts = [`Validation: +${baseXP} XP`];
         if (streakBonus > 0) notificationParts.push(`Streak: +${streakBonus}`);
         
@@ -511,7 +551,7 @@ export default function ValidatePage() {
         // Dispatch custom event for other components to update
         window.dispatchEvent(new CustomEvent('xp-earned', { detail: { amount: totalXP, newTotal: previousXP + totalXP } }));
         console.log('✅ XP awarded successfully');
-      } else {
+      } else if (!xpAwarded && totalXP > 0) {
         console.error('❌ Failed to award XP - check console for details');
       }
 
@@ -616,7 +656,6 @@ export default function ValidatePage() {
         // Refresh stats to ensure everything is synced
         loadUserStats();
       }, 3000); // Increased to 3 seconds so user can see XP clearly
-      
     } catch (error) {
       console.error('🔥 CRITICAL ERROR in handleSwipe:', error);
       console.error('🔥 Error stack:', error instanceof Error ? error.stack : 'No stack');
