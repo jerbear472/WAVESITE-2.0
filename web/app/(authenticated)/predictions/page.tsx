@@ -32,7 +32,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import TrendPredictionChart from '@/components/TrendPredictionChart';
+import TrendPredictionChartV6 from '@/components/TrendPredictionChartV6';
 import { addDays } from 'date-fns';
 
 // Custom Vote Button Components - Updated to handle vote changes properly
@@ -42,8 +42,8 @@ const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient, us
   const [voting, setVoting] = useState(false);
   const hasVoted = userVote === type;
   
-  // Use count from allCounts to ensure proper updates
-  const displayCount = allCounts?.[type] ?? count;
+  // Use count from allCounts to ensure proper updates, fallback to initial count
+  const displayCount = allCounts?.[type] !== undefined ? allCounts[type] : count;
   
   const handleVote = async () => {
     console.log('🎯 Vote button clicked!', { type, label });
@@ -157,8 +157,8 @@ const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient, us
         // Award XP for voting
         const xpEarned = !previousVote ? 10 : 5;
         
-        // Save XP to database
-        await supabase.from('xp_transactions').insert({
+        // Save XP to database (trigger will update user_xp automatically)
+        const { error: xpError } = await supabase.from('xp_transactions').insert({
           user_id: user.id,
           amount: xpEarned,
           type: 'vote',
@@ -168,26 +168,11 @@ const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient, us
           created_at: new Date().toISOString()
         });
         
-        // Update user_xp table
-        const { data: currentXP } = await supabase
-          .from('user_xp')
-          .select('total_xp')
-          .eq('user_id', user.id)
-          .single();
-          
-        if (currentXP) {
-          await supabase
-            .from('user_xp')
-            .update({ 
-              total_xp: currentXP.total_xp + xpEarned,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id);
-        }
-        
-        if (showXPNotification) {
+        if (!xpError && showXPNotification) {
           showXPNotification(xpEarned, `Voted: ${label}`, 'prediction');
           console.log('🏆 XP awarded for voting:', xpEarned);
+        } else if (xpError) {
+          console.error('⚠️ XP transaction failed:', xpError);
         }
         
         // Visual feedback on successful vote
@@ -236,8 +221,8 @@ const VoteMobileButton = ({ type, trendId, count, icon, label, value, gradient, 
   const [voting, setVoting] = useState(false);
   const hasVoted = userVote === type;
   
-  // Use count from allCounts to ensure proper updates
-  const displayCount = allCounts?.[type] ?? count;
+  // Use count from allCounts to ensure proper updates, fallback to initial count
+  const displayCount = allCounts?.[type] !== undefined ? allCounts[type] : count;
   
   const handleVote = async () => {
     console.log('📱 Mobile vote button clicked!', { type, label });
@@ -351,8 +336,8 @@ const VoteMobileButton = ({ type, trendId, count, icon, label, value, gradient, 
         // Award XP for voting
         const xpEarned = !previousVote ? 10 : 5;
         
-        // Save XP to database
-        await supabase.from('xp_transactions').insert({
+        // Save XP to database (trigger will update user_xp automatically)
+        const { error: xpError } = await supabase.from('xp_transactions').insert({
           user_id: user.id,
           amount: xpEarned,
           type: 'vote',
@@ -362,26 +347,11 @@ const VoteMobileButton = ({ type, trendId, count, icon, label, value, gradient, 
           created_at: new Date().toISOString()
         });
         
-        // Update user_xp table
-        const { data: currentXP } = await supabase
-          .from('user_xp')
-          .select('total_xp')
-          .eq('user_id', user.id)
-          .single();
-          
-        if (currentXP) {
-          await supabase
-            .from('user_xp')
-            .update({ 
-              total_xp: currentXP.total_xp + xpEarned,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id);
-        }
-        
-        if (showXPNotification) {
+        if (!xpError && showXPNotification) {
           showXPNotification(xpEarned, `Voted: ${label}`, 'prediction');
           console.log('🏆 XP awarded for voting:', xpEarned);
+        } else if (xpError) {
+          console.error('⚠️ XP transaction failed:', xpError);
         }
         
         // Visual feedback on successful vote
@@ -789,11 +759,33 @@ export default function EnhancedPredictionsPage() {
       const { data: realTrends, error } = await supabase
         .from('trend_submissions')
         .select('*')
-        .in('status', ['submitted', 'validated', 'validating', 'approved'])  // Show all except rejected
+        .in('status', ['submitted', 'validating', 'approved'])  // Removed 'validated' - not a valid enum
         .order('created_at', { ascending: false })
-        .limit(20);  // Load more trends for better sorting
+        .limit(50);  // Load more trends
       
       if (!error && realTrends && realTrends.length > 0) {
+        // Load vote counts for all trends
+        const trendIds = realTrends.map(t => t.id);
+        const { data: votesData } = await supabase
+          .from('trend_user_votes')
+          .select('trend_id, vote_type')
+          .in('trend_id', trendIds);
+        
+        // Calculate vote counts per trend
+        const voteCountsMap: Record<string, Record<string, number>> = {};
+        trendIds.forEach(id => {
+          voteCountsMap[id] = { wave: 0, fire: 0, declining: 0, dead: 0 };
+        });
+        
+        votesData?.forEach(vote => {
+          if (vote.trend_id && vote.vote_type && voteCountsMap[vote.trend_id]) {
+            voteCountsMap[vote.trend_id][vote.vote_type] = (voteCountsMap[vote.trend_id][vote.vote_type] || 0) + 1;
+          }
+        });
+        
+        // Set vote counts state
+        setVoteCounts(voteCountsMap);
+        
         // Map real trends to the component format
         const formattedTrends: TrendWithEngagement[] = realTrends.map(trend => ({
           id: trend.id,
@@ -817,12 +809,15 @@ export default function EnhancedPredictionsPage() {
           user_has_predicted: false,
           
           // Voting data (for wave score only, not validation)
-          wave_votes: trend.wave_votes || 0,
-          fire_votes: trend.fire_votes || 0,
-          declining_votes: trend.declining_votes || 0,
-          dead_votes: trend.dead_votes || 0,
-          is_validated: trend.status === 'validated', // From validation page
+          wave_votes: voteCountsMap[trend.id]?.wave || 0,
+          fire_votes: voteCountsMap[trend.id]?.fire || 0,
+          declining_votes: voteCountsMap[trend.id]?.declining || 0,
+          dead_votes: voteCountsMap[trend.id]?.dead || 0,
+          is_validated: trend.status === 'validating' || trend.status === 'approved', // From validation page
           is_rejected: trend.status === 'rejected', // From validation page
+          
+          // Calculate wave score (positive votes - negative votes)
+          wave_score: ((voteCountsMap[trend.id]?.wave || 0) * 2 + (voteCountsMap[trend.id]?.fire || 0)) - ((voteCountsMap[trend.id]?.declining || 0) + (voteCountsMap[trend.id]?.dead || 0) * 2),
           
           // Default prediction breakdown
           prediction_breakdown: {
@@ -1563,11 +1558,9 @@ export default function EnhancedPredictionsPage() {
                 </button>
               </div>
 
-              <TrendPredictionChart
+              <TrendPredictionChartV6
                 trendId={selectedTrend.id}
                 trendTitle={selectedTrend.title}
-                historicalData={[]} // Could add historical data if available
-                existingPredictions={[]} // Could add other users' predictions
                 onSavePrediction={async (prediction) => {
                   if (!user) return;
 
@@ -1605,8 +1598,7 @@ export default function EnhancedPredictionsPage() {
                             value: p.value,
                             confidence: p.confidence
                           })),
-                          peakValue: prediction.peakValue,
-                          reasoning: prediction.reasoning
+                          peakValue: prediction.peakValue
                         },
                         confidence_score: prediction.confidence
                       });

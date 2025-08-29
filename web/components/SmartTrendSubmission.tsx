@@ -916,6 +916,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   const handleNext = () => {
     if (!validateCurrentStep()) return;
     
+    // Scroll to top when navigating to next step
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     switch (currentStep) {
       case 'url':
         setCurrentStep('velocity');
@@ -942,6 +945,9 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
   };
 
   const handleBack = () => {
+    // Scroll to top when navigating to previous step
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     switch (currentStep) {
       case 'velocity':
         setCurrentStep('url');
