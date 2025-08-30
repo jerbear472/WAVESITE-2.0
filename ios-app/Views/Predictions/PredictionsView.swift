@@ -36,6 +36,14 @@ struct PredictionsView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Predictions")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: ProfileView()) {
+                        Image(systemName: "person.circle")
+                            .font(.title3)
+                    }
+                }
+            }
         }
     }
     

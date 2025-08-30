@@ -1,4 +1,112 @@
 {
   "name": "WaveSight",
-  "displayName": "WaveSight"
+  "displayName": "WaveSight",
+  "version": "1.0.0",
+  "description": "Spot, validate, and predict the next viral trends. Join the community shaping what's trending.",
+  "slug": "wavesight",
+  "scheme": "wavesight",
+  "owner": "wavesight",
+  "orientation": "portrait",
+  "icon": "./src/assets/images/logo2.png",
+  "userInterfaceStyle": "dark",
+  "splash": {
+    "image": "./src/assets/images/logo2.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#0F0F0F"
+  },
+  "updates": {
+    "fallbackToCacheTimeout": 0,
+    "url": "https://wavesight.app/api/updates"
+  },
+  "assetBundlePatterns": [
+    "**/*"
+  ],
+  "ios": {
+    "bundleIdentifier": "com.wavesight.app",
+    "buildNumber": "1",
+    "supportsTablet": true,
+    "requireFullScreen": false,
+    "infoPlist": {
+      "NSCameraUsageDescription": "WaveSight needs camera access to capture trend screenshots and videos",
+      "NSPhotoLibraryUsageDescription": "WaveSight needs photo library access to save and share trend content",
+      "NSPhotoLibraryAddUsageDescription": "WaveSight needs permission to save trend images to your photo library",
+      "NSMicrophoneUsageDescription": "WaveSight needs microphone access to record trend videos with audio",
+      "NSLocationWhenInUseUsageDescription": "WaveSight uses your location to show trending content in your area",
+      "NSUserTrackingUsageDescription": "WaveSight uses this to provide personalized trend recommendations",
+      "UIBackgroundModes": ["fetch", "remote-notification"],
+      "UIStatusBarStyle": "UIStatusBarStyleLightContent",
+      "ITSAppUsesNonExemptEncryption": false,
+      "LSApplicationQueriesSchemes": [
+        "tiktok",
+        "instagram",
+        "twitter",
+        "x",
+        "youtube",
+        "reddit",
+        "fb",
+        "snapchat"
+      ],
+      "CFBundleURLTypes": [
+        {
+          "CFBundleURLSchemes": ["wavesight"],
+          "CFBundleURLName": "com.wavesight.app"
+        }
+      ]
+    },
+    "config": {
+      "usesNonExemptEncryption": false
+    },
+    "associatedDomains": [
+      "applinks:wavesight.app",
+      "webcredentials:wavesight.app"
+    ]
+  },
+  "android": {
+    "package": "com.wavesight.app",
+    "versionCode": 1,
+    "adaptiveIcon": {
+      "foregroundImage": "./src/assets/images/logo2.png",
+      "backgroundColor": "#0F0F0F"
+    },
+    "permissions": [
+      "CAMERA",
+      "READ_EXTERNAL_STORAGE",
+      "WRITE_EXTERNAL_STORAGE",
+      "RECORD_AUDIO",
+      "ACCESS_COARSE_LOCATION",
+      "ACCESS_FINE_LOCATION",
+      "VIBRATE",
+      "RECEIVE_BOOT_COMPLETED"
+    ],
+    "intentFilters": [
+      {
+        "action": "VIEW",
+        "autoVerify": true,
+        "data": [
+          {
+            "scheme": "https",
+            "host": "wavesight.app",
+            "pathPrefix": "/"
+          }
+        ],
+        "category": ["BROWSABLE", "DEFAULT"]
+      }
+    ]
+  },
+  "notification": {
+    "icon": "./src/assets/images/logo2.png",
+    "color": "#8B5CF6",
+    "iosDisplayInForeground": true,
+    "androidMode": "default",
+    "androidCollapsedTitle": "WaveSight"
+  },
+  "categories": [
+    "Social Networking",
+    "Entertainment"
+  ],
+  "privacy": "public",
+  "platforms": ["ios", "android"],
+  "githubUrl": "https://github.com/wavesight/mobile",
+  "primaryColor": "#8B5CF6",
+  "backgroundColor": "#0F0F0F"
 }

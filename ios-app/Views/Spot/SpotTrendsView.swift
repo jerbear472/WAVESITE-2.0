@@ -55,6 +55,13 @@ struct SpotTrendsView: View {
                         }
                     }
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: ProfileView()) {
+                        Image(systemName: "person.circle")
+                            .font(.title3)
+                    }
+                }
             }
         }
     }

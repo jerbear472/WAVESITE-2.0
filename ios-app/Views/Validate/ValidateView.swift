@@ -82,8 +82,15 @@ struct ValidateView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: loadTrends) {
-                        Image(systemName: "arrow.clockwise")
+                    HStack(spacing: 16) {
+                        Button(action: loadTrends) {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        
+                        NavigationLink(destination: ProfileView()) {
+                            Image(systemName: "person.circle")
+                                .font(.title3)
+                        }
                     }
                 }
             }

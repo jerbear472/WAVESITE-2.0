@@ -33,9 +33,16 @@ struct DashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { /* Show notifications */ }) {
-                        Image(systemName: "bell")
-                            .symbolRenderingMode(.hierarchical)
+                    HStack(spacing: 16) {
+                        Button(action: { /* Show notifications */ }) {
+                            Image(systemName: "bell")
+                                .symbolRenderingMode(.hierarchical)
+                        }
+                        
+                        NavigationLink(destination: ProfileView()) {
+                            Image(systemName: "person.circle")
+                                .font(.title3)
+                        }
                     }
                 }
             }

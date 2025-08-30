@@ -160,25 +160,25 @@ struct MainTabView: View {
             
             SpotTrendsView()
                 .tabItem {
-                    Label("Spot", systemImage: "plus.circle.fill")
+                    Label("Spot", systemImage: "eye.circle.fill")
                 }
                 .tag(1)
-            
-            ValidateView()
-                .tabItem {
-                    Label("Validate", systemImage: "checkmark.shield")
-                }
-                .tag(2)
             
             PredictionsView()
                 .tabItem {
                     Label("Predict", systemImage: "chart.bar.fill")
                 }
+                .tag(2)
+            
+            MyTimelineView()
+                .tabItem {
+                    Label("My Timeline", systemImage: "clock.arrow.circlepath")
+                }
                 .tag(3)
             
-            ProfileView()
+            ValidateView()
                 .tabItem {
-                    Label("Profile", systemImage: "person.circle")
+                    Label("Validate", systemImage: "checkmark.shield.fill")
                 }
                 .tag(4)
         }
