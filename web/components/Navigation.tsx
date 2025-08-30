@@ -194,13 +194,10 @@ export default function Navigation() {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/spot', label: 'Spot', icon: '👁️' },
-    { href: '/predictions', label: 'Predictions', icon: '🔮' },
-    { href: '/timeline', label: 'My Timeline', icon: '📈' },
+    { href: '/spot', label: 'Spot', icon: '➕' },
+    { href: '/predictions', label: 'Predict', icon: '📈' },
+    { href: '/timeline', label: 'My Timeline', icon: '📅' },
     { href: '/validate', label: 'Validate', icon: '✅' },
-    { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
-    { href: '/profile', label: 'Profile', icon: '👤' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' },
   ];
 
   return (
@@ -256,7 +253,7 @@ export default function Navigation() {
             </div>
           </div>
 
-          {/* Desktop Stats & Logout - More Compact */}
+          {/* Desktop Stats & Profile - More Compact */}
           <div className="hidden md:flex items-center space-x-2 flex-shrink-0">
             {/* XP Display */}
             <div className="flex items-center bg-gradient-to-r from-yellow-50 to-orange-50 px-2.5 py-1 rounded-md border border-yellow-200 whitespace-nowrap">
@@ -279,15 +276,45 @@ export default function Navigation() {
               </div>
             )}
 
-            <button
-              onClick={handleLogout}
-              className="text-gray-500 hover:text-gray-700 p-1.5 rounded-md hover:bg-gray-100 transition-colors ml-1"
-              title="Logout"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
+            {/* Profile Dropdown */}
+            <div className="relative group">
+              <Link
+                href="/profile"
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold text-sm hover:shadow-lg transition-all duration-200"
+                title="Profile"
+              >
+                {user?.username ? user.username.charAt(0).toUpperCase() : '👤'}
+              </Link>
+              
+              {/* Dropdown Menu */}
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <Link
+                  href="/profile"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                >
+                  <span className="mr-2">👤</span> Profile
+                </Link>
+                <Link
+                  href="/settings"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <span className="mr-2">⚙️</span> Settings
+                </Link>
+                <Link
+                  href="/leaderboard"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <span className="mr-2">🏆</span> Leaderboard
+                </Link>
+                <hr className="my-1 border-gray-200" />
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-lg"
+                >
+                  <span className="mr-2">🚪</span> Logout
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Mobile menu button + XP display */}
@@ -368,6 +395,36 @@ export default function Navigation() {
                 <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
               </Link>
             ))}
+
+            {/* Additional Menu Items */}
+            <div className="pt-2 border-t border-gray-200">
+              <Link
+                href="/profile"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="text-lg">👤</span>
+                <span>Profile</span>
+              </Link>
+              
+              <Link
+                href="/leaderboard"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="text-lg">🏆</span>
+                <span>Leaderboard</span>
+              </Link>
+              
+              <Link
+                href="/settings"
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="text-lg">⚙️</span>
+                <span>Settings</span>
+              </Link>
+            </div>
 
             {/* Mobile Logout */}
             <div className="pt-2 border-t border-gray-200">
