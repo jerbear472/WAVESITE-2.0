@@ -8,6 +8,7 @@ import { ToastProvider } from '@/contexts/ToastContext';
 import { SessionProvider } from '@/contexts/SessionContext';
 import { XPNotificationProvider } from '@/contexts/XPNotificationContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import AuthWrapper from '@/components/AuthWrapper';
 import dynamic from 'next/dynamic';
 
 // Dynamically import FloatingSessionTimer to avoid SSR issues
@@ -47,14 +48,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <SessionProvider>
-            <ToastProvider>
-              <XPNotificationProvider>
-                {children}
-                <FloatingSessionTimer />
-              </XPNotificationProvider>
-            </ToastProvider>
-          </SessionProvider>
+          <AuthWrapper>
+            <SessionProvider>
+              <ToastProvider>
+                <XPNotificationProvider>
+                  {children}
+                  <FloatingSessionTimer />
+                </XPNotificationProvider>
+              </ToastProvider>
+            </SessionProvider>
+          </AuthWrapper>
         </AuthProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -39,6 +39,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
+  sessionReady: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: {
     email: string;
@@ -52,26 +53,44 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   switchViewMode: (mode: 'user' | 'professional') => Promise<void>;
   updateUserXP: (amount: number) => Promise<void>;
+  checkSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Session recovery helper
+const SESSION_CHECK_INTERVAL = 30000; // Check every 30 seconds
+const SESSION_RECOVERY_KEY = 'wavesight_session_recovery';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
   const router = useRouter();
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = useCallback(async (userId: string, retryCount = 0): Promise<void> => {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000 * Math.pow(2, retryCount); // Exponential backoff
+
     try {
-      // Get basic profile
+      console.log(`[Auth] Fetching user data for ${userId}, attempt ${retryCount + 1}`);
+      
+      // Get basic profile with retry logic
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        if (retryCount < MAX_RETRIES) {
+          console.log(`[Auth] Profile fetch failed, retrying in ${RETRY_DELAY}ms...`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          return fetchUserData(userId, retryCount + 1);
+        }
+        throw profileError;
+      }
 
       // Get XP data
       const { data: xpData } = await supabase
@@ -114,23 +133,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(userData);
       setError(null);
+      setSessionReady(true);
+      
+      // Store session recovery data
+      localStorage.setItem(SESSION_RECOVERY_KEY, JSON.stringify({
+        userId,
+        timestamp: Date.now()
+      }));
+      
+      console.log('[Auth] User data fetched successfully');
     } catch (err: any) {
-      console.error('Error fetching user data:', err);
+      console.error('[Auth] Error fetching user data:', err);
       setError(err.message);
+      setSessionReady(true); // Mark as ready even with error
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
+  const checkSession = useCallback(async () => {
+    try {
+      console.log('[Auth] Checking session...');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('[Auth] Session check error:', sessionError);
         
-        if (session?.user) {
+        // Try to recover from stored session
+        const recoveryData = localStorage.getItem(SESSION_RECOVERY_KEY);
+        if (recoveryData) {
+          const { userId, timestamp } = JSON.parse(recoveryData);
+          const AGE_LIMIT = 7 * 24 * 60 * 60 * 1000; // 7 days
+          
+          if (Date.now() - timestamp < AGE_LIMIT) {
+            console.log('[Auth] Attempting session recovery...');
+            await fetchUserData(userId);
+          } else {
+            localStorage.removeItem(SESSION_RECOVERY_KEY);
+          }
+        }
+        return;
+      }
+      
+      if (session?.user) {
+        console.log('[Auth] Valid session found');
+        if (!user || user.id !== session.user.id) {
           await fetchUserData(session.user.id);
         }
+      } else {
+        console.log('[Auth] No active session');
+        setUser(null);
+        setSessionReady(true);
+      }
+    } catch (err: any) {
+      console.error('[Auth] Session check failed:', err);
+      setSessionReady(true);
+    }
+  }, [user, fetchUserData]);
+
+  // Initialize auth and set up session monitoring
+  useEffect(() => {
+    let sessionCheckInterval: NodeJS.Timeout;
+    
+    const initAuth = async () => {
+      try {
+        console.log('[Auth] Initializing authentication...');
+        setLoading(true);
+        
+        // Check for existing session
+        await checkSession();
+        
+        // Set up periodic session checks
+        sessionCheckInterval = setInterval(checkSession, SESSION_CHECK_INTERVAL);
+        
       } catch (err: any) {
-        console.error('Error initializing auth:', err);
+        console.error('[Auth] Error initializing auth:', err);
         setError(err.message);
+        setSessionReady(true);
       } finally {
         setLoading(false);
       }
@@ -138,31 +215,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth();
 
+    // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        await fetchUserData(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
+      console.log('[Auth] Auth state change:', event);
+      
+      switch (event) {
+        case 'SIGNED_IN':
+        case 'TOKEN_REFRESHED':
+        case 'USER_UPDATED':
+          if (session?.user) {
+            await fetchUserData(session.user.id);
+          }
+          break;
+          
+        case 'SIGNED_OUT':
+          setUser(null);
+          setSessionReady(true);
+          localStorage.removeItem(SESSION_RECOVERY_KEY);
+          break;
+          
+        case 'PASSWORD_RECOVERY':
+          // Handle password recovery
+          break;
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Handle page visibility changes to refresh session
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('[Auth] Page became visible, checking session...');
+        checkSession();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Handle online/offline status
+    const handleOnline = () => {
+      console.log('[Auth] Connection restored, checking session...');
+      checkSession();
+    };
+    
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      subscription.unsubscribe();
+      if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     setError(null);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
+    setLoading(true);
     
-    if (error) {
-      setError(error.message);
-      throw error;
-    }
-    
-    if (data.user) {
-      await fetchUserData(data.user.id);
+    try {
+      console.log('[Auth] Attempting login...');
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      
+      if (error) {
+        console.error('[Auth] Login error:', error);
+        setError(error.message);
+        throw error;
+      }
+      
+      if (data.user) {
+        console.log('[Auth] Login successful, fetching user data...');
+        await fetchUserData(data.user.id);
+        
+        // Ensure navigation happens after user data is loaded
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -175,8 +307,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     interests?: any;
   }) => {
     setError(null);
+    setLoading(true);
     
     try {
+      console.log('[Auth] Starting registration...');
+      
       const { data, error } = await supabase.auth.signUp({
         email: userData.email.trim().toLowerCase(),
         password: userData.password,
@@ -192,14 +327,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       if (error) {
-        console.error('Supabase signup error:', error);
+        console.error('[Auth] Signup error:', error);
         setError(error.message);
         throw error;
       }
       
       // Check if user was created successfully
       if (data?.user) {
-        console.log('User created successfully:', data.user.id);
+        console.log('[Auth] User created successfully:', data.user.id);
+        
+        // Wait a bit for the database trigger to create profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Try to check if profile was created
         const { data: profile, error: profileError } = await supabase
@@ -209,43 +347,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .single();
         
         if (profileError) {
-          console.error('Profile creation may have failed:', profileError);
-          // Don't throw here - user was created, profile issue can be fixed
+          console.error('[Auth] Profile check failed:', profileError);
+          // Don't throw - profile might be created async
         } else {
-          console.log('Profile created successfully:', profile);
+          console.log('[Auth] Profile verified:', profile);
         }
       }
       
       return { needsEmailConfirmation: true };
-    } catch (err: any) {
-      console.error('Registration error in auth context:', err);
-      throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
+      console.log('[Auth] Logging out...');
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      
+      if (error) {
+        console.error('[Auth] Logout error:', error);
+        throw error;
+      }
       
       setUser(null);
+      setSessionReady(true);
+      localStorage.removeItem(SESSION_RECOVERY_KEY);
       router.push('/');
+      
       return { success: true };
     } catch (err: any) {
-      console.error('Logout error:', err);
-      return { success: false, error: err };
+      console.error('[Auth] Logout failed:', err);
+      // Force local logout even if server fails
+      setUser(null);
+      localStorage.removeItem(SESSION_RECOVERY_KEY);
+      router.push('/');
+      return { success: true, error: err };
     }
   };
 
   const refreshUser = async () => {
     if (user) {
+      console.log('[Auth] Refreshing user data...');
       await fetchUserData(user.id);
+    } else {
+      console.log('[Auth] No user to refresh, checking session...');
+      await checkSession();
     }
   };
 
   const switchViewMode = async (mode: 'user' | 'professional') => {
     if (!user) return;
     
+    console.log(`[Auth] Switching view mode to ${mode}`);
     const { error } = await supabase
       .from('profiles')
       .update({ view_mode: mode })
@@ -253,12 +407,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (!error) {
       setUser({ ...user, view_mode: mode });
+    } else {
+      console.error('[Auth] Failed to switch view mode:', error);
     }
   };
 
   const updateUserXP = async (amount: number) => {
     if (!user) return;
     
+    console.log(`[Auth] Updating user XP by ${amount}`);
     setUser({ ...user, total_xp: user.total_xp + amount });
   };
 
@@ -267,12 +424,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       error,
+      sessionReady,
       login,
       register,
       logout,
       refreshUser,
       switchViewMode,
       updateUserXP,
+      checkSession,
     }}>
       {children}
     </AuthContext.Provider>
