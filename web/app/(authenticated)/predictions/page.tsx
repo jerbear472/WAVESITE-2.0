@@ -507,6 +507,8 @@ export default function EnhancedPredictionsPage() {
   const [selectedTrend, setSelectedTrend] = useState<TrendWithEngagement | null>(null);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [selectedTrendForStats, setSelectedTrendForStats] = useState<any>(null);
   const [activeCommentTrend, setActiveCommentTrend] = useState<TrendWithEngagement | null>(null);
   const [commentText, setCommentText] = useState('');
   const [userVotes, setUserVotes] = useState<Record<string, string>>({});
@@ -871,20 +873,60 @@ export default function EnhancedPredictionsPage() {
     }
   };
 
-  const handleLike = async (trendId: string, currentlyLiked: boolean) => {
-    setTrends(prev => prev.map(trend => {
-      if (trend.id === trendId) {
-        return {
-          ...trend,
-          user_has_liked: !currentlyLiked,
-          likes_count: currentlyLiked ? trend.likes_count - 1 : trend.likes_count + 1
-        };
-      }
-      return trend;
-    }));
-
-    if (!currentlyLiked) {
-      showXPNotification(5, 'Trend liked! +5 XP', 'bonus');
+  const handleShowStats = async (trend: any) => {
+    setSelectedTrendForStats(trend);
+    setShowStatsModal(true);
+    
+    // Load activity data for this trend
+    try {
+      // Fetch all votes for this trend
+      const { data: votes } = await supabase
+        .from('trend_user_votes')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            avatar_url
+          )
+        `)
+        .eq('trend_id', trend.id)
+        .order('created_at', { ascending: false });
+      
+      // Fetch all predictions for this trend
+      const { data: predictions } = await supabase
+        .from('trend_predictions')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            avatar_url
+          )
+        `)
+        .eq('trend_id', trend.id)
+        .order('created_at', { ascending: false });
+      
+      // Fetch all comments for this trend
+      const { data: comments } = await supabase
+        .from('trend_comments')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            avatar_url
+          )
+        `)
+        .eq('trend_id', trend.id)
+        .order('created_at', { ascending: false });
+      
+      // Update the selected trend with activity data
+      setSelectedTrendForStats({
+        ...trend,
+        activityVotes: votes || [],
+        activityPredictions: predictions || [],
+        activityComments: comments || []
+      });
+    } catch (error) {
+      console.error('Error loading trend activity:', error);
     }
   };
 
@@ -1430,7 +1472,7 @@ export default function EnhancedPredictionsPage() {
                       });
                     }
                   }}
-                  onLike={handleLike}
+                  onStats={handleShowStats}
                   onComment={(trend) => {
                     setActiveCommentTrend(trend);
                     setShowCommentsModal(true);
@@ -1619,6 +1661,153 @@ export default function EnhancedPredictionsPage() {
                 >
                   <Send className="w-5 h-5" />
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stats Modal - Shows all user activity on the trend */}
+      <AnimatePresence>
+        {showStatsModal && selectedTrendForStats && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowStatsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Trend Activity Stats
+                </h2>
+                <button
+                  onClick={() => setShowStatsModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="text-lg font-medium text-gray-700 mb-4">
+                {selectedTrendForStats.title}
+              </div>
+
+              {/* Stats Overview */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl mb-1">🌊</div>
+                  <div className="text-xl font-bold text-blue-600">
+                    {selectedTrendForStats.wave_votes || 0}
+                  </div>
+                  <div className="text-xs text-gray-600">Wave</div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl mb-1">🔥</div>
+                  <div className="text-xl font-bold text-orange-600">
+                    {selectedTrendForStats.fire_votes || 0}
+                  </div>
+                  <div className="text-xs text-gray-600">Fire</div>
+                </div>
+                <div className="bg-yellow-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl mb-1">📉</div>
+                  <div className="text-xl font-bold text-yellow-600">
+                    {selectedTrendForStats.declining_votes || 0}
+                  </div>
+                  <div className="text-xs text-gray-600">Declining</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center">
+                  <div className="text-2xl mb-1">💀</div>
+                  <div className="text-xl font-bold text-gray-600">
+                    {selectedTrendForStats.dead_votes || 0}
+                  </div>
+                  <div className="text-xs text-gray-600">Dead</div>
+                </div>
+              </div>
+
+              {/* Activity Feed */}
+              <div className="flex-1 overflow-y-auto space-y-4">
+                <h3 className="font-semibold text-gray-800 mb-2">Recent Activity</h3>
+                
+                {/* Votes */}
+                {selectedTrendForStats.activityVotes?.map((vote: any) => (
+                  <div key={vote.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">
+                          {vote.profiles?.username || 'Anonymous'}
+                        </span>
+                        <span className="text-sm text-gray-500">voted</span>
+                        <span className="text-lg">
+                          {vote.vote_type === 'wave' && '🌊'}
+                          {vote.vote_type === 'fire' && '🔥'}
+                          {vote.vote_type === 'declining' && '📉'}
+                          {vote.vote_type === 'dead' && '💀'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(vote.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Predictions */}
+                {selectedTrendForStats.activityPredictions?.map((pred: any) => (
+                  <div key={pred.id} className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">
+                          {pred.profiles?.username || 'Anonymous'}
+                        </span>
+                        <span className="text-sm text-gray-500">predicted peak in</span>
+                        <span className="font-bold text-purple-600">
+                          {pred.days_until_peak} days
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(pred.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Comments */}
+                {selectedTrendForStats.activityComments?.map((comment: any) => (
+                  <div key={comment.id} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-900">
+                          {comment.profiles?.username || 'Anonymous'}
+                        </span>
+                        <span className="text-sm text-gray-500">commented</span>
+                      </div>
+                      <div className="text-sm text-gray-700">{comment.comment}</div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(comment.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* No activity message */}
+                {(!selectedTrendForStats.activityVotes?.length && 
+                  !selectedTrendForStats.activityPredictions?.length && 
+                  !selectedTrendForStats.activityComments?.length) && (
+                  <div className="text-center py-8 text-gray-500">
+                    No activity yet. Be the first to engage with this trend!
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

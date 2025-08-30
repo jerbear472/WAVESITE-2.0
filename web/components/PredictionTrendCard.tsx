@@ -39,9 +39,9 @@ interface TrendCardProps {
   };
   userVote?: string;
   onVote: (trendId: string, voteType: string) => void;
-  onLike: (trendId: string, currentlyLiked: boolean) => void;
   onComment: (trend: any) => void;
   onPredict: (trend: any) => void;
+  onStats?: (trend: any) => void;
   index: number;
   isVoting?: boolean;
 }
@@ -87,9 +87,9 @@ export default function PredictionTrendCard({
   trend, 
   userVote, 
   onVote, 
-  onLike, 
   onComment, 
   onPredict,
+  onStats,
   index,
   isVoting 
 }: TrendCardProps) {
@@ -258,18 +258,6 @@ export default function PredictionTrendCard({
             {/* Action Buttons */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onLike(trend.id, trend.user_has_liked)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all ${
-                  trend.user_has_liked
-                    ? 'bg-red-50 text-red-600'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Heart className={`w-4 h-4 ${trend.user_has_liked ? 'fill-current' : ''}`} />
-                <span className="text-sm font-medium">{trend.likes_count}</span>
-              </button>
-
-              <button
                 onClick={() => onComment(trend)}
                 className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
               >
@@ -278,10 +266,12 @@ export default function PredictionTrendCard({
               </button>
 
               <button
-                className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                onClick={() => onStats?.(trend)}
+                className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
+                title="View all user activity on this trend"
               >
                 <BarChart3 className="w-4 h-4" />
-                <span className="text-sm font-medium">{trend.predictions_count}</span>
+                <span className="text-sm font-medium">Stats</span>
               </button>
             </div>
           </div>
