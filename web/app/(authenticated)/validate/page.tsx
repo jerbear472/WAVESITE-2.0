@@ -147,7 +147,22 @@ export default function ValidatePage() {
     try {
       setLoading(true);
       
+      // First, let's check if we can access the table at all
+      console.log('Testing basic query...');
+      const { data: testQuery, error: testError } = await supabase
+        .from('trend_submissions')
+        .select('id, status')
+        .limit(1);
+      
+      if (testError) {
+        console.error('Basic query failed:', testError);
+        throw new Error(`Database access error: ${testError.message}`);
+      }
+      
+      console.log('Basic query successful, found records:', testQuery?.length || 0);
+      
       // Get trends that need validation (haven't been validated by this user)
+      console.log('Fetching trends for validation...');
       const { data: trends, error: trendsError } = await supabase
         .from('trend_submissions')
         .select(`
@@ -174,16 +189,18 @@ export default function ValidatePage() {
           comments_count,
           driving_generation,
           trend_origin,
-          evolution_status,
-          profiles!trend_submissions_spotter_id_fkey (
-            username
-          )
+          evolution_status
         `)
         .eq('status', 'submitted')
         .order('created_at', { ascending: false })
         .limit(20);
 
-      if (trendsError) throw trendsError;
+      if (trendsError) {
+        console.error('Error fetching trends:', trendsError);
+        throw trendsError;
+      }
+      
+      console.log(`Found ${trends?.length || 0} trends with status 'submitted'`);
 
       // Filter out trends already validated by this user
       const { data: userValidations } = await supabase
@@ -229,9 +246,33 @@ export default function ValidatePage() {
       setTrendQueue(unvalidatedTrends);
       setCurrentIndex(0);
       setError('');
+      
+      // If no trends found, check if there are ANY trends in the database
+      if (unvalidatedTrends.length === 0) {
+        console.log('No unvalidated trends found. Checking total trends in database...');
+        const { data: allTrends, error: allError } = await supabase
+          .from('trend_submissions')
+          .select('id, status')
+          .limit(10);
+        
+        console.log('All trends check:', { 
+          count: allTrends?.length || 0, 
+          error: allError,
+          statuses: allTrends?.map(t => t.status)
+        });
+      }
     } catch (error: any) {
       console.error('Error fetching trends:', error);
-      setError('Failed to load trends. Please try again.');
+      
+      // More detailed error message based on error type
+      let errorMessage = 'Failed to load trends. Please try again.';
+      if (error.message?.includes('permission') || error.message?.includes('RLS')) {
+        errorMessage = 'Permission denied. Please check your login status.';
+      } else if (error.message?.includes('column')) {
+        errorMessage = 'Database schema issue. Please contact support.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
