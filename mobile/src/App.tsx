@@ -3,7 +3,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './contexts/AuthContext';
-import { XPNotificationProvider } from './contexts/XPNotificationContext';
 import { NotificationService } from './services/NotificationService';
 import { RootNavigator } from './navigation/RootNavigator';
 import { PrivacyOverlay } from './components/PrivacyOverlay';
@@ -28,13 +27,11 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <AuthProvider>
-            <XPNotificationProvider>
-              <NavigationContainer>
-                <PrivacyOverlay>
-                  <RootNavigator />
-                </PrivacyOverlay>
-              </NavigationContainer>
-            </XPNotificationProvider>
+            <NavigationContainer>
+              <PrivacyOverlay>
+                <RootNavigator />
+              </PrivacyOverlay>
+            </NavigationContainer>
           </AuthProvider>
         </SafeAreaProvider>
       </QueryClientProvider>
