@@ -53,630 +53,691 @@ interface TrendToValidate {
   evolution_status?: string;
 }
 
-const SWIPE_CONFIDENCE_THRESHOLD = 0.3;
-const ROTATION_LIMIT = 30;
+// Utility function to format numbers
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) {
+    return `${(num / 1000000).toFixed(1)}M`;
+  } else if (num >= 1000) {
+    return `${(num / 1000).toFixed(1)}K`;
+  }
+  return num.toString();
+};
 
 export default function ValidatePage() {
-  const router = useRouter();
   const { user } = useAuth();
   const { showXPNotification } = useXPNotification();
+  const router = useRouter();
+  const [currentTrend, setCurrentTrend] = useState<TrendToValidate | null>(null);
   const [trendQueue, setTrendQueue] = useState<TrendToValidate[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [streak, setStreak] = useState(0);
+  const [dailyValidations, setDailyValidations] = useState(0);
   const [showFeedback, setShowFeedback] = useState(false);
   const [lastVote, setLastVote] = useState<'valid' | 'invalid' | null>(null);
-  const [consecutiveValidations, setConsecutiveValidations] = useState(0);
-  const [isInConsensus, setIsInConsensus] = useState<boolean | null>(null);
-  const [consensusPercentage, setConsensusPercentage] = useState<number>(0);
-  const [showStreakAnimation, setShowStreakAnimation] = useState(false);
-  const [currentStreak, setCurrentStreak] = useState(0);
-  const swipeInProgressRef = useRef(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [consensus, setConsensus] = useState<number | null>(null);
+  const [todaysXP, setTodaysXP] = useState(0);
+  const [lastXPEarned, setLastXPEarned] = useState(5);
+  const [showXPAnimation, setShowXPAnimation] = useState(false);
+  const [floatingXP, setFloatingXP] = useState<{ amount: number; id: number } | null>(null);
+  const [streakAnimation, setStreakAnimation] = useState<'increase' | 'reset' | null>(null);
+  const xpMotionValue = useMotionValue(0);
+  const xpAnimated = useTransform(xpMotionValue, Math.round);
+  const [cardKey, setCardKey] = useState(0);
+  // Track locally validated trends to prevent re-showing
+  const [localValidatedIds, setLocalValidatedIds] = useState<string[]>([]);
   
-  // Navigation refresh hook
-  const { refresh: refreshNav } = useNavigationRefresh(() => {
-    // Callback to refresh navigation state
-    console.log('Navigation refreshed');
-  });
-
+  // Swipe animation values
   const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-ROTATION_LIMIT, ROTATION_LIMIT]);
-  const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5]);
+  const rotate = useTransform(x, [-200, 200], [-30, 30]);
+  // Removed opacity transform to keep card fully visible
 
-  const currentTrend = trendQueue[currentIndex];
-
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Load user's current streak
-  useEffect(() => {
-    const loadUserStreak = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('validation_streak')
-          .eq('id', user.id)
-          .single();
-        
-        if (data) {
-          setCurrentStreak(data.validation_streak || 0);
-        }
-      } catch (error) {
-        console.error('Error loading streak:', error);
-      }
-    };
-    
-    loadUserStreak();
+  // Use navigation refresh hook to reload data on route changes
+  useNavigationRefresh(() => {
+    if (user) {
+      loadTrendsToValidate();
+      loadUserStats();
+    }
   }, [user]);
 
-  // Keyboard shortcuts for desktop
   useEffect(() => {
-    if (isMobile) return;
-    
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (showFeedback || !currentTrend) return;
+    if (user) {
+      loadTrendsToValidate();
+      loadUserStats();
+    }
+  }, [user]);
+
+  // Add keyboard event listener for arrow keys
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!currentTrend || showFeedback) return;
       
-      if (event.key === 'ArrowLeft' || event.key === 'a') {
+      if (e.key === 'ArrowLeft') {
         handleSwipe('left');
-      } else if (event.key === 'ArrowRight' || event.key === 'd') {
+      } else if (e.key === 'ArrowRight') {
         handleSwipe('right');
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [showFeedback, currentTrend]);
+  }, [currentTrend, showFeedback]);
 
-  const fetchTrends = useCallback(async () => {
-    if (!user?.id) {
-      setError('Please log in to validate trends');
-      setLoading(false);
-      return;
-    }
+  // Listen for XP events to refresh stats in real-time
+  useEffect(() => {
+    const handleXPEarned = (event: CustomEvent) => {
+      if (user) {
+        loadUserStats();
+        // Trigger animation when XP is earned
+        setShowXPAnimation(true);
+        setTimeout(() => setShowXPAnimation(false), 600);
+      }
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned as EventListener);
+    return () => window.removeEventListener('xp-earned', handleXPEarned as EventListener);
+  }, [user]);
+
+  // Animate XP counter when value changes
+  useEffect(() => {
+    const animation = animate(xpMotionValue, todaysXP, {
+      duration: 0.8,
+      ease: "easeOut"
+    });
+    return animation.stop;
+  }, [todaysXP, xpMotionValue]);
+
+
+  const loadTrendsToValidate = async () => {
+    if (!user) return;
     
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // First, let's check if we can access the table at all
-      console.log('Testing basic query...');
-      const { data: testQuery, error: testError } = await supabase
-        .from('trend_submissions')
-        .select('id, status')
-        .limit(1);
-      
-      if (testError) {
-        console.error('Basic query failed:', testError);
-        throw new Error(`Database access error: ${testError.message}`);
-      }
-      
-      console.log('Basic query successful, found records:', testQuery?.length || 0);
-      
-      // Get trends that need validation - start with minimal columns
-      console.log('Fetching trends for validation...');
-      
-      // First try with all columns
-      let { data: trends, error: trendsError } = await supabase
-        .from('trend_submissions')
-        .select('*')
-        .eq('status', 'submitted')
-        .order('created_at', { ascending: false })
-        .limit(20);
-        
-      // If that fails, try with minimal columns
-      if (trendsError) {
-        console.log('Full select failed, trying minimal columns:', trendsError.message);
-        const minimalResult = await supabase
-          .from('trend_submissions')
-          .select(`
-            id,
-            title,
-            description,
-            post_url,
-            platform,
-            category,
-            created_at,
-            spotter_id,
-            status
-          `)
-          .eq('status', 'submitted')
-          .order('created_at', { ascending: false })
-          .limit(20);
-          
-        trends = minimalResult.data;
-        trendsError = minimalResult.error;
-      }
-
-      if (trendsError) {
-        console.error('Error fetching trends:', trendsError);
-        throw trendsError;
-      }
-      
-      console.log(`Found ${trends?.length || 0} trends with status 'submitted'`);
-
-      // Filter out trends already validated by this user
-      const { data: userValidations } = await supabase
+      // First get trends the user has already validated
+      const { data: userValidations, error: validationError } = await supabase
         .from('trend_validations')
         .select('trend_id')
         .eq('validator_id', user.id);
-
-      const validatedTrendIds = new Set(userValidations?.map(v => v.trend_id) || []);
       
-      const unvalidatedTrends = (trends || [])
-        .filter(trend => !validatedTrendIds.has(trend.id))
-        .map(trend => {
-          const cleaned = cleanTrendData(trend);
-          
-          // Handle both old and new field names
-          const title = cleaned.title || 
-                       cleaned.trend_headline || 
-                       cleaned.trend_name ||
-                       'Untitled Trend';
-                       
-          const description = cleaned.description || 
-                             cleaned.why_trending || 
-                             cleaned.trend_description ||
-                             '';
-          
-          return {
-            id: cleaned.id,
-            title: title,
-            description: description,
-            url: cleaned.post_url || cleaned.url || '',
-            thumbnail_url: cleaned.thumbnail_url || cleaned.thumbnail || null,
-            screenshot_url: cleaned.screenshot_url || cleaned.screenshot || null,
-            platform: cleaned.platform || 'unknown',
-            creator_handle: cleaned.creator_handle || cleaned.creator || null,
-            category: cleaned.category || 'lifestyle',
-            submitted_at: cleaned.created_at || new Date().toISOString(),
-            spotter_username: 'Trend Spotter',
-            validation_count: cleaned.validation_count || 0,
-            // Include metadata - all optional
-            trend_velocity: cleaned.trend_velocity || cleaned.velocity || null,
-            trend_size: cleaned.trend_size || cleaned.size || null,
-            ai_angle: cleaned.ai_angle || null,
-            sentiment: cleaned.sentiment || null,
-            audience_age: cleaned.audience_age || null,
-            hashtags: cleaned.hashtags || null,
-            views_count: cleaned.views_count || null,
-            likes_count: cleaned.likes_count || null,
-            comments_count: cleaned.comments_count || null,
-            driving_generation: cleaned.driving_generation || cleaned.generation || null,
-            trend_origin: cleaned.trend_origin || cleaned.origin || null,
-            evolution_status: cleaned.evolution_status || cleaned.evolution || null
-          } as TrendToValidate;
-        });
-
-      setTrendQueue(unvalidatedTrends);
-      setCurrentIndex(0);
-      setError('');
-      
-      // If no trends found, check if there are ANY trends in the database
-      if (unvalidatedTrends.length === 0) {
-        console.log('No unvalidated trends found. Checking total trends in database...');
-        
-        // Check all trends regardless of status
-        const { data: allTrends, error: allError } = await supabase
-          .from('trend_submissions')
-          .select('id, status, created_at')
-          .order('created_at', { ascending: false })
-          .limit(20);
-        
-        console.log('All trends check:', { 
-          count: allTrends?.length || 0, 
-          error: allError,
-          statuses: allTrends?.map(t => t.status),
-          uniqueStatuses: [...new Set(allTrends?.map(t => t.status) || [])]
-        });
-        
-        // If there are trends but none with 'submitted' status, 
-        // try to load trends that need validation (not validated or rejected)
-        if (allTrends && allTrends.length > 0 && !allTrends.some(t => t.status === 'submitted')) {
-          console.log('No submitted trends found. Looking for other validatable statuses...');
-          
-          const { data: validatableTrends } = await supabase
-            .from('trend_submissions')
-            .select('*')
-            .or('status.eq.pending,status.eq.validating,status.eq.submitted')
-            .order('created_at', { ascending: false })
-            .limit(20);
-            
-          if (validatableTrends && validatableTrends.length > 0) {
-            console.log(`Found ${validatableTrends.length} trends with validatable status`);
-            trends = validatableTrends;
-            
-            // Re-process with the new trends
-            const newUnvalidatedTrends = (validatableTrends || [])
-              .filter(trend => !validatedTrendIds.has(trend.id))
-              .map(trend => {
-                const cleaned = cleanTrendData(trend);
-                
-                const title = cleaned.title || 
-                             cleaned.trend_headline || 
-                             cleaned.trend_name ||
-                             'Untitled Trend';
-                             
-                const description = cleaned.description || 
-                                   cleaned.why_trending || 
-                                   cleaned.trend_description ||
-                                   '';
-                
-                return {
-                  id: cleaned.id,
-                  title: title,
-                  description: description,
-                  url: cleaned.post_url || cleaned.url || '',
-                  thumbnail_url: cleaned.thumbnail_url || cleaned.thumbnail || null,
-                  screenshot_url: cleaned.screenshot_url || cleaned.screenshot || null,
-                  platform: cleaned.platform || 'unknown',
-                  creator_handle: cleaned.creator_handle || cleaned.creator || null,
-                  category: cleaned.category || 'lifestyle',
-                  submitted_at: cleaned.created_at || new Date().toISOString(),
-                  spotter_username: 'Trend Spotter',
-                  validation_count: cleaned.validation_count || 0,
-                  trend_velocity: cleaned.trend_velocity || cleaned.velocity || null,
-                  trend_size: cleaned.trend_size || cleaned.size || null,
-                  ai_angle: cleaned.ai_angle || null,
-                  sentiment: cleaned.sentiment || null,
-                  audience_age: cleaned.audience_age || null,
-                  hashtags: cleaned.hashtags || null,
-                  views_count: cleaned.views_count || null,
-                  likes_count: cleaned.likes_count || null,
-                  comments_count: cleaned.comments_count || null,
-                  driving_generation: cleaned.driving_generation || cleaned.generation || null,
-                  trend_origin: cleaned.trend_origin || cleaned.origin || null,
-                  evolution_status: cleaned.evolution_status || cleaned.evolution || null
-                } as TrendToValidate;
-              });
-              
-            setTrendQueue(newUnvalidatedTrends);
-            setCurrentIndex(0);
-            setError('');
-            return; // Exit early since we found trends
-          }
-        }
-      }
-    } catch (error: any) {
-      console.error('Error fetching trends:', error);
-      
-      // More detailed error message based on error type
-      let errorMessage = 'Failed to load trends. Please try again.';
-      if (error.message?.includes('permission') || error.message?.includes('RLS')) {
-        errorMessage = 'Permission denied. Please check your login status.';
-      } else if (error.message?.includes('column')) {
-        errorMessage = 'Database schema issue. Please contact support.';
+      if (validationError) {
+        console.error('Error fetching user validations:', validationError);
       }
       
-      setError(errorMessage);
+      const validatedTrendIds = userValidations?.map(v => v.trend_id) || [];
+      console.log('User has already validated trends:', validatedTrendIds.length);
+      console.log('Locally validated trends:', localValidatedIds.length);
+      
+      // Combine database validated IDs with locally tracked ones
+      const allValidatedIds = [...new Set([...validatedTrendIds, ...localValidatedIds])];
+      
+      // Get all trends that need validation
+      const { data: allTrends, error } = await supabase
+        .from('trend_submissions')
+        .select('*')
+        .or('validation_count.is.null,validation_count.lt.3')
+        .neq('spotter_id', user.id) // Don't show user's own trends
+        .in('status', ['submitted', 'validating']) // Only get trends not yet quality approved
+        .order('created_at', { ascending: false })
+        .limit(50); // Get more initially to filter client-side
+      
+      if (error) throw error;
+      
+      // Filter out already validated trends client-side (more reliable)
+      const trends = allTrends?.filter(trend => 
+        !allValidatedIds.includes(trend.id)
+      ) || [];
+      
+      console.log(`Found ${allTrends?.length} total trends, ${trends.length} after filtering out validated ones`);
+
+      const formattedTrends = trends?.map(trend => {
+        // Clean the trend data first to remove problematic values
+        const cleaned = cleanTrendData(trend);
+        
+        return {
+          id: cleaned.id,
+          title: cleaned.title || cleaned.trend_headline || 'Untitled',
+          description: cleaned.description || cleaned.why_trending || '',
+          url: cleaned.url || cleaned.post_url || '',
+          thumbnail_url: cleaned.thumbnail_url,
+          screenshot_url: cleaned.screenshot_url,
+          platform: cleaned.platform || 'unknown',
+          creator_handle: cleaned.creator_handle,
+          category: cleaned.category || 'lifestyle',
+          submitted_at: cleaned.created_at,
+          spotter_username: 'Trend Spotter',
+          validation_count: cleaned.validation_count || 0,
+          // Include metadata
+          trend_velocity: cleaned.trend_velocity,
+          trend_size: cleaned.trend_size,
+          ai_angle: cleaned.ai_angle,
+          sentiment: cleaned.sentiment,
+          audience_age: cleaned.audience_age,
+          hashtags: cleaned.hashtags,
+          views_count: cleaned.views_count,
+          likes_count: cleaned.likes_count,
+          comments_count: cleaned.comments_count,
+          // Origins fields
+          driving_generation: cleaned.driving_generation,
+          trend_origin: cleaned.trend_origin,
+          evolution_status: cleaned.evolution_status
+        };
+      }) || [];
+
+      setTrendQueue(formattedTrends);
+      setCurrentTrend(formattedTrends[0] || null);
+      
+    } catch (error) {
+      console.error('Error loading trends:', error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
-
-  useEffect(() => {
-    fetchTrends();
-  }, [fetchTrends]);
-
-  const getPlatformEmoji = (platform?: string) => {
-    const emojis: Record<string, string> = {
-      'TikTok': '📱',
-      'Instagram': '📸',
-      'Twitter': '🐦',
-      'X': '✖️',
-      'YouTube': '📺',
-      'Reddit': '🤖',
-      'LinkedIn': '💼',
-      'Facebook': '👥',
-      'Threads': '🧵',
-      'unknown': '🌐'
-    };
-    return emojis[platform || 'unknown'] || '🌐';
   };
 
-  const checkConsensus = async (trendId: string, vote: 'valid' | 'invalid'): Promise<{ isInConsensus: boolean; percentage: number }> => {
+  const loadUserStats = async () => {
+    if (!user) return;
+    
     try {
-      // Get all validations for this trend
-      const { data: validations, error } = await supabase
+      // Get user profile for actual streak data
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('current_streak')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setStreak(profile.current_streak || 0);
+      }
+
+      // Get today's XP from xp_transactions
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { data: xpTransactions } = await supabase
+        .from('xp_transactions')
+        .select('amount')
+        .eq('user_id', user.id)
+        .gte('created_at', today.toISOString());
+      
+      const dailyXP = xpTransactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
+      setTodaysXP(dailyXP);
+      
+      // Also get total XP and level from user_xp table
+      const { data: userXP } = await supabase
+        .from('user_xp')
+        .select('total_xp, current_level')
+        .eq('user_id', user.id)
+        .single();
+      
+      console.log('📊 User XP Stats:', {
+        todaysXP: dailyXP,
+        totalXP: userXP?.total_xp || 0,
+        currentLevel: userXP?.current_level || 1
+      });
+
+      // Get today's validations count
+      const { data: validations } = await supabase
         .from('trend_validations')
-        .select('is_valid')
-        .eq('trend_id', trendId);
+        .select('id')
+        .eq('validator_id', user.id)
+        .gte('created_at', today.toISOString());
 
-      if (error) {
-        console.error('Error checking consensus:', error);
-        return { isInConsensus: false, percentage: 50 };
-      }
+      setDailyValidations(validations?.length || 0);
 
-      if (!validations || validations.length === 0) {
-        // First validator - always in consensus
-        return { isInConsensus: true, percentage: 100 };
-      }
-
-      // Calculate consensus
-      const validCount = validations.filter(v => v.is_valid).length;
-      const invalidCount = validations.length - validCount;
-      
-      // Add user's vote to the calculation
-      const newValidCount = vote === 'valid' ? validCount + 1 : validCount;
-      const newInvalidCount = vote === 'invalid' ? invalidCount + 1 : invalidCount;
-      const total = newValidCount + newInvalidCount;
-      
-      // Calculate majority
-      const majority = newValidCount > newInvalidCount ? 'valid' : 'invalid';
-      const majorityCount = Math.max(newValidCount, newInvalidCount);
-      const percentage = Math.round((majorityCount / total) * 100);
-      
-      // Check if user is with majority
-      const isInConsensus = vote === majority;
-      
-      return { isInConsensus, percentage };
+      console.log('📊 Validate Page Stats:', {
+        streak: profile?.current_streak || 0,
+        todaysXP: dailyXP,
+        dailyValidations: validations?.length || 0
+      });
     } catch (error) {
-      console.error('Error in consensus check:', error);
-      return { isInConsensus: false, percentage: 50 };
+      console.error('Error loading stats:', error);
     }
   };
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     console.log('🔄 handleSwipe called:', { 
       direction, 
-      currentIndex, 
-      hasCurrentTrend: !!currentTrend,
-      inProgress: swipeInProgressRef.current 
+      currentTrendId: currentTrend?.id, 
+      userId: user?.id,
+      currentTrendTitle: currentTrend?.title 
     });
     
-    // Prevent double-processing
-    if (swipeInProgressRef.current || !currentTrend || !user?.id) {
-      console.log('⚠️ Skipping swipe - already processing or no trend/user');
+    if (!currentTrend || !user) {
+      console.log('❌ Missing requirements:', { currentTrend: !!currentTrend, user: !!user });
       return;
     }
     
-    swipeInProgressRef.current = true;
-    const vote = direction === 'right' ? 'valid' : 'invalid';
-    setLastVote(vote);
+    const isValid = direction === 'right';
+    setLastVote(isValid ? 'valid' : 'invalid');
     
-    // Start swipe animation
-    await animate(x, direction === 'left' ? -300 : 300, { 
-      type: "spring",
-      stiffness: 300,
-      damping: 30
-    });
+    // Add to local validated list immediately to prevent re-showing
+    setLocalValidatedIds(prev => [...prev, currentTrend.id]);
+    
+    console.log('🎯 Starting validation process...');
     
     try {
-      console.log('📝 Recording validation:', { trendId: currentTrend.id, vote });
-      
-      // Record the validation
-      const { error: validationError } = await supabase
+      // First check if user already validated this trend
+      const { data: existingVote, error: checkError } = await supabase
+        .from('trend_validations')
+        .select('id, vote')
+        .eq('trend_id', currentTrend.id)
+        .eq('validator_id', user.id)
+        .single();
+
+      if (existingVote) {
+        console.log('⚠️ User already validated this trend:', existingVote);
+        // Skip to next trend without error
+        setShowFeedback(true);
+        setConsensus(100); // Show they already voted
+        setTimeout(() => {
+          setShowFeedback(false);
+          moveToNextTrend();
+        }, 1500);
+        return;
+      }
+
+      console.log('📝 Submitting validation:', {
+        trend_id: currentTrend.id,
+        validator_id: user.id,
+        vote: isValid ? 'verify' : 'reject',
+        is_valid: isValid,
+        validation_score: isValid ? 1 : -1
+      });
+
+      // Submit validation with proper vote field
+      const { data: validationData, error: validationError } = await supabase
         .from('trend_validations')
         .insert({
           trend_id: currentTrend.id,
           validator_id: user.id,
-          is_valid: vote === 'valid',
-          confidence_score: 80
-        });
+          vote: isValid ? 'wave' : 'dead',  // Use correct vote types for database trigger
+          is_valid: isValid,  // Keep for backward compatibility
+          validation_score: isValid ? 1 : -1,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
       if (validationError) {
         console.error('❌ Validation error:', validationError);
-        throw validationError;
+        // Don't throw - continue to try awarding XP even if validation fails
+        // This might happen if user already validated this trend
+      } else {
+        console.log('✅ Validation submitted successfully');
+
+        // Update validation count only if validation succeeded
+        // Status will be updated by database trigger based on vote counts
+        const newValidationCount = currentTrend.validation_count + 1;
+        const { error: updateError } = await supabase
+          .from('trend_submissions')
+          .update({ 
+            validation_count: newValidationCount
+            // Status is handled by database trigger when 3 votes reached
+          })
+          .eq('id', currentTrend.id);
+
+        if (updateError) {
+          console.error('⚠️ Update error:', updateError);
+        }
       }
 
-      console.log('✅ Validation recorded successfully');
-
-      // Check consensus
-      const consensus = await checkConsensus(currentTrend.id, vote);
-      setIsInConsensus(consensus.isInConsensus);
-      setConsensusPercentage(consensus.percentage);
-
-      // Calculate XP based on consensus
-      let xpAmount = 10; // Base XP
-      if (consensus.isInConsensus) {
-        xpAmount = 15; // Bonus for consensus
-      }
-
-      // Update streak
-      const newConsecutive = consecutiveValidations + 1;
-      setConsecutiveValidations(newConsecutive);
+      // Award XP for validation (only if first time validating this trend)
+      console.log('💎 STARTING XP AWARD PROCESS');
       
-      // Award streak bonus every 5 validations
-      if (newConsecutive % 5 === 0) {
-        xpAmount += 20; // Streak bonus
-        setShowStreakAnimation(true);
-        setTimeout(() => setShowStreakAnimation(false), 2000);
+      // Check if XP was already awarded for this trend
+      const { data: existingXP, error: xpCheckError } = await supabase
+        .from('xp_transactions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('reference_id', currentTrend.id)
+        .eq('type', 'validation')
+        .single();
+
+      let xpAwarded = false;
+      let totalXP = 0;
+      
+      if (existingXP) {
+        console.log('⚠️ XP already awarded for this trend validation');
+        xpAwarded = true; // Set to true to skip XP award but continue with flow
+      } else {
+        const baseXP = 10; // Base XP for validation
         
-        // Update user's validation streak in database
-        await supabase
-          .from('user_profiles')
-          .update({ validation_streak: currentStreak + 1 })
-          .eq('id', user.id);
+        // Calculate streak multiplier: Every 10 validations increases multiplier by 0.1
+        // First 10 validations (1-10): 1.0x multiplier
+        // Second 10 validations (11-20): 1.1x multiplier  
+        // Third 10 validations (21-30): 1.2x multiplier, etc.
+        const currentValidationCount = dailyValidations; // This is before we increment it
+        const streakLevel = Math.floor(currentValidationCount / 10); // 0 for first 10, 1 for second 10, etc.
+        const streakMultiplier = 1.0 + (streakLevel * 0.1); // 1.0, 1.1, 1.2, etc.
         
-        setCurrentStreak(prev => prev + 1);
-      }
+        // Apply multiplier to base XP
+        totalXP = Math.round(baseXP * streakMultiplier);
+        
+        console.log('🎮 XP Calculation:', {
+          user_id: user.id,
+          baseXP,
+          currentValidationCount,
+          streakLevel,
+          streakMultiplier,
+          totalXP,
+          trend_id: currentTrend.id,
+          trend_title: currentTrend.title
+        });
 
-      // Check for accuracy bonus (when user reaches milestones)
-      if (newConsecutive === 10) {
-        xpAmount += 50; // Accuracy bonus
-      }
-
-      console.log('💰 Awarding XP:', xpAmount);
-
-      // Award XP and record in xp_transactions
-      try {
-        const { error: xpError } = await supabase
+        console.log('💰 Attempting to award XP:', {
+          user_id: user.id,
+          amount: totalXP,
+          type: 'validation'
+        });
+        
+        // Insert into xp_transactions
+        const { data: xpTransData, error: xpTransError } = await supabase
           .from('xp_transactions')
           .insert({
             user_id: user.id,
-            amount: xpAmount,
+            amount: totalXP,
             type: 'validation',
-            description: `Validated trend: ${currentTrend.title}`,
+            description: `Validated trend: ${currentTrend.title && currentTrend.title !== '0' ? currentTrend.title : 'Untitled Trend'}`,
             reference_id: currentTrend.id,
-            reference_type: 'trend_validation'
-          });
-
-        if (xpError) {
-          console.error('XP transaction error:', xpError);
-        } else {
-          console.log('✅ XP awarded successfully');
-        }
-
-        // Update user's total XP
-        const { data: userData } = await supabase
-          .from('user_xp')
-          .select('total_xp')
-          .eq('user_id', user.id)
-          .single();
-
-        const currentXP = userData?.total_xp || 0;
-        
-        await supabase
-          .from('user_xp')
-          .upsert({
-            user_id: user.id,
-            total_xp: currentXP + xpAmount,
-            updated_at: new Date().toISOString()
-          });
-
-      } catch (xpError) {
-        console.error('Failed to award XP:', xpError);
-      }
-
-      // Show XP notification
-      showXPNotification(
-        xpAmount,
-        consensus.isInConsensus 
-          ? `In consensus! (${consensus.percentage}% agree)`
-          : `Against consensus (${100 - consensus.percentage}% disagree)`,
-        'validation'
-      );
-
-      // Show feedback
-      setShowFeedback(true);
+            reference_type: 'trend',
+            created_at: new Date().toISOString()
+          })
+          .select();
       
-      // Move to next trend after delay
-      setTimeout(() => {
-        // Reset animation
-        x.set(0);
+        console.log('💰 XP Transaction Result:', {
+          data: xpTransData,
+          error: xpTransError
+        });
         
-        // Move to next trend
-        if (currentIndex < trendQueue.length - 1) {
-          setCurrentIndex(currentIndex + 1);
+        if (!xpTransError) {
+          xpAwarded = true;
+          console.log('✅ XP transaction recorded successfully!');
+          console.log('✅ XP Transaction ID:', xpTransData?.[0]?.id);
+          
+          // Method 2: Update user_xp table for total XP
+          console.log('📊 Updating user_xp table...');
+          const { data: currentUserXP, error: fetchError } = await supabase
+            .from('user_xp')
+            .select('total_xp, current_level, xp_to_next_level')
+            .eq('user_id', user.id)
+            .single();
+          
+          console.log('📊 Current user_xp:', { data: currentUserXP, error: fetchError });
+          
+          if (currentUserXP) {
+            const newTotalXP = currentUserXP.total_xp + totalXP;
+            
+            // Calculate new level if needed
+            let newLevel = currentUserXP.current_level;
+            let xpToNext = currentUserXP.xp_to_next_level - totalXP;
+            
+            if (xpToNext <= 0) {
+              newLevel += 1;
+              xpToNext = 500 + (newLevel * 100); // Example level scaling
+            }
+            
+            const { error: updateError } = await supabase
+              .from('user_xp')
+              .update({
+                total_xp: newTotalXP,
+                current_level: newLevel,
+                xp_to_next_level: xpToNext,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id);
+            
+            if (updateError) {
+              console.log('⚠️ user_xp update failed:', updateError);
+            } else {
+              console.log('✅ user_xp updated - Total XP:', newTotalXP);
+            }
+          } else {
+            // Create user_xp record if it doesn't exist
+            await supabase
+              .from('user_xp')
+              .insert({
+                user_id: user.id,
+                total_xp: totalXP,
+                current_level: 1,
+                xp_to_next_level: 500,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+          }
         } else {
-          // Queue exhausted, try to fetch more
-          fetchTrends();
+          console.log('❌ XP TRANSACTION FAILED!');
+          console.log('❌ Error details:', xpTransError);
+          console.log('❌ Full error object:', JSON.stringify(xpTransError, null, 2));
+        
+          // Fallback: Try via API endpoint that we know works
+          console.log('🔄 Trying fallback API method...');
+          try {
+            const response = await fetch('/api/simple-xp', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                userId: user.id,
+                amount: totalXP,
+                type: 'validation'
+              })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+              xpAwarded = true;
+              console.log('✅ XP awarded via API fallback!');
+            } else {
+              console.log('❌ API fallback also failed:', result.error);
+            }
+          } catch (apiError) {
+            console.log('❌ API fallback error:', apiError);
+          }
+        }
+      } // End of else block for XP not already awarded
+      
+      if (xpAwarded && totalXP > 0) {
+        // Only show XP animations if new XP was actually awarded
+        // Update local XP immediately for responsive UI
+        const previousXP = todaysXP;
+        setTodaysXP(prev => prev + totalXP);
+        setLastXPEarned(totalXP);
+        
+        // Trigger animations
+        setShowXPAnimation(true);
+        setTimeout(() => setShowXPAnimation(false), 600);
+        
+        // Show floating XP indicator
+        setFloatingXP({ amount: totalXP, id: Date.now() });
+        setTimeout(() => setFloatingXP(null), 1500);
+        
+        // Show XP notification with detailed breakdown
+        const baseXP = 10;
+        const currentValidationCount = dailyValidations - 1; // We already incremented it
+        const streakLevel = Math.floor(currentValidationCount / 10);
+        const streakMultiplier = 1.0 + (streakLevel * 0.1);
+        
+        const notificationParts = [`Validation: +${totalXP} XP`];
+        if (streakMultiplier > 1.0) {
+          notificationParts.push(`Streak ${streakMultiplier.toFixed(1)}x`);
         }
         
-        setShowFeedback(false);
-        swipeInProgressRef.current = false;
-      }, 1500);
-
-      // Update validation count
-      const { error: updateError } = await supabase
-        .from('trend_submissions')
-        .update({ 
-          validation_count: currentTrend.validation_count + 1,
-          last_validated_at: new Date().toISOString()
-        })
-        .eq('id', currentTrend.id);
-
-      if (updateError) {
-        console.error('Failed to update validation count:', updateError);
+        console.log('🎯 Showing validation XP notification:', totalXP, notificationParts.join(' | '));
+        showXPNotification(totalXP, notificationParts.join(' | '), 'validation');
+        
+        // Dispatch custom event for other components to update
+        window.dispatchEvent(new CustomEvent('xp-earned', { detail: { amount: totalXP, newTotal: previousXP + totalXP } }));
+        console.log('✅ XP awarded successfully');
+      } else if (!xpAwarded && totalXP > 0) {
+        console.error('❌ Failed to award XP - check console for details');
       }
 
-      // Check if trend should change status based on validations
-      const { data: allValidations } = await supabase
+      // Update stats locally
+      setDailyValidations(prev => prev + 1);
+
+      // Get actual consensus from database
+      const { data: allVotes, error: votesError } = await supabase
         .from('trend_validations')
         .select('is_valid')
         .eq('trend_id', currentTrend.id);
-
-      if (allValidations && allValidations.length >= 5) {
-        const validCount = allValidations.filter(v => v.is_valid).length;
-        const validPercentage = (validCount / allValidations.length) * 100;
+      
+      let consensusPercent = 50; // Default if no votes yet
+      let inConsensus = false;
+      
+      if (allVotes && allVotes.length > 0) {
+        const validVotes = allVotes.filter(v => v.is_valid).length;
+        const totalVotes = allVotes.length;
+        const validPercent = Math.round((validVotes / totalVotes) * 100);
         
-        if (validPercentage >= 70) {
-          // Trend is validated
-          await supabase
-            .from('trend_submissions')
-            .update({ status: 'validated' })
-            .eq('id', currentTrend.id);
-        } else if (validPercentage <= 30) {
-          // Trend is rejected
-          await supabase
-            .from('trend_submissions')
-            .update({ status: 'rejected' })
-            .eq('id', currentTrend.id);
-        }
-      }
-
-      // Refresh navigation to update XP
-      refreshNav();
-
-    } catch (error: any) {
-      console.error('🔥 CRITICAL ERROR in handleSwipe:', error);
-      setError('Failed to record validation. Please try again.');
-      
-      // Reset on error
-      x.set(0);
-      swipeInProgressRef.current = false;
-      
-      // If it's a duplicate key error, move to next trend
-      if (error.code === '23505') {
-        console.log('Already validated this trend, moving to next...');
-        if (currentIndex < trendQueue.length - 1) {
-          setCurrentIndex(currentIndex + 1);
+        // Determine if user is with majority
+        const majorityVotedValid = validPercent >= 50;
+        inConsensus = (isValid && majorityVotedValid) || (!isValid && !majorityVotedValid);
+        
+        // Show the percentage that agrees with the user's vote
+        if (isValid) {
+          consensusPercent = validPercent;
         } else {
-          fetchTrends();
+          consensusPercent = 100 - validPercent;
         }
+        
+        console.log('📊 Consensus data:', {
+          totalVotes,
+          validVotes,
+          validPercent,
+          userVote: isValid ? 'valid' : 'invalid',
+          inConsensus,
+          consensusWithUser: consensusPercent
+        });
+      } else {
+        // First vote - user sets the consensus
+        consensusPercent = 100;
+        inConsensus = true;
       }
+      
+      setConsensus(consensusPercent);
+      
+      // Add consensus bonus to XP if user is with majority
+      const finalConsensusBonus = inConsensus ? 5 : 0;
+      const baseXP = 10;
+      const streakBonus = Math.min(streak * 2, 20);
+      totalXP = baseXP + streakBonus + finalConsensusBonus;
+      
+      // Update the XP display
+      setLastXPEarned(totalXP);
+      
+      // Show updated notification with consensus bonus
+      if (finalConsensusBonus > 0 && xpAwarded) {
+        console.log('🎯 Consensus bonus earned:', finalConsensusBonus);
+        // Show a second notification for the consensus bonus
+        setTimeout(() => {
+          showXPNotification(finalConsensusBonus, `Consensus Bonus: +${finalConsensusBonus} XP`, 'bonus');
+        }, 500);
+      }
+      
+      // Update streak based on consensus (only continue streak if in consensus with majority)
+      const newStreak = inConsensus ? streak + 1 : 0;
+      setStreak(newStreak);
+      
+      // Trigger streak animation
+      if (inConsensus && newStreak > streak) {
+        setStreakAnimation('increase');
+      } else if (!inConsensus && streak > 0) {
+        setStreakAnimation('reset');
+      }
+      setTimeout(() => setStreakAnimation(null), 1000);
+      
+      // Update streak in database
+      const { error: streakError } = await supabase
+        .from('user_profiles')
+        .update({ 
+          current_streak: newStreak,
+          last_validation_date: new Date().toISOString()
+        })
+        .eq('id', user.id);
+      
+      if (streakError) {
+        console.error('Error updating streak:', streakError);
+      } else {
+        console.log('🔥 Streak updated:', { 
+          newStreak, 
+          inConsensus,
+          consensusPercent: `${consensusPercent}%` 
+        });
+      }
+      
+      // Show feedback briefly with XP animation
+      setShowFeedback(true);
+      
+      // Show feedback for longer so user can see XP clearly
+      setTimeout(() => {
+        setShowFeedback(false);
+        moveToNextTrend();
+        // Refresh stats to ensure everything is synced
+        loadUserStats();
+      }, 3000); // Increased to 3 seconds so user can see XP clearly
+      
+    } catch (error) {
+      console.error('🔥 CRITICAL ERROR in handleSwipe:', error);
+      console.error('🔥 Error stack:', error instanceof Error ? error.stack : 'No stack');
+      moveToNextTrend();
     }
+  };
+
+  const moveToNextTrend = () => {
+    // Animate out current card
+    setTimeout(() => {
+      // Filter out any validated trends that might have slipped through
+      const newQueue = trendQueue.slice(1).filter(trend => 
+        !localValidatedIds.includes(trend.id)
+      );
+      setTrendQueue(newQueue);
+      setCurrentTrend(newQueue[0] || null);
+      setLastVote(null);
+      setConsensus(null);
+      setCardKey(prev => prev + 1); // Force re-render with new key for animation
+      
+      // Reload if queue is getting low
+      if (newQueue.length < 5) {
+        loadTrendsToValidate();
+      }
+    }, 200);
+  };
+
+
+  const getPlatformEmoji = (platform: string) => {
+    const emojis: Record<string, string> = {
+      tiktok: '🎵',
+      instagram: '📸',
+      twitter: '𝕏',
+      reddit: '🔥',
+      youtube: '📺',
+      default: '🌐'
+    };
+    return emojis[platform.toLowerCase()] || emojis.default;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading trends to validate...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading trends to validate...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (!currentTrend) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={fetchTrends}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (trendQueue.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="text-6xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold mb-2">All caught up!</h2>
-          <p className="text-gray-600 mb-4">
-            You've validated all available trends. Check back later for more!
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">All Caught Up!</h2>
+          <p className="text-gray-600 mb-6">
+            No trends need validation right now. Check back soon or submit your own trends!
           </p>
           <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={() => router.push('/spot')}
+            className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
           >
-            Back to Dashboard
+            Start Spotting Trends
           </button>
         </div>
       </div>
@@ -684,330 +745,498 @@ export default function ValidatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-green-50 overflow-hidden">
-      {/* Mobile-optimized header */}
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
-        <div className="max-w-4xl mx-auto">
-          {/* Stats Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-            <div className="bg-white/80 backdrop-blur rounded-lg p-2 sm:p-3">
-              <div className="flex items-center space-x-2">
-                <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
-                <div>
-                  <p className="text-xs text-gray-600">Streak</p>
-                  <p className="text-sm sm:text-lg font-bold text-gray-900">{currentStreak}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur rounded-lg p-2 sm:p-3">
-              <div className="flex items-center space-x-2">
-                <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
-                <div>
-                  <p className="text-xs text-gray-600">Session</p>
-                  <p className="text-sm sm:text-lg font-bold text-gray-900">{consecutiveValidations}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur rounded-lg p-2 sm:p-3">
-              <div className="flex items-center space-x-2">
-                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
-                <div>
-                  <p className="text-xs text-gray-600">Queue</p>
-                  <p className="text-sm sm:text-lg font-bold text-gray-900">{trendQueue.length - currentIndex}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur rounded-lg p-2 sm:p-3">
-              <div className="flex items-center space-x-2">
-                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
-                <div>
-                  <p className="text-xs text-gray-600">Bonus</p>
-                  <p className="text-sm sm:text-lg font-bold text-gray-900">
-                    {consecutiveValidations > 0 && consecutiveValidations % 5 === 0 ? '+20' : 
-                     consecutiveValidations >= 10 ? '+50' : '—'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 py-6">
+      <div className="max-w-lg mx-auto px-4">
+        {/* Page Header */}
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Trend Validation</h1>
+          <p className="text-sm text-gray-600 mt-1">Help identify real trends worth tracking</p>
+        </div>
 
-          {/* Progress indicator */}
-          <div className="bg-white/80 backdrop-blur rounded-lg p-2 sm:p-3 mb-4 sm:mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs sm:text-sm text-gray-600">Progress</span>
-              <span className="text-xs sm:text-sm font-medium text-gray-900">
-                {currentIndex + 1} / {trendQueue.length}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
-                style={{ width: `${((currentIndex + 1) / trendQueue.length) * 100}%` }}
-              />
-            </div>
+        {/* Header Stats */}
+        <div className="mb-6 flex justify-between items-center relative">
+          <div className="flex items-center space-x-4">
+            <motion.div 
+              className="bg-white rounded-lg px-4 py-2 shadow-sm relative"
+              animate={{
+                scale: streakAnimation ? [1, 1.2, 1] : 1,
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-1">
+                  <Flame className={`h-5 w-5 transition-colors ${
+                    streakAnimation === 'reset' ? 'text-gray-400' : 
+                    dailyValidations > 0 ? 'text-orange-500' : 'text-gray-400'
+                  } ${streakAnimation === 'increase' ? 'animate-pulse' : ''}`} />
+                  <span className="font-bold text-gray-900">{dailyValidations}</span>
+                  <span className="text-xs text-gray-500">validations</span>
+                </div>
+                <div className="flex items-center mt-1">
+                  <div className="text-xs text-gray-600">
+                    {(() => {
+                      const streakLevel = Math.floor(dailyValidations / 10);
+                      const nextMilestone = (streakLevel + 1) * 10;
+                      const progressInLevel = dailyValidations % 10;
+                      const multiplier = 1.0 + (streakLevel * 0.1);
+                      
+                      return (
+                        <>
+                          <span className="font-medium text-purple-600">{multiplier.toFixed(1)}x</span>
+                          <span className="text-gray-500 ml-1">
+                            ({progressInLevel}/10 to {(multiplier + 0.1).toFixed(1)}x)
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+              {streakAnimation === 'increase' && (
+                <motion.div
+                  initial={{ opacity: 1, y: 0 }}
+                  animate={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.8 }}
+                  className="absolute -top-2 left-1/2 transform -translate-x-1/2 text-orange-500 font-bold text-sm"
+                >
+                  +1 🔥
+                </motion.div>
+              )}
+              {streakAnimation === 'reset' && streak === 0 && (
+                <motion.div
+                  initial={{ opacity: 1, scale: 1 }}
+                  animate={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute -top-2 left-1/2 transform -translate-x-1/2 text-red-500 font-bold text-sm"
+                >
+                  Reset 💔
+                </motion.div>
+              )}
+            </motion.div>
+            
+            <motion.div 
+              className="bg-white rounded-lg px-3 py-2 shadow-sm relative"
+              animate={showXPAnimation ? {
+                scale: [1, 1.1, 1],
+                backgroundColor: ["#ffffff", "#fef3c7", "#ffffff"]
+              } : {}}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="flex items-center space-x-1">
+                <Zap className="h-5 w-5 text-yellow-500" />
+                <motion.span 
+                  className="font-bold text-gray-900 tabular-nums"
+                  animate={showXPAnimation ? {
+                    scale: [1, 1.3, 1],
+                    color: ["#111827", "#f59e0b", "#111827"]
+                  } : {}}
+                  transition={{ duration: 0.5 }}
+                >
+                  {xpAnimated}
+                </motion.span>
+                <span className="text-xs text-gray-500">XP today</span>
+              </div>
+              
+              {/* Floating XP Indicator */}
+              <AnimatePresence>
+                {floatingXP && (
+                  <motion.div
+                    key={floatingXP.id}
+                    initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                    animate={{ 
+                      opacity: [0, 1, 1, 0],
+                      y: -40,
+                      scale: [0.5, 1.2, 1, 0.9]
+                    }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    className="absolute -top-8 left-1/2 transform -translate-x-1/2 pointer-events-none"
+                  >
+                    <div className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold text-sm rounded-full shadow-lg">
+                      <Zap className="w-3 h-3" />
+                      <span>+{floatingXP.amount}</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content Area - Mobile optimized */}
-      <div className="relative px-4 sm:px-6" style={{ height: isMobile ? 'calc(100vh - 280px)' : 'calc(100vh - 320px)' }}>
-        <div className="max-w-md mx-auto h-full flex flex-col justify-center">
-          {/* Card Stack */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentTrend?.id}
-              style={{ x, rotate }}
-              initial={{ scale: 0.8, opacity: 0, y: 50 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ 
-                scale: 0.9, 
-                opacity: 0,
-                x: lastVote === 'valid' ? 300 : -300,
-                rotate: lastVote === 'valid' ? 20 : -20,
-                transition: { duration: 0.3 }
-              }}
-              transition={{ 
-                type: "spring",
-                stiffness: 300,
-                damping: 30
-              }}
-              drag={isMobile ? "x" : false}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.7}
-              onDragEnd={(e, { offset, velocity }) => {
-                const swipe = offset.x * velocity.x;
-                
-                // Mobile swipe thresholds - more forgiving
-                if (swipe < -3000 || offset.x < -100) {
-                  handleSwipe('left');
-                } else if (swipe > 3000 || offset.x > 100) {
-                  handleSwipe('right');
-                } else {
-                  // Snap back
-                  animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
-                }
-              }}
-              className="relative cursor-grab active:cursor-grabbing"
-              whileDrag={{ scale: 1.05 }}
-            >
-              <div className={`${isMobile ? 'h-[500px]' : 'h-[600px]'} bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col`}>
-                {/* Trend Image/Thumbnail */}
-                {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
-                  <div className={`${isMobile ? 'h-40' : 'h-48'} bg-gray-100 relative flex-shrink-0`}>
-                    <img 
-                      src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
-                      alt={currentTrend.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-white/90 backdrop-blur rounded-lg px-2 sm:px-3 py-1">
-                      <span className="text-base sm:text-lg mr-1">{getPlatformEmoji(currentTrend.platform)}</span>
-                      <span className="text-xs sm:text-sm font-medium text-gray-700">{currentTrend.platform}</span>
-                    </div>
+
+        {/* Trend Confirmed notification removed per user request - showing XP only via notification system */}
+
+        {/* Swipe Card Container */}
+        <div className="relative">
+          {/* Background card preview (next in queue) */}
+          {trendQueue.length > 1 && (
+            <div className="absolute inset-0 scale-95 opacity-30">
+              <div className="h-[650px] bg-white rounded-2xl shadow-lg" />
+            </div>
+          )}
+
+          <motion.div
+            key={cardKey}
+            style={{ x, rotate }}
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ 
+              scale: 0.9, 
+              opacity: 0,
+              x: lastVote === 'valid' ? 300 : -300,
+              rotate: lastVote === 'valid' ? 20 : -20,
+              transition: { duration: 0.3 }
+            }}
+            transition={{ 
+              type: "spring",
+              stiffness: 300,
+              damping: 30
+            }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={1}
+            onDragEnd={(e, { offset, velocity }) => {
+              const swipe = Math.abs(offset.x) * velocity.x;
+              if (swipe < -10000) {
+                handleSwipe('left');
+              } else if (swipe > 10000) {
+                handleSwipe('right');
+              }
+            }}
+            className="relative cursor-grab active:cursor-grabbing"
+            whileDrag={{ scale: 1.05 }}
+          >
+            <div className="h-[650px] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+              {/* Trend Image/Thumbnail - Optimized height */}
+              {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
+                <div className="h-48 bg-gray-100 relative flex-shrink-0">
+                  <img 
+                    src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
+                    alt={currentTrend.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur rounded-lg px-3 py-1">
+                    <span className="text-lg mr-1">{getPlatformEmoji(currentTrend.platform)}</span>
+                    <span className="text-sm font-medium text-gray-700">{currentTrend.platform}</span>
                   </div>
-                ) : (
-                  <div className={`${isMobile ? 'h-40' : 'h-48'} bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0`}>
-                    <div className="text-center text-white">
-                      <div className="text-5xl sm:text-6xl mb-2">{getPlatformEmoji(currentTrend.platform)}</div>
-                      <p className="font-medium">{currentTrend.platform}</p>
+                </div>
+              ) : (
+                <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+                  <div className="text-center text-white">
+                    <div className="text-6xl mb-2">{getPlatformEmoji(currentTrend.platform)}</div>
+                    <p className="font-medium">{currentTrend.platform}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Trend Content - Redesigned with better spacing */}
+              <div className="flex-1 p-5 space-y-3 overflow-y-auto">
+                {/* Title and Category */}
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between">
+                    <h3 className="text-xl font-bold text-gray-900 flex-1">
+                      {currentTrend.title}
+                    </h3>
+                    <span className="ml-2 px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                      {currentTrend.category.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  
+                  {currentTrend.description && currentTrend.description !== '0' && (
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      {currentTrend.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Velocity */}
+                  {currentTrend.trend_velocity && (
+                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <TrendingUp className="h-3.5 w-3.5 text-purple-600" />
+                        <span className="text-xs font-medium text-purple-900">Velocity</span>
+                      </div>
+                      <p className="text-xs text-purple-700 mt-0.5 capitalize">
+                        {currentTrend.trend_velocity.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Size */}
+                  {currentTrend.trend_size && (
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-sm">
+                          {currentTrend.trend_size === 'micro' ? '🔬' :
+                           currentTrend.trend_size === 'niche' ? '🎯' :
+                           currentTrend.trend_size === 'viral' || currentTrend.trend_size === 'medium' ? '🔥' :
+                           currentTrend.trend_size === 'mega' || currentTrend.trend_size === 'large' ? '💥' :
+                           currentTrend.trend_size === 'global' ? '🌍' : '📏'}
+                        </span>
+                        <span className="text-xs font-medium text-blue-900">Size</span>
+                      </div>
+                      <p className="text-xs text-blue-700 mt-0.5 capitalize">
+                        {currentTrend.trend_size === 'micro' ? 'Micro' :
+                         currentTrend.trend_size === 'niche' ? 'Niche' :
+                         currentTrend.trend_size === 'viral' || currentTrend.trend_size === 'medium' ? 'Viral' :
+                         currentTrend.trend_size === 'mega' || currentTrend.trend_size === 'large' ? 'Mega' :
+                         currentTrend.trend_size === 'global' ? 'Global' :
+                         currentTrend.trend_size.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Driving Generation */}
+                  {currentTrend.driving_generation && (
+                    <div className="bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-sm">
+                          {currentTrend.driving_generation === 'gen_alpha' ? '📱' :
+                           currentTrend.driving_generation === 'gen_z' ? '🎮' :
+                           currentTrend.driving_generation === 'millennials' ? '💻' :
+                           currentTrend.driving_generation === 'gen_x' ? '💿' :
+                           currentTrend.driving_generation === 'boomers' ? '📺' : '👥'}
+                        </span>
+                        <span className="text-xs font-medium text-cyan-900">Generation</span>
+                      </div>
+                      <p className="text-xs text-cyan-700 mt-0.5">
+                        {currentTrend.driving_generation === 'gen_alpha' ? 'Gen Alpha' :
+                         currentTrend.driving_generation === 'gen_z' ? 'Gen Z' :
+                         currentTrend.driving_generation === 'millennials' ? 'Millennials' :
+                         currentTrend.driving_generation === 'gen_x' ? 'Gen X' :
+                         currentTrend.driving_generation === 'boomers' ? 'Boomers' :
+                         currentTrend.driving_generation?.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Trend Origin */}
+                  {currentTrend.trend_origin && (
+                    <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-sm">
+                          {currentTrend.trend_origin === 'organic' ? '🌱' :
+                           currentTrend.trend_origin === 'influencer' ? '🎭' :
+                           currentTrend.trend_origin === 'brand' ? '🏢' :
+                           currentTrend.trend_origin === 'ai_generated' ? '🤖' : '🌊'}
+                        </span>
+                        <span className="text-xs font-medium text-orange-900">Origin</span>
+                      </div>
+                      <p className="text-xs text-orange-700 mt-0.5">
+                        {currentTrend.trend_origin === 'organic' ? 'Organic' :
+                         currentTrend.trend_origin === 'influencer' ? 'Influencer' :
+                         currentTrend.trend_origin === 'brand' ? 'Brand' :
+                         currentTrend.trend_origin === 'ai_generated' ? 'AI Generated' :
+                         currentTrend.trend_origin?.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Evolution Status */}
+                  {currentTrend.evolution_status && (
+                    <div className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-sm">
+                          {currentTrend.evolution_status === 'original' ? '🧬' :
+                           currentTrend.evolution_status === 'variants' ? '🔄' :
+                           currentTrend.evolution_status === 'parody' ? '😂' :
+                           currentTrend.evolution_status === 'meta' ? '🤯' :
+                           currentTrend.evolution_status === 'final' ? '🧟' : '📈'}
+                        </span>
+                        <span className="text-xs font-medium text-pink-900">Evolution</span>
+                      </div>
+                      <p className="text-xs text-pink-700 mt-0.5">
+                        {currentTrend.evolution_status === 'original' ? 'Original' :
+                         currentTrend.evolution_status === 'variants' ? 'Variants' :
+                         currentTrend.evolution_status === 'parody' ? 'Parody' :
+                         currentTrend.evolution_status === 'meta' ? 'Meta' :
+                         currentTrend.evolution_status === 'final' ? 'Final Form' :
+                         currentTrend.evolution_status?.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* AI Angle */}
+                  {currentTrend.ai_angle && (
+                    <div className="bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-xs">🤖</span>
+                        <span className="text-xs font-medium text-amber-900">AI Angle</span>
+                      </div>
+                      <p className="text-xs text-amber-700 mt-0.5 capitalize">
+                        {currentTrend.ai_angle.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Audience Age if present */}
+                {currentTrend.audience_age && currentTrend.audience_age.length > 0 && (
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-indigo-50 rounded-lg">
+                    <span className="text-xs font-medium text-indigo-900">Audience:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {currentTrend.audience_age.map((age, idx) => (
+                        <span key={idx} className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-md">
+                          {age}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {/* Content - Scrollable on mobile */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                  {/* Title */}
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 line-clamp-2">
-                    {currentTrend.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4 line-clamp-3">
-                    {currentTrend.description}
-                  </p>
-
-                  {/* Stats Grid - Mobile optimized */}
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
-                    {currentTrend.views_count && (
-                      <div className="bg-gray-50 rounded-lg p-2">
-                        <div className="flex items-center gap-1">
-                          <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
-                          <span className="text-xs sm:text-sm text-gray-600">Views</span>
-                        </div>
-                        <p className="text-sm sm:text-base font-semibold text-gray-900">
-                          {currentTrend.views_count.toLocaleString()}
+                {/* Engagement Stats */}
+                {((currentTrend.views_count && currentTrend.views_count > 0) || 
+                  (currentTrend.likes_count && currentTrend.likes_count > 0) || 
+                  (currentTrend.comments_count && currentTrend.comments_count > 0)) && (
+                  <div className="flex items-center justify-around py-2 bg-gray-50 rounded-lg">
+                    {currentTrend.views_count !== undefined && currentTrend.views_count > 0 && (
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatNumber(currentTrend.views_count)}
                         </p>
+                        <p className="text-xs text-gray-500">views</p>
                       </div>
                     )}
-                    
-                    {currentTrend.likes_count && (
-                      <div className="bg-gray-50 rounded-lg p-2">
-                        <div className="flex items-center gap-1">
-                          <Flame className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
-                          <span className="text-xs sm:text-sm text-gray-600">Likes</span>
-                        </div>
-                        <p className="text-sm sm:text-base font-semibold text-gray-900">
-                          {currentTrend.likes_count.toLocaleString()}
+                    {currentTrend.likes_count !== undefined && currentTrend.likes_count > 0 && (
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatNumber(currentTrend.likes_count)}
                         </p>
+                        <p className="text-xs text-gray-500">likes</p>
+                      </div>
+                    )}
+                    {currentTrend.comments_count !== undefined && currentTrend.comments_count > 0 && (
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatNumber(currentTrend.comments_count)}
+                        </p>
+                        <p className="text-xs text-gray-500">comments</p>
                       </div>
                     )}
                   </div>
+                )}
 
-                  {/* Quick Info Pills - Mobile optimized */}
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {currentTrend.trend_velocity && (
-                      <span className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm font-medium">
-                        {currentTrend.trend_velocity === 'just_starting' ? '🚀 Just Starting' :
-                         currentTrend.trend_velocity === 'picking_up' ? '📈 Picking Up' :
-                         currentTrend.trend_velocity === 'viral' ? '🔥 Going Viral' :
-                         currentTrend.trend_velocity === 'saturated' ? '📊 Saturated' : 
-                         currentTrend.trend_velocity === 'declining' ? '📉 Declining' : currentTrend.trend_velocity}
+                {/* Hashtags */}
+                {currentTrend.hashtags && currentTrend.hashtags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {currentTrend.hashtags.slice(0, 5).map((tag, idx) => (
+                      <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                        #{tag}
                       </span>
-                    )}
-                    
-                    {currentTrend.trend_size && (
-                      <span className="px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm font-medium">
-                        {currentTrend.trend_size === 'micro' ? '🔬 Micro' :
-                         currentTrend.trend_size === 'niche' ? '🎯 Niche' :
-                         currentTrend.trend_size === 'viral' ? '🌟 Viral' :
-                         currentTrend.trend_size === 'mega' ? '💥 Mega' : 
-                         currentTrend.trend_size === 'global' ? '🌍 Global' : currentTrend.trend_size}
-                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Creator and Timestamp */}
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    {currentTrend.creator_handle && (
+                      <div className="flex items-center space-x-1">
+                        <Users className="h-3 w-3" />
+                        <span>{currentTrend.creator_handle.startsWith('@') ? currentTrend.creator_handle : `@${currentTrend.creator_handle}`}</span>
+                      </div>
                     )}
                   </div>
+                  <div className="flex items-center space-x-1 text-xs text-gray-500">
+                    <Clock className="h-3 w-3" />
+                    <span>{new Date(currentTrend.submitted_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
 
-                  {/* Spotted by - Mobile size */}
-                  <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
-                    <p className="text-xs sm:text-sm text-gray-500">
-                      Spotted by <span className="font-medium text-gray-700">{currentTrend.spotter_username}</span>
+                {/* Vote Display */}
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <SimpleVoteDisplay 
+                    trendId={currentTrend.id}
+                    initialVotes={{
+                      wave: 0,
+                      fire: 0,
+                      declining: 0,
+                      dead: 0
+                    }}
+                  />
+                </div>
+
+                {/* Validation Question */}
+                <div className="mt-auto pt-4">
+                  <div className="space-y-2">
+                    <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+                      <p className="text-center font-semibold text-gray-900 text-sm">
+                        Is this a real trend worth tracking?
+                      </p>
+                      <p className="text-center text-xs text-gray-600 mt-1">
+                        Authentic • Emerging • Worth monitoring
+                      </p>
+                    </div>
+                    <p className="text-xs text-center text-gray-500">
+                      Approved trends move to Predictions for community voting
                     </p>
                   </div>
                 </div>
-
-                {/* Swipe Indicators - Mobile visible */}
-                {isMobile && (
-                  <>
-                    <motion.div
-                      className="absolute top-1/2 -translate-y-1/2 left-4 bg-red-500 text-white rounded-full p-3 shadow-lg"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ 
-                        opacity: x.get() < -50 ? 1 : 0,
-                        scale: x.get() < -50 ? 1 : 0.5
-                      }}
-                    >
-                      <X className="h-6 w-6" />
-                    </motion.div>
-                    
-                    <motion.div
-                      className="absolute top-1/2 -translate-y-1/2 right-4 bg-green-500 text-white rounded-full p-3 shadow-lg"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ 
-                        opacity: x.get() > 50 ? 1 : 0,
-                        scale: x.get() > 50 ? 1 : 0.5
-                      }}
-                    >
-                      <Check className="h-6 w-6" />
-                    </motion.div>
-                  </>
-                )}
               </div>
-            </motion.div>
-          </AnimatePresence>
 
-          {/* Action Buttons - Mobile optimized */}
-          {!isMobile && (
-            <motion.div 
-              className="flex justify-center space-x-4 sm:space-x-8 mt-6 sm:mt-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <button
-                onClick={() => handleSwipe('left')}
-                className="group relative touch-manipulation"
-                disabled={showFeedback}
-              >
-                <div className="flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 hover:from-red-600 hover:to-red-700">
-                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
-                  <span className="text-base sm:text-lg font-semibold">Reject</span>
-                </div>
-                <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap hidden sm:block">
-                  Not a real trend
-                </span>
-              </button>
-              
-              <button
-                onClick={() => handleSwipe('right')}
-                className="group relative touch-manipulation"
-                disabled={showFeedback}
-              >
-                <div className="flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 hover:from-green-600 hover:to-green-700">
-                  <Check className="h-5 w-5 sm:h-6 sm:w-6" />
-                  <span className="text-base sm:text-lg font-semibold">Approve</span>
-                </div>
-                <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap hidden sm:block">
-                  Valid trend
-                </span>
-              </button>
-            </motion.div>
-          )}
-
-          {/* Mobile swipe hint */}
-          {isMobile && (
-            <motion.div 
-              className="mt-4 text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              <p className="text-xs text-gray-500">
-                Swipe left to reject • Swipe right to approve
-              </p>
-            </motion.div>
-          )}
-
-          {/* Desktop keyboard hint */}
-          {!isMobile && (
-            <motion.div 
-              className="mt-6 sm:mt-8 text-center space-y-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              <p className="text-xs sm:text-sm text-gray-500">
-                {trendQueue.length - currentIndex - 1} more trends to review
-              </p>
-              <p className="text-xs text-gray-400">
-                Use ← → arrow keys or A/D for quick validation
-              </p>
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      {/* Streak Animation Overlay */}
-      <AnimatePresence>
-        {showStreakAnimation && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.5 }}
-            className="fixed inset-0 flex items-center justify-center pointer-events-none z-50"
-          >
-            <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl shadow-2xl">
-              <div className="flex items-center space-x-3">
-                <Flame className="h-8 w-8 sm:h-10 sm:w-10 animate-pulse" />
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold">Streak Bonus!</p>
-                  <p className="text-sm sm:text-base">+20 XP</p>
-                </div>
-              </div>
+              {/* Removed swipe indicators from card - buttons are now below */}
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+
+        {/* Action Buttons - Below card stack */}
+        <motion.div 
+          className="flex justify-center space-x-8 mt-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          {/* Reject Button */}
+          <button
+            onClick={() => handleSwipe('left')}
+            className="group relative"
+            disabled={showFeedback}
+          >
+            <div className="flex items-center space-x-3 bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 hover:from-red-600 hover:to-red-700">
+              <X className="h-6 w-6" />
+              <span className="text-lg font-semibold">Reject</span>
+            </div>
+            <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">Not a real trend</span>
+          </button>
+          
+          {/* Approve Button */}
+          <button
+            onClick={() => handleSwipe('right')}
+            className="group relative"
+            disabled={showFeedback}
+          >
+            <div className="flex items-center space-x-3 bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 hover:from-green-600 hover:to-green-700">
+              <Check className="h-6 w-6" />
+              <span className="text-lg font-semibold">Approve</span>
+            </div>
+            <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 whitespace-nowrap">Valid trend</span>
+          </button>
+        </motion.div>
+
+
+        {/* Queue indicator and keyboard hint */}
+        <motion.div 
+          className="mt-8 text-center space-y-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <p className="text-sm text-gray-500">
+            {trendQueue.length - 1} more trends to review
+          </p>
+          <p className="text-xs text-gray-400">
+            💡 Tip: Use ← → arrow keys • Left = Reject • Right = Approve
+          </p>
+          <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+            <p className="text-xs text-blue-700">
+              <span className="font-semibold">How it works:</span> After 3 quality votes, trends move to Predictions 
+              where the community votes on their trending potential
+            </p>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
