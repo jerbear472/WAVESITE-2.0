@@ -161,39 +161,40 @@ export default function ValidatePage() {
       
       console.log('Basic query successful, found records:', testQuery?.length || 0);
       
-      // Get trends that need validation (haven't been validated by this user)
+      // Get trends that need validation - start with minimal columns
       console.log('Fetching trends for validation...');
-      const { data: trends, error: trendsError } = await supabase
+      
+      // First try with all columns
+      let { data: trends, error: trendsError } = await supabase
         .from('trend_submissions')
-        .select(`
-          id,
-          title,
-          description,
-          post_url,
-          thumbnail_url,
-          screenshot_url,
-          platform,
-          creator_handle,
-          category,
-          created_at,
-          validation_count,
-          spotter_id,
-          trend_velocity,
-          trend_size,
-          ai_angle,
-          sentiment,
-          audience_age,
-          hashtags,
-          views_count,
-          likes_count,
-          comments_count,
-          driving_generation,
-          trend_origin,
-          evolution_status
-        `)
+        .select('*')
         .eq('status', 'submitted')
         .order('created_at', { ascending: false })
         .limit(20);
+        
+      // If that fails, try with minimal columns
+      if (trendsError) {
+        console.log('Full select failed, trying minimal columns:', trendsError.message);
+        const minimalResult = await supabase
+          .from('trend_submissions')
+          .select(`
+            id,
+            title,
+            description,
+            post_url,
+            platform,
+            category,
+            created_at,
+            spotter_id,
+            status
+          `)
+          .eq('status', 'submitted')
+          .order('created_at', { ascending: false })
+          .limit(20);
+          
+        trends = minimalResult.data;
+        trendsError = minimalResult.error;
+      }
 
       if (trendsError) {
         console.error('Error fetching trends:', trendsError);
@@ -214,32 +215,44 @@ export default function ValidatePage() {
         .filter(trend => !validatedTrendIds.has(trend.id))
         .map(trend => {
           const cleaned = cleanTrendData(trend);
+          
+          // Handle both old and new field names
+          const title = cleaned.title || 
+                       cleaned.trend_headline || 
+                       cleaned.trend_name ||
+                       'Untitled Trend';
+                       
+          const description = cleaned.description || 
+                             cleaned.why_trending || 
+                             cleaned.trend_description ||
+                             '';
+          
           return {
             id: cleaned.id,
-            title: cleaned.title || cleaned.trend_headline || 'Untitled Trend',
-            description: cleaned.description || cleaned.why_trending || '',
-            url: cleaned.post_url || '',
-            thumbnail_url: cleaned.thumbnail_url,
-            screenshot_url: cleaned.screenshot_url,
+            title: title,
+            description: description,
+            url: cleaned.post_url || cleaned.url || '',
+            thumbnail_url: cleaned.thumbnail_url || cleaned.thumbnail || null,
+            screenshot_url: cleaned.screenshot_url || cleaned.screenshot || null,
             platform: cleaned.platform || 'unknown',
-            creator_handle: cleaned.creator_handle,
+            creator_handle: cleaned.creator_handle || cleaned.creator || null,
             category: cleaned.category || 'lifestyle',
-            submitted_at: cleaned.created_at,
+            submitted_at: cleaned.created_at || new Date().toISOString(),
             spotter_username: 'Trend Spotter',
             validation_count: cleaned.validation_count || 0,
-            // Include metadata
-            trend_velocity: cleaned.trend_velocity,
-            trend_size: cleaned.trend_size,
-            ai_angle: cleaned.ai_angle,
-            sentiment: cleaned.sentiment,
-            audience_age: cleaned.audience_age,
-            hashtags: cleaned.hashtags,
-            views_count: cleaned.views_count,
-            likes_count: cleaned.likes_count,
-            comments_count: cleaned.comments_count,
-            driving_generation: cleaned.driving_generation,
-            trend_origin: cleaned.trend_origin,
-            evolution_status: cleaned.evolution_status
+            // Include metadata - all optional
+            trend_velocity: cleaned.trend_velocity || cleaned.velocity || null,
+            trend_size: cleaned.trend_size || cleaned.size || null,
+            ai_angle: cleaned.ai_angle || null,
+            sentiment: cleaned.sentiment || null,
+            audience_age: cleaned.audience_age || null,
+            hashtags: cleaned.hashtags || null,
+            views_count: cleaned.views_count || null,
+            likes_count: cleaned.likes_count || null,
+            comments_count: cleaned.comments_count || null,
+            driving_generation: cleaned.driving_generation || cleaned.generation || null,
+            trend_origin: cleaned.trend_origin || cleaned.origin || null,
+            evolution_status: cleaned.evolution_status || cleaned.evolution || null
           } as TrendToValidate;
         });
 
@@ -250,16 +263,87 @@ export default function ValidatePage() {
       // If no trends found, check if there are ANY trends in the database
       if (unvalidatedTrends.length === 0) {
         console.log('No unvalidated trends found. Checking total trends in database...');
+        
+        // Check all trends regardless of status
         const { data: allTrends, error: allError } = await supabase
           .from('trend_submissions')
-          .select('id, status')
-          .limit(10);
+          .select('id, status, created_at')
+          .order('created_at', { ascending: false })
+          .limit(20);
         
         console.log('All trends check:', { 
           count: allTrends?.length || 0, 
           error: allError,
-          statuses: allTrends?.map(t => t.status)
+          statuses: allTrends?.map(t => t.status),
+          uniqueStatuses: [...new Set(allTrends?.map(t => t.status) || [])]
         });
+        
+        // If there are trends but none with 'submitted' status, 
+        // try to load trends that need validation (not validated or rejected)
+        if (allTrends && allTrends.length > 0 && !allTrends.some(t => t.status === 'submitted')) {
+          console.log('No submitted trends found. Looking for other validatable statuses...');
+          
+          const { data: validatableTrends } = await supabase
+            .from('trend_submissions')
+            .select('*')
+            .or('status.eq.pending,status.eq.validating,status.eq.submitted')
+            .order('created_at', { ascending: false })
+            .limit(20);
+            
+          if (validatableTrends && validatableTrends.length > 0) {
+            console.log(`Found ${validatableTrends.length} trends with validatable status`);
+            trends = validatableTrends;
+            
+            // Re-process with the new trends
+            const newUnvalidatedTrends = (validatableTrends || [])
+              .filter(trend => !validatedTrendIds.has(trend.id))
+              .map(trend => {
+                const cleaned = cleanTrendData(trend);
+                
+                const title = cleaned.title || 
+                             cleaned.trend_headline || 
+                             cleaned.trend_name ||
+                             'Untitled Trend';
+                             
+                const description = cleaned.description || 
+                                   cleaned.why_trending || 
+                                   cleaned.trend_description ||
+                                   '';
+                
+                return {
+                  id: cleaned.id,
+                  title: title,
+                  description: description,
+                  url: cleaned.post_url || cleaned.url || '',
+                  thumbnail_url: cleaned.thumbnail_url || cleaned.thumbnail || null,
+                  screenshot_url: cleaned.screenshot_url || cleaned.screenshot || null,
+                  platform: cleaned.platform || 'unknown',
+                  creator_handle: cleaned.creator_handle || cleaned.creator || null,
+                  category: cleaned.category || 'lifestyle',
+                  submitted_at: cleaned.created_at || new Date().toISOString(),
+                  spotter_username: 'Trend Spotter',
+                  validation_count: cleaned.validation_count || 0,
+                  trend_velocity: cleaned.trend_velocity || cleaned.velocity || null,
+                  trend_size: cleaned.trend_size || cleaned.size || null,
+                  ai_angle: cleaned.ai_angle || null,
+                  sentiment: cleaned.sentiment || null,
+                  audience_age: cleaned.audience_age || null,
+                  hashtags: cleaned.hashtags || null,
+                  views_count: cleaned.views_count || null,
+                  likes_count: cleaned.likes_count || null,
+                  comments_count: cleaned.comments_count || null,
+                  driving_generation: cleaned.driving_generation || cleaned.generation || null,
+                  trend_origin: cleaned.trend_origin || cleaned.origin || null,
+                  evolution_status: cleaned.evolution_status || cleaned.evolution || null
+                } as TrendToValidate;
+              });
+              
+            setTrendQueue(newUnvalidatedTrends);
+            setCurrentIndex(0);
+            setError('');
+            return; // Exit early since we found trends
+          }
+        }
       }
     } catch (error: any) {
       console.error('Error fetching trends:', error);
