@@ -60,7 +60,6 @@ export default function ValidatePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { showXPNotification } = useXPNotification();
-  const refreshNav = useNavigationRefresh();
   const [trendQueue, setTrendQueue] = useState<TrendToValidate[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -74,6 +73,12 @@ export default function ValidatePage() {
   const [currentStreak, setCurrentStreak] = useState(0);
   const swipeInProgressRef = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Navigation refresh hook
+  const { refresh: refreshNav } = useNavigationRefresh(() => {
+    // Callback to refresh navigation state
+    console.log('Navigation refreshed');
+  });
 
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-ROTATION_LIMIT, ROTATION_LIMIT]);
