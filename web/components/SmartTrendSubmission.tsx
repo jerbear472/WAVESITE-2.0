@@ -858,16 +858,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           return false;
         }
         break;
-      case 'origins':
-        if (!formData.drivingGeneration) {
-          setError('Please select which generation is driving this trend');
-          return false;
-        }
-        if (!formData.trendOrigin) {
-          setError('Please select where this trend originated');
-          return false;
-        }
-        break;
       case 'ai_analysis':
         // AI analysis automatically validates - no user input required
         break;
@@ -887,9 +877,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         setCurrentStep('velocity');
         break;
       case 'velocity':
-        setCurrentStep('origins');
-        break;
-      case 'origins':
         setCurrentStep('ai_analysis');
         break;
       case 'ai_analysis':
@@ -915,11 +902,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       case 'velocity':
         setCurrentStep('url');
         break;
-      case 'origins':
-        setCurrentStep('velocity');
-        break;
       case 'ai_analysis':
-        setCurrentStep('origins');
+        setCurrentStep('velocity');
         break;
       case 'review':
         setCurrentStep('ai_analysis');
@@ -1105,7 +1089,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 <p className="text-xs text-gray-500">
                   {currentStep === 'url' && 'Paste URL and describe the trend'}
                   {currentStep === 'velocity' && 'Predict the trend trajectory'}
-                  {currentStep === 'origins' && 'Identify origin and what\'s happening'}
                   {currentStep === 'ai_analysis' && 'AI validates your discovery'}
                   {currentStep === 'review' && 'Finalize your submission'}
                 </p>
@@ -1192,16 +1175,14 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               Step {
                 currentStep === 'url' ? '1' :
                 currentStep === 'velocity' ? '2' :
-                currentStep === 'origins' ? '3' :
-                currentStep === 'ai_analysis' ? '4' :
-                '5'
-              } of 5
+                currentStep === 'ai_analysis' ? '3' :
+                '4'
+              } of 4
             </span>
             <span className="text-xs text-gray-500">
               {
                 currentStep === 'url' ? 'URL & Description' :
                 currentStep === 'velocity' ? 'Trend Analysis' :
-                currentStep === 'origins' ? 'Origins & Status' :
                 currentStep === 'ai_analysis' ? 'AI Analysis' :
                 'Review'
               }
@@ -1216,9 +1197,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                   
                   // Base progress for each step
                   if (currentStep === 'url') progress = 5;
-                  else if (currentStep === 'velocity') progress = 25;
-                  else if (currentStep === 'origins') progress = 50;
-                  else if (currentStep === 'ai_analysis') progress = 75;
+                  else if (currentStep === 'velocity') progress = 33;
+                  else if (currentStep === 'ai_analysis') progress = 66;
                   else if (currentStep === 'review') progress = 90;
                   
                   // Add progress based on form completion within current step
@@ -1230,10 +1210,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     if (formData.trendVelocity) progress += 10;
                     if (formData.trendSize) progress += 10;
                     if (formData.sentiment !== 50) progress += 5;
-                  }
-                  else if (currentStep === 'origins') {
-                    if (formData.trendOrigin) progress += 12;
-                    if (formData.evolutionStatus) progress += 13;
                   }
                   else if (currentStep === 'ai_analysis') {
                     if (aiAnalysisReady) progress += 15; // Analysis ready to read
@@ -1535,80 +1511,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               </motion.div>
             )}
 
-            {/* Step 3: Origins & What's Happening */}
-            {currentStep === 'origins' && (
-              <motion.div
-                key="origins"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                {/* Who's Driving This Trend */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">5. Who's driving this trend?</h3>
-                  <p className="text-sm text-gray-600 mb-4">Which generation is leading this?</p>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { value: 'gen_alpha', emoji: '📱', label: 'Gen Alpha (9-14)' },
-                      { value: 'gen_z', emoji: '🎮', label: 'Gen Z (15-24)' },
-                      { value: 'millennials', emoji: '💻', label: 'Millennials (25-40)' },
-                      { value: 'gen_x', emoji: '💿', label: 'Gen X (40-55)' },
-                      { value: 'boomers', emoji: '📺', label: 'Boomers (55+)' }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setFormData(prev => ({ ...prev, drivingGeneration: option.value as any }))}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          formData.drivingGeneration === option.value
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-300 hover:border-gray-400 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{option.emoji}</span>
-                          <span className="font-medium text-gray-800 text-sm">{option.label}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Where Did This Come From */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-1">Where did this trend come from?</h3>
-                  <p className="text-sm text-gray-600 mb-4">What's the origin source?</p>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { value: 'organic', emoji: '🌱', label: 'Organic/User generated' },
-                      { value: 'influencer', emoji: '⭐', label: 'Influencer/Creator pushed' },
-                      { value: 'brand', emoji: '💼', label: 'Brand/Marketing campaign' },
-                      { value: 'ai_generated', emoji: '🤖', label: 'AI/Bot generated' }
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setFormData(prev => ({ ...prev, trendOrigin: option.value as any }))}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
-                          formData.trendOrigin === option.value
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-gray-300 hover:border-gray-400 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{option.emoji}</span>
-                          <span className="font-medium text-gray-800 text-sm">{option.label}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-
-            {/* Step 5: AI Analysis - Deep Resonance Analysis */}
+            {/* Step 3: AI Analysis - Deep Resonance Analysis */}
             {currentStep === 'ai_analysis' && (
               <motion.div
                 key="ai_analysis"
@@ -1630,7 +1533,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
               </motion.div>
             )}
 
-            {/* Step 6: Review */}
+            {/* Step 4: Review */}
             {currentStep === 'review' && (
               <motion.div
                 key="review"
@@ -1650,8 +1553,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         const qualityBonus = Math.floor(calculateTitleCatchiness(formData.title) / 2);
                         const velocityBonus = formData.trendVelocity && formData.trendSize ? 20 : 0;
                         const predictionBonus = formData.predictedPeak ? 15 : 0;
-                        const originsBonus = formData.drivingGeneration && formData.trendOrigin ? 15 : 0;
-                        return 30 + qualityBonus + velocityBonus + predictionBonus + originsBonus;
+                        return 30 + qualityBonus + velocityBonus + predictionBonus;
                       })() > 0 ? 'Complete' : 'In Progress'}
                     </div>
                   </div>
@@ -1663,10 +1565,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Trend Analysis</span>
                       <span className="text-gray-800">{formData.trendVelocity && formData.trendSize ? '✓' : '○'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Origins</span>
-                      <span className="text-gray-800">{formData.drivingGeneration && formData.trendOrigin ? '✓' : '○'}</span>
                     </div>
                   </div>
                 </div>
@@ -1741,35 +1639,6 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     )}
                   </div>
 
-                  {/* Origins & What's Happening */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-gray-600 mb-2">Trend Origins</h4>
-                    <div className="space-y-2">
-                      {formData.drivingGeneration && (
-                        <div className="text-sm">
-                          <span className="text-gray-600">Driving Generation: </span>
-                          <span className="text-gray-700">
-                            {formData.drivingGeneration === 'gen_alpha' ? '📱 Gen Alpha (9-14)' :
-                             formData.drivingGeneration === 'gen_z' ? '🎮 Gen Z (15-24)' :
-                             formData.drivingGeneration === 'millennials' ? '💻 Millennials (25-40)' :
-                             formData.drivingGeneration === 'gen_x' ? '💿 Gen X (40-55)' :
-                             formData.drivingGeneration === 'boomers' ? '📺 Boomers (55+)' : formData.drivingGeneration}
-                          </span>
-                        </div>
-                      )}
-                      {formData.trendOrigin && (
-                        <div className="text-sm">
-                          <span className="text-gray-600">Origin: </span>
-                          <span className="text-gray-700">
-                            {formData.trendOrigin === 'organic' ? '🌱 Organic/User generated' :
-                             formData.trendOrigin === 'influencer' ? '⭐ Influencer/Creator pushed' :
-                             formData.trendOrigin === 'brand' ? '💼 Brand/Marketing campaign' :
-                             formData.trendOrigin === 'ai_generated' ? '🤖 AI/Bot generated' : formData.trendOrigin}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
 
                   {/* AI Signal if selected */}
                   {formData.aiAngle && formData.aiAngle !== 'not_ai' && (
