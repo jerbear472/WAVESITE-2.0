@@ -1,0 +1,53 @@
+#!/bin/bash
+
+echo "================================="
+echo "🔧 FIX EMAIL REDIRECT TO LOCALHOST"
+echo "================================="
+echo ""
+echo "The email confirmation links are going to localhost because"
+echo "Supabase's dashboard settings override our code configuration."
+echo ""
+echo "TO FIX THIS ISSUE:"
+echo ""
+echo "1. Go to Supabase Dashboard:"
+echo "   https://supabase.com/dashboard/project/aicahushpcslwjwrlqbo/auth/url-configuration"
+echo ""
+echo "2. Update 'Site URL' setting:"
+echo "   FROM: http://localhost:3000"
+echo "   TO:   https://wavesight.app"
+echo ""
+echo "3. Update 'Redirect URLs' - Add ALL of these:"
+echo "   • https://wavesight.app/*"
+echo "   • https://wavesight.app/auth/callback"
+echo "   • http://localhost:3000/* (keep for development)"
+echo "   • http://localhost:3000/auth/callback (keep for development)"
+echo ""
+echo "4. Save the changes in Supabase Dashboard"
+echo ""
+echo "5. (Optional) Update Email Templates:"
+echo "   Go to: Authentication → Email Templates"
+echo "   Replace hardcoded URLs with: {{ .SiteURL }}"
+echo ""
+echo "================================="
+echo "📝 ENVIRONMENT VARIABLES UPDATED"
+echo "================================="
+echo ""
+echo "✅ .env.production has been updated with:"
+echo "   NEXT_PUBLIC_SITE_URL=https://wavesight.app"
+echo "   NEXT_PUBLIC_APP_URL=https://wavesight.app"
+echo ""
+echo "⚠️  When deploying to Vercel, add these environment variables:"
+echo "   - Copy all variables from .env.production"
+echo "   - Ensure NEXT_PUBLIC_SITE_URL is set to your domain"
+echo ""
+echo "Press Enter to open Supabase Dashboard..."
+read
+
+# Try to open the Supabase dashboard
+if command -v open &> /dev/null; then
+    open "https://supabase.com/dashboard/project/aicahushpcslwjwrlqbo/auth/url-configuration"
+elif command -v xdg-open &> /dev/null; then
+    xdg-open "https://supabase.com/dashboard/project/aicahushpcslwjwrlqbo/auth/url-configuration"
+else
+    echo "Please manually open: https://supabase.com/dashboard/project/aicahushpcslwjwrlqbo/auth/url-configuration"
+fi
