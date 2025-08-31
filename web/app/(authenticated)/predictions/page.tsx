@@ -494,7 +494,7 @@ function formatTimeAgo(dateString: string): string {
 }
 
 type FilterType = 'all' | 'rising' | 'peaking' | 'need_predictions' | 'following';
-type TimeFilter = 'all' | '24hrs' | 'week';
+type TimeFilter = 'all' | 'today' | '3days' | 'week' | 'month';
 type CategoryFilter = 'all' | 'Fashion' | 'Technology' | 'Lifestyle' | 'Food' | 'Shopping' | 'Pets' | 'Career';
 type SortType = 'hot' | 'top' | 'new' | 'controversial' | 'wave_score';
 
@@ -1059,7 +1059,7 @@ export default function EnhancedPredictionsPage() {
                 className="mt-4 space-y-3 overflow-hidden"
               >
                 {/* Sort Options - Reddit Style */}
-                <div className="flex gap-2 items-center">
+                <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-sm text-gray-500 py-2">Sort by:</span>
                   {(['hot', 'top', 'new', 'controversial', 'wave_score'] as SortType[]).map(sort => (
                     <button
@@ -1072,7 +1072,7 @@ export default function EnhancedPredictionsPage() {
                       }`}
                     >
                       {sort === 'hot' && '🔥 Hot'}
-                      {sort === 'top' && '👑 Top'}
+                      {sort === 'top' && '👑 Most Upvoted'}
                       {sort === 'new' && '✨ New'}
                       {sort === 'controversial' && '⚡ Controversial'}
                       {sort === 'wave_score' && '🌊 Wave Score'}
@@ -1080,8 +1080,30 @@ export default function EnhancedPredictionsPage() {
                   ))}
                 </div>
                 
+                {/* Date Range Filter */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-sm text-gray-500 py-2">Time:</span>
+                  {(['all', 'today', '3days', 'week', 'month'] as TimeFilter[]).map(time => (
+                    <button
+                      key={time}
+                      onClick={() => setTimeFilter(time)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        timeFilter === time
+                          ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {time === 'all' && 'All Time'}
+                      {time === 'today' && '📅 Today'}
+                      {time === '3days' && '📊 3 Days'}
+                      {time === 'week' && '📈 This Week'}
+                      {time === 'month' && '📆 This Month'}
+                    </button>
+                  ))}
+                </div>
+                
                 {/* Filter Options */}
-                <div className="flex gap-2 items-center">
+                <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-sm text-gray-500 py-2">Filter:</span>
                   {(['all', 'rising', 'peaking', 'need_predictions', 'following'] as FilterType[]).map(type => (
                     <button
@@ -1181,7 +1203,85 @@ export default function EnhancedPredictionsPage() {
 
             {/* Trends Feed */}
             <div className="space-y-6">
-              {trends.filter(t => !t.is_rejected).map((trend, index) => (
+              {(() => {
+                // Apply filters and sorting
+                let filteredTrends = trends.filter(t => !t.is_rejected);
+                
+                // Apply date range filter
+                const now = new Date();
+                if (timeFilter !== 'all') {
+                  filteredTrends = filteredTrends.filter(trend => {
+                    const trendDate = new Date(trend.submitted_at);
+                    const daysDiff = (now.getTime() - trendDate.getTime()) / (1000 * 60 * 60 * 24);
+                    
+                    switch (timeFilter) {
+                      case 'today':
+                        return daysDiff <= 1;
+                      case '3days':
+                        return daysDiff <= 3;
+                      case 'week':
+                        return daysDiff <= 7;
+                      case 'month':
+                        return daysDiff <= 30;
+                      default:
+                        return true;
+                    }
+                  });
+                }
+                
+                // Apply type filter
+                if (filterType !== 'all') {
+                  switch (filterType) {
+                    case 'rising':
+                      filteredTrends = filteredTrends.filter(t => 
+                        (t.wave_votes || 0) > (t.dead_votes || 0) && (t.wave_votes || 0) < 10
+                      );
+                      break;
+                    case 'peaking':
+                      filteredTrends = filteredTrends.filter(t => 
+                        (t.wave_votes || 0) >= 10 || (t.fire_votes || 0) >= 5
+                      );
+                      break;
+                    case 'need_predictions':
+                      filteredTrends = filteredTrends.filter(t => 
+                        (t.predictions_count || 0) < 3
+                      );
+                      break;
+                    case 'following':
+                      // Would need following data
+                      break;
+                  }
+                }
+                
+                // Apply sorting
+                const sortedTrends = [...filteredTrends].sort((a, b) => {
+                  switch (sortType) {
+                    case 'top':
+                      // Sort by wave score (most upvoted)
+                      return (b.wave_score || 0) - (a.wave_score || 0);
+                    case 'new':
+                      // Sort by newest first
+                      return new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime();
+                    case 'controversial':
+                      // Sort by most disputed (high votes on both sides)
+                      const aControversy = Math.min((a.wave_votes || 0) + (a.fire_votes || 0), 
+                                                   (a.declining_votes || 0) + (a.dead_votes || 0));
+                      const bControversy = Math.min((b.wave_votes || 0) + (b.fire_votes || 0), 
+                                                   (b.declining_votes || 0) + (b.dead_votes || 0));
+                      return bControversy - aControversy;
+                    case 'wave_score':
+                      // Sort by wave score
+                      return (b.wave_score || 0) - (a.wave_score || 0);
+                    case 'hot':
+                    default:
+                      // Hot: combination of votes and recency
+                      const aHotScore = ((a.wave_score || 0) + 1) / Math.pow((Date.now() - new Date(a.submitted_at).getTime()) / (1000 * 60 * 60) + 2, 1.5);
+                      const bHotScore = ((b.wave_score || 0) + 1) / Math.pow((Date.now() - new Date(b.submitted_at).getTime()) / (1000 * 60 * 60) + 2, 1.5);
+                      return bHotScore - aHotScore;
+                  }
+                });
+                
+                return sortedTrends.map((trend, index) => (
                 <PredictionTrendCard
                   key={trend.id}
                   trend={trend}
@@ -1471,7 +1571,8 @@ export default function EnhancedPredictionsPage() {
                   }}
                   index={index}
                 />
-              ))}
+              ));
+              })()}
             </div>
           </div>
 
