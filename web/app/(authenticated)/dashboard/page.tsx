@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
+import PastTrendsTimeline from '@/components/PastTrendsTimeline';
+import XPActivitySidebar from '@/components/XPActivitySidebar';
 import PendingValidations from '@/components/PendingValidations';
 import StreakDisplay from '@/components/StreakDisplay';
 import { motion } from 'framer-motion';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { XP_LEVELS, calculateLevelProgress, getLevelTitle, getLevelByXP } from '@/lib/xpLevels';
-import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
-import { cleanTrendData } from '@/lib/cleanTrendData';
 import { 
   Trophy,
   TrendingUp,
@@ -23,12 +23,10 @@ import {
   Sparkles,
   Users,
   CheckCircle,
-  XCircle,
-  Flame,
-  ChevronDown,
-  ChevronUp,
   Plus,
-  Send
+  Send,
+  Flame,
+  Activity
 } from 'lucide-react';
 import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import { submitTrend } from '@/lib/submitTrend';
@@ -41,31 +39,11 @@ interface XPStats {
   weekly_xp: number;
   trends_submitted: number;
   trends_validated: number;
-  trends_rejected: number;
-  pending_validations: number;
-  validation_accuracy: number;
   current_streak: number;
   global_rank: number | null;
 }
 
-interface XPEvent {
-  id: string;
-  event_type: string;
-  xp_change: number;
-  description: string;
-  created_at: string;
-  reference_id?: string;
-  reference_type?: string;
-  trend?: {
-    name: string;
-    category?: string;
-  };
-}
-
-// 15-level cultural anthropologist progression system
-// XP_LEVELS imported from lib/xpLevels.ts for consistency
-
-export default function Dashboard() {
+export default function DashboardUpdated() {
   const { user } = useAuth();
   const { showXPNotification } = useXPNotification();
   const [stats, setStats] = useState<XPStats>({
@@ -76,229 +54,70 @@ export default function Dashboard() {
     weekly_xp: 0,
     trends_submitted: 0,
     trends_validated: 0,
-    trends_rejected: 0,
-    pending_validations: 0,
-    validation_accuracy: 0,
     current_streak: 0,
     global_rank: null
   });
-  const [recentEvents, setRecentEvents] = useState<XPEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAllLevels, setShowAllLevels] = useState(false);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
-  // Use navigation refresh hook to reload data on route changes
+  // Use navigation refresh hook
   useNavigationRefresh(() => {
     if (user) {
       loadDashboardData();
     }
   }, [user]);
 
-  // Also load on user change
   useEffect(() => {
     if (user) {
       loadDashboardData();
     }
   }, [user]);
 
-  // Set up real-time refresh for today's XP
-  useEffect(() => {
-    if (!user) return;
-
-    // Refresh every 30 seconds to keep today's XP current
-    const interval = setInterval(() => {
-      loadDashboardData();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [user]);
-
-  // Listen for XP notifications to refresh dashboard immediately
-  useEffect(() => {
-    const handleXPEarned = () => {
-      // Delay refresh slightly to ensure database is updated
-      setTimeout(() => {
-        loadDashboardData();
-      }, 1000);
-    };
-
-    // Custom event listener for XP earned
-    window.addEventListener('xp-earned', handleXPEarned);
-    
-    return () => {
-      window.removeEventListener('xp-earned', handleXPEarned);
-    };
-  }, []);
-
   const loadDashboardData = async () => {
     if (!user) return;
 
     try {
-      // Get user XP summary
-      const { data: xpSummary, error: xpError } = await supabase
-        .from('user_xp_summary')
-        .select('*')
+      // Get user XP and stats
+      const { data: xpData } = await supabase
+        .from('user_xp')
+        .select('total_xp')
         .eq('user_id', user.id)
         .single();
 
-      if (xpError) {
-        console.error('Error fetching XP summary:', xpError);
-        console.log('XP Error details:', {
-          message: xpError.message,
-          details: xpError.details,
-          hint: xpError.hint,
-          code: xpError.code
-        });
-      }
-      
-      console.log('XP Summary data:', xpSummary);
-      console.log('XP Summary columns available:', xpSummary ? Object.keys(xpSummary) : 'No data');
-
-      // Get today's and this week's XP
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-
-      // Use xp_transactions as the primary source for XP data
-      let xpEvents = null;
-      const { data: xpTransData, error: transError } = await supabase
-        .from('xp_transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('created_at', weekAgo.toISOString())
-        .order('created_at', { ascending: false });
-      
-      console.log('📊 XP Transactions Query Result:', { 
-        data: xpTransData, 
-        error: transError,
-        userId: user.id 
-      });
-      
-      if (!transError && xpTransData) {
-        // Map xp_transactions to match expected structure
-        xpEvents = xpTransData.map(t => ({
-          ...t,
-          xp_change: t.amount,
-          event_type: t.type,
-          reference_type: t.reference_type || 'trend_submission',
-          reference_id: t.reference_id
-        }));
-      } else if (transError) {
-        console.error('Error fetching XP transactions:', transError);
-        // Try xp_events as fallback if xp_transactions fails
-        const { data: xpEventsData } = await supabase
-          .from('xp_events')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('created_at', weekAgo.toISOString())
-          .order('created_at', { ascending: false });
-        
-        xpEvents = xpEventsData;
-      }
-
-      // Fetch trend details for events with reference_id
-      if (xpEvents && xpEvents.length > 0) {
-        const trendIds = xpEvents
-          .filter(e => e.reference_id && e.reference_type === 'trend_submission')
-          .map(e => e.reference_id);
-        
-        console.log('🔍 Looking for trends with IDs:', trendIds);
-        
-        if (trendIds.length > 0) {
-          const { data: trends, error: trendsError } = await supabase
-            .from('trend_submissions')
-            .select('id, name, category')
-            .in('id', trendIds);
-          
-          console.log('📚 Trend lookup result:', { trends, error: trendsError });
-          
-          if (trends) {
-            const trendMap = new Map(trends.map(t => [t.id, t]));
-            xpEvents = xpEvents.map(event => ({
-              ...event,
-              trend: event.reference_id ? trendMap.get(event.reference_id) : undefined
-            }));
-            console.log('✅ XP Events with trends:', xpEvents.slice(0, 2));
-          }
-        }
-      }
-
-      let todaysXP = xpEvents
-        ?.filter(e => new Date(e.created_at) >= today)
-        .reduce((sum, e) => sum + e.xp_change, 0) || 0;
-
-      let weeklyXP = xpEvents
-        ?.reduce((sum, e) => sum + e.xp_change, 0) || 0;
-      
-      console.log('📊 XP Calculations:', {
-        todaysXP,
-        weeklyXP,
-        todayEvents: xpEvents?.filter(e => new Date(e.created_at) >= today),
-        totalEvents: xpEvents?.length
-      });
-
-      // Get validation accuracy
-      const { data: validations } = await supabase
-        .from('trend_validations')
-        .select('is_valid, trend_id')
-        .eq('validator_id', user.id);
-
-      let accuracy = 0;
-      if (validations && validations.length > 0) {
-        // Check how many of user's validations matched final outcome
-        // Simplified for now - would need to check actual trend outcomes
-        accuracy = 75; // Placeholder
-      }
-
-      // Get global rank
-      const { data: leaderboard } = await supabase
-        .from('xp_leaderboard')
-        .select('global_rank')
-        .eq('user_id', user.id)
-        .single();
-
-      // Get user's daily streak from profile
-      const { data: userProfile } = await supabase
+      // Get user profile for streak
+      const { data: profileData } = await supabase
         .from('user_profiles')
-        .select('current_streak')
+        .select('current_streak, total_submitted, total_validated')
         .eq('id', user.id)
         .single();
 
-      // Ensure we handle both null and undefined properly
-      const totalXP = xpSummary?.total_xp ?? 0;
-      
-      // Calculate level based on XP (don't trust database level)
-      const calculatedLevel = getLevelByXP(totalXP);
-      const currentLevel = calculatedLevel.level;
-      const levelTitle = calculatedLevel.title;
-      
+      // Calculate today's XP
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data: todayXP } = await supabase
+        .from('xp_transactions')
+        .select('amount')
+        .eq('user_id', user.id)
+        .gte('created_at', today.toISOString());
+
+      const todaysTotal = todayXP?.reduce((sum, tx) => sum + tx.amount, 0) || 0;
+
+      // Calculate level
+      const totalXP = xpData?.total_xp || 0;
+      const levelData = getLevelByXP(totalXP);
+
       setStats({
         total_xp: totalXP,
-        current_level: currentLevel,
-        level_title: levelTitle,
-        todays_xp: todaysXP,
-        weekly_xp: weeklyXP,
-        trends_submitted: xpSummary?.total_trends_submitted ?? 0,
-        trends_validated: xpSummary?.validated_trends ?? 0,
-        trends_rejected: xpSummary?.rejected_trends ?? 0,
-        pending_validations: xpSummary?.pending_trends ?? 0,
-        validation_accuracy: accuracy,
-        current_streak: userProfile?.current_streak || 0,
-        global_rank: leaderboard?.global_rank || null
+        current_level: levelData.level,
+        level_title: levelData.title,
+        todays_xp: todaysTotal,
+        weekly_xp: 0, // TODO: Calculate weekly
+        trends_submitted: profileData?.total_submitted || 0,
+        trends_validated: profileData?.total_validated || 0,
+        current_streak: profileData?.current_streak || 0,
+        global_rank: null
       });
-      
-      console.log('Stats updated:', {
-        totalXP,
-        currentLevel,
-        fromSummary: xpSummary
-      });
-
-      // Get recent XP events
-      const recentXP = xpEvents?.slice(0, 5) || [];
-      setRecentEvents(recentXP);
-
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -306,25 +125,36 @@ export default function Dashboard() {
     }
   };
 
-  // handleTrendSubmit removed - SmartTrendSubmission handles everything internally now
-
   const getLevelProgress = () => {
-    return calculateLevelProgress(stats.total_xp, stats.current_level);
-  };
-
-  const getEventIcon = (eventType: string) => {
-    switch (eventType) {
-      case 'trend_submitted': return <TrendingUp className="w-4 h-4 text-blue-500" />;
-      case 'trend_validated': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'trend_rejected': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'validation': return <Users className="w-4 h-4 text-purple-500" />;
-      default: return <Sparkles className="w-4 h-4 text-gray-500" />;
+    const currentLevel = XP_LEVELS.find(l => l.level === stats.current_level);
+    const nextLevel = XP_LEVELS.find(l => l.level === stats.current_level + 1);
+    
+    if (!currentLevel || !nextLevel) {
+      return { 
+        percentage: 100, 
+        xpInLevel: 0, 
+        xpToNext: 0,
+        currentThreshold: currentLevel?.threshold || 0,
+        nextThreshold: nextLevel?.threshold || 999999
+      };
     }
+    
+    const xpProgress = stats.total_xp - currentLevel.threshold;
+    const xpRequired = nextLevel.threshold - currentLevel.threshold;
+    const percentage = Math.min(100, Math.max(0, (xpProgress / xpRequired) * 100));
+    
+    return {
+      percentage,
+      xpInLevel: xpProgress,
+      xpToNext: Math.max(0, nextLevel.threshold - stats.total_xp),
+      currentThreshold: currentLevel.threshold,
+      nextThreshold: nextLevel.threshold
+    };
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -333,383 +163,184 @@ export default function Dashboard() {
   const levelProgress = getLevelProgress();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, <span className="bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">{user?.username || 'Cultural Anthropologist'}</span>!
+              Welcome back, <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                {user?.username || 'Trend Spotter'}
+              </span>!
             </h1>
-            <p className="text-gray-600">Track your journey in spotting cultural waves</p>
+            <p className="text-gray-600">Track cultural waves and predict the future</p>
           </div>
           <button
             onClick={() => setShowSubmissionForm(true)}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-3 sm:px-6 rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base whitespace-nowrap min-w-fit"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 
+                     hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-xl 
+                     font-medium transition-all shadow-lg hover:shadow-xl"
           >
-            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="hidden xs:inline">Submit New Trend</span>
-            <span className="xs:hidden">New Trend</span>
+            <Plus className="w-5 h-5" />
+            Spot New Trend
           </button>
         </div>
 
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl shadow-sm p-4 relative overflow-hidden"
-          >
-            {/* Animated background pulse for live updates */}
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-yellow-200/20 to-orange-200/20"
-              animate={{
-                opacity: [0, 0.5, 0],
-                scale: [1, 1.05, 1]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-2">
-                <motion.div
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 1, repeat: Infinity, repeatDelay: 3 }}
-                >
-                  <Zap className="w-5 h-5 text-yellow-600" />
-                </motion.div>
-                <span className="text-xs text-yellow-700 font-medium">Today</span>
+        {/* Quick Stats Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {/* Level Progress */}
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Trophy className="w-5 h-5 text-yellow-500" />
+              <span className="text-xs text-gray-500">Level {stats.current_level}</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.level_title}</p>
+            <div className="mt-2">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-2 rounded-full transition-all"
+                  style={{ width: `${levelProgress.percentage}%` }}
+                />
               </div>
-              <motion.p 
-                className="text-2xl font-bold text-gray-900"
-                key={stats.todays_xp} // Re-animate when XP changes
-                initial={{ scale: 1.2, color: "#f59e0b" }}
-                animate={{ scale: 1, color: "#111827" }}
-                transition={{ duration: 0.5 }}
-              >
-                {stats.todays_xp}
-              </motion.p>
-              <p className="text-xs text-yellow-700 font-medium">XP Earned</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {levelProgress.xpToNext} XP to next level
+              </p>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="bg-white rounded-xl shadow-sm p-4"
-          >
+          {/* Today's XP */}
+          <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <Clock className="w-5 h-5 text-orange-500" />
-              <span className="text-xs text-gray-500">Pending</span>
+              <Zap className="w-5 h-5 text-blue-500" />
+              <span className="text-xs text-gray-500">Today</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.pending_validations}</p>
-            <p className="text-xs text-gray-600">Validations</p>
-          </motion.div>
+            <p className="text-2xl font-bold text-gray-900">+{stats.todays_xp} XP</p>
+            <p className="text-xs text-gray-500 mt-2">Keep the momentum!</p>
+          </div>
 
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="bg-white rounded-xl shadow-sm p-4"
-          >
+          {/* Streak */}
+          <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <span className="text-xs text-gray-500">Success</span>
+              <Flame className="w-5 h-5 text-orange-500" />
+              <span className="text-xs text-gray-500">Streak</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.trends_validated}</p>
-            <p className="text-xs text-gray-600">Validated</p>
-          </motion.div>
+            <p className="text-2xl font-bold text-gray-900">{stats.current_streak} days</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {stats.current_streak > 0 ? 'Keep it up!' : 'Start today!'}
+            </p>
+          </div>
 
-          <motion.div 
-            whileHover={{ scale: 1.02 }}
-            className="bg-white rounded-xl shadow-sm p-4"
-          >
+          {/* Trends Spotted */}
+          <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <Target className="w-5 h-5 text-purple-500" />
-              <span className="text-xs text-gray-500">Accuracy</span>
+              <TrendingUp className="w-5 h-5 text-green-500" />
+              <span className="text-xs text-gray-500">Spotted</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.validation_accuracy}%</p>
-            <p className="text-xs text-gray-600">Hit Rate</p>
-          </motion.div>
+            <p className="text-2xl font-bold text-gray-900">{stats.trends_submitted}</p>
+            <p className="text-xs text-gray-500 mt-2">Trends submitted</p>
+          </div>
         </div>
 
-        {/* Main Two-Column Layout */}
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Takes 2/3 on desktop */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Recent Activity */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent XP Activity</h3>
-              
-              {recentEvents.length > 0 ? (
-                <div className="space-y-3">
-                  {recentEvents.map((event) => (
-                    <div key={event.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {getEventIcon(event.event_type)}
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {event.description}
-                            {event.trend?.name && (
-                              <span className="ml-2 text-purple-600 font-semibold">
-                                "{event.trend.name}"
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(event.created_at).toLocaleDateString()}
-                            {event.trend?.category && (
-                              <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
-                                {event.trend.category}
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={`text-sm font-bold ${
-                        event.xp_change > 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {event.xp_change > 0 ? '+' : ''}{event.xp_change} XP
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">No recent activity</p>
-              )}
-              
-              <Link
-                href="/timeline"
-                className="mt-4 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                View All Activity
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
+          {/* Main Column - Past Trends (2/3 width) */}
+          <div className="lg:col-span-2">
+            <PastTrendsTimeline />
+          </div>
 
-            {/* Streak Display */}
-            <StreakDisplay />
+          {/* Sidebar - XP Activity (1/3 width) */}
+          <div className="space-y-6">
+            <XPActivitySidebar />
+            
+            {/* Quick Actions */}
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <Link
+                  href="/spot"
+                  className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Spot Trends</p>
+                      <p className="text-xs text-gray-600">+10 XP per trend</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Link>
+                
+                <Link
+                  href="/predictions"
+                  className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Target className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Make Predictions</p>
+                      <p className="text-xs text-gray-600">+20 XP when correct</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Link>
+
+                <Link
+                  href="/timeline"
+                  className="flex items-center justify-between p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">My Timeline</p>
+                      <p className="text-xs text-gray-600">View your history</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Link>
+              </div>
+            </div>
 
             {/* Pending Validations */}
             <PendingValidations />
           </div>
-
-          {/* Right Column - Takes 1/3 on desktop */}
-          <div className="space-y-6">
-            {/* XP & Level Progress */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Your Progress</h3>
-              <Link
-                href="/leaderboard"
-                className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                Leaderboard
-                <ChevronRight className="w-3 h-3" />
-              </Link>
-            </div>
-            
-            <div className="space-y-4">
-              {/* Current Level Display */}
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">{XP_LEVELS.find(l => l.level === stats.current_level)?.emoji || '👁️'}</span>
-                </div>
-                <div>
-                  <h4 className="text-xl font-bold text-gray-900">{stats.total_xp.toLocaleString()} XP</h4>
-                  <p className="text-sm text-gray-600">Level {stats.current_level}: {stats.level_title}</p>
-                  <p className="text-xs text-gray-500">{XP_LEVELS.find(l => l.level === stats.current_level)?.benefit}</p>
-                </div>
-              </div>
-              
-              {stats.global_rank && stats.global_rank <= 100 && (
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full">
-                  <Award className="w-3 h-3" />
-                  <span className="text-xs font-medium">Global Rank #{stats.global_rank}</span>
-                </div>
-              )}
-              
-              {/* Current Level Progress */}
-              {stats.current_level < 15 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Progress to {XP_LEVELS.find(l => l.level === stats.current_level + 1)?.title}</span>
-                    <span className="text-gray-900 font-medium">{levelProgress.xpToNext.toLocaleString()} XP to go</span>
-                  </div>
-                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${levelProgress.progress}%` }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Toggle All Levels View */}
-              <button
-                onClick={() => setShowAllLevels(!showAllLevels)}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium mt-4"
-              >
-                {showAllLevels ? 'Hide' : 'View'} All 15 Levels
-                {showAllLevels ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
-              
-              {/* All Levels Display */}
-              {showAllLevels && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-4 space-y-2 max-h-80 overflow-y-auto border-t border-gray-200 pt-4"
-                >
-                  {XP_LEVELS.map((level) => {
-                    const isCompleted = stats.current_level > level.level;
-                    const isCurrent = stats.current_level === level.level;
-                    const progress = isCurrent ? levelProgress.progress : (isCompleted ? 100 : 0);
-                    
-                    return (
-                      <div
-                        key={level.level}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                          isCurrent 
-                            ? 'bg-blue-50 border border-blue-200' 
-                            : isCompleted 
-                            ? 'bg-green-50 border border-green-200'
-                            : 'bg-gray-50 border border-gray-200'
-                        }`}
-                      >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          isCurrent
-                            ? 'bg-blue-100'
-                            : isCompleted
-                            ? 'bg-green-100'
-                            : 'bg-gray-100'
-                        }`}>
-                          <span className="text-lg">{level.emoji}</span>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className={`text-sm font-medium ${
-                              isCurrent ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-700'
-                            }`}>
-                              Level {level.level}: {level.title}
-                            </p>
-                            {isCompleted && <CheckCircle className="w-4 h-4 text-green-500" />}
-                            {isCurrent && <Zap className="w-4 h-4 text-blue-500" />}
-                          </div>
-                          <p className="text-xs text-gray-600 mb-1">{level.benefit}</p>
-                          
-                          {/* Progress bar for current level */}
-                          {isCurrent && progress < 100 && (
-                            <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                              <div 
-                                className="bg-gradient-to-r from-purple-500 to-blue-500 h-1.5 rounded-full transition-all duration-500"
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="text-right">
-                          <p className={`text-xs font-medium ${
-                            isCurrent ? 'text-blue-700' : isCompleted ? 'text-green-700' : 'text-gray-500'
-                          }`}>
-                            {level.threshold.toLocaleString()} XP
-                          </p>
-                          {isCurrent && levelProgress.xpToNext > 0 && (
-                            <p className="text-xs text-gray-500">+{levelProgress.xpToNext.toLocaleString()}</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            
-            <div className="space-y-3">
-              <Link
-                href="/spot"
-                className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-gray-900">Spot Trends</p>
-                    <p className="text-xs text-gray-600">+10 XP per trend</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </Link>
-              
-              {/* Validate link removed - still accessible at /validate for admins */}
-              
-              <Link
-                href="/predictions"
-                className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Target className="w-5 h-5 text-green-600" />
-                  <div>
-                    <p className="font-medium text-gray-900">Predictions</p>
-                    <p className="text-xs text-gray-600">Bonus XP for accuracy</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              </Link>
-            </div>
-          </div>
-          </div>
         </div>
       </div>
 
-      {/* Trend Submission Modal */}
+      {/* Submission Form Modal */}
       {showSubmissionForm && (
-        <SmartTrendSubmission
-          onClose={() => setShowSubmissionForm(false)}
-          onSubmit={async (data) => {
-            if (!user?.id) {
-              throw new Error('Please log in to submit trends');
-            }
-            
-            console.log('Dashboard: Starting trend submission');
-            const result = await submitTrend(user.id, data);
-            console.log('Dashboard: Submission result:', result);
-            
-            if (!result.success) {
-              throw new Error(result.error || 'Failed to submit trend');
-            }
-            
-            // Show XP notification on successful submission
-            if (result.earnings) {
-              showXPNotification(
-                result.earnings,
-                'Trend spotted successfully!',
-                'submission',
-                'XP Earned',
-                result.xpBreakdown ? `Multipliers applied: ${result.xpBreakdown}` : undefined
-              );
-            }
-            
-            // Close form and refresh dashboard on success
-            setShowSubmissionForm(false);
-            
-            // Delay refresh slightly to ensure modal closes properly
-            setTimeout(() => {
-              loadDashboardData();
-            }, 100);
-            
-            return result;
-          }}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <SmartTrendSubmission
+              onClose={() => setShowSubmissionForm(false)}
+              onSubmit={async (data) => {
+                if (!user?.id) {
+                  throw new Error('Please log in to submit trends');
+                }
+                
+                const result = await submitTrend(user.id, data);
+                
+                if (!result.success) {
+                  throw new Error(result.error || 'Failed to submit trend');
+                }
+                
+                if (result.earnings) {
+                  showXPNotification(
+                    result.earnings,
+                    'Trend spotted successfully!',
+                    'submission',
+                    'XP Earned',
+                    result.xpBreakdown
+                  );
+                }
+                
+                setShowSubmissionForm(false);
+                loadDashboardData();
+                
+                return result;
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
