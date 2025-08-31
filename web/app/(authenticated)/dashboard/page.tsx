@@ -43,7 +43,7 @@ interface XPStats {
   global_rank: number | null;
 }
 
-export default function DashboardUpdated() {
+export default function Dashboard() {
   const { user } = useAuth();
   const { showXPNotification } = useXPNotification();
   const [stats, setStats] = useState<XPStats>({
@@ -329,7 +329,7 @@ export default function DashboardUpdated() {
                     'Trend spotted successfully!',
                     'submission',
                     'XP Earned',
-                    result.xpBreakdown
+                    result.xpBreakdown ? result.xpBreakdown.join(', ') : undefined
                   );
                 }
                 
