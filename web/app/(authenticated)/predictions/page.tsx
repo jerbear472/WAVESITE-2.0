@@ -1512,15 +1512,13 @@ export default function EnhancedPredictionsPage() {
             </AnimatePresence>
 
             {/* Top Predictors Leaderboard */}
-            <div className="bg-gradient-to-br from-white to-purple-50 rounded-2xl shadow-lg border border-purple-100 p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-200 to-orange-200 rounded-full -mr-16 -mt-16 opacity-20" />
-              <div className="relative">
-                <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-yellow-500" />
-                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    Top Predictors
-                  </span>
-                </h3>
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-5">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Top Predictors
+                </span>
+              </h3>
                 <div className="space-y-2">
                   {[
                     { username: 'TrendMaster', accuracy: 78, rank: 1, trend: '+12', badge: '🏆' },
@@ -1578,7 +1576,6 @@ export default function EnhancedPredictionsPage() {
                 >
                   View Full Leaderboard →
                 </motion.button>
-              </div>
             </div>
           </div>
         </div>

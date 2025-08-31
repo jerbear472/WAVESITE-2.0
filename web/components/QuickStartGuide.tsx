@@ -228,8 +228,6 @@ export default function QuickStartGuide({ onDismiss }: QuickStartGuideProps) {
                       ? 'bg-white/60 hover:bg-white/80' 
                       : 'bg-white/30 hover:bg-white/50'
                   }`}
-                  animate={index === currentStep ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 2, repeat: Infinity }}
                 />
                 <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-white/60 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                   {index === 0 ? 'Welcome' : index === 1 ? 'Spot' : index === 2 ? 'Predict' : 'Level Up'}
@@ -388,75 +386,7 @@ export default function QuickStartGuide({ onDismiss }: QuickStartGuideProps) {
   );
 }
 
-// Minimal version for returning users with enhanced UI
+// Minimal version removed - no longer showing banner to returning users
 export function MiniQuickStart() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    // Show mini guide if user hasn't submitted a trend yet
-    const hasSubmitted = localStorage.getItem('hasSubmittedTrend');
-    if (!hasSubmitted) {
-      setIsVisible(true);
-    }
-  }, []);
-
-  if (!isVisible) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-      whileHover={{ scale: 1.02 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl p-5 mb-6 shadow-xl"
-    >
-      {/* Animated background effect */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20"
-        animate={{
-          x: isHovered ? [0, 100, 0] : 0,
-        }}
-        transition={{ duration: 3, ease: "linear" }}
-      />
-      
-      <div className="relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <motion.div 
-            className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center"
-            animate={isHovered ? { rotate: [0, 10, -10, 0] } : {}}
-            transition={{ duration: 0.5 }}
-          >
-            <TrendingUp className="w-6 h-6" />
-          </motion.div>
-          <div>
-            <p className="font-bold text-lg">Ready to spot your first trend?</p>
-            <p className="text-sm text-white/80">Join thousands earning rewards daily</p>
-          </div>
-        </div>
-        <Link href="/spot">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-5 py-2.5 bg-white text-indigo-600 rounded-xl font-semibold hover:bg-white/90 transition-all shadow-lg flex items-center gap-2"
-          >
-            Start Now
-            <ArrowRight className="w-4 h-4" />
-          </motion.button>
-        </Link>
-      </div>
-
-      {/* Dismiss button */}
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsVisible(false)}
-        className="absolute top-2 right-2 p-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-      >
-        <X className="w-4 h-4 text-white/60" />
-      </motion.button>
-    </motion.div>
-  );
+  return null;
 }

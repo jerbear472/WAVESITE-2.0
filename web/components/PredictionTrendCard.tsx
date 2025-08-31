@@ -284,15 +284,15 @@ export default function PredictionTrendCard({
               onClick={() => onPredict(trend)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:shadow-md transition-all inline-flex items-center gap-1.5"
             >
-              <Target className="w-5 h-5" />
+              <Target className="w-4 h-4" />
               Predict Peak
             </motion.button>
           ) : (
-            <div className="w-full py-3 bg-green-50 text-green-700 rounded-xl font-medium flex items-center justify-center gap-2">
-              <Shield className="w-5 h-5" />
-              Prediction Locked In
+            <div className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
+              <Shield className="w-4 h-4" />
+              Locked In
             </div>
           )}
         </div>
