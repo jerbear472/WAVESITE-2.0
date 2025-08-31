@@ -1,0 +1,4 @@
+module NukeExtensions {
+    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/NukeExtensions.build/NukeExtensions-Swift.h"
+    requires objc
+}

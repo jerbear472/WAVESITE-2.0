@@ -21,7 +21,8 @@ import {
   ChevronRight,
   Eye,
   Users,
-  Timer
+  Timer,
+  Shield
 } from 'lucide-react';
 
 interface TrendToValidate {
@@ -85,6 +86,11 @@ export default function ValidatePage() {
   const [cardKey, setCardKey] = useState(0);
   // Track locally validated trends to prevent re-showing
   const [localValidatedIds, setLocalValidatedIds] = useState<string[]>([]);
+  
+  // Check if user is community monitor
+  const isCommunityMonitor = user?.email === 'jeremy@wavesight.app' || 
+                             user?.email === 'admin@wavesight.app' ||
+                             user?.id === 'YOUR_USER_ID_HERE'; // Replace with your actual user ID
   
   // Swipe animation values
   const x = useMotionValue(0);
@@ -342,29 +348,87 @@ export default function ValidatePage() {
         validation_score: isValid ? 1 : -1
       });
 
+      // Check if user is community monitor (you can set this email or user ID)
+      const isCommunityMonitor = user.email === 'jeremy@wavesight.app' || 
+                                 user.email === 'admin@wavesight.app' ||
+                                 user.id === 'YOUR_USER_ID_HERE'; // Replace with your actual user ID
+      
       // Submit validation with proper vote field
-      const { data: validationData, error: validationError } = await supabase
-        .from('trend_validations')
-        .insert({
-          trend_id: currentTrend.id,
-          validator_id: user.id,
-          vote: isValid ? 'wave' : 'dead',  // Use correct vote types for database trigger
-          is_valid: isValid,  // Keep for backward compatibility
-          validation_score: isValid ? 1 : -1,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (validationError) {
-        console.error('❌ Validation error:', validationError);
-        // Don't throw - continue to try awarding XP even if validation fails
-        // This might happen if user already validated this trend
+      // If community monitor, submit 3 votes to instantly validate/reject
+      const votesToSubmit = isCommunityMonitor ? 3 : 1;
+      
+      console.log(`👮 Community Monitor: ${isCommunityMonitor}, submitting ${votesToSubmit} vote(s)`);
+      
+      if (isCommunityMonitor) {
+        // Submit 3 votes for instant validation/rejection
+        const validations = [];
+        for (let i = 0; i < votesToSubmit; i++) {
+          validations.push({
+            trend_id: currentTrend.id,
+            validator_id: user.id,
+            vote: isValid ? 'wave' : 'dead',
+            is_valid: isValid,
+            validation_score: isValid ? 1 : -1,
+            created_at: new Date().toISOString()
+          });
+        }
+        
+        const { data: validationData, error: validationError } = await supabase
+          .from('trend_validations')
+          .insert(validations[0]) // Insert first vote normally
+          .select()
+          .single();
+          
+        if (!validationError) {
+          // Add 2 more system votes to reach 3 total
+          const systemVotes = [];
+          for (let i = 1; i < votesToSubmit; i++) {
+            systemVotes.push({
+              trend_id: currentTrend.id,
+              validator_id: `system_${i}`, // System validator IDs
+              vote: isValid ? 'wave' : 'dead',
+              is_valid: isValid,
+              validation_score: isValid ? 1 : -1,
+              created_at: new Date().toISOString()
+            });
+          }
+          
+          await supabase
+            .from('trend_validations')
+            .insert(systemVotes);
+            
+          // Update trend status immediately since we have 3 votes
+          await supabase
+            .from('trend_submissions')
+            .update({ 
+              validation_count: 3,
+              status: isValid ? 'quality_approved' : 'rejected'
+            })
+            .eq('id', currentTrend.id);
+            
+          console.log('✅ Community Monitor: Trend instantly ' + (isValid ? 'approved' : 'rejected'));
+        }
       } else {
-        console.log('✅ Validation submitted successfully');
+        // Regular user - submit single vote
+        const { data: validationData, error: validationError } = await supabase
+          .from('trend_validations')
+          .insert({
+            trend_id: currentTrend.id,
+            validator_id: user.id,
+            vote: isValid ? 'wave' : 'dead',
+            is_valid: isValid,
+            validation_score: isValid ? 1 : -1,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+      }
 
-        // Update validation count only if validation succeeded
-        // Status will be updated by database trigger based on vote counts
+      // Note: validationError is handled within the conditional blocks above
+      console.log('✅ Validation process completed');
+      
+      // For regular users, update validation count
+      if (!isCommunityMonitor) {
         const newValidationCount = currentTrend.validation_count + 1;
         const { error: updateError } = await supabase
           .from('trend_submissions')
@@ -751,6 +815,17 @@ export default function ValidatePage() {
         <div className="text-center mb-4">
           <h1 className="text-2xl font-bold text-gray-900">Trend Validation</h1>
           <p className="text-sm text-gray-600 mt-1">Help identify real trends worth tracking</p>
+          {isCommunityMonitor && (
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-lg"
+            >
+              <Shield className="w-5 h-5" />
+              <span className="font-bold">Community Monitor Mode</span>
+              <span className="text-xs opacity-90">• Your vote = 3 votes</span>
+            </motion.div>
+          )}
         </div>
 
         {/* Header Stats */}

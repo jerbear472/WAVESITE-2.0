@@ -1,0 +1,4 @@
+module ConcurrencyExtras {
+    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/ConcurrencyExtras.build/ConcurrencyExtras-Swift.h"
+    requires objc
+}

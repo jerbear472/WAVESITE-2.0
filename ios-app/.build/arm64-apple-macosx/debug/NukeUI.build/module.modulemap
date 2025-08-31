@@ -1,0 +1,4 @@
+module NukeUI {
+    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/NukeUI.build/NukeUI-Swift.h"
+    requires objc
+}

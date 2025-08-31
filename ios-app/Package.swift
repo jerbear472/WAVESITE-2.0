@@ -24,6 +24,13 @@ let package = Package(
                 .product(name: "Nuke", package: "Nuke"),
                 .product(name: "NukeUI", package: "Nuke"),
                 .product(name: "SwiftUIX", package: "SwiftUIX")
+            ],
+            path: ".",
+            sources: [
+                "WaveSightApp.swift",
+                "Managers",
+                "Models",
+                "Views"
             ]),
     ]
 )

@@ -197,7 +197,8 @@ export default function Navigation() {
     { href: '/spot', label: 'Spot', icon: '➕' },
     { href: '/predictions', label: 'Predict', icon: '📈' },
     { href: '/timeline', label: 'My Timeline', icon: '📅' },
-    { href: '/validate', label: 'Validate', icon: '✅' },
+    // Hidden from nav but still accessible at /validate
+    // { href: '/validate', label: 'Validate', icon: '✅' },
   ];
 
   return (

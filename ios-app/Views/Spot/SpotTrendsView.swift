@@ -372,7 +372,7 @@ struct SpotTrendsView: View {
         
         Task {
             // TODO: Implement Supabase submission
-            await authManager.awardXP(amount: 25, type: "submission", description: "Submitted trend: \(trendTitle)")
+            // await authManager.awardXP(amount: 25, type: "submission", description: "Submitted trend: \(trendTitle)")
             
             // Simulate submission
             try? await Task.sleep(nanoseconds: 2_000_000_000)

@@ -13,16 +13,16 @@ struct MyTimelineView: View {
                     // Filter Pills
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            FilterPill(title: "All", isSelected: selectedFilter == "all") {
+                            TimelineFilterPill(title: "All", isSelected: selectedFilter == "all") {
                                 selectedFilter = "all"
                             }
-                            FilterPill(title: "Submitted", isSelected: selectedFilter == "submitted") {
+                            TimelineFilterPill(title: "Submitted", isSelected: selectedFilter == "submitted") {
                                 selectedFilter = "submitted"
                             }
-                            FilterPill(title: "Validated", isSelected: selectedFilter == "validated") {
+                            TimelineFilterPill(title: "Validated", isSelected: selectedFilter == "validated") {
                                 selectedFilter = "validated"
                             }
-                            FilterPill(title: "Trending", isSelected: selectedFilter == "trending") {
+                            TimelineFilterPill(title: "Trending", isSelected: selectedFilter == "trending") {
                                 selectedFilter = "trending"
                             }
                         }
@@ -284,7 +284,7 @@ struct EmptyTimelineView: View {
     }
 }
 
-struct FilterPill: View {
+struct TimelineFilterPill: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void

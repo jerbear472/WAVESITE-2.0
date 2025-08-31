@@ -1,33 +1,6 @@
-import Foundation
 import SwiftUI
-import Supabase
-import Combine
 
-// MARK: - User Model
-struct User: Codable, Identifiable {
-    let id: String
-    let email: String
-    var username: String
-    var totalXP: Int
-    var currentLevel: Int
-    var trendsSpotted: Int
-    var accuracyScore: Double
-    var currentStreak: Int
-    var role: String
-    var profileImageUrl: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case id, email, username, role
-        case totalXP = "total_xp"
-        case currentLevel = "current_level"
-        case trendsSpotted = "trends_spotted"
-        case accuracyScore = "accuracy_score"
-        case currentStreak = "current_streak"
-        case profileImageUrl = "profile_image_url"
-    }
-}
-
-// MARK: - Auth Manager
+// Simplified AuthManager for demo purposes
 class AuthManager: ObservableObject {
     static let shared = AuthManager()
     
@@ -36,295 +9,78 @@ class AuthManager: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    private var cancellables = Set<AnyCancellable>()
-    
-    // Supabase client
-    let supabase = SupabaseClient(
-        supabaseURL: URL(string: ProcessInfo.processInfo.environment["SUPABASE_URL"] ?? "https://your-project.supabase.co")!,
-        supabaseKey: ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"] ?? "your-anon-key"
-    )
-    
     private init() {
-        checkSession()
-        setupAuthListener()
+        // Check for demo mode
+        checkDemoMode()
     }
     
-    // MARK: - Authentication Methods
-    
-    func signIn(email: String, password: String) async {
-        await MainActor.run {
-            isLoading = true
-            errorMessage = nil
-        }
-        
-        do {
-            let session = try await supabase.auth.signIn(
-                email: email.lowercased().trimmingCharacters(in: .whitespacesAndNewlines),
-                password: password
+    private func checkDemoMode() {
+        // Auto-login for demo
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.isAuthenticated = true
+            self.currentUser = User(
+                id: UUID(),
+                email: "demo@wavesight.com",
+                username: "DemoUser",
+                currentLevel: 5,
+                totalXP: 2500,
+                currentStreak: 7,
+                trendsSpotted: 23,
+                accuracyScore: 85
             )
-            
-            await fetchUserProfile(userId: session.user.id)
-            
-            await MainActor.run {
-                isAuthenticated = true
-                isLoading = false
-            }
-        } catch {
-            await MainActor.run {
-                errorMessage = error.localizedDescription
-                isLoading = false
-            }
         }
     }
     
-    func signUp(email: String, password: String, username: String) async {
-        await MainActor.run {
-            isLoading = true
-            errorMessage = nil
-        }
+    func signIn(email: String, password: String) async throws {
+        isLoading = true
+        defer { isLoading = false }
         
-        do {
-            let session = try await supabase.auth.signUp(
-                email: email.lowercased().trimmingCharacters(in: .whitespacesAndNewlines),
-                password: password,
-                data: ["username": username]
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        
+        // Demo login
+        await MainActor.run {
+            self.isAuthenticated = true
+            self.currentUser = User(
+                id: UUID(),
+                email: email,
+                username: email.components(separatedBy: "@").first ?? "User",
+                currentLevel: 1,
+                totalXP: 0,
+                currentStreak: 0,
+                trendsSpotted: 0,
+                accuracyScore: 0
             )
-            
-            // Create user profile
-            try await createUserProfile(userId: session.user.id, email: email, username: username)
-            
-            await MainActor.run {
-                isAuthenticated = true
-                isLoading = false
-            }
-        } catch {
-            await MainActor.run {
-                errorMessage = error.localizedDescription
-                isLoading = false
-            }
+        }
+    }
+    
+    func signUp(email: String, password: String, username: String) async throws {
+        isLoading = true
+        defer { isLoading = false }
+        
+        // Simulate network delay
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        
+        // Demo signup
+        await MainActor.run {
+            self.isAuthenticated = true
+            self.currentUser = User(
+                id: UUID(),
+                email: email,
+                username: username,
+                currentLevel: 1,
+                totalXP: 0,
+                currentStreak: 0,
+                trendsSpotted: 0,
+                accuracyScore: 0
+            )
         }
     }
     
     func signOut() async {
-        do {
-            try await supabase.auth.signOut()
-            
-            await MainActor.run {
-                isAuthenticated = false
-                currentUser = nil
-            }
-        } catch {
-            print("Error signing out: \(error)")
+        await MainActor.run {
+            self.isAuthenticated = false
+            self.currentUser = nil
         }
-    }
-    
-    // MARK: - Session Management
-    
-    private func checkSession() {
-        Task {
-            do {
-                let session = try await supabase.auth.session
-                if let userId = session?.user.id {
-                    await fetchUserProfile(userId: userId)
-                    await MainActor.run {
-                        isAuthenticated = true
-                    }
-                }
-            } catch {
-                print("No active session")
-            }
-        }
-    }
-    
-    private func setupAuthListener() {
-        Task {
-            for await state in supabase.auth.authStateChanges {
-                switch state.event {
-                case .signedIn:
-                    if let userId = state.session?.user.id {
-                        await fetchUserProfile(userId: userId)
-                        await MainActor.run {
-                            isAuthenticated = true
-                        }
-                    }
-                case .signedOut:
-                    await MainActor.run {
-                        isAuthenticated = false
-                        currentUser = nil
-                    }
-                default:
-                    break
-                }
-            }
-        }
-    }
-    
-    // MARK: - User Profile Management
-    
-    private func fetchUserProfile(userId: String) async {
-        do {
-            // Fetch from profiles table
-            let profile: User = try await supabase
-                .from("profiles")
-                .select()
-                .eq("id", value: userId)
-                .single()
-                .execute()
-                .value
-            
-            // Fetch XP data
-            let xpData: [String: Any] = try await supabase
-                .from("user_xp")
-                .select("total_xp, current_level")
-                .eq("user_id", value: userId)
-                .single()
-                .execute()
-                .value
-            
-            // Fetch user stats
-            let stats: [String: Any] = try await supabase
-                .from("user_profiles")
-                .select()
-                .eq("id", value: userId)
-                .single()
-                .execute()
-                .value
-            
-            // Combine data into User model
-            var user = profile
-            user.totalXP = xpData["total_xp"] as? Int ?? 0
-            user.currentLevel = xpData["current_level"] as? Int ?? 1
-            user.trendsSpotted = stats["trends_spotted"] as? Int ?? 0
-            user.accuracyScore = stats["accuracy_score"] as? Double ?? 0.0
-            user.currentStreak = stats["current_streak"] as? Int ?? 0
-            
-            await MainActor.run {
-                self.currentUser = user
-            }
-        } catch {
-            print("Error fetching user profile: \(error)")
-        }
-    }
-    
-    private func createUserProfile(userId: String, email: String, username: String) async throws {
-        // Create profile record
-        let profile = [
-            "id": userId,
-            "email": email,
-            "username": username,
-            "role": "user",
-            "created_at": ISO8601DateFormatter().string(from: Date())
-        ]
-        
-        try await supabase
-            .from("profiles")
-            .insert(profile)
-            .execute()
-        
-        // Create user_xp record
-        let xpRecord = [
-            "user_id": userId,
-            "total_xp": 0,
-            "current_level": 1,
-            "xp_to_next_level": 100
-        ]
-        
-        try await supabase
-            .from("user_xp")
-            .insert(xpRecord)
-            .execute()
-        
-        // Create user_profiles record
-        let userProfile = [
-            "id": userId,
-            "username": username,
-            "trends_spotted": 0,
-            "accuracy_score": 0.0,
-            "current_streak": 0
-        ] as [String : Any]
-        
-        try await supabase
-            .from("user_profiles")
-            .insert(userProfile)
-            .execute()
-    }
-    
-    // MARK: - XP Management
-    
-    func awardXP(amount: Int, type: String, description: String) async {
-        guard let userId = currentUser?.id else { return }
-        
-        do {
-            // Insert XP transaction
-            let transaction = [
-                "user_id": userId,
-                "amount": amount,
-                "type": type,
-                "description": description,
-                "created_at": ISO8601DateFormatter().string(from: Date())
-            ] as [String : Any]
-            
-            try await supabase
-                .from("xp_transactions")
-                .insert(transaction)
-                .execute()
-            
-            // Update user's total XP
-            if var user = currentUser {
-                user.totalXP += amount
-                
-                // Check for level up
-                let newLevel = calculateLevel(from: user.totalXP)
-                if newLevel > user.currentLevel {
-                    user.currentLevel = newLevel
-                    // Trigger level up animation
-                }
-                
-                await MainActor.run {
-                    self.currentUser = user
-                }
-                
-                // Update database
-                try await supabase
-                    .from("user_xp")
-                    .update(["total_xp": user.totalXP, "current_level": user.currentLevel])
-                    .eq("user_id", value: userId)
-                    .execute()
-            }
-        } catch {
-            print("Error awarding XP: \(error)")
-        }
-    }
-    
-    private func calculateLevel(from xp: Int) -> Int {
-        // Level calculation: each level requires more XP
-        // Level 1: 0-99, Level 2: 100-299, Level 3: 300-599, etc.
-        var level = 1
-        var requiredXP = 100
-        var totalRequired = 0
-        
-        while totalRequired + requiredXP <= xp {
-            totalRequired += requiredXP
-            level += 1
-            requiredXP = 100 * level
-        }
-        
-        return level
-    }
-}
-
-// MARK: - Navigation Manager
-class NavigationManager: ObservableObject {
-    @Published var selectedTab = 0
-    @Published var showingTrendDetail = false
-    @Published var selectedTrend: Trend?
-    
-    func navigateTo(tab: Int) {
-        selectedTab = tab
-    }
-    
-    func showTrend(_ trend: Trend) {
-        selectedTrend = trend
-        showingTrendDetail = true
     }
 }

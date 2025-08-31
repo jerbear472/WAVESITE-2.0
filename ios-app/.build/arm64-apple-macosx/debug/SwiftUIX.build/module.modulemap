@@ -1,0 +1,4 @@
+module SwiftUIX {
+    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/SwiftUIX.build/SwiftUIX-Swift.h"
+    requires objc
+}
