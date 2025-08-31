@@ -74,54 +74,12 @@ export default function XPActivitySidebar() {
       setTodayXP(todayTotal);
     } catch (error) {
       console.error('Error loading XP activity:', error);
-      // Use mock data for demo
-      setActivities(getMockActivities());
-      setTotalXP(1250);
-      setTodayXP(85);
+      setActivities([]);
+      setTotalXP(0);
+      setTodayXP(0);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getMockActivities = (): XPActivity[] => {
-    const now = new Date();
-    return [
-      {
-        id: '1',
-        amount: 10,
-        type: 'trend_submission',
-        description: 'Submitted: AI movie trailers',
-        created_at: new Date(now.getTime() - 30 * 60 * 1000).toISOString()
-      },
-      {
-        id: '2',
-        amount: 5,
-        type: 'validation',
-        description: 'Validated trend correctly',
-        created_at: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '3',
-        amount: 20,
-        type: 'prediction_correct',
-        description: 'Prediction came true!',
-        created_at: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '4',
-        amount: 15,
-        type: 'streak_bonus',
-        description: '7 day streak bonus',
-        created_at: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '5',
-        amount: 5,
-        type: 'validation',
-        description: 'Validated trend correctly',
-        created_at: new Date(now.getTime() - 25 * 60 * 60 * 1000).toISOString()
-      }
-    ];
   };
 
   const getActivityIcon = (type: string) => {
