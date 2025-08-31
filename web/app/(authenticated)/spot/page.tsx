@@ -38,6 +38,7 @@ import { supabase } from '@/lib/supabase';
 import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
 import { getSafeCategory, getSafeStatus } from '@/lib/safeCategory';
 import { submitTrend } from '@/lib/submitTrend';
+import { submitTrendInstant } from '@/lib/submitTrendInstant';
 import { testSubmitTrend } from '@/lib/testSubmitTrend';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { calculateQualityScore } from '@/lib/calculateQualityScore';
@@ -695,29 +696,32 @@ export default function SpotPage() {
                 throw new Error('Please log in to submit trends');
               }
               
-              const result = await submitTrend(user.id, data);
+              // Use instant submission for immediate feedback
+              const result = await submitTrendInstant(user.id, data);
               
               if (!result.success) {
-                throw new Error(result.error || 'Failed to submit trend');
+                throw new Error(result.message || 'Failed to submit trend');
               }
               
-              // Show XP notification on successful submission
-              if (result.earnings) {
-                showXPNotification(
-                  result.earnings,
-                  'Trend spotted successfully!',
-                  'submission',
-                  'XP Earned',
-                  result.xpBreakdown ? `Multipliers applied: ${result.xpBreakdown}` : undefined
-                );
-              }
+              // Show success notification immediately
+              showXPNotification(
+                10, // Base XP, multipliers calculated async
+                'Trend submitted! Processing...',
+                'submission',
+                '🚀 Instant Submit',
+                'Your trend is being processed in the background'
+              );
               
               // Close form and refresh stats on success
               setShowSubmissionForm(false);
               setTrendUrl('');
-              loadTodaysStats();
               
-              return result;
+              // Refresh stats after a short delay to catch processed submission
+              setTimeout(() => {
+                loadTodaysStats();
+              }, 2000);
+              
+              return { success: true };
             }}
           />
         </ErrorBoundary>
