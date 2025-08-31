@@ -174,7 +174,7 @@ export default function Dashboard() {
   const levelProgress = getLevelProgress();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Show mini quick start for users who haven't submitted yet */}
         {stats.trends_submitted === 0 && !showQuickStart && (
@@ -182,126 +182,126 @@ export default function Dashboard() {
         )}
         
         {/* Header */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+        <div className="mb-4 sm:mb-6">
+          <div className="mb-4">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+              Welcome back, <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent block sm:inline">
                 {user?.username || 'Trend Spotter'}
               </span>!
             </h1>
-            <p className="text-gray-600">Track cultural waves and predict the future</p>
+            <p className="text-sm sm:text-base text-gray-600">Track cultural waves and predict the future</p>
           </div>
           <button
             onClick={() => setShowSubmissionForm(true)}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 
-                     hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-xl 
-                     font-medium transition-all shadow-lg hover:shadow-xl"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 
+                     hover:from-blue-600 hover:to-purple-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl 
+                     font-medium transition-all shadow-lg hover:shadow-xl text-sm sm:text-base"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
             Spot New Trend
           </button>
         </div>
 
         {/* Quick Stats Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
           {/* Level Progress */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Trophy className="w-5 h-5 text-yellow-500" />
-              <span className="text-xs text-gray-500">Level {stats.current_level}</span>
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <Trophy className="w-4 sm:w-5 h-4 sm:h-5 text-yellow-500" />
+              <span className="text-[10px] sm:text-xs text-gray-500">Level {stats.current_level}</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.level_title}</p>
-            <div className="mt-2">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+            <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">{stats.level_title}</p>
+            <div className="mt-1 sm:mt-2">
+              <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                 <div 
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-2 rounded-full transition-all"
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-1.5 sm:h-2 rounded-full transition-all"
                   style={{ width: `${levelProgress.percentage}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {levelProgress.xpToNext} XP to next level
+              <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 truncate">
+                {levelProgress.xpToNext} XP to next
               </p>
             </div>
           </div>
 
           {/* Today's XP */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Zap className="w-5 h-5 text-blue-500" />
-              <span className="text-xs text-gray-500">Today</span>
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <Zap className="w-4 sm:w-5 h-4 sm:h-5 text-blue-500" />
+              <span className="text-[10px] sm:text-xs text-gray-500">Today</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">+{stats.todays_xp} XP</p>
-            <p className="text-xs text-gray-500 mt-2">Keep the momentum!</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">+{stats.todays_xp} XP</p>
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-2 hidden sm:block">Keep the momentum!</p>
           </div>
 
           {/* Streak */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Flame className="w-5 h-5 text-orange-500" />
-              <span className="text-xs text-gray-500">Streak</span>
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <Flame className="w-4 sm:w-5 h-4 sm:h-5 text-orange-500" />
+              <span className="text-[10px] sm:text-xs text-gray-500">Streak</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.current_streak} days</p>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.current_streak} <span className="text-sm sm:text-base">days</span></p>
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-2 hidden sm:block">
               {stats.current_streak > 0 ? 'Keep it up!' : 'Start today!'}
             </p>
           </div>
 
           {/* Trends Spotted */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-center justify-between mb-2">
-              <TrendingUp className="w-5 h-5 text-green-500" />
-              <span className="text-xs text-gray-500">Spotted</span>
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-1 sm:mb-2">
+              <TrendingUp className="w-4 sm:w-5 h-4 sm:h-5 text-green-500" />
+              <span className="text-[10px] sm:text-xs text-gray-500">Spotted</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.trends_submitted}</p>
-            <p className="text-xs text-gray-500 mt-2">Trends submitted</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{stats.trends_submitted}</p>
+            <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-2 hidden sm:block">Trends submitted</p>
           </div>
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Column - Past Trends (2/3 width) */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Main Column - Past Trends (2/3 width on desktop, full on mobile) */}
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <PastTrendsTimeline />
           </div>
 
-          {/* Sidebar - XP Activity (1/3 width) */}
-          <div className="space-y-6">
+          {/* Sidebar - XP Activity (1/3 width on desktop, full on mobile) */}
+          <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
             <XPActivitySidebar />
             
             {/* Level Progression */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Your Progress</h3>
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Your Progress</h3>
                 <Link
                   href="/leaderboard"
-                  className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium"
                 >
                   Leaderboard
                   <ChevronRight className="w-3 h-3" />
                 </Link>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Current Level Display */}
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl flex items-center justify-center">
-                    <span className="text-2xl">{XP_LEVELS.find(l => l.level === stats.current_level)?.emoji || '👁️'}</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-10 sm:w-12 h-10 sm:h-12 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl sm:text-2xl">{XP_LEVELS.find(l => l.level === stats.current_level)?.emoji || '👁️'}</span>
                   </div>
-                  <div>
-                    <h4 className="text-xl font-bold text-gray-900">{stats.total_xp.toLocaleString()} XP</h4>
-                    <p className="text-sm text-gray-600">Level {stats.current_level}: {stats.level_title}</p>
-                    <p className="text-xs text-gray-500">{XP_LEVELS.find(l => l.level === stats.current_level)?.benefit}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-lg sm:text-xl font-bold text-gray-900">{stats.total_xp.toLocaleString()} XP</h4>
+                    <p className="text-xs sm:text-sm text-gray-600 truncate">Level {stats.current_level}: {stats.level_title}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 line-clamp-2">{XP_LEVELS.find(l => l.level === stats.current_level)?.benefit}</p>
                   </div>
                 </div>
                 
                 {/* Current Level Progress */}
                 {stats.current_level < 15 && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Progress to {XP_LEVELS.find(l => l.level === stats.current_level + 1)?.title}</span>
-                      <span className="text-gray-900 font-medium">{levelProgress.xpToNext.toLocaleString()} XP to go</span>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <div className="flex justify-between text-[11px] sm:text-sm">
+                      <span className="text-gray-600 truncate mr-2">Progress to {XP_LEVELS.find(l => l.level === stats.current_level + 1)?.title}</span>
+                      <span className="text-gray-900 font-medium whitespace-nowrap">{levelProgress.xpToNext.toLocaleString()} XP</span>
                     </div>
-                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden">
                       <motion.div
                         className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
                         initial={{ width: 0 }}
@@ -315,10 +315,10 @@ export default function Dashboard() {
                 {/* Toggle All Levels View */}
                 <button
                   onClick={() => setShowAllLevels(!showAllLevels)}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium mt-4"
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium mt-3 sm:mt-4"
                 >
                   {showAllLevels ? 'Hide' : 'View'} All 15 Levels
-                  {showAllLevels ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {showAllLevels ? <ChevronUp className="w-3 sm:w-4 h-3 sm:h-4" /> : <ChevronDown className="w-3 sm:w-4 h-3 sm:h-4" />}
                 </button>
                 
                 {/* All Levels Display */}
@@ -327,7 +327,7 @@ export default function Dashboard() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 space-y-2 max-h-80 overflow-y-auto border-t border-gray-200 pt-4"
+                    className="mt-3 sm:mt-4 space-y-1.5 sm:space-y-2 max-h-60 sm:max-h-80 overflow-y-auto border-t border-gray-200 pt-3 sm:pt-4"
                   >
                     {XP_LEVELS.map((level) => {
                       const isCompleted = stats.current_level > level.level;
@@ -337,7 +337,7 @@ export default function Dashboard() {
                       return (
                         <div
                           key={level.level}
-                          className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                          className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg transition-all ${
                             isCurrent 
                               ? 'bg-blue-50 border border-blue-200' 
                               : isCompleted 
@@ -345,48 +345,48 @@ export default function Dashboard() {
                               : 'bg-gray-50 border border-gray-200'
                           }`}
                         >
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          <div className={`w-7 sm:w-8 h-7 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center flex-shrink-0 ${
                             isCurrent
                               ? 'bg-blue-100'
                               : isCompleted
                               ? 'bg-green-100'
                               : 'bg-gray-100'
                           }`}>
-                            <span className="text-lg">{level.emoji}</span>
+                            <span className="text-base sm:text-lg">{level.emoji}</span>
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className={`text-sm font-medium ${
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <p className={`text-xs sm:text-sm font-medium truncate ${
                                 isCurrent ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-700'
                               }`}>
-                                Level {level.level}: {level.title}
+                                Lv{level.level}: {level.title}
                               </p>
-                              {isCompleted && <CheckCircle className="w-4 h-4 text-green-500" />}
-                              {isCurrent && <Zap className="w-4 h-4 text-blue-500" />}
+                              {isCompleted && <CheckCircle className="w-3 sm:w-4 h-3 sm:h-4 text-green-500 flex-shrink-0" />}
+                              {isCurrent && <Zap className="w-3 sm:w-4 h-3 sm:h-4 text-blue-500 flex-shrink-0" />}
                             </div>
-                            <p className="text-xs text-gray-600 mb-1">{level.benefit}</p>
+                            <p className="text-[10px] sm:text-xs text-gray-600 mb-0.5 sm:mb-1 line-clamp-1">{level.benefit}</p>
                             
                             {/* Progress bar for current level */}
                             {isCurrent && progress < 100 && (
-                              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                              <div className="w-full bg-gray-200 rounded-full h-1 sm:h-1.5 mt-0.5 sm:mt-1">
                                 <div 
-                                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-1 sm:h-1.5 rounded-full transition-all duration-500"
                                   style={{ width: `${progress}%` }}
                                 />
                               </div>
                             )}
                           </div>
                           
-                          <div className="text-right">
-                            <p className={`text-xs font-medium ${
+                          <div className="text-right flex-shrink-0">
+                            <p className={`text-[10px] sm:text-xs font-medium ${
                               isCurrent ? 'text-blue-700' : isCompleted ? 'text-green-700' : 'text-gray-500'
                             }`}>
-                              {level.threshold.toLocaleString()} XP
+                              {level.threshold >= 1000 ? `${(level.threshold/1000).toFixed(0)}k` : level.threshold} XP
                             </p>
                             {isCurrent && levelProgress.xpToNext > 0 && (
-                              <p className="text-xs text-gray-500">
-                                {levelProgress.xpToNext} to go
+                              <p className="text-[10px] sm:text-xs text-gray-500">
+                                {levelProgress.xpToNext >= 1000 ? `${(levelProgress.xpToNext/1000).toFixed(1)}k` : levelProgress.xpToNext}
                               </p>
                             )}
                           </div>
