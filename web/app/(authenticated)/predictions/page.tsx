@@ -1116,78 +1116,66 @@ export default function EnhancedPredictionsPage() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100 relative overflow-hidden"
+                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-100 to-transparent rounded-full -mr-12 -mt-12 opacity-50" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-3">
-                    <Brain className="w-6 h-6 text-purple-600" />
-                    {userStats.rank_change > 0 && (
-                      <span className="text-xs text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full">
-                        +{userStats.rank_change}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">{userStats.accuracy_rate}%</div>
-                  <div className="text-sm text-gray-600 font-medium mt-1">Accuracy</div>
+                <div className="flex items-center justify-between mb-3">
+                  <Brain className="w-6 h-6 text-purple-600" />
+                  {userStats.rank_change > 0 && (
+                    <span className="text-xs text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full">
+                      +{userStats.rank_change}
+                    </span>
+                  )}
                 </div>
+                <div className="text-3xl font-bold text-gray-900">{userStats.accuracy_rate}%</div>
+                <div className="text-sm text-gray-600 font-medium mt-1">Accuracy</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100 relative overflow-hidden"
+                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-orange-100 to-transparent rounded-full -mr-12 -mt-12 opacity-50" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-3">
-                    <Flame className="w-6 h-6 text-orange-600" />
-                    {userStats.current_streak > 0 && (
-                      <span className="text-2xl">🔥</span>
-                    )}
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">{userStats.current_streak}</div>
-                  <div className="text-sm text-gray-600 font-medium mt-1">Day Streak</div>
+                <div className="flex items-center justify-between mb-3">
+                  <Flame className="w-6 h-6 text-orange-600" />
+                  {userStats.current_streak > 0 && (
+                    <span className="text-2xl">🔥</span>
+                  )}
                 </div>
+                <div className="text-3xl font-bold text-gray-900">{userStats.current_streak}</div>
+                <div className="text-sm text-gray-600 font-medium mt-1">Day Streak</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100 relative overflow-hidden"
+                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-yellow-100 to-transparent rounded-full -mr-12 -mt-12 opacity-50" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-3">
-                    <Trophy className="w-6 h-6 text-yellow-600" />
-                    <span className="text-sm font-bold text-gray-700 bg-yellow-50 px-2 py-0.5 rounded-full">
-                      #{userStats.rank}
-                    </span>
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">{userStats.xp_earned_today}</div>
-                  <div className="text-sm text-gray-600 font-medium mt-1">XP Today</div>
+                <div className="flex items-center justify-between mb-3">
+                  <Trophy className="w-6 h-6 text-yellow-600" />
+                  <span className="text-sm font-bold text-gray-700 bg-yellow-50 px-2 py-0.5 rounded-full">
+                    #{userStats.rank}
+                  </span>
                 </div>
+                <div className="text-3xl font-bold text-gray-900">{userStats.xp_earned_today}</div>
+                <div className="text-sm text-gray-600 font-medium mt-1">XP Today</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100 relative overflow-hidden"
+                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-100 to-transparent rounded-full -mr-12 -mt-12 opacity-50" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-3">
-                    <Target className="w-6 h-6 text-blue-600" />
-                    <span className="text-xs text-gray-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full">
-                      {userStats.best_category}
-                    </span>
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">{userStats.total_predictions}</div>
-                  <div className="text-sm text-gray-600 font-medium mt-1">Predictions</div>
+                <div className="flex items-center justify-between mb-3">
+                  <Target className="w-6 h-6 text-blue-600" />
+                  <span className="text-xs text-gray-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full">
+                    {userStats.best_category}
+                  </span>
                 </div>
+                <div className="text-3xl font-bold text-gray-900">{userStats.total_predictions}</div>
+                <div className="text-sm text-gray-600 font-medium mt-1">Predictions</div>
               </motion.div>
             </div>
 
