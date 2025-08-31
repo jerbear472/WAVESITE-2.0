@@ -36,6 +36,7 @@ interface TrendCardProps {
     dead_votes?: number;
     wave_score?: number;
     is_validated?: boolean;
+    status?: 'submitted' | 'approved' | 'rejected';
   };
   userVote?: string;
   onVote: (trendId: string, voteType: string) => void;
@@ -127,7 +128,21 @@ export default function PredictionTrendCard({
     return { emoji: '❄️', color: 'text-gray-400', label: 'Cold' };
   };
 
+  const getStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'submitted':
+        return { label: 'Submitted', bgColor: 'bg-blue-100', textColor: 'text-blue-700', icon: '📝' };
+      case 'approved':
+        return { label: 'Validated', bgColor: 'bg-green-100', textColor: 'text-green-700', icon: '✓' };
+      case 'rejected':
+        return { label: 'Rejected', bgColor: 'bg-red-100', textColor: 'text-red-700', icon: '✗' };
+      default:
+        return null;
+    }
+  };
+
   const heat = getHeatIndicator(trend.heat_score || 50);
+  const statusBadge = getStatusBadge(trend.status);
 
   return (
     <motion.div
@@ -144,9 +159,10 @@ export default function PredictionTrendCard({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-gray-900">{trend.title}</span>
-                {trend.is_validated && (
-                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                    ✓ Verified
+                {statusBadge && (
+                  <span className={`px-2 py-0.5 ${statusBadge.bgColor} ${statusBadge.textColor} text-xs font-bold rounded-full flex items-center gap-1`}>
+                    <span>{statusBadge.icon}</span>
+                    <span>{statusBadge.label}</span>
                   </span>
                 )}
               </div>

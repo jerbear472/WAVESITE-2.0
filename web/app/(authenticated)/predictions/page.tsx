@@ -530,6 +530,9 @@ export default function EnhancedPredictionsPage() {
   const [followerActivity, setFollowerActivity] = useState<FollowerActivity[]>([]);
   const [showActivityPanel, setShowActivityPanel] = useState(false);
   
+  // Top Predictors
+  const [topPredictors, setTopPredictors] = useState<any[]>([]);
+  
   // Voting state
   const [votingTrends, setVotingTrends] = useState<Set<string>>(new Set());
   
@@ -550,6 +553,7 @@ export default function EnhancedPredictionsPage() {
       loadUserStats();
       loadFollowerActivity();
       loadUserVotes(); // Load user's existing votes
+      loadTopPredictors();
     }
   }, [user, filterType, timeFilter, categoryFilter, sortType]);
 
@@ -756,6 +760,84 @@ export default function EnhancedPredictionsPage() {
     }
   };
 
+  const loadTopPredictors = async () => {
+    if (!user) return;
+    
+    try {
+      // Get all users who have made predictions
+      const { data: predictors, error } = await supabase
+        .from('user_predictions')
+        .select(`
+          user_id,
+          profiles!user_id (
+            id,
+            username,
+            avatar_url
+          )
+        `)
+        .not('profiles', 'is', null);
+      
+      if (error) {
+        console.error('Error loading top predictors:', error);
+        setTopPredictors([]);
+        return;
+      }
+      
+      // Get unique users
+      const uniqueUsers = new Map();
+      predictors?.forEach(p => {
+        if (p.profiles && p.profiles.username) {
+          uniqueUsers.set(p.user_id, p.profiles);
+        }
+      });
+      
+      // Calculate accuracy for each user (for now, using random data)
+      // In a real app, you'd calculate this based on actual prediction outcomes
+      const predictorsList = Array.from(uniqueUsers.values()).map((user, index) => {
+        // Mock accuracy calculation - replace with real logic when prediction outcomes are tracked
+        const mockAccuracy = Math.floor(Math.random() * 30) + 50; // 50-80% accuracy
+        const mockTrend = Math.random() > 0.5 ? `+${Math.floor(Math.random() * 15)}` : `-${Math.floor(Math.random() * 5)}`;
+        
+        return {
+          id: user.id,
+          username: user.username || 'Anonymous',
+          avatar_url: user.avatar_url,
+          accuracy: mockAccuracy,
+          trend: mockTrend,
+          rank: index + 1
+        };
+      });
+      
+      // Sort by accuracy and take top 5
+      predictorsList.sort((a, b) => b.accuracy - a.accuracy);
+      
+      // Add rank badges
+      const topPredictorsWithBadges = predictorsList.slice(0, 5).map((p, index) => ({
+        ...p,
+        rank: index + 1,
+        badge: index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '⭐'
+      }));
+      
+      // If current user is not in top 5, add them at the end
+      const currentUserInTop = topPredictorsWithBadges.find(p => p.id === user.id);
+      if (!currentUserInTop && predictorsList.length > 0) {
+        const currentUserData = predictorsList.find(p => p.id === user.id);
+        if (currentUserData) {
+          topPredictorsWithBadges.push({
+            ...currentUserData,
+            badge: '⭐',
+            isCurrentUser: true
+          });
+        }
+      }
+      
+      setTopPredictors(topPredictorsWithBadges.slice(0, 4)); // Show max 4 predictors
+    } catch (error) {
+      console.error('Error in loadTopPredictors:', error);
+      setTopPredictors([]);
+    }
+  };
+
   const loadTrends = async () => {
     try {
       setLoading(true);
@@ -766,8 +848,13 @@ export default function EnhancedPredictionsPage() {
       // Rejected trends are NOT shown on predictions page
       const { data: realTrends, error } = await supabase
         .from('trend_submissions')
-        .select('*')
-        .in('status', ['submitted', 'validating', 'approved'])  // Removed 'validated' - not a valid enum
+        .select(`
+          *,
+          profiles:spotter_id (
+            username
+          )
+        `)
+        .in('status', ['submitted', 'approved'])  // Only show submitted and approved trends
         .order('created_at', { ascending: false })
         .limit(50);  // Load more trends
       
@@ -825,7 +912,7 @@ export default function EnhancedPredictionsPage() {
           creator_handle: trend.creator_handle,
           submitted_at: trend.created_at,
           spotter_id: trend.spotter_id,
-          spotter_username: trend.spotter_username || 'Anonymous',
+          spotter_username: trend.profiles?.username || trend.spotter_username || 'Anonymous',
           
           // Engagement metrics (with defaults)
           likes_count: trend.likes_count || 0,
@@ -1621,19 +1708,15 @@ export default function EnhancedPredictionsPage() {
                 </span>
               </h3>
                 <div className="space-y-2">
-                  {[
-                    { username: 'TrendMaster', accuracy: 78, rank: 1, trend: '+12', badge: '🏆' },
-                    { username: 'ViralScout', accuracy: 72, rank: 2, trend: '+5', badge: '🥈' },
-                    { username: 'CultureWave', accuracy: 69, rank: 3, trend: '+3', badge: '🥉' },
-                    { username: 'You', accuracy: 66, rank: 23, trend: '+8', badge: '⭐' },
-                  ].map((predictor, index) => (
+                  {topPredictors.length > 0 ? (
+                    topPredictors.map((predictor, index) => (
                     <motion.div 
                       key={predictor.username}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                       className={`flex items-center justify-between p-3 rounded-lg transition-all hover:scale-105 ${
-                        predictor.username === 'You' 
+                        predictor.isCurrentUser 
                           ? 'bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200' 
                           : predictor.rank <= 3 
                           ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200'
@@ -1650,9 +1733,9 @@ export default function EnhancedPredictionsPage() {
                               #{predictor.rank}
                             </span>
                             <span className={`text-sm font-medium ${
-                              predictor.username === 'You' ? 'text-blue-700' : 'text-gray-900'
+                              predictor.isCurrentUser ? 'text-blue-700' : 'text-gray-900'
                             }`}>
-                              {predictor.username}
+                              {predictor.isCurrentUser ? 'You' : predictor.username}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-xs">
@@ -1668,7 +1751,14 @@ export default function EnhancedPredictionsPage() {
                         <div className="text-xs text-gray-500">accuracy</div>
                       </div>
                     </motion.div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Trophy className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">No predictors yet</p>
+                      <p className="text-xs mt-1">Be the first to make predictions!</p>
+                    </div>
+                  )}
                 </div>
                 <motion.button 
                   whileHover={{ scale: 1.02 }}

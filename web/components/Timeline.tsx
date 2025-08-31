@@ -25,7 +25,7 @@ interface TimelineItem {
   title: string;
   description?: string;
   category: string;
-  status: 'submitted' | 'validating' | 'approved' | 'rejected' | 'viral';
+  status: 'submitted' | 'approved' | 'rejected';
   thumbnail?: string;
   url?: string;
   creator?: {
@@ -84,9 +84,7 @@ export default function Timeline({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved': return 'from-green-500 to-emerald-600';
-      case 'viral': return 'from-purple-500 to-pink-600';
       case 'rejected': return 'from-red-500 to-rose-600';
-      case 'validating': return 'from-yellow-500 to-amber-600';
       default: return 'from-blue-500 to-indigo-600';
     }
   };
@@ -94,9 +92,7 @@ export default function Timeline({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved': return <Sparkles className="w-4 h-4" />;
-      case 'viral': return <Zap className="w-4 h-4" />;
       case 'rejected': return <Clock className="w-4 h-4" />;
-      case 'validating': return <Eye className="w-4 h-4" />;
       default: return <TrendingUp className="w-4 h-4" />;
     }
   };

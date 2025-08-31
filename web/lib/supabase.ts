@@ -45,7 +45,7 @@ export interface TrendSubmission {
   evidence?: any;
   virality_prediction: number;
   predicted_peak_date?: string;
-  status: 'submitted' | 'validating' | 'approved' | 'rejected' | 'viral';
+  status: 'submitted' | 'approved' | 'rejected';
   quality_score: number;
   validation_count: number;
   bounty_amount: number;
