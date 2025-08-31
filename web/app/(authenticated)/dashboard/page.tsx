@@ -9,6 +9,7 @@ import PastTrendsTimeline from '@/components/PastTrendsTimeline';
 import XPActivitySidebar from '@/components/XPActivitySidebar';
 import PendingValidations from '@/components/PendingValidations';
 import StreakDisplay from '@/components/StreakDisplay';
+import QuickStartGuide, { MiniQuickStart } from '@/components/QuickStartGuide';
 import { motion } from 'framer-motion';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { XP_LEVELS, calculateLevelProgress, getLevelTitle, getLevelByXP } from '@/lib/xpLevels';
@@ -62,6 +63,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showAllLevels, setShowAllLevels] = useState(false);
+  const [showQuickStart, setShowQuickStart] = useState(false);
 
   // Use navigation refresh hook
   useNavigationRefresh(() => {
@@ -73,6 +75,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       loadDashboardData();
+      
+      // Check if user is new (should see quick start)
+      const hasSeenGuide = localStorage.getItem('hasSeenQuickStart');
+      if (!hasSeenGuide && stats.trends_submitted === 0) {
+        setShowQuickStart(true);
+      }
     }
   }, [user]);
 
@@ -168,6 +176,11 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Show mini quick start for users who haven't submitted yet */}
+        {stats.trends_submitted === 0 && !showQuickStart && (
+          <MiniQuickStart />
+        )}
+        
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -474,6 +487,13 @@ export default function Dashboard() {
             />
           </div>
         </div>
+      )}
+
+      {/* Quick Start Guide Modal for new users */}
+      {showQuickStart && (
+        <QuickStartGuide 
+          onDismiss={() => setShowQuickStart(false)}
+        />
       )}
     </div>
   );
