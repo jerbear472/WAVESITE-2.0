@@ -19,6 +19,8 @@ import {
   Zap,
   Clock,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Award,
   Sparkles,
   Users,
@@ -59,6 +61,7 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [showAllLevels, setShowAllLevels] = useState(false);
 
   // Use navigation refresh hook
   useNavigationRefresh(() => {
@@ -251,6 +254,136 @@ export default function Dashboard() {
           {/* Sidebar - XP Activity (1/3 width) */}
           <div className="space-y-6">
             <XPActivitySidebar />
+            
+            {/* Level Progression */}
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Your Progress</h3>
+                <Link
+                  href="/leaderboard"
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  Leaderboard
+                  <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Current Level Display */}
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl flex items-center justify-center">
+                    <span className="text-2xl">{XP_LEVELS.find(l => l.level === stats.current_level)?.emoji || '👁️'}</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-gray-900">{stats.total_xp.toLocaleString()} XP</h4>
+                    <p className="text-sm text-gray-600">Level {stats.current_level}: {stats.level_title}</p>
+                    <p className="text-xs text-gray-500">{XP_LEVELS.find(l => l.level === stats.current_level)?.benefit}</p>
+                  </div>
+                </div>
+                
+                {/* Current Level Progress */}
+                {stats.current_level < 15 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Progress to {XP_LEVELS.find(l => l.level === stats.current_level + 1)?.title}</span>
+                      <span className="text-gray-900 font-medium">{levelProgress.xpToNext.toLocaleString()} XP to go</span>
+                    </div>
+                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${levelProgress.percentage}%` }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Toggle All Levels View */}
+                <button
+                  onClick={() => setShowAllLevels(!showAllLevels)}
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium mt-4"
+                >
+                  {showAllLevels ? 'Hide' : 'View'} All 15 Levels
+                  {showAllLevels ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                
+                {/* All Levels Display */}
+                {showAllLevels && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 space-y-2 max-h-80 overflow-y-auto border-t border-gray-200 pt-4"
+                  >
+                    {XP_LEVELS.map((level) => {
+                      const isCompleted = stats.current_level > level.level;
+                      const isCurrent = stats.current_level === level.level;
+                      const progress = isCurrent ? levelProgress.percentage : (isCompleted ? 100 : 0);
+                      
+                      return (
+                        <div
+                          key={level.level}
+                          className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                            isCurrent 
+                              ? 'bg-blue-50 border border-blue-200' 
+                              : isCompleted 
+                              ? 'bg-green-50 border border-green-200'
+                              : 'bg-gray-50 border border-gray-200'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            isCurrent
+                              ? 'bg-blue-100'
+                              : isCompleted
+                              ? 'bg-green-100'
+                              : 'bg-gray-100'
+                          }`}>
+                            <span className="text-lg">{level.emoji}</span>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className={`text-sm font-medium ${
+                                isCurrent ? 'text-blue-900' : isCompleted ? 'text-green-900' : 'text-gray-700'
+                              }`}>
+                                Level {level.level}: {level.title}
+                              </p>
+                              {isCompleted && <CheckCircle className="w-4 h-4 text-green-500" />}
+                              {isCurrent && <Zap className="w-4 h-4 text-blue-500" />}
+                            </div>
+                            <p className="text-xs text-gray-600 mb-1">{level.benefit}</p>
+                            
+                            {/* Progress bar for current level */}
+                            {isCurrent && progress < 100 && (
+                              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div 
+                                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-1.5 rounded-full transition-all duration-500"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="text-right">
+                            <p className={`text-xs font-medium ${
+                              isCurrent ? 'text-blue-700' : isCompleted ? 'text-green-700' : 'text-gray-500'
+                            }`}>
+                              {level.threshold.toLocaleString()} XP
+                            </p>
+                            {isCurrent && levelProgress.xpToNext > 0 && (
+                              <p className="text-xs text-gray-500">
+                                {levelProgress.xpToNext} to go
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </div>
+            </div>
             
             {/* Quick Actions */}
             <div className="bg-white rounded-2xl shadow-sm p-6">
