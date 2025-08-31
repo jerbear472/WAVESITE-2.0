@@ -221,18 +221,7 @@ export default function OptimizedDashboard() {
           <p className="text-sm text-gray-600 mt-2">Find and submit the next viral trend</p>
         </Link>
 
-        <Link
-          href="/validate"
-          prefetch
-          className="group bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <CheckCircle className="w-8 h-8 text-green-500 group-hover:scale-110 transition-transform" />
-            <span className="text-sm text-gray-500">Earn XP</span>
-          </div>
-          <h3 className="font-bold text-gray-900">Validate Trends</h3>
-          <p className="text-sm text-gray-600 mt-2">Review and validate community submissions</p>
-        </Link>
+        {/* Validate link removed - still accessible at /validate for admins */}
 
         <Link
           href="/predictions"

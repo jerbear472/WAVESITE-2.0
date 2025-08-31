@@ -163,7 +163,7 @@ export default function SPANavigation() {
     { href: '/spot', label: 'Spot', icon: '👁️' },
     { href: '/predictions', label: 'Predictions', icon: '🔮' },
     { href: '/timeline', label: 'My Timeline', icon: '📈' },
-    { href: '/validate', label: 'Validate', icon: '✅' },
+    // Hidden: { href: '/validate', label: 'Validate', icon: '✅' },
     { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
     { href: '/profile', label: 'Profile', icon: '👤' },
   ];

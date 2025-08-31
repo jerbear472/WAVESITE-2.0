@@ -103,7 +103,7 @@ export default function OptimizedNavigation() {
     { href: '/spot', label: 'Spot', icon: '👁️', prefetch: true },
     { href: '/predictions', label: 'Predictions', icon: '🔮', prefetch: true },
     { href: '/timeline', label: 'My Timeline', icon: '📈', prefetch: true },
-    { href: '/validate', label: 'Validate', icon: '✅', prefetch: true },
+    // Hidden: { href: '/validate', label: 'Validate', icon: '✅', prefetch: true },
     { href: '/leaderboard', label: 'Leaderboard', icon: '🏆', prefetch: true },
     { href: '/profile', label: 'Profile', icon: '👤', prefetch: false },
   ];
