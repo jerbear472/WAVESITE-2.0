@@ -724,23 +724,27 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       const extractedData = await MetadataExtractor.extractFromUrl(url);
       const platform = detectPlatform(url);
       
-      // Also try to get thumbnail via our API
+      // Also try to get thumbnail via our improved API
       let thumbnailUrl = extractedData.thumbnail_url || '';
-      if (!thumbnailUrl) {
-        try {
-          const response = await fetch('/api/extract-thumbnail', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            thumbnailUrl = data.thumbnail_url || '';
+      let additionalMetadata: any = {};
+      
+      try {
+        const response = await fetch('/api/extract-thumbnail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            thumbnailUrl = data.thumbnail_url || thumbnailUrl;
+            additionalMetadata = data.metadata || {};
+            console.log('Thumbnail extracted successfully:', thumbnailUrl);
           }
-        } catch (err) {
-          console.log('Could not fetch thumbnail during metadata extraction:', err);
         }
+      } catch (err) {
+        console.log('Could not fetch thumbnail during metadata extraction:', err);
       }
       
       // Update form data with extracted metadata

@@ -29,7 +29,6 @@ interface TrendCardProps {
     likes_count: number;
     comments_count: number;
     predictions_count: number;
-    heat_score: number;
     user_has_liked: boolean;
     user_has_predicted: boolean;
     wave_votes?: number;
@@ -122,14 +121,6 @@ export default function PredictionTrendCard({
     return `${days}d ago`;
   };
 
-  const getHeatIndicator = (score: number) => {
-    if (score > 80) return { emoji: '🌋', color: 'text-red-500', label: 'Erupting' };
-    if (score > 60) return { emoji: '🔥', color: 'text-orange-500', label: 'On Fire' };
-    if (score > 40) return { emoji: '📈', color: 'text-yellow-500', label: 'Rising' };
-    if (score > 20) return { emoji: '🌡️', color: 'text-blue-500', label: 'Warming' };
-    return { emoji: '❄️', color: 'text-gray-400', label: 'Cold' };
-  };
-
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'submitted':
@@ -143,7 +134,6 @@ export default function PredictionTrendCard({
     }
   };
 
-  const heat = getHeatIndicator(trend.heat_score || 50);
   const statusBadge = getStatusBadge(trend.status);
 
   return (
@@ -153,7 +143,7 @@ export default function PredictionTrendCard({
       transition={{ delay: index * 0.05 }}
       className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
     >
-      {/* Card Header with Platform & Heat */}
+      {/* Card Header with Platform & Status */}
       <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -161,12 +151,6 @@ export default function PredictionTrendCard({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-gray-900">{trend.title}</span>
-                {statusBadge && (
-                  <span className={`px-2 py-0.5 ${statusBadge.bgColor} ${statusBadge.textColor} text-xs font-bold rounded-full flex items-center gap-1`}>
-                    <span>{statusBadge.icon}</span>
-                    <span>{statusBadge.label}</span>
-                  </span>
-                )}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <User className="w-3 h-3" />
@@ -178,16 +162,15 @@ export default function PredictionTrendCard({
             </div>
           </div>
           
-          {/* Heat Indicator */}
-          <div className="flex items-center gap-2">
-            <div className={`flex items-center gap-1 ${heat.color}`}>
-              <span className="text-2xl">{heat.emoji}</span>
-              <div className="text-right">
-                <div className="text-xs font-bold">{heat.label}</div>
-                <div className="text-xs opacity-75">{trend.heat_score}°</div>
-              </div>
+          {/* Status Badge */}
+          {statusBadge && (
+            <div className="flex items-center">
+              <span className={`px-3 py-1.5 ${statusBadge.bgColor} ${statusBadge.textColor} text-sm font-bold rounded-full flex items-center gap-1`}>
+                <span>{statusBadge.icon}</span>
+                <span>{statusBadge.label}</span>
+              </span>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
