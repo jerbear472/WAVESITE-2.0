@@ -105,7 +105,7 @@ class SubmissionQueue {
           spotter_id: submission.userId,
           title: submission.data.title || 'Untitled Trend',
           description: submission.data.description || submission.data.title || 'No description',
-          category: submission.data.category || 'lifestyle',
+          category: submission.data.category || 'entertainment',
           platform: submission.data.platform || 'unknown',
           post_url: submission.data.url,
           status: 'submitted',

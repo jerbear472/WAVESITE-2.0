@@ -36,6 +36,7 @@ import TrendPredictionChartV7 from '@/components/TrendPredictionChartV7';
 import PredictionTrendCard from '@/components/PredictionTrendCard';
 import TrendAnalyzer from '@/components/TrendAnalyzer';
 import { addDays } from 'date-fns';
+import { cleanTrendData } from '@/lib/cleanTrendData';
 
 // Custom Vote Button Components - Updated to handle vote changes properly
 const VoteSideButton = ({ type, trendId, count, icon, label, value, gradient, userVote, onVote, allCounts, setAllCounts }: any) => {
@@ -950,7 +951,9 @@ export default function EnhancedPredictionsPage() {
           comments: []
         }));
         
-        setTrends(formattedTrends);
+        // Clean trend data to remove "0" values
+        const cleanedTrends = formattedTrends.map(trend => cleanTrendData(trend));
+        setTrends(cleanedTrends);
         setLoading(false);
         return;
       }

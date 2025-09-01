@@ -16,6 +16,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticatedSupabase';
 import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
+import { cleanTrendData } from '@/lib/cleanTrendData';
 // Removed formatCurrency import - using XP display instead
 import { 
   TrendingUp as TrendingUpIcon,
@@ -156,7 +157,7 @@ export default function Timeline() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h2 className="text-2xl font-bold mb-2">
-                  {trend.evidence?.title || trend.description || 'Trend Analysis'}
+                  {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description : null) || 'Trend Analysis'}
                 </h2>
                 <div className="flex items-center gap-2 text-sm opacity-90">
                   <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -187,7 +188,7 @@ export default function Timeline() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">
-                    {trend.evidence?.title || trend.description || 'Trend Analysis'}
+                    {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description : null) || 'Trend Analysis'}
                   </h2>
                   <div className="flex items-center gap-2 text-sm opacity-90">
                     <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -607,20 +608,24 @@ export default function Timeline() {
     if (user) {
       fetchUserTrends();
       
-      // Set up real-time subscription for trends, validations, and XP
+      // Set up real-time subscription for ALL trends, validations, and XP
       const subscription = supabase
-        .channel('user-trends-xp-updates')
+        .channel('all-trends-updates')
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
-            table: 'trend_submissions',
-            filter: `spotter_id=eq.${user.id}`
+            table: 'trend_submissions'
+            // No filter - listen for all trends
           },
           (payload) => {
             console.log('Trend update:', payload);
-            fetchUserTrends();
+            // Only refresh if it's a submitted or approved trend
+            const newStatus = (payload.new as any)?.status;
+            if (newStatus === 'submitted' || newStatus === 'approved') {
+              fetchUserTrends();
+            }
           }
         )
         .on(
@@ -737,8 +742,9 @@ export default function Timeline() {
         });
       }
       
-      // Process trends to set validation/rejection status and filter rejected ones
-      const processedTrends = (data || []).map(trend => ({
+      // Clean and process trends to remove "0" values and set validation status
+      const cleanedTrends = (data || []).map(trend => cleanTrendData(trend));
+      const processedTrends = cleanedTrends.map(trend => ({
         ...trend,
         is_validated: (trend.wave_votes ?? 0) >= 3,
         is_rejected: (trend.dead_votes ?? 0) >= 3
@@ -1121,9 +1127,9 @@ export default function Timeline() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Trend Timeline
+                  Global Trend Timeline
                 </h1>
-                <p className="text-gray-600 mt-1">Track your spotted trends and cultural anthropologist progress</p>
+                <p className="text-gray-600 mt-1">Discover all trends spotted by the WaveSight community</p>
               </div>
               
               <div className="flex items-center gap-3">

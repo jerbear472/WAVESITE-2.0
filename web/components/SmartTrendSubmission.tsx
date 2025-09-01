@@ -851,6 +851,10 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
           setError('Please add a quality description (at least 10 characters)');
           return false;
         }
+        if (!formData.category) {
+          setError('Please select a category');
+          return false;
+        }
         break;
       case 'velocity':
         if (!formData.trendVelocity) {
@@ -1394,6 +1398,35 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                       <CatchinessIndicators title={formData.title} />
                     </div>
                   )}
+                </div>
+
+                {/* Category Selection */}
+                <div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="">Select a category...</option>
+                    <option value="meme">😂 Meme/Humor</option>
+                    <option value="fashion">👗 Fashion/Beauty</option>
+                    <option value="food">🍔 Food/Drink</option>
+                    <option value="music">🎵 Music/Dance</option>
+                    <option value="tech">💻 Tech/Gaming</option>
+                    <option value="sports">⚽ Sports/Fitness</option>
+                    <option value="entertainment">🎬 Entertainment</option>
+                    <option value="art">🎨 Art/Design</option>
+                    <option value="travel">✈️ Travel</option>
+                    <option value="education">📚 Education</option>
+                    <option value="business">💼 Business</option>
+                    <option value="health">💪 Health/Wellness</option>
+                    <option value="pets">🐾 Pets/Animals</option>
+                    <option value="diy">🔨 DIY/Crafts</option>
+                    <option value="relationships">❤️ Relationships</option>
+                  </select>
                 </div>
 
                 {/* Platform indicator */}
