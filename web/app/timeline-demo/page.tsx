@@ -70,7 +70,7 @@ const sampleTimelineData = [
     title: 'Vertical Split-Screen Storytelling',
     description: 'Creators using split screens to tell parallel stories simultaneously',
     category: 'creator_technique',
-    status: 'validating' as const,
+    status: 'submitted' as const,
     thumbnail: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=400&h=300&fit=crop',
     url: 'https://instagram.com',
     creator: {
