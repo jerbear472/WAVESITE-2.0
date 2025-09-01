@@ -1109,35 +1109,44 @@ export default function EnhancedPredictionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-sky-50">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="bg-white/90 backdrop-blur-md border-b border-blue-100 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                The Arena
-              </h1>
-              <p className="text-sm text-gray-600">Predict the next viral wave</p>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-sky-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-3xl font-black text-gray-900">
+                  Predictions Arena
+                </h1>
+              </div>
+              <p className="text-sm text-blue-600 font-medium ml-13">Track and predict the next viral wave</p>
             </div>
             
             <div className="flex items-center gap-3">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setShowActivityPanel(!showActivityPanel)}
-                className="relative p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="relative p-2.5 bg-blue-50 rounded-xl hover:bg-blue-100 transition-all border border-blue-200"
               >
-                <Activity className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              </button>
+                <Activity className="w-5 h-5 text-blue-600" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" />
+              </motion.button>
               
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-sky-500 text-white rounded-xl hover:shadow-lg transition-all font-medium"
               >
                 <Filter className="w-4 h-4" />
-                <span className="text-sm font-medium">Filters</span>
+                <span className="text-sm">Filters</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-              </button>
+              </motion.button>
             </div>
           </div>
 
@@ -1159,8 +1168,8 @@ export default function EnhancedPredictionsPage() {
                       onClick={() => setSortType(sort)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         sortType === sort
-                          ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-blue-500 to-sky-500 text-white shadow-md'
+                          : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
                       }`}
                     >
                       {sort === 'hot' && '🔥 Hot'}
@@ -1181,8 +1190,8 @@ export default function EnhancedPredictionsPage() {
                       onClick={() => setTimeFilter(time)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         timeFilter === time
-                          ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-blue-500 to-sky-500 text-white shadow-md'
+                          : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
                       }`}
                     >
                       {time === 'all' && 'All Time'}
@@ -1203,8 +1212,8 @@ export default function EnhancedPredictionsPage() {
                       onClick={() => setFilterType(type)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         filterType === type
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-blue-500 to-sky-500 text-white shadow-md'
+                          : 'bg-white border border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
                       }`}
                     >
                       {type === 'all' && 'All'}
@@ -1230,66 +1239,82 @@ export default function EnhancedPredictionsPage() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
+                whileHover={{ y: -2 }}
+                className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all border border-blue-100 relative overflow-hidden"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <Brain className="w-6 h-6 text-purple-600" />
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-100 to-transparent rounded-bl-full opacity-50" />
+                <div className="flex items-center justify-between mb-3 relative">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-sky-500 rounded-xl flex items-center justify-center shadow-md">
+                    <Brain className="w-5 h-5 text-white" />
+                  </div>
                   {userStats.rank_change > 0 && (
                     <span className="text-xs text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full">
                       +{userStats.rank_change}
                     </span>
                   )}
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{userStats.accuracy_rate}%</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">Accuracy</div>
+                <div className="text-3xl font-black bg-gradient-to-r from-blue-600 to-sky-600 bg-clip-text text-transparent">{userStats.accuracy_rate}%</div>
+                <div className="text-sm text-blue-600 font-semibold mt-1">Accuracy Rate</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
+                whileHover={{ y: -2 }}
+                className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all border border-blue-100 relative overflow-hidden"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <Flame className="w-6 h-6 text-orange-600" />
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-orange-100 to-transparent rounded-bl-full opacity-50" />
+                <div className="flex items-center justify-between mb-3 relative">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-md">
+                    <Flame className="w-5 h-5 text-white" />
+                  </div>
                   {userStats.current_streak > 0 && (
                     <span className="text-2xl">🔥</span>
                   )}
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{userStats.current_streak}</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">Day Streak</div>
+                <div className="text-3xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">{userStats.current_streak}</div>
+                <div className="text-sm text-orange-600 font-semibold mt-1">Day Streak</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
+                whileHover={{ y: -2 }}
+                className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all border border-blue-100 relative overflow-hidden"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <Trophy className="w-6 h-6 text-yellow-600" />
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-100 to-transparent rounded-bl-full opacity-50" />
+                <div className="flex items-center justify-between mb-3 relative">
+                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-xl flex items-center justify-center shadow-md">
+                    <Trophy className="w-5 h-5 text-white" />
+                  </div>
                   <span className="text-sm font-bold text-gray-700 bg-yellow-50 px-2 py-0.5 rounded-full">
                     #{userStats.rank}
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{userStats.xp_earned_today}</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">XP Today</div>
+                <div className="text-3xl font-black bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">{userStats.xp_earned_today}</div>
+                <div className="text-sm text-yellow-600 font-semibold mt-1">XP Today</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
+                whileHover={{ y: -2 }}
+                className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all border border-blue-100 relative overflow-hidden"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <Target className="w-6 h-6 text-blue-600" />
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-100 to-transparent rounded-bl-full opacity-50" />
+                <div className="flex items-center justify-between mb-3 relative">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-md">
+                    <Target className="w-5 h-5 text-white" />
+                  </div>
                   <span className="text-xs text-gray-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full">
                     {userStats.best_category}
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{userStats.total_predictions}</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">Predictions</div>
+                <div className="text-3xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{userStats.total_predictions}</div>
+                <div className="text-sm text-blue-600 font-semibold mt-1">Predictions</div>
               </motion.div>
             </div>
 
@@ -1681,16 +1706,18 @@ export default function EnhancedPredictionsPage() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-4"
+                  className="bg-white rounded-2xl shadow-xl border border-blue-100 p-5"
                 >
-                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Activity className="w-4 h-4" />
-                    Follower Activity
+                  <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-sky-500 rounded-lg flex items-center justify-center">
+                      <Activity className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="bg-gradient-to-r from-blue-600 to-sky-600 bg-clip-text text-transparent">Recent Activity</span>
                   </h3>
                   <div className="space-y-3">
                     {followerActivity.map((activity) => (
                       <div key={activity.id} className="flex items-start gap-3 text-sm">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-400" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-sky-500 shadow-md" />
                         <div className="flex-1">
                           <div className="text-gray-900">
                             <span className="font-medium">{activity.user.username}</span>
@@ -1709,10 +1736,14 @@ export default function EnhancedPredictionsPage() {
             </AnimatePresence>
 
             {/* Top Predictors Leaderboard */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-5">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-500" />
-                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <div className="bg-gradient-to-br from-blue-500 to-sky-600 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full" />
+              <h3 className="font-black text-xl mb-4 flex items-center gap-3 relative">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-yellow-300" />
+                </div>
+                <span>
                   Top Predictors
                 </span>
               </h3>
@@ -1724,12 +1755,12 @@ export default function EnhancedPredictionsPage() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className={`flex items-center justify-between p-3 rounded-lg transition-all hover:scale-105 ${
+                      className={`flex items-center justify-between p-3 rounded-xl transition-all hover:scale-105 ${
                         predictor.isCurrentUser 
-                          ? 'bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200' 
+                          ? 'bg-white/30 backdrop-blur border border-white/50' 
                           : predictor.rank <= 3 
-                          ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200'
-                          : 'bg-white/50 border border-gray-100'
+                          ? 'bg-white/20 backdrop-blur border border-white/30'
+                          : 'bg-white/10 backdrop-blur border border-white/20'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -1737,42 +1768,42 @@ export default function EnhancedPredictionsPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className={`text-sm font-bold ${
-                              predictor.rank <= 3 ? 'text-orange-600' : 'text-gray-700'
+                              predictor.rank <= 3 ? 'text-yellow-300' : 'text-white/90'
                             }`}>
                               #{predictor.rank}
                             </span>
                             <span className={`text-sm font-medium ${
-                              predictor.isCurrentUser ? 'text-blue-700' : 'text-gray-900'
+                              predictor.isCurrentUser ? 'text-yellow-300' : 'text-white'
                             }`}>
                               {predictor.isCurrentUser ? 'You' : predictor.username}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-xs">
-                            <span className="text-green-600 font-medium">{predictor.trend}</span>
-                            <span className="text-gray-500">vs yesterday</span>
+                            <span className="text-green-300 font-medium">{predictor.trend}</span>
+                            <span className="text-white/70">vs yesterday</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        <div className="text-lg font-black text-white">
                           {predictor.accuracy}%
                         </div>
-                        <div className="text-xs text-gray-500">accuracy</div>
+                        <div className="text-xs text-white/70">accuracy</div>
                       </div>
                     </motion.div>
                   ))
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Trophy className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                    <div className="text-center py-8 text-white/70">
+                      <Trophy className="w-12 h-12 mx-auto mb-2 text-white/30" />
                       <p className="text-sm">No predictors yet</p>
-                      <p className="text-xs mt-1">Be the first to make predictions!</p>
+                      <p className="text-xs mt-1 text-white/50">Be the first to make predictions!</p>
                     </div>
                   )}
                 </div>
                 <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full mt-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                  className="w-full mt-4 py-3 bg-white/20 backdrop-blur text-white rounded-xl font-bold hover:bg-white/30 transition-all border border-white/30 relative"
                 >
                   View Full Leaderboard →
                 </motion.button>

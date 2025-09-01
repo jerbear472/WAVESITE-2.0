@@ -40,7 +40,7 @@ export async function submitTrendInstant(
     const cleanData = {
       title: data.title || 'Untitled Trend',
       description: data.description || data.title || 'No description provided',
-      category: getSafeCategory(data.category) || 'lifestyle',
+      category: getSafeCategory(data.category) || 'entertainment',
       platform: data.platform || 'unknown',
       url: data.url || '',
       wave_score: data.wave_score || data.sentiment || 50,

@@ -108,7 +108,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     ];
     
     // Final validation to ensure we use a valid enum value
-    const finalCategory = validCategories.includes(safeCategory) ? safeCategory : 'lifestyle';
+    const finalCategory = validCategories.includes(safeCategory) ? safeCategory : 'entertainment';
     console.log(`📁 Final category: "${finalCategory}"`);
     
     // Prepare submission data - only include essential columns first

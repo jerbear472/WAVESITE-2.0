@@ -6,7 +6,7 @@ export async function submitTrendWrapper(trendData: any) {
     virality_prediction: trendData.virality_prediction,
     quality_score: trendData.quality_score,
     validation_count: trendData.validation_count,
-    category: trendData.category || 'lifestyle',
+    category: trendData.category || 'entertainment',
     status: 'pending',
     // Social media metadata fields with defaults
     screenshot_url: trendData.screenshot_url || null,
