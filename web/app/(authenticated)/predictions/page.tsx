@@ -499,7 +499,7 @@ type CategoryFilter = 'all' | 'Fashion' | 'Technology' | 'Lifestyle' | 'Food' | 
 type SortType = 'hot' | 'top' | 'new' | 'controversial' | 'wave_score';
 
 export default function EnhancedPredictionsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { showXPNotification } = useXPNotification();
   
   const [trends, setTrends] = useState<TrendWithEngagement[]>([]);
@@ -550,14 +550,14 @@ export default function EnhancedPredictionsPage() {
   const [confidence, setConfidence] = useState<'very' | 'somewhat' | 'guess'>('somewhat');
 
   useEffect(() => {
-    if (user) {
+    if (user && !authLoading) {
       loadTrends();
       loadUserStats();
       loadFollowerActivity();
       loadUserVotes(); // Load user's existing votes
       loadTopPredictors();
     }
-  }, [user, filterType, timeFilter, categoryFilter, sortType]);
+  }, [user, authLoading, filterType, timeFilter, categoryFilter, sortType]);
 
   // Load saved votes from localStorage on mount
   useEffect(() => {
@@ -1100,7 +1100,7 @@ export default function EnhancedPredictionsPage() {
     return '📈';
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
