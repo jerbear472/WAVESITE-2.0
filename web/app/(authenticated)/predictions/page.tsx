@@ -1221,16 +1221,16 @@ export default function EnhancedPredictionsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
           {/* Main Content */}
           <div className="xl:col-span-3 space-y-6">
             {/* Metric Tiles - Improved alignment and visual hierarchy */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
+                className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
                 <div className="flex items-center justify-between mb-3">
                   <Brain className="w-6 h-6 text-purple-600" />
@@ -1240,15 +1240,15 @@ export default function EnhancedPredictionsPage() {
                     </span>
                   )}
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{userStats.accuracy_rate}%</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">Accuracy</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900">{userStats.accuracy_rate}%</div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium mt-1">Accuracy</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
+                className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
                 <div className="flex items-center justify-between mb-3">
                   <Flame className="w-6 h-6 text-orange-600" />
@@ -1256,15 +1256,15 @@ export default function EnhancedPredictionsPage() {
                     <span className="text-2xl">🔥</span>
                   )}
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{userStats.current_streak}</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">Day Streak</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900">{userStats.current_streak}</div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium mt-1">Day Streak</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
+                className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
                 <div className="flex items-center justify-between mb-3">
                   <Trophy className="w-6 h-6 text-yellow-600" />
@@ -1272,15 +1272,15 @@ export default function EnhancedPredictionsPage() {
                     #{userStats.rank}
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{userStats.xp_earned_today}</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">XP Today</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900">{userStats.xp_earned_today}</div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium mt-1">XP Today</div>
               </motion.div>
 
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
+                className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
                 <div className="flex items-center justify-between mb-3">
                   <Target className="w-6 h-6 text-blue-600" />
@@ -1288,8 +1288,8 @@ export default function EnhancedPredictionsPage() {
                     {userStats.best_category}
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900">{userStats.total_predictions}</div>
-                <div className="text-sm text-gray-600 font-medium mt-1">Predictions</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900">{userStats.total_predictions}</div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium mt-1">Predictions</div>
               </motion.div>
             </div>
 

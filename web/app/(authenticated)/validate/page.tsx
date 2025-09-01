@@ -673,19 +673,20 @@ export default function ValidatePage() {
             dragElastic={1}
             onDragEnd={(e, { offset, velocity }) => {
               const swipe = Math.abs(offset.x) * velocity.x;
-              if (swipe < -10000) {
+              // Adjusted for better mobile sensitivity
+              if (swipe < -5000 || (offset.x < -100 && velocity.x <= 0)) {
                 handleSwipe('left');
-              } else if (swipe > 10000) {
+              } else if (swipe > 5000 || (offset.x > 100 && velocity.x >= 0)) {
                 handleSwipe('right');
               }
             }}
             className="relative cursor-grab active:cursor-grabbing"
             whileDrag={{ scale: 1.05 }}
           >
-            <div className="h-[650px] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+            <div className="h-[500px] sm:h-[600px] md:h-[650px] bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
               {/* Trend Image/Thumbnail - Optimized height */}
               {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
-                <div className="h-48 bg-gray-100 relative flex-shrink-0">
+                <div className="h-40 sm:h-48 bg-gray-100 relative flex-shrink-0">
                   <img 
                     src={currentTrend.thumbnail_url || currentTrend.screenshot_url}
                     alt={currentTrend.title}
@@ -697,7 +698,7 @@ export default function ValidatePage() {
                   </div>
                 </div>
               ) : (
-                <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+                <div className="h-40 sm:h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
                   <div className="text-center text-white">
                     <div className="text-6xl mb-2">{getPlatformEmoji(currentTrend.platform)}</div>
                     <p className="font-medium">{currentTrend.platform}</p>
@@ -706,7 +707,7 @@ export default function ValidatePage() {
               )}
 
               {/* Trend Content - Redesigned with better spacing */}
-              <div className="flex-1 p-5 space-y-3 overflow-y-auto">
+              <div className="flex-1 p-4 sm:p-5 space-y-3 overflow-y-auto">
                 {/* Title and Category */}
                 <div className="space-y-2">
                   <div className="flex items-start justify-between">

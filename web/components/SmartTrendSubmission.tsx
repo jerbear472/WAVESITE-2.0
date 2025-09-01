@@ -1075,11 +1075,11 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
         )}
       </AnimatePresence>
       
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4 z-50">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50">
         <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-xl sm:rounded-2xl max-w-3xl w-full trend-modal border border-gray-200 shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[80vh] overflow-hidden"
+        className="bg-white rounded-t-2xl sm:rounded-2xl max-w-3xl w-full trend-modal border border-gray-200 shadow-2xl flex flex-col h-[90vh] sm:max-h-[80vh] overflow-hidden"
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 sm:p-5 border-b border-gray-200 flex-shrink-0">
