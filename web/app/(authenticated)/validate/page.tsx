@@ -1,19 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import { useAuth } from '@/contexts/AuthContext';
-import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { cleanTrendData } from '@/lib/cleanTrendData';
 import SimpleVoteDisplay from '@/components/SimpleVoteDisplay';
 import { 
   X, 
   Check, 
   Flame, 
-  Zap, 
+ 
   TrendingUp, 
   Clock,
   Award,
@@ -66,7 +65,6 @@ const formatNumber = (num: number): string => {
 
 export default function ValidatePage() {
   const { user } = useAuth();
-  const { showXPNotification } = useXPNotification();
   const router = useRouter();
   const [currentTrend, setCurrentTrend] = useState<TrendToValidate | null>(null);
   const [trendQueue, setTrendQueue] = useState<TrendToValidate[]>([]);
@@ -76,13 +74,7 @@ export default function ValidatePage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [lastVote, setLastVote] = useState<'valid' | 'invalid' | null>(null);
   const [consensus, setConsensus] = useState<number | null>(null);
-  const [todaysXP, setTodaysXP] = useState(0);
-  const [lastXPEarned, setLastXPEarned] = useState(5);
-  const [showXPAnimation, setShowXPAnimation] = useState(false);
-  const [floatingXP, setFloatingXP] = useState<{ amount: number; id: number } | null>(null);
   const [streakAnimation, setStreakAnimation] = useState<'increase' | 'reset' | null>(null);
-  const xpMotionValue = useMotionValue(0);
-  const xpAnimated = useTransform(xpMotionValue, Math.round);
   const [cardKey, setCardKey] = useState(0);
   // Track locally validated trends to prevent re-showing
   const [localValidatedIds, setLocalValidatedIds] = useState<string[]>([]);
@@ -130,27 +122,8 @@ export default function ValidatePage() {
 
   // Listen for XP events to refresh stats in real-time
   useEffect(() => {
-    const handleXPEarned = (event: CustomEvent) => {
-      if (user) {
-        loadUserStats();
-        // Trigger animation when XP is earned
-        setShowXPAnimation(true);
-        setTimeout(() => setShowXPAnimation(false), 600);
-      }
-    };
-
-    window.addEventListener('xp-earned', handleXPEarned as EventListener);
-    return () => window.removeEventListener('xp-earned', handleXPEarned as EventListener);
+    // Removed XP event listener - validation no longer awards XP
   }, [user]);
-
-  // Animate XP counter when value changes
-  useEffect(() => {
-    const animation = animate(xpMotionValue, todaysXP, {
-      duration: 0.8,
-      ease: "easeOut"
-    });
-    return animation.stop;
-  }, [todaysXP, xpMotionValue]);
 
 
   const loadTrendsToValidate = async () => {
@@ -257,28 +230,6 @@ export default function ValidatePage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const { data: xpTransactions } = await supabase
-        .from('xp_transactions')
-        .select('amount')
-        .eq('user_id', user.id)
-        .gte('created_at', today.toISOString());
-      
-      const dailyXP = xpTransactions?.reduce((sum, t) => sum + (t.amount || 0), 0) || 0;
-      setTodaysXP(dailyXP);
-      
-      // Also get total XP and level from user_xp table
-      const { data: userXP } = await supabase
-        .from('user_xp')
-        .select('total_xp, current_level')
-        .eq('user_id', user.id)
-        .single();
-      
-      console.log('📊 User XP Stats:', {
-        todaysXP: dailyXP,
-        totalXP: userXP?.total_xp || 0,
-        currentLevel: userXP?.current_level || 1
-      });
-
       // Get today's validations count
       const { data: validations } = await supabase
         .from('trend_validations')
@@ -290,7 +241,6 @@ export default function ValidatePage() {
 
       console.log('📊 Validate Page Stats:', {
         streak: profile?.current_streak || 0,
-        todaysXP: dailyXP,
         dailyValidations: validations?.length || 0
       });
     } catch (error) {
@@ -443,195 +393,8 @@ export default function ValidatePage() {
         }
       }
 
-      // Award XP for validation (only if first time validating this trend)
-      console.log('💎 STARTING XP AWARD PROCESS');
-      
-      // Check if XP was already awarded for this trend
-      const { data: existingXP, error: xpCheckError } = await supabase
-        .from('xp_transactions')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('reference_id', currentTrend.id)
-        .eq('type', 'validation')
-        .single();
-
-      let xpAwarded = false;
-      let totalXP = 0;
-      
-      if (existingXP) {
-        console.log('⚠️ XP already awarded for this trend validation');
-        xpAwarded = true; // Set to true to skip XP award but continue with flow
-      } else {
-        const baseXP = 10; // Base XP for validation
-        
-        // Calculate streak multiplier: Every 10 validations increases multiplier by 0.1
-        // First 10 validations (1-10): 1.0x multiplier
-        // Second 10 validations (11-20): 1.1x multiplier  
-        // Third 10 validations (21-30): 1.2x multiplier, etc.
-        const currentValidationCount = dailyValidations; // This is before we increment it
-        const streakLevel = Math.floor(currentValidationCount / 10); // 0 for first 10, 1 for second 10, etc.
-        const streakMultiplier = 1.0 + (streakLevel * 0.1); // 1.0, 1.1, 1.2, etc.
-        
-        // Apply multiplier to base XP
-        totalXP = Math.round(baseXP * streakMultiplier);
-        
-        console.log('🎮 XP Calculation:', {
-          user_id: user.id,
-          baseXP,
-          currentValidationCount,
-          streakLevel,
-          streakMultiplier,
-          totalXP,
-          trend_id: currentTrend.id,
-          trend_title: currentTrend.title
-        });
-
-        console.log('💰 Attempting to award XP:', {
-          user_id: user.id,
-          amount: totalXP,
-          type: 'validation'
-        });
-        
-        // Insert into xp_transactions
-        const { data: xpTransData, error: xpTransError } = await supabase
-          .from('xp_transactions')
-          .insert({
-            user_id: user.id,
-            amount: totalXP,
-            type: 'validation',
-            description: `Validated trend: ${currentTrend.title && currentTrend.title !== '0' ? currentTrend.title : 'Untitled Trend'}`,
-            reference_id: currentTrend.id,
-            reference_type: 'trend',
-            created_at: new Date().toISOString()
-          })
-          .select();
-      
-        console.log('💰 XP Transaction Result:', {
-          data: xpTransData,
-          error: xpTransError
-        });
-        
-        if (!xpTransError) {
-          xpAwarded = true;
-          console.log('✅ XP transaction recorded successfully!');
-          console.log('✅ XP Transaction ID:', xpTransData?.[0]?.id);
-          
-          // Method 2: Update user_xp table for total XP
-          console.log('📊 Updating user_xp table...');
-          const { data: currentUserXP, error: fetchError } = await supabase
-            .from('user_xp')
-            .select('total_xp, current_level, xp_to_next_level')
-            .eq('user_id', user.id)
-            .single();
-          
-          console.log('📊 Current user_xp:', { data: currentUserXP, error: fetchError });
-          
-          if (currentUserXP) {
-            const newTotalXP = currentUserXP.total_xp + totalXP;
-            
-            // Calculate new level if needed
-            let newLevel = currentUserXP.current_level;
-            let xpToNext = currentUserXP.xp_to_next_level - totalXP;
-            
-            if (xpToNext <= 0) {
-              newLevel += 1;
-              xpToNext = 500 + (newLevel * 100); // Example level scaling
-            }
-            
-            const { error: updateError } = await supabase
-              .from('user_xp')
-              .update({
-                total_xp: newTotalXP,
-                current_level: newLevel,
-                xp_to_next_level: xpToNext,
-                updated_at: new Date().toISOString()
-              })
-              .eq('user_id', user.id);
-            
-            if (updateError) {
-              console.log('⚠️ user_xp update failed:', updateError);
-            } else {
-              console.log('✅ user_xp updated - Total XP:', newTotalXP);
-            }
-          } else {
-            // Create user_xp record if it doesn't exist
-            await supabase
-              .from('user_xp')
-              .insert({
-                user_id: user.id,
-                total_xp: totalXP,
-                current_level: 1,
-                xp_to_next_level: 500,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-          }
-        } else {
-          console.log('❌ XP TRANSACTION FAILED!');
-          console.log('❌ Error details:', xpTransError);
-          console.log('❌ Full error object:', JSON.stringify(xpTransError, null, 2));
-        
-          // Fallback: Try via API endpoint that we know works
-          console.log('🔄 Trying fallback API method...');
-          try {
-            const response = await fetch('/api/simple-xp', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                userId: user.id,
-                amount: totalXP,
-                type: 'validation'
-              })
-            });
-            
-            const result = await response.json();
-            if (result.success) {
-              xpAwarded = true;
-              console.log('✅ XP awarded via API fallback!');
-            } else {
-              console.log('❌ API fallback also failed:', result.error);
-            }
-          } catch (apiError) {
-            console.log('❌ API fallback error:', apiError);
-          }
-        }
-      } // End of else block for XP not already awarded
-      
-      if (xpAwarded && totalXP > 0) {
-        // Only show XP animations if new XP was actually awarded
-        // Update local XP immediately for responsive UI
-        const previousXP = todaysXP;
-        setTodaysXP(prev => prev + totalXP);
-        setLastXPEarned(totalXP);
-        
-        // Trigger animations
-        setShowXPAnimation(true);
-        setTimeout(() => setShowXPAnimation(false), 600);
-        
-        // Show floating XP indicator
-        setFloatingXP({ amount: totalXP, id: Date.now() });
-        setTimeout(() => setFloatingXP(null), 1500);
-        
-        // Show XP notification with detailed breakdown
-        const baseXP = 10;
-        const currentValidationCount = dailyValidations - 1; // We already incremented it
-        const streakLevel = Math.floor(currentValidationCount / 10);
-        const streakMultiplier = 1.0 + (streakLevel * 0.1);
-        
-        const notificationParts = [`Validation: +${totalXP} XP`];
-        if (streakMultiplier > 1.0) {
-          notificationParts.push(`Streak ${streakMultiplier.toFixed(1)}x`);
-        }
-        
-        console.log('🎯 Showing validation XP notification:', totalXP, notificationParts.join(' | '));
-        showXPNotification(totalXP, notificationParts.join(' | '), 'validation');
-        
-        // Dispatch custom event for other components to update
-        window.dispatchEvent(new CustomEvent('xp-earned', { detail: { amount: totalXP, newTotal: previousXP + totalXP } }));
-        console.log('✅ XP awarded successfully');
-      } else if (!xpAwarded && totalXP > 0) {
-        console.error('❌ Failed to award XP - check console for details');
-      }
+      // XP for validation is disabled - validation is now a community manager role
+      console.log('🔒 Validation is a community manager role - no XP awarded');
 
       // Update stats locally
       setDailyValidations(prev => prev + 1);
@@ -677,23 +440,7 @@ export default function ValidatePage() {
       
       setConsensus(consensusPercent);
       
-      // Add consensus bonus to XP if user is with majority
-      const finalConsensusBonus = inConsensus ? 5 : 0;
-      const baseXP = 10;
-      const streakBonus = Math.min(streak * 2, 20);
-      totalXP = baseXP + streakBonus + finalConsensusBonus;
-      
-      // Update the XP display
-      setLastXPEarned(totalXP);
-      
-      // Show updated notification with consensus bonus
-      if (finalConsensusBonus > 0 && xpAwarded) {
-        console.log('🎯 Consensus bonus earned:', finalConsensusBonus);
-        // Show a second notification for the consensus bonus
-        setTimeout(() => {
-          showXPNotification(finalConsensusBonus, `Consensus Bonus: +${finalConsensusBonus} XP`, 'bonus');
-        }, 500);
-      }
+      // XP bonuses disabled - validation is now a community manager role
       
       // Update streak based on consensus (only continue streak if in consensus with majority)
       const newStreak = inConsensus ? streak + 1 : 0;
@@ -889,52 +636,6 @@ export default function ValidatePage() {
               )}
             </motion.div>
             
-            <motion.div 
-              className="bg-white rounded-lg px-3 py-2 shadow-sm relative"
-              animate={showXPAnimation ? {
-                scale: [1, 1.1, 1],
-                backgroundColor: ["#ffffff", "#fef3c7", "#ffffff"]
-              } : {}}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="flex items-center space-x-1">
-                <Zap className="h-5 w-5 text-yellow-500" />
-                <motion.span 
-                  className="font-bold text-gray-900 tabular-nums"
-                  animate={showXPAnimation ? {
-                    scale: [1, 1.3, 1],
-                    color: ["#111827", "#f59e0b", "#111827"]
-                  } : {}}
-                  transition={{ duration: 0.5 }}
-                >
-                  {xpAnimated}
-                </motion.span>
-                <span className="text-xs text-gray-500">XP today</span>
-              </div>
-              
-              {/* Floating XP Indicator */}
-              <AnimatePresence>
-                {floatingXP && (
-                  <motion.div
-                    key={floatingXP.id}
-                    initial={{ opacity: 0, y: 0, scale: 0.5 }}
-                    animate={{ 
-                      opacity: [0, 1, 1, 0],
-                      y: -40,
-                      scale: [0.5, 1.2, 1, 0.9]
-                    }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                    className="absolute -top-8 left-1/2 transform -translate-x-1/2 pointer-events-none"
-                  >
-                    <div className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold text-sm rounded-full shadow-lg">
-                      <Zap className="w-3 h-3" />
-                      <span>+{floatingXP.amount}</span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
           </div>
         </div>
 
