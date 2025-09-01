@@ -806,7 +806,8 @@ export default function EnhancedPredictionsPage() {
           avatar_url: user.avatar_url,
           accuracy: mockAccuracy,
           trend: mockTrend,
-          rank: index + 1
+          rank: index + 1,
+          isCurrentUser: false
         };
       });
       
@@ -817,7 +818,8 @@ export default function EnhancedPredictionsPage() {
       const topPredictorsWithBadges = predictorsList.slice(0, 5).map((p, index) => ({
         ...p,
         rank: index + 1,
-        badge: index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '⭐'
+        badge: index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '⭐',
+        isCurrentUser: p.id === user.id
       }));
       
       // If current user is not in top 5, add them at the end
