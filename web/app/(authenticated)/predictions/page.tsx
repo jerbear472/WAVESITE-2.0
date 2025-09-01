@@ -922,7 +922,14 @@ export default function EnhancedPredictionsPage() {
           likes_count: trend.likes_count || 0,
           comments_count: trend.comments_count || 0,
           predictions_count: trend.predictions_count || 0,
-          heat_score: trend.heat_score || 0,
+          // Calculate heat score based on engagement and votes
+          heat_score: Math.min(100, 
+            (voteCountsMap[trend.id]?.wave || 0) * 15 + 
+            (voteCountsMap[trend.id]?.fire || 0) * 10 + 
+            (trend.predictions_count || 0) * 5 +
+            (trend.comments_count || 0) * 3 +
+            (trend.likes_count || 0) * 2
+          ),
           user_has_liked: false,
           user_has_predicted: false,
           

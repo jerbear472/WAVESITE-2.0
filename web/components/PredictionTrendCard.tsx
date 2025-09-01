@@ -11,7 +11,8 @@ import {
   TrendingUp,
   TrendingDown,
   Clock,
-  User
+  User,
+  ExternalLink
 } from 'lucide-react';
 
 interface TrendCardProps {
@@ -21,6 +22,7 @@ interface TrendCardProps {
     description: string;
     platform: string;
     category: string;
+    url?: string;
     thumbnail_url?: string;
     spotter_username: string;
     submitted_at: string;
@@ -189,8 +191,15 @@ export default function PredictionTrendCard({
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-6">
+      {/* Main Content - Clickable */}
+      <div 
+        className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+        onClick={() => {
+          if (trend.url) {
+            window.open(trend.url, '_blank', 'noopener,noreferrer');
+          }
+        }}
+      >
         <div className="flex gap-6">
           {/* Thumbnail */}
           {trend.thumbnail_url && (
@@ -212,6 +221,9 @@ export default function PredictionTrendCard({
               <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">
                 {trend.category}
               </span>
+              {trend.url && (
+                <ExternalLink className="w-4 h-4 text-gray-400" />
+              )}
               {trend.wave_score !== undefined && trend.wave_score !== 0 && (
                 <div className={`flex items-center gap-1 font-medium ${
                   trend.wave_score > 0 ? 'text-blue-600' : 'text-gray-500'
