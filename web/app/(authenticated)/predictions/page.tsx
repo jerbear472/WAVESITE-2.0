@@ -785,15 +785,17 @@ export default function EnhancedPredictionsPage() {
       
       // Get unique users
       const uniqueUsers = new Map();
-      predictors?.forEach(p => {
-        if (p.profiles && p.profiles.username) {
-          uniqueUsers.set(p.user_id, p.profiles);
+      predictors?.forEach((p: any) => {
+        // profiles comes as an array from the join, get the first item
+        const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+        if (profile && profile.username) {
+          uniqueUsers.set(p.user_id, profile);
         }
       });
       
       // Calculate accuracy for each user (for now, using random data)
       // In a real app, you'd calculate this based on actual prediction outcomes
-      const predictorsList = Array.from(uniqueUsers.values()).map((user, index) => {
+      const predictorsList = Array.from(uniqueUsers.values()).map((user: any, index) => {
         // Mock accuracy calculation - replace with real logic when prediction outcomes are tracked
         const mockAccuracy = Math.floor(Math.random() * 30) + 50; // 50-80% accuracy
         const mockTrend = Math.random() > 0.5 ? `+${Math.floor(Math.random() * 15)}` : `-${Math.floor(Math.random() * 5)}`;
@@ -912,7 +914,7 @@ export default function EnhancedPredictionsPage() {
           creator_handle: trend.creator_handle,
           submitted_at: trend.created_at,
           spotter_id: trend.spotter_id,
-          spotter_username: trend.profiles?.username || trend.spotter_username || 'Anonymous',
+          spotter_username: (Array.isArray(trend.profiles) ? trend.profiles[0]?.username : trend.profiles?.username) || trend.spotter_username || 'Anonymous',
           
           // Engagement metrics (with defaults)
           likes_count: trend.likes_count || 0,
