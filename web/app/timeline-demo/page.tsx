@@ -20,7 +20,7 @@ const sampleTimelineData = [
     title: 'AI-Generated Fashion Trends Taking Over TikTok',
     description: 'Users are using AI to create unique fashion combinations that are going viral',
     category: 'visual_style',
-    status: 'viral' as const,
+    status: 'approved' as const,
     thumbnail: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&h=300&fit=crop',
     url: 'https://tiktok.com',
     creator: {
@@ -152,7 +152,7 @@ export default function TimelineDemoPage() {
   };
 
   const randomizeStatus = () => {
-    const statuses = ['submitted', 'validating', 'approved', 'viral', 'rejected'] as const;
+    const statuses = ['submitted', 'approved', 'rejected'] as const;
     setData(data.map(item => ({
       ...item,
       status: statuses[Math.floor(Math.random() * statuses.length)] as typeof item.status
@@ -304,7 +304,7 @@ const timelineItems = [
     title: 'Trend Title',
     description: 'Optional description',
     category: 'visual_style',
-    status: 'viral',
+    status: 'approved',
     thumbnail: 'image-url.jpg',
     creator: {
       handle: '@username',
