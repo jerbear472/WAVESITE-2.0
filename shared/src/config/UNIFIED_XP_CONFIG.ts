@@ -12,10 +12,10 @@ export const UNIFIED_XP_CONFIG = {
   base: {
     // Core Actions
     trendSubmission: 10,        // Base XP per trend submission
-    validationVote: 5,          // XP per validation vote
+    validationVote: 0,          // XP per validation vote (disabled - community manager role)
     approvalBonus: 50,          // Bonus when trend gets approved (3+ YES votes)
     rejectionPenalty: -15,      // XP penalty when trend gets rejected
-    accurateValidation: 15,     // Bonus XP for voting with majority
+    accurateValidation: 0,      // Bonus XP for voting with majority (disabled - community manager role)
     
     // Engagement Actions
     dailyLogin: 10,             // Daily login bonus

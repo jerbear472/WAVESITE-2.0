@@ -177,14 +177,15 @@ export default function PredictionTrendCard({
         </div>
       </div>
 
-      {/* Main Content - Clickable */}
+      {/* Main Content - Clickable if URL exists */}
       <div 
-        className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+        className={`p-6 transition-colors ${trend.url ? 'cursor-pointer hover:bg-gray-50' : ''}`}
         onClick={() => {
           if (trend.url) {
             window.open(trend.url, '_blank', 'noopener,noreferrer');
           }
         }}
+        title={trend.url ? 'Click to view source' : 'No source URL available'}
       >
         <div className="flex gap-6">
           {/* Thumbnail */}

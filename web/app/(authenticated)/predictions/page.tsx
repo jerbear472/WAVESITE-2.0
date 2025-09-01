@@ -913,7 +913,7 @@ export default function EnhancedPredictionsPage() {
           description: trend.description || 'No description',
           platform: trend.platform || 'unknown',
           category: trend.category || 'Other',
-          url: trend.url || '',
+          url: trend.post_url || trend.url || '',
           thumbnail_url: trend.thumbnail_url,
           creator_handle: trend.creator_handle,
           submitted_at: trend.created_at,
