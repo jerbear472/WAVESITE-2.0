@@ -68,7 +68,10 @@ const VoteButton = ({
   isLoading?: boolean;
 }) => (
   <motion.button
-    onClick={onClick}
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
     whileHover={{ scale: isLoading ? 1 : 1.05 }}
     whileTap={{ scale: isLoading ? 1 : 0.95 }}
     disabled={isLoading}
@@ -177,17 +180,17 @@ export default function PredictionTrendCard({
         </div>
       </div>
 
-      {/* Main Content - Clickable if URL exists */}
-      <div 
-        className={`p-6 transition-colors ${trend.url ? 'cursor-pointer hover:bg-gray-50' : ''}`}
-        onClick={() => {
-          if (trend.url) {
-            window.open(trend.url, '_blank', 'noopener,noreferrer');
-          }
-        }}
-        title={trend.url ? 'Click to view source' : 'No source URL available'}
-      >
-        <div className="flex gap-6">
+      {/* Main Content */}
+      <div className="p-6">
+        <div 
+          className={`flex gap-6 ${trend.url ? 'cursor-pointer' : ''}`}
+          onClick={() => {
+            if (trend.url) {
+              window.open(trend.url, '_blank', 'noopener,noreferrer');
+            }
+          }}
+          title={trend.url ? 'Click to view source' : 'No source URL available'}
+        >
           {/* Thumbnail */}
           {trend.thumbnail_url && (
             <div className="w-32 h-32 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
@@ -273,7 +276,10 @@ export default function PredictionTrendCard({
             {/* Action Buttons */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onComment(trend)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComment(trend);
+                }}
                 className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
@@ -281,7 +287,10 @@ export default function PredictionTrendCard({
               </button>
 
               <button
-                onClick={() => onStats?.(trend)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStats?.(trend);
+                }}
                 className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
                 title="View all user activity on this trend"
               >
@@ -291,7 +300,10 @@ export default function PredictionTrendCard({
 
               {onAnalyze && (
                 <button
-                  onClick={() => onAnalyze(trend)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAnalyze(trend);
+                  }}
                   className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg text-purple-700 hover:from-purple-200 hover:to-pink-200 transition-all"
                   title="AI Analysis"
                 >
@@ -307,7 +319,10 @@ export default function PredictionTrendCard({
         <div className="mt-4">
           {!trend.user_has_predicted ? (
             <motion.button
-              onClick={() => onPredict(trend)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPredict(trend);
+              }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:shadow-md transition-all inline-flex items-center gap-1.5"
