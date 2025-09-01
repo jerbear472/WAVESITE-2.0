@@ -127,7 +127,7 @@ function generateQuickAnalysis(data: any): TrendAnalysis {
   ));
 
   return {
-    summary: `${data.title} is showing ${viralityScore > 70 ? 'strong' : viralityScore > 40 ? 'moderate' : 'early'} viral signals on ${data.platform || 'social media'}. The trend appears to be ${data.category || 'lifestyle'}-focused with ${totalVotes > negativeVotes ? 'positive' : 'mixed'} community sentiment.`,
+    summary: `${data.title} is showing ${viralityScore > 70 ? 'strong' : viralityScore > 40 ? 'moderate' : 'early'} viral signals on ${data.platform || 'social media'}. The trend appears to be ${data.category || 'entertainment'}-focused with ${totalVotes > negativeVotes ? 'positive' : 'mixed'} community sentiment.`,
     viralityScore,
     keyFactors: [
       totalVotes > 10 ? 'High engagement' : 'Growing interest',

@@ -103,12 +103,12 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     const validCategories = [
       'technology', 'fashion', 'food', 'travel', 'fitness', 'entertainment',
       'gaming', 'sports', 'music', 'art', 'education', 'business', 'health',
-      'science', 'politics', 'comedy', 'lifestyle', 'beauty', 'diy', 'pets',
+      'science', 'politics', 'comedy', 'beauty', 'diy', 'pets',
       'automotive', 'finance', 'realestate', 'crypto', 'other'
     ];
     
     // Final validation to ensure we use a valid enum value
-    const finalCategory = validCategories.includes(safeCategory) ? safeCategory : 'lifestyle';
+    const finalCategory = validCategories.includes(safeCategory) ? safeCategory : 'entertainment';
     console.log(`📁 Final category: "${finalCategory}"`);
     
     // Prepare submission data - only include essential columns first

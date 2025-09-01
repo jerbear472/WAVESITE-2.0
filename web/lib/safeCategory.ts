@@ -10,7 +10,6 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'fashion': 'fashion',
     'food': 'food',
     'music': 'music',
-    'lifestyle': 'lifestyle',
     'tech': 'tech',
     'technology': 'tech',
     'finance': 'finance',
@@ -31,7 +30,6 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Fashion/Beauty': 'fashion',
     'Food/Drink': 'food',
     'Music/Dance': 'music',
-    'Lifestyle': 'lifestyle',
     'Tech/Gaming': 'tech',
     'Finance/Crypto': 'finance',
     'Sports/Fitness': 'sports',
@@ -46,13 +44,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Relationships': 'relationships',
     'Health & Wellness': 'health',
     
-    // Legacy mappings (for backward compatibility with any old data)
-    'meme_format': 'meme',
-    'visual_style': 'art',
-    'audio_music': 'music',
-    'creator_technique': 'entertainment',
-    'product_brand': 'lifestyle',
-    'behavior_pattern': 'lifestyle',
+    // No legacy mappings - removed nonsensical categories
     
     // Lowercase versions (for flexible input handling)
     'cars & machines': 'cars',
@@ -73,7 +65,7 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
   
   // Check if it's already a valid category
   const validCategories = [
-    'meme', 'fashion', 'food', 'music', 'lifestyle', 'tech', 
+    'meme', 'fashion', 'food', 'music', 'tech', 
     'finance', 'sports', 'political', 'cars', 'animals', 'travel',
     'education', 'science', 'entertainment', 'art', 'relationships', 'health'
   ];
@@ -82,9 +74,9 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     return displayCategory;
   }
   
-  // Default fallback - use lifestyle category (a valid enum)
-  console.log('[getSafeCategory] Fallback to: lifestyle');
-  return 'lifestyle';
+  // Default fallback - use entertainment as more generic
+  console.log('[getSafeCategory] Fallback to: entertainment');
+  return 'entertainment';
 }
 
 // Safe status function to ensure we NEVER use 'pending'
