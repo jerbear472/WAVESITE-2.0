@@ -12,7 +12,8 @@ import {
   TrendingDown,
   Clock,
   User,
-  ExternalLink
+  ExternalLink,
+  Brain
 } from 'lucide-react';
 
 interface TrendCardProps {
@@ -44,6 +45,7 @@ interface TrendCardProps {
   onComment: (trend: any) => void;
   onPredict: (trend: any) => void;
   onStats?: (trend: any) => void;
+  onAnalyze?: (trend: any) => void;
   index: number;
   isVoting?: boolean;
 }
@@ -92,6 +94,7 @@ export default function PredictionTrendCard({
   onComment, 
   onPredict,
   onStats,
+  onAnalyze,
   index,
   isVoting 
 }: TrendCardProps) {
@@ -284,6 +287,17 @@ export default function PredictionTrendCard({
                 <BarChart3 className="w-4 h-4" />
                 <span className="text-sm font-medium">Stats</span>
               </button>
+
+              {onAnalyze && (
+                <button
+                  onClick={() => onAnalyze(trend)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg text-purple-700 hover:from-purple-200 hover:to-pink-200 transition-all"
+                  title="AI Analysis"
+                >
+                  <Brain className="w-4 h-4" />
+                  <span className="text-sm font-medium">Analyze</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

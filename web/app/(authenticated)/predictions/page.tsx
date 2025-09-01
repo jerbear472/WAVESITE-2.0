@@ -34,6 +34,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import TrendPredictionChartV7 from '@/components/TrendPredictionChartV7';
 import PredictionTrendCard from '@/components/PredictionTrendCard';
+import TrendAnalyzer from '@/components/TrendAnalyzer';
 import { addDays } from 'date-fns';
 
 // Custom Vote Button Components - Updated to handle vote changes properly
@@ -506,6 +507,8 @@ export default function EnhancedPredictionsPage() {
   const [selectedTrend, setSelectedTrend] = useState<TrendWithEngagement | null>(null);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [showAnalyzerModal, setShowAnalyzerModal] = useState(false);
+  const [analyzingTrend, setAnalyzingTrend] = useState<any>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedTrendForStats, setSelectedTrendForStats] = useState<any>(null);
   const [activeCommentTrend, setActiveCommentTrend] = useState<TrendWithEngagement | null>(null);
@@ -1658,6 +1661,10 @@ export default function EnhancedPredictionsPage() {
                     setSelectedTrend(trend);
                     setShowPredictionModal(true);
                   }}
+                  onAnalyze={(trend) => {
+                    setAnalyzingTrend(trend);
+                    setShowAnalyzerModal(true);
+                  }}
                   index={index}
                 />
               ));
@@ -2121,6 +2128,35 @@ export default function EnhancedPredictionsPage() {
                     console.error('Error saving prediction:', error);
                     alert('Failed to save prediction. Please try again.');
                   }
+                }}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Analyzer Modal */}
+      <AnimatePresence>
+        {showAnalyzerModal && analyzingTrend && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowAnalyzerModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="max-w-2xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <TrendAnalyzer
+                trend={analyzingTrend}
+                onClose={() => {
+                  setShowAnalyzerModal(false);
+                  setAnalyzingTrend(null);
                 }}
               />
             </motion.div>
