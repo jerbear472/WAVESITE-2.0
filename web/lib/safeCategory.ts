@@ -46,7 +46,13 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     'Relationships': 'relationships',
     'Health & Wellness': 'health',
     
-    // Legacy mappings removed - no more dummy data
+    // Legacy mappings (for backward compatibility with any old data)
+    'meme_format': 'meme',
+    'visual_style': 'art',
+    'audio_music': 'music',
+    'creator_technique': 'entertainment',
+    'product_brand': 'lifestyle',
+    'behavior_pattern': 'lifestyle',
     
     // Lowercase versions (for flexible input handling)
     'cars & machines': 'cars',
@@ -76,9 +82,9 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     return displayCategory;
   }
   
-  // Default fallback - use entertainment as it's more generic
-  console.log('[getSafeCategory] Fallback to: entertainment');
-  return 'entertainment';
+  // Default fallback - use lifestyle category (a valid enum)
+  console.log('[getSafeCategory] Fallback to: lifestyle');
+  return 'lifestyle';
 }
 
 // Safe status function to ensure we NEVER use 'pending'
