@@ -691,10 +691,21 @@ export default function Timeline() {
       }
 
       const userId = user?.id || '';
-      console.log('Timeline: Fetching trends for user ID:', userId);
+      console.log('Timeline: Fetching all trends from all users');
       
-      // Use the helper function that handles RLS issues
-      const { data, error } = await fetchUserTrendsHelper(userId);
+      // Fetch ALL trends (not just user's own) with status 'submitted' or 'approved'
+      // Similar to how predictions page fetches trends
+      const { data, error } = await supabase
+        .from('trend_submissions')
+        .select(`
+          *,
+          profiles:spotter_id (
+            username
+          )
+        `)
+        .in('status', ['submitted', 'approved'])
+        .order('created_at', { ascending: false })
+        .limit(100);
 
       if (error) {
         showError('Failed to load trends', (error as any).message || 'Unknown error');
