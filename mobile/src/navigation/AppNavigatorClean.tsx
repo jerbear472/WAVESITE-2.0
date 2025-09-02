@@ -16,6 +16,7 @@ import { ValidationScreenClean } from '../screens/ValidationScreenClean';
 import MyTimelineScreen from '../screens/MyTimelineScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { EarningsDashboard } from '../screens/EarningsDashboard';
+import { PredictScreen } from '../screens/PredictScreen';
 import { TrendsScreen } from '../screens/TrendsScreen';
 // MyTimelineScreen is already imported above
 import { AchievementsScreen } from '../screens/AchievementsScreen';
@@ -94,7 +95,7 @@ const MainTabs = () => {
     >
       <Tab.Screen 
         name="Predict" 
-        component={TrendsScreen}
+        component={PredictScreen}
         options={{ tabBarLabel: 'Predict' }}
       />
       <Tab.Screen 
