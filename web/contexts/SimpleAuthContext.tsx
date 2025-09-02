@@ -290,7 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Ensure navigation happens after user data is loaded
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push('/predictions');
         }, 100);
       }
     } finally {

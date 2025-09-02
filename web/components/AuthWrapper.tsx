@@ -44,10 +44,10 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
     if (sessionReady && !loading) {
       if (!user && !isPublicRoute) {
         console.log('[AuthWrapper] No user on protected route, redirecting to login');
-        router.push(`/login?from=${encodeURIComponent(pathname || '/dashboard')}`);
+        router.push(`/login?from=${encodeURIComponent(pathname || '/predictions')}`);
       } else if (user && (pathname === '/login' || pathname === '/register')) {
-        console.log('[AuthWrapper] User logged in on auth page, redirecting to dashboard');
-        router.push('/dashboard');
+        console.log('[AuthWrapper] User logged in on auth page, redirecting to predictions');
+        router.push('/predictions');
       }
     }
   }, [user, pathname, loading, sessionReady, isInitialized, router]);

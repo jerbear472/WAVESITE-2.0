@@ -58,11 +58,11 @@ export default function AuthCallback() {
             setMessage('Email confirmed! Setting up your account...');
             // After email confirmation, go to dashboard
             setTimeout(() => {
-              router.push('/dashboard');
+              router.push('/predictions');
             }, 1500);
           } else {
             // Regular sign in
-            const redirectTo = params.get('redirect_to') || '/dashboard';
+            const redirectTo = params.get('redirect_to') || '/predictions';
             router.push(redirectTo);
           }
           return;

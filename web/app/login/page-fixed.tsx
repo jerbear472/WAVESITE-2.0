@@ -19,8 +19,8 @@ export default function LoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      console.log('[LOGIN] User already logged in, redirecting to dashboard');
-      router.push('/dashboard');
+      console.log('[LOGIN] User already logged in, redirecting to predictions');
+      router.push('/predictions');
     }
   }, [user, router]);
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
       
       // Force navigation to dashboard
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/predictions');
         router.refresh();
       }, 100);
       
