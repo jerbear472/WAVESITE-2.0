@@ -23,9 +23,9 @@ import { AchievementsScreen } from '../screens/AchievementsScreen';
 import { enhancedTheme } from '../styles/theme.enhanced';
 
 export type AppTabParamList = {
-  Home: undefined;
+  Predict: undefined;
   Capture: undefined;
-  Submit: undefined;
+  Home: undefined;
   Timeline: undefined;
   Profile: undefined;
 };
@@ -59,10 +59,10 @@ const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
   }));
 
   const iconMap: { [key: string]: string } = {
-    Home: 'home',
+    Predict: 'trending-up',
     Capture: 'camera',
-    Submit: 'send',
-    Timeline: 'clock-outline',
+    Home: 'chart-line',
+    Timeline: 'history',
     Profile: 'account',
   };
 
@@ -80,6 +80,7 @@ const TabIcon: React.FC<TabIconProps> = ({ name, focused }) => {
 const MainTabs = () => {
   return (
     <Tab.Navigator
+      initialRouteName="Predict"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: styles.tabBar,
@@ -92,9 +93,9 @@ const MainTabs = () => {
       })}
     >
       <Tab.Screen 
-        name="Home" 
-        component={DashboardScreen}
-        options={{ tabBarLabel: 'Home' }}
+        name="Predict" 
+        component={TrendsScreen}
+        options={{ tabBarLabel: 'Predict' }}
       />
       <Tab.Screen 
         name="Capture" 
@@ -102,14 +103,14 @@ const MainTabs = () => {
         options={{ tabBarLabel: 'Capture' }}
       />
       <Tab.Screen 
-        name="Submit" 
-        component={ValidationScreenClean}
-        options={{ tabBarLabel: 'Submit' }}
+        name="Home" 
+        component={DashboardScreen}
+        options={{ tabBarLabel: 'Stats' }}
       />
       <Tab.Screen 
         name="Timeline" 
         component={MyTimelineScreen}
-        options={{ tabBarLabel: 'Timeline' }}
+        options={{ tabBarLabel: 'History' }}
       />
       <Tab.Screen 
         name="Profile" 

@@ -35,6 +35,7 @@ interface Trend {
   predicted_peak: string;
   created_at: string;
   spotter_id: string;
+  hashtags?: string[];
 }
 
 export const TrendsScreen: React.FC = () => {
@@ -46,7 +47,7 @@ export const TrendsScreen: React.FC = () => {
     queryFn: async () => {
       let query = supabase
         .from('trend_submissions')
-        .select('id, category, description, title, quality_score, validation_count, approve_count, reject_count, trend_velocity, trend_size, ai_angle, predicted_peak, created_at, spotter_id')
+        .select('id, category, description, title, quality_score, validation_count, approve_count, reject_count, trend_velocity, trend_size, ai_angle, predicted_peak, created_at, spotter_id, hashtags')
         .in('status', ['approved', 'viral'])
         .order('validation_count', { ascending: false })
         .limit(50);
@@ -165,6 +166,17 @@ export const TrendsScreen: React.FC = () => {
                 </View>
               )}
             </View>
+            
+            {/* Hashtags */}
+            {item.hashtags && item.hashtags.length > 0 && (
+              <View style={styles.hashtagsContainer}>
+                {item.hashtags.map((tag, index) => (
+                  <View key={index} style={styles.hashtag}>
+                    <Text style={styles.hashtagText}>#{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
             
             <View style={styles.trendFooter}>
               <Text style={styles.trendTime}>
@@ -420,6 +432,26 @@ const styles = StyleSheet.create({
     color: enhancedTheme.colors.text,
     fontWeight: '500',
     textTransform: 'capitalize',
+  },
+  hashtagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  hashtag: {
+    backgroundColor: enhancedTheme.colors.primary + '20',
+    borderRadius: enhancedTheme.borderRadius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: enhancedTheme.colors.primary + '40',
+  },
+  hashtagText: {
+    ...enhancedTheme.typography.bodySmall,
+    color: enhancedTheme.colors.primary,
+    fontWeight: '600',
   },
   trendFooter: {
     flexDirection: 'row',
