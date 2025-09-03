@@ -135,8 +135,8 @@ Provide rich, specific insights. Reference data points, percentages, and concret
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1500, // Increased for more comprehensive analysis
-        temperature: 0.4, // Slightly higher for more creative insights
+        max_tokens: 1000, // Reduced for faster response
+        temperature: 0.3, // Lower for more consistent output
         messages: [
           {
             role: 'user',
@@ -334,7 +334,7 @@ export async function POST(request: NextRequest) {
       debugInfo.trend = data.title;
       debugInfo.apiKeyPresent = !!process.env.ANTHROPIC_API_KEY;
       
-      // Get comprehensive AI analysis
+      // Get comprehensive AI analysis - increased timeout to 25s for Claude
       analysis = await Promise.race([
         analyzeTrendWithClaude(data, searchContext).then(result => {
           debugInfo.source = 'claude';
@@ -343,11 +343,11 @@ export async function POST(request: NextRequest) {
         }),
         new Promise<TrendAnalysis>(resolve => 
           setTimeout(() => {
-            console.log('Claude API timeout after 10s, using fallback');
+            console.log('Claude API timeout after 25s, using fallback');
             debugInfo.source = 'timeout-fallback';
             debugInfo.timeout = true;
             resolve(generateQuickAnalysis(data));
-          }, 10000) // 10s timeout
+          }, 25000) // 25s timeout - Claude can be slow
         )
       ]);
       

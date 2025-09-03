@@ -81,9 +81,9 @@ export default function TrendResonanceAnalysis({ formData, onAnalysisComplete }:
     setLoading(true);
     
     try {
-      // Add timeout to API call to prevent hanging
+      // Add timeout to API call to prevent hanging - increased for Claude
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout for Claude
       
       // Call the v2 API with Claude integration
       const response = await fetch('/api/analyze-trend-v2', {
