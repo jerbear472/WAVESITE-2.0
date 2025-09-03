@@ -181,24 +181,20 @@ export default function Dashboard() {
           <MiniQuickStart />
         )}
         
-        {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <div className="mb-4">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
-              Welcome back, <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent block sm:inline">
-                {user?.username || 'Trend Spotter'}
-              </span>!
+        {/* Header - simplified */}
+        <div className="mb-4 sm:mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+              Dashboard
             </h1>
-            <p className="text-sm sm:text-base text-gray-600">Track cultural waves and predict the future</p>
           </div>
           <button
             onClick={() => setShowSubmissionForm(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 
-                     hover:from-blue-600 hover:to-purple-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl 
-                     font-medium transition-all shadow-lg hover:shadow-xl text-sm sm:text-base"
+            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg 
+                     font-medium transition-colors text-sm"
           >
-            <Plus className="w-4 sm:w-5 h-4 sm:h-5" />
-            Spot New Trend
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Spot Trend</span>
           </button>
         </div>
 
