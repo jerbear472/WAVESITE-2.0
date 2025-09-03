@@ -42,6 +42,41 @@ export default function TrendResonanceAnalysis({ formData, onAnalysisComplete }:
     generateDeepAnalysis();
   }, []);
 
+  const formatClaudeInsight = (apiData: any) => {
+    // If we have a proper Claude response, format it nicely
+    if (apiData.summary && !apiData.error) {
+      let insight = "";
+      
+      // Add the summary
+      insight += `📱 **What's Going On Here?** ${apiData.summary}\n\n`;
+      
+      // Add cultural context if available
+      if (apiData.culturalContext) {
+        insight += `🌍 **Cultural Moment:** ${apiData.culturalContext}\n\n`;
+      }
+      
+      // Add why it's resonating if available
+      if (apiData.whyResonating && apiData.whyResonating.length > 0) {
+        insight += `💡 **Why It Clicks:** ${apiData.whyResonating[0]}\n\n`;
+      }
+      
+      // Add competitor insights if available
+      if (apiData.competitorInsights) {
+        insight += `👥 **Who's In:** ${apiData.competitorInsights}\n\n`;
+      }
+      
+      // Add monetization potential if available
+      if (apiData.monetizationPotential) {
+        insight += `💰 **Opportunity:** ${apiData.monetizationPotential}`;
+      }
+      
+      return insight;
+    }
+    
+    // Fallback to generic insight
+    return generateKeyInsight();
+  };
+
   const generateDeepAnalysis = async () => {
     setLoading(true);
     
@@ -50,13 +85,23 @@ export default function TrendResonanceAnalysis({ formData, onAnalysisComplete }:
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
       
-      // Call the actual API
-      const response = await fetch('/api/analyze-trend', {
+      // Call the v2 API with Claude integration
+      const response = await fetch('/api/analyze-trend-v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          title: formData.title || 'Untitled Trend',
+          description: formData.description || formData.post_caption || '',
+          platform: formData.platform || 'tiktok',
+          category: formData.category || 'general',
+          url: formData.url || '',
+          wave_votes: formData.wave_votes || 0,
+          fire_votes: formData.fire_votes || 0,
+          declining_votes: formData.declining_votes || 0,
+          dead_votes: formData.dead_votes || 0
+        }),
         signal: controller.signal
       });
       
@@ -65,14 +110,14 @@ export default function TrendResonanceAnalysis({ formData, onAnalysisComplete }:
       
       // Generate the structured analysis using both API response and local calculations
       const analysis = {
-        resonanceScore: calculateResonanceScore(),
+        resonanceScore: apiData.viralityScore || calculateResonanceScore(),
         psychologicalDrivers: generatePsychologicalDrivers(),
         culturalContext: generateCulturalContext(),
         timingFactors: generateTimingFactors(),
         viralMechanics: generateViralMechanics(),
-        keyInsight: apiData.analysis || generateKeyInsight(), // Use API response as primary insight
-        predictions: generatePredictions(),
-        apiAnalysis: apiData.analysis, // Store the full API response
+        keyInsight: formatClaudeInsight(apiData), // Format Claude's response properly
+        predictions: apiData.predictions || generatePredictions(),
+        apiAnalysis: apiData, // Store the full API response
         fromCache: apiData.cached || false,
         hasError: apiData.error || false
       };
