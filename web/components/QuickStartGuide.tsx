@@ -10,7 +10,14 @@ import {
   ChevronLeft,
   Eye,
   Zap,
-  CheckCircle
+  CheckCircle,
+  Sparkles,
+  Rocket,
+  Trophy,
+  Brain,
+  Crown,
+  Flame,
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -30,52 +37,74 @@ export default function QuickStartGuide({ onDismiss }: QuickStartGuideProps) {
 
   const steps = [
     {
-      icon: <TrendingUp className="w-6 h-6" />,
-      title: "Welcome to WaveSight",
-      subtitle: "Your professional trend intelligence platform",
-      description: "Identify emerging trends before they reach mainstream awareness. Build your reputation as an early adopter and trend analyst.",
+      icon: <Rocket className="w-8 h-8" />,
+      emoji: "🌊",
+      title: "You're About to See the Future",
+      subtitle: "Before everyone else does 👀",
+      description: "Welcome to the inner circle. While others scroll mindlessly, you're about to predict what they'll be obsessed with next week.",
       features: [
-        "Real-time trend discovery",
-        "Data-driven predictions",
-        "Performance tracking"
+        "🔮 Spot trends 2-3 weeks early",
+        "💎 Join the top 1% of cultural predictors",
+        "🏆 Turn your instincts into credibility"
       ],
+      vibe: "Every cultural revolution starts with someone who saw it coming. That's you now.",
       action: null
     },
     {
-      icon: <Eye className="w-6 h-6" />,
-      title: "Trend Discovery",
-      subtitle: "Identify what's next",
-      description: "Submit emerging trends from across the internet. Our algorithm validates authenticity and tracks growth patterns.",
+      icon: <Eye className="w-8 h-8" />,
+      emoji: "🎯",
+      title: "Become a Cultural Prophet",
+      subtitle: "They'll ask how you always know",
+      description: "Drop trends into our system. Watch them explode. Say \"called it\" with receipts. It's that simple.",
       features: [
-        "Submit trending content",
-        "Earn 10+ XP per validated submission",
-        "Build credibility score"
+        "📸 Capture trends in seconds",
+        "⚡ Instant validation from the community",
+        "📈 Watch your predictions go viral"
       ],
-      action: { label: "Start Discovering", href: "/spot" }
+      vibe: "That TikTok sound that's everywhere now? You could've called it 3 weeks ago. Next time, you will.",
+      action: { label: "Start Hunting Trends →", href: "/spot" }
     },
     {
-      icon: <Target className="w-6 h-6" />,
-      title: "Predictive Analytics",
-      subtitle: "Test your market intuition",
-      description: "Analyze community-submitted trends and predict their trajectory. Accurate predictions increase your influence score.",
+      icon: <Brain className="w-8 h-8" />,
+      emoji: "🔥",
+      title: "Predict the Next Main Character",
+      subtitle: "Your feed is tomorrow's timeline",
+      description: "Vote on what's about to blow up. Get it right, stack XP. Get it REALLY right? Welcome to the leaderboard.",
       features: [
-        "Vote on trend trajectories",
-        "20+ XP for accurate predictions",
-        "Performance analytics"
+        "🌊 Wave = Next viral sensation",
+        "🔥 Fire = It's heating up",
+        "💀 Dead = Already over (you knew first)"
       ],
-      action: { label: "View Predictions", href: "/predictions" }
+      vibe: "While they're catching on, you're already onto the next thing. That's the power move.",
+      action: { label: "Make Your First Prediction →", href: "/predictions" }
     },
     {
-      icon: <Zap className="w-6 h-6" />,
-      title: "Professional Growth",
-      subtitle: "Advance your expertise",
-      description: "Progress through 15 professional levels. Each tier unlocks enhanced capabilities and recognition.",
+      icon: <Crown className="w-8 h-8" />,
+      emoji: "👑",
+      title: "Rise Through the Ranks",
+      subtitle: "From Observer to Oracle",
+      description: "15 levels of cultural mastery. Each level proves you see what others miss. At the top? You're literally shaping culture.",
       features: [
-        "15-tier progression system",
-        "Performance multipliers",
-        "Professional badges"
+        "🎖️ Unlock elite predictor status",
+        "💰 Monthly prize pools for top spotters",
+        "🌟 Verified badges that actually mean something"
       ],
-      action: { label: "View Dashboard", href: "/dashboard" }
+      vibe: "Imagine having \"Called Winter Arc trend 3 weeks early\" on your profile. That's currency.",
+      action: { label: "Check Your Stats →", href: "/dashboard" }
+    },
+    {
+      icon: <Flame className="w-8 h-8" />,
+      emoji: "⚡",
+      title: "Ready to Change the Game?",
+      subtitle: "The wave starts with you",
+      description: "This isn't about following trends. It's about knowing them before they exist. It's about being the one who says \"first\" and means it.",
+      features: [
+        "🚀 Daily challenges to test your instincts",
+        "🏅 Compete with culture's sharpest minds",
+        "📱 Real influence, not just followers"
+      ],
+      vibe: "Your friends will wonder how you always know what's next. Let them wonder.",
+      action: { label: "Let's Go →", href: "/predictions" }
     }
   ];
 
@@ -105,155 +134,221 @@ export default function QuickStartGuide({ onDismiss }: QuickStartGuideProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
       >
         <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ type: "tween", duration: 0.2 }}
-          className="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden"
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="relative bg-gradient-to-br from-gray-900 via-purple-900/20 to-blue-900/20 rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-purple-500/20"
         >
+          {/* Animated background effect */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-transparent to-blue-600/20 animate-pulse" />
+          </div>
+
           {/* Header */}
-          <div className="relative bg-gray-50 border-b border-gray-200 px-6 py-4">
+          <div className="relative bg-black/40 backdrop-blur-sm border-b border-white/10 px-6 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="text-sm font-medium text-gray-500">
-                  Step {currentStep + 1} of {steps.length}
+              <div className="flex items-center gap-4">
+                <div className="flex gap-1">
+                  {steps.map((_, index) => (
+                    <motion.div
+                      key={index}
+                      className={`h-1.5 rounded-full transition-all ${
+                        index === currentStep 
+                          ? 'w-8 bg-gradient-to-r from-purple-400 to-blue-400' 
+                          : index < currentStep 
+                          ? 'w-1.5 bg-purple-400/60' 
+                          : 'w-1.5 bg-white/20'
+                      }`}
+                      animate={{
+                        scale: index === currentStep ? [1, 1.2, 1] : 1
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: index === currentStep ? Infinity : 0
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="text-sm font-medium text-purple-300">
+                  {currentStep + 1} / {steps.length}
                 </div>
               </div>
               <button
                 onClick={handleDismiss}
-                className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/10 rounded-lg transition-all hover:rotate-90 duration-300"
               >
-                <X className="w-4 h-4 text-gray-500" />
+                <X className="w-4 h-4 text-white/60" />
               </button>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-200">
-              <motion.div
-                className="h-full bg-gray-900"
-                initial={{ width: "0%" }}
-                animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                transition={{ type: "tween", duration: 0.3 }}
-              />
             </div>
           </div>
 
           {/* Content */}
-          <div className="p-8">
+          <div className="relative p-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, x: 10 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ type: "spring", damping: 25 }}
+                className="space-y-6"
               >
-                {/* Icon and titles */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-gray-100 rounded-lg text-gray-700">
+                {/* Icon and Emoji */}
+                <div className="flex items-center justify-center">
+                  <motion.div 
+                    className="relative"
+                    animate={{ 
+                      rotate: [0, 5, -5, 0],
+                      scale: [1, 1.05, 1]
+                    }}
+                    transition={{ 
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur-xl opacity-50" />
+                    <div className="relative bg-gradient-to-br from-purple-500/20 to-blue-500/20 p-4 rounded-full border border-purple-400/30">
                       {currentStepData.icon}
                     </div>
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        {currentStepData.title}
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        {currentStepData.subtitle}
-                      </p>
-                    </div>
-                  </div>
+                    <span className="absolute -top-2 -right-2 text-2xl animate-bounce">
+                      {currentStepData.emoji}
+                    </span>
+                  </motion.div>
                 </div>
-                
+
+                {/* Title and Subtitle */}
+                <div className="text-center space-y-2">
+                  <motion.h2 
+                    className="text-3xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent"
+                    animate={{ 
+                      backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
+                    }}
+                    transition={{ 
+                      duration: 5,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                    style={{ backgroundSize: "200% 200%" }}
+                  >
+                    {currentStepData.title}
+                  </motion.h2>
+                  <p className="text-purple-300 font-medium text-lg">
+                    {currentStepData.subtitle}
+                  </p>
+                </div>
+
                 {/* Description */}
-                <p className="text-gray-700 mb-6 leading-relaxed">
+                <p className="text-white/80 text-center leading-relaxed">
                   {currentStepData.description}
                 </p>
 
                 {/* Features */}
-                <div className="space-y-3 mb-8">
-                  {currentStepData.features.map((feature, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-3 text-gray-600"
+                <div className="space-y-3">
+                  {currentStepData.features.map((feature, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex items-center gap-3 text-white/70"
                     >
-                      <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ 
+                          delay: index * 0.2,
+                          duration: 0.5
+                        }}
+                      >
+                        <Sparkles className="w-4 h-4 text-purple-400" />
+                      </motion.div>
                       <span className="text-sm">{feature}</span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-              </motion.div>
-            </AnimatePresence>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                {steps.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentStep(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      index === currentStep 
-                        ? 'w-6 bg-gray-900' 
-                        : index < currentStep 
-                        ? 'bg-gray-400' 
-                        : 'bg-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
+                {/* Vibe text */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 blur-xl" />
+                  <div className="relative bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-purple-400/20">
+                    <p className="text-sm text-purple-200 italic leading-relaxed">
+                      "{currentStepData.vibe}"
+                    </p>
+                  </div>
+                </div>
 
-              <div className="flex gap-3">
-                {currentStep > 0 && (
-                  <button
-                    onClick={() => setCurrentStep(currentStep - 1)}
-                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                {/* Action Button */}
+                {currentStepData.action && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex justify-center"
                   >
-                    <ChevronLeft className="w-4 h-4" />
-                    Previous
-                  </button>
-                )}
-
-                {currentStep < steps.length - 1 ? (
-                  <button
-                    onClick={() => setCurrentStep(currentStep + 1)}
-                    className="flex items-center gap-2 px-5 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
-                  >
-                    Continue
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <>
-                    {currentStepData.action && (
-                      <Link
-                        href={currentStepData.action.href}
+                    <Link href={currentStepData.action.href}>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-full shadow-lg hover:shadow-purple-500/25 transition-all"
                         onClick={handleDismiss}
                       >
-                        <button className="flex items-center gap-2 px-5 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors">
-                          {currentStepData.action.label}
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </Link>
-                    )}
+                        {currentStepData.action.label}
+                      </motion.button>
+                    </Link>
+                  </motion.div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Navigation */}
+          <div className="relative px-8 pb-8">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                disabled={currentStep === 0}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                  currentStep === 0
+                    ? 'opacity-30 cursor-not-allowed text-white/50'
+                    : 'hover:bg-white/10 text-white'
+                }`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="text-sm">Back</span>
+              </button>
+
+              <div className="flex gap-4">
+                {currentStep === steps.length - 1 ? (
+                  <motion.button
+                    onClick={handleDismiss}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-6 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-purple-500/25 transition-all"
+                  >
+                    Start Predicting 🚀
+                  </motion.button>
+                ) : (
+                  <>
                     <button
                       onClick={handleDismiss}
-                      className="px-5 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                      className="px-4 py-2 text-white/60 hover:text-white/80 transition-colors text-sm"
                     >
-                      Close
+                      Skip for now
+                    </button>
+                    <button
+                      onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                      className="flex items-center gap-2 px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all border border-white/20"
+                    >
+                      <span className="text-sm font-medium">Next</span>
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </>
                 )}
               </div>
-            </div>
-          </div>
-
-          {/* Footer tip */}
-          <div className="px-8 pb-6">
-            <div className="text-xs text-gray-500 text-center">
-              Use arrow keys to navigate • Press ESC to close
             </div>
           </div>
         </motion.div>
@@ -262,7 +357,32 @@ export default function QuickStartGuide({ onDismiss }: QuickStartGuideProps) {
   );
 }
 
-// Minimal version removed - no longer showing banner to returning users
+// Mini version for returning users
 export function MiniQuickStart() {
-  return null;
+  const tips = [
+    "🔥 Hot tip: Trends peak 2-3 weeks after discovery. Time your predictions!",
+    "💎 Pro move: Check what's trending in Asia - it hits the West 10-14 days later",
+    "🎯 Accuracy hack: If Gen Z loves it ironically, it's about to go mainstream",
+    "⚡ Quick wins: Morning submissions get 3x more validations",
+    "🌊 Wave spotting: Look for sounds with <1000 uses but growing 100% daily"
+  ];
+
+  const [currentTip] = useState(() => Math.floor(Math.random() * tips.length));
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg p-4 border border-purple-500/20 backdrop-blur-sm"
+    >
+      <div className="flex items-start gap-3">
+        <div className="p-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg">
+          <Zap className="w-4 h-4 text-purple-400" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm text-white/80">{tips[currentTip]}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
