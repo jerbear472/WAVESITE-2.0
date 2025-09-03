@@ -50,10 +50,13 @@ async function analyzeTrendWithClaude(data: any, searchContext: string): Promise
   
   if (!apiKey) {
     console.error('ANTHROPIC_API_KEY not found in environment variables');
-    throw new Error('No Anthropic API key configured');
+    console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('ANTHRO')));
+    throw new Error('No Anthropic API key configured - please add ANTHROPIC_API_KEY to environment variables');
   }
   
   console.log('Analyzing trend with Claude Sonnet 3.5...');
+  console.log('API Key present:', apiKey ? 'Yes' : 'No');
+  console.log('API Key length:', apiKey ? apiKey.length : 0);
 
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
