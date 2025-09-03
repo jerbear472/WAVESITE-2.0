@@ -312,13 +312,16 @@ export async function POST(request: NextRequest) {
     // Check cache
     const cached = analysisCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log('Returning cached analysis');
       return NextResponse.json({ 
         ...cached.analysis,
-        cached: true
+        cached: true,
+        debug: { source: 'cache' }
       });
     }
     
     let analysis: TrendAnalysis;
+    let debugInfo: any = {};
     
     try {
       // Get web context with better search
@@ -328,13 +331,21 @@ export async function POST(request: NextRequest) {
       ]);
       
       console.log('Starting Claude analysis for trend:', data.title);
+      debugInfo.trend = data.title;
+      debugInfo.apiKeyPresent = !!process.env.ANTHROPIC_API_KEY;
       
       // Get comprehensive AI analysis
       analysis = await Promise.race([
-        analyzeTrendWithClaude(data, searchContext),
+        analyzeTrendWithClaude(data, searchContext).then(result => {
+          debugInfo.source = 'claude';
+          debugInfo.success = true;
+          return result;
+        }),
         new Promise<TrendAnalysis>(resolve => 
           setTimeout(() => {
             console.log('Claude API timeout after 10s, using fallback');
+            debugInfo.source = 'timeout-fallback';
+            debugInfo.timeout = true;
             resolve(generateQuickAnalysis(data));
           }, 10000) // 10s timeout
         )
@@ -345,6 +356,8 @@ export async function POST(request: NextRequest) {
       console.error('AI analysis failed:', error.message);
       console.error('Full error:', error);
       console.log('Using enhanced fallback analysis');
+      debugInfo.source = 'error-fallback';
+      debugInfo.error = error.message;
       analysis = generateQuickAnalysis(data);
     }
     
@@ -362,7 +375,14 @@ export async function POST(request: NextRequest) {
       oldestEntries.forEach(([key]) => analysisCache.delete(key));
     }
     
-    return NextResponse.json(analysis);
+    // Include debug info in development
+    const response = {
+      ...analysis,
+      debug: process.env.NODE_ENV === 'development' ? debugInfo : undefined,
+      _debug: debugInfo // Always include for debugging
+    };
+    
+    return NextResponse.json(response);
     
   } catch (error: any) {
     console.error('Error in analyze-trend-v2:', error);

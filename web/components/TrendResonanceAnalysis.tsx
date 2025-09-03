@@ -108,6 +108,11 @@ export default function TrendResonanceAnalysis({ formData, onAnalysisComplete }:
       clearTimeout(timeoutId);
       const apiData = await response.json();
       
+      // Log debug info if available
+      if (apiData._debug) {
+        console.log('API Debug Info:', apiData._debug);
+      }
+      
       // Generate the structured analysis using both API response and local calculations
       const analysis = {
         resonanceScore: apiData.viralityScore || calculateResonanceScore(),
@@ -119,7 +124,8 @@ export default function TrendResonanceAnalysis({ formData, onAnalysisComplete }:
         predictions: apiData.predictions || generatePredictions(),
         apiAnalysis: apiData, // Store the full API response
         fromCache: apiData.cached || false,
-        hasError: apiData.error || false
+        hasError: apiData.error || false,
+        debugInfo: apiData._debug // Store debug info
       };
       
       setAnalysisData(analysis);
@@ -467,6 +473,11 @@ export default function TrendResonanceAnalysis({ formData, onAnalysisComplete }:
                   )}
                   {analysisData.hasError && (
                     <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-600 rounded-full">Fallback</span>
+                  )}
+                  {analysisData.debugInfo && (
+                    <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                      {analysisData.debugInfo.source}
+                    </span>
                   )}
                 </div>
                 <div className="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none"
