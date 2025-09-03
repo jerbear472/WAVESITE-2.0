@@ -49,8 +49,11 @@ async function analyzeTrendWithClaude(data: any, searchContext: string): Promise
   const apiKey = process.env.ANTHROPIC_API_KEY;
   
   if (!apiKey) {
+    console.error('ANTHROPIC_API_KEY not found in environment variables');
     throw new Error('No Anthropic API key configured');
   }
+  
+  console.log('Analyzing trend with Claude Sonnet 3.5...');
 
   const currentDate = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
@@ -141,20 +144,38 @@ Provide rich, specific insights. Reference data points, percentages, and concret
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Anthropic API error:', error);
-      throw new Error('Failed to get AI analysis');
+      const errorText = await response.text();
+      console.error('Anthropic API error:', response.status, errorText);
+      
+      // Check for specific error types
+      if (response.status === 401) {
+        console.error('Invalid API key - please check ANTHROPIC_API_KEY');
+        throw new Error('Authentication failed');
+      } else if (response.status === 429) {
+        console.error('Rate limit exceeded');
+        throw new Error('Rate limit exceeded');
+      } else if (response.status === 400) {
+        console.error('Bad request - check prompt format');
+        throw new Error('Invalid request format');
+      }
+      
+      throw new Error(`API error: ${response.status}`);
     }
 
     const result = await response.json();
+    console.log('Claude API response received successfully');
     
     if (result.content && result.content[0] && result.content[0].text) {
       try {
         // Parse the JSON response
         const analysisText = result.content[0].text;
+        console.log('Raw Claude response length:', analysisText.length);
+        
         // Remove any markdown code blocks if present
         const cleanJson = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const parsed = JSON.parse(cleanJson);
+        
+        console.log('Successfully parsed Claude response');
         
         // Ensure all required fields exist
         return {
@@ -216,11 +237,17 @@ Provide rich, specific insights. Reference data points, percentages, and concret
 }
 
 function generateQuickAnalysis(data: any): TrendAnalysis {
-  // Calculate a basic virality score based on votes
-  const totalVotes = (data.wave_votes || 0) + (data.fire_votes || 0);
+  console.log('Generating fallback analysis for:', data.title);
+  
+  // Calculate a more sophisticated virality score
+  const waveVotes = data.wave_votes || 0;
+  const fireVotes = data.fire_votes || 0;
+  const totalPositive = waveVotes + fireVotes;
   const negativeVotes = (data.declining_votes || 0) + (data.dead_votes || 0);
+  
+  // Weight wave votes more heavily as they indicate stronger virality
   const viralityScore = Math.min(100, Math.max(10, 
-    50 + (totalVotes * 5) - (negativeVotes * 10)
+    40 + (waveVotes * 8) + (fireVotes * 4) - (negativeVotes * 10)
   ));
 
   const platform = data.platform || 'social media';
@@ -297,15 +324,24 @@ export async function POST(request: NextRequest) {
         new Promise<string>(resolve => setTimeout(() => resolve('Limited web context available.'), 5000))
       ]);
       
+      console.log('Starting Claude analysis for trend:', data.title);
+      
       // Get comprehensive AI analysis
       analysis = await Promise.race([
         analyzeTrendWithClaude(data, searchContext),
         new Promise<TrendAnalysis>(resolve => 
-          setTimeout(() => resolve(generateQuickAnalysis(data)), 10000) // 10s timeout
+          setTimeout(() => {
+            console.log('Claude API timeout after 10s, using fallback');
+            resolve(generateQuickAnalysis(data));
+          }, 10000) // 10s timeout
         )
       ]);
-    } catch (error) {
-      console.error('AI analysis failed, using enhanced quick analysis:', error);
+      
+      console.log('Analysis completed successfully');
+    } catch (error: any) {
+      console.error('AI analysis failed:', error.message);
+      console.error('Full error:', error);
+      console.log('Using enhanced fallback analysis');
       analysis = generateQuickAnalysis(data);
     }
     
