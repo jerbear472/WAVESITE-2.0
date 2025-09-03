@@ -261,7 +261,7 @@ function generateQuickAnalysis(data: any): TrendAnalysis {
     viralityScore,
     
     keyFactors: [
-      `${totalVotes > 10 ? 'Strong' : 'Growing'} community validation with ${totalVotes} positive signals`,
+      `${totalPositive > 10 ? 'Strong' : 'Growing'} community validation with ${totalPositive} positive signals`,
       `Platform algorithm favoring ${category} content this quarter`,
       'Low barrier to entry encourages mass participation',
       viralityScore > 60 ? 'Celebrity and influencer adoption accelerating spread' : 'Organic grassroots growth pattern'
