@@ -165,7 +165,7 @@ export default function QuickTrendSubmit({ isOpen, onClose, onSuccess, initialUr
           if (data.metadata.title) {
             const hashtagMatches = data.metadata.title.match(/#\w+/g);
             if (hashtagMatches && !tags) {
-              setTags(hashtagMatches.map(tag => tag.slice(1)).join(', '));
+              setTags(hashtagMatches.map((tag: string) => tag.slice(1)).join(', '));
             }
           }
         }
