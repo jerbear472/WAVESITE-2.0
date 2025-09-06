@@ -2033,10 +2033,10 @@ export default function Timeline() {
                               <SimpleVoteDisplay 
                                 trendId={trend.id}
                                 initialVotes={{
-                                  wave: trend.vote_wave_count || 0,
-                                  fire: trend.vote_fire_count || 0,
-                                  declining: trend.vote_declining_count || 0,
-                                  dead: trend.vote_dead_count || 0
+                                  wave: trend.wave_votes || 0,
+                                  fire: trend.fire_votes || 0,
+                                  declining: trend.declining_votes || 0,
+                                  dead: trend.dead_votes || 0
                                 }}
                                 compact={false}
                               />
