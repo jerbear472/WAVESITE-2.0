@@ -43,7 +43,7 @@ export default function Home() {
           </div>
           
           <p className="mt-8 text-sm text-gray-500 dark:text-gray-500">
-            Join 1,000+ cultural analysts already calling the future
+            Join 1,000+ cultural journalists documenting what happens next
           </p>
         </div>
       </section>
@@ -52,39 +52,39 @@ export default function Home() {
       <section className="py-20 bg-gray-50 dark:bg-neutral-900">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            <span className="text-gradient font-light">How to Win at WaveSight</span>
+            <span className="text-gradient font-light">How Cultural Journalism Works</span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
               <div className="text-4xl mb-4">👁️</div>
-              <h3 className="text-lg font-medium mb-3">SPOT</h3>
+              <h3 className="text-lg font-medium mb-3">CAPTURE</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                See something catching on? Drop it here first.
+                Screenshot the moment culture shifts. Be the primary source.
               </p>
             </div>
             
             <div className="text-center">
               <div className="text-4xl mb-4">📈</div>
-              <h3 className="text-lg font-medium mb-3">PREDICT</h3>
+              <h3 className="text-lg font-medium mb-3">HEADLINE</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Call when it peaks. 24 hours? 1 week? Place your bet.
+                Write tomorrow's cultural story today. Call the timeline.
               </p>
             </div>
             
             <div className="text-center">
               <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-lg font-medium mb-3">PROVE</h3>
+              <h3 className="text-lg font-medium mb-3">VERIFY</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Time proves you right. Accuracy score goes up.
+                Reality validates your reporting. Build credibility.
               </p>
             </div>
             
             <div className="text-center">
               <div className="text-4xl mb-4">🏆</div>
-              <h3 className="text-lg font-medium mb-3">WIN</h3>
+              <h3 className="text-lg font-medium mb-3">EARN</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Climb the leaderboard. Become a cultural oracle.
+                Top journalists get paid. Best stories win monthly.
               </p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function Home() {
       <section className="py-20">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            <span className="text-gradient font-light">What You're Playing For</span>
+            <span className="text-gradient font-light">Why This Matters</span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
@@ -109,25 +109,25 @@ export default function Home() {
             
             <div className="card card-hover p-6">
               <div className="text-3xl mb-3">⭐</div>
-              <h3 className="font-semibold mb-2">Social Proof</h3>
+              <h3 className="font-semibold mb-2">Cultural Credit</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                "Called Winter Arc 3 weeks early" - verified on your profile
+                "First to document Winter Arc" - timestamped forever
               </p>
             </div>
             
             <div className="card card-hover p-6">
               <div className="text-3xl mb-3">📊</div>
-              <h3 className="font-semibold mb-2">Accuracy Score</h3>
+              <h3 className="font-semibold mb-2">Journalist Score</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Your prediction track record, public and permanent
+                Your cultural reporting accuracy, verified on-chain
               </p>
             </div>
             
             <div className="card card-hover p-6">
               <div className="text-3xl mb-3">🎯</div>
-              <h3 className="font-semibold mb-2">Bragging Rights</h3>
+              <h3 className="font-semibold mb-2">First-Mover Proof</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Proof you're culturally ahead of everyone else
+                Evidence you documented culture before it was news
               </p>
             </div>
           </div>
