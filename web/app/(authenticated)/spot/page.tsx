@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 // ScrollSession component removed - using session context directly
 import { XPLevelDisplay } from '@/components/XPLevelDisplay';
+import QuickTrendSubmit from '@/components/QuickTrendSubmit';
 import SmartTrendSubmission from '@/components/SmartTrendSubmission';
 import StreakDisplay from '@/components/StreakDisplay';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,6 +66,8 @@ export default function SpotPage() {
   // Core states
   const [trendUrl, setTrendUrl] = useState('');
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [showSmartSubmission, setShowSmartSubmission] = useState(false);
+  const [trendData, setTrendData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
@@ -307,7 +310,45 @@ export default function SpotPage() {
     }
   };
 
-  // handleTrendSubmit removed - SmartTrendSubmission handles everything internally now
+  // Handle trend submission
+  const handleTrendSubmit = async (trendData: any) => {
+    console.log('Starting trend submission from spot page:', trendData);
+    
+    // Ensure user is authenticated
+    if (!user?.id) {
+      console.error('No user ID available for submission');
+      throw new Error('Please log in to submit trends');
+    }
+
+    try {
+      // Add timeout to prevent hanging (15 seconds)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Submission timeout - please try again')), 15000)
+      );
+      
+      // Use the submitTrend function with XP calculation
+      console.log('📊 Submitting trend with data:', trendData);
+      const result = await Promise.race([
+        submitTrend(user.id, trendData),
+        timeoutPromise
+      ]) as any;
+      
+      console.log('📊 Submit result:', result);
+      
+      if (result && result.success) {
+        // Refresh stats after successful submission
+        await loadTodaysStats();
+        
+        // Return success result
+        return result;
+      } else {
+        throw new Error(result?.error || 'Failed to submit trend');
+      }
+    } catch (error: any) {
+      console.error('Error submitting trend:', error);
+      throw error;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -665,66 +706,40 @@ export default function SpotPage() {
       </div>
 
       {/* Trend Submission Form */}
-      {showSubmissionForm && (
-        <ErrorBoundary
-          fallback={
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl p-6 max-w-md w-full">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Form</h3>
-                <p className="text-gray-600 mb-4">Unable to load the submission form. Please try refreshing the page.</p>
-                <button
-                  onClick={() => {
-                    setShowSubmissionForm(false);
-                    setTrendUrl('');
-                  }}
-                  className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
+      {/* Quick Trend Submit Modal */}
+      <QuickTrendSubmit
+        isOpen={showSubmissionForm}
+        initialUrl={trendUrl}
+        onClose={() => {
+          setShowSubmissionForm(false);
+          setTrendUrl('');
+        }}
+        onSuccess={(data?: any) => {
+          setShowSubmissionForm(false);
+          if (data?.continueToAnalysis) {
+            // Open SmartTrendSubmission for full AI analysis
+            setTrendData(data);
+            setShowSmartSubmission(true);
+          } else {
+            setTrendUrl('');
+            // Refresh stats after submission
+            loadTodaysStats();
           }
-        >
-          <SmartTrendSubmission
-            initialUrl={trendUrl}
-            onClose={() => {
-              setShowSubmissionForm(false);
-              setTrendUrl('');
-            }}
-            onSubmit={async (data) => {
-              if (!user?.id) {
-                throw new Error('Please log in to submit trends');
-              }
-              
-              // Use instant submission for immediate feedback
-              const result = await submitTrendInstant(user.id, data);
-              
-              if (!result.success) {
-                throw new Error(result.message || 'Failed to submit trend');
-              }
-              
-              // Show success notification immediately
-              showXPNotification(
-                10, // Base XP, multipliers calculated async
-                'Trend submitted! Processing...',
-                'submission',
-                '🚀 Instant Submit',
-                'Your trend is being processed in the background'
-              );
-              
-              // Close form and refresh stats on success
-              setShowSubmissionForm(false);
-              setTrendUrl('');
-              
-              // Refresh stats after a short delay to catch processed submission
-              setTimeout(() => {
-                loadTodaysStats();
-              }, 2000);
-              
-              return { success: true };
-            }}
-          />
-        </ErrorBoundary>
+        }}
+      />
+      
+      {/* Smart Trend Submission for full AI analysis */}
+      {showSmartSubmission && (
+        <SmartTrendSubmission
+          initialUrl={trendData?.url || trendUrl}
+          onClose={() => {
+            setShowSmartSubmission(false);
+            setTrendData(null);
+            setTrendUrl('');
+            loadTodaysStats();
+          }}
+          onSubmit={handleTrendSubmit}
+        />
       )}
     </div>
   );

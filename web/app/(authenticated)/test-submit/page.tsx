@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import QuickTrendSubmit from '@/components/QuickTrendSubmit';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
 export default function TestSubmitPage() {
   const router = useRouter();
+  const [showSubmit, setShowSubmit] = useState(true);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black p-6">
@@ -42,7 +44,14 @@ export default function TestSubmitPage() {
           </div>
 
           {/* Quick Submit Component */}
-          <QuickTrendSubmit />
+          <QuickTrendSubmit 
+            isOpen={showSubmit}
+            onClose={() => setShowSubmit(false)}
+            onSuccess={() => {
+              console.log('Submission successful!');
+              setTimeout(() => setShowSubmit(true), 2000);
+            }}
+          />
 
           {/* Debug Info */}
           <div className="bg-gray-800/50 rounded-xl p-4 text-xs font-mono text-gray-400">

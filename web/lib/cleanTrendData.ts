@@ -25,7 +25,10 @@ export function cleanTrendData(trend: any): any {
     'platform',
     'status',
     'stage',
-    'validation_status'
+    'validation_status',
+    'thumbnail_url',
+    'screenshot_url',
+    'post_url'
   ];
   
   // Clean string fields - convert 0, "0", false to null

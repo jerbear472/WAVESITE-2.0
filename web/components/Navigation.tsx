@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import WaveSightLogo from '@/components/WaveSightLogo';
 import { Trophy, TrendingUp, Award } from 'lucide-react';
+import { getLevelByXP } from '@/lib/xpLevels';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -17,73 +18,6 @@ export default function Navigation() {
   const [userXP, setUserXP] = useState<number>(0);
   const [userLevel, setUserLevel] = useState<string>('Observer');
   const [globalRank, setGlobalRank] = useState<number | null>(null);
-
-  // Function to calculate level from XP
-  const getLevelByXP = (xp: number) => {
-    // Ensure xp is a number and handle any potential issues
-    const xpValue = parseInt(String(xp)) || 0;
-    console.log('getLevelByXP called with:', xpValue, 'type:', typeof xpValue);
-    
-    // Check each threshold explicitly
-    if (xpValue >= 12500) {
-      console.log('Level: Legend (15)');
-      return { level: 15, title: 'Legend', emoji: '⭐' };
-    }
-    if (xpValue >= 10000) {
-      console.log('Level: Master (14)');
-      return { level: 14, title: 'Master', emoji: '🏆' };
-    }
-    if (xpValue >= 8000) {
-      console.log('Level: Visionary (13)');
-      return { level: 13, title: 'Visionary', emoji: '✨' };
-    }
-    if (xpValue >= 6600) {
-      console.log('Level: Pioneer (12)');
-      return { level: 12, title: 'Pioneer', emoji: '🚀' };
-    }
-    if (xpValue >= 5500) {
-      console.log('Level: Authority (11)');
-      return { level: 11, title: 'Authority', emoji: '👑' };
-    }
-    if (xpValue >= 4500) {
-      console.log('Level: Researcher (10)');
-      return { level: 10, title: 'Researcher', emoji: '🔬' };
-    }
-    if (xpValue >= 3600) {
-      console.log('Level: Scholar (9)');
-      return { level: 9, title: 'Scholar', emoji: '📚' };
-    }
-    if (xpValue >= 2800) {
-      console.log('Level: Expert (8)');
-      return { level: 8, title: 'Expert', emoji: '🧠' };
-    }
-    if (xpValue >= 2100) {
-      console.log('Level: Specialist (7) - XP:', xpValue);
-      return { level: 7, title: 'Specialist', emoji: '🎯' };
-    }
-    if (xpValue >= 1500) {
-      console.log('Level: Interpreter (6)');
-      return { level: 6, title: 'Interpreter', emoji: '🔬' };
-    }
-    if (xpValue >= 1000) {
-      console.log('Level: Analyst (5) - XP:', xpValue);
-      return { level: 5, title: 'Analyst', emoji: '📊' };
-    }
-    if (xpValue >= 600) {
-      console.log('Level: Spotter (4)');
-      return { level: 4, title: 'Spotter', emoji: '📍' };
-    }
-    if (xpValue >= 300) {
-      console.log('Level: Tracker (3)');
-      return { level: 3, title: 'Tracker', emoji: '🔍' };
-    }
-    if (xpValue >= 100) {
-      console.log('Level: Recorder (2)');
-      return { level: 2, title: 'Recorder', emoji: '📝' };
-    }
-    console.log('Level: Observer (1)');
-    return { level: 1, title: 'Observer', emoji: '👁️' };
-  };
 
   const fetchXPData = async () => {
     if (!user) return;
@@ -192,10 +126,11 @@ export default function Navigation() {
     router.push('/');
   };
 
+  // Navigation items with updated Headlines
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
     { href: '/spot', label: 'Spot', icon: '➕' },
-    { href: '/predictions', label: 'Predict', icon: '📈' },
+    { href: '/predictions', label: 'Headlines', icon: '🌍' },
     { href: '/timeline', label: 'My Timeline', icon: '📅' },
     // Hidden from nav but still accessible at /validate
     // { href: '/validate', label: 'Validate', icon: '✅' },
@@ -270,10 +205,12 @@ export default function Navigation() {
               </div>
             )}
             
-            {/* Level Display - Only if not Observer */}
-            {userLevel && userLevel !== 'Observer' && (
-              <div className="flex items-center bg-gradient-to-r from-purple-50 to-pink-50 px-2.5 py-1 rounded-md border border-purple-200">
-                <span className="text-xs font-bold text-purple-700">{userLevel}</span>
+            {/* Level Display - Show current rank */}
+            {userLevel && (
+              <div key={`level-${userXP}`} className="flex items-center bg-gradient-to-r from-purple-50 to-pink-50 px-2.5 py-1 rounded-md border border-purple-200">
+                <span className="text-xs font-bold text-purple-700">
+                  {getLevelByXP(userXP).emoji} {getLevelByXP(userXP).title}
+                </span>
               </div>
             )}
 

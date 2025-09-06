@@ -2,10 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  generateBuildId: async () => {
-    // Force new build ID to clear cache
-    return 'build-' + Date.now()
-  },
   images: {
     domains: ['aicahushpcslwjwrlqbo.supabase.co'], // NEW Supabase instance
     minimumCacheTTL: 60, // Cache images for 60 seconds

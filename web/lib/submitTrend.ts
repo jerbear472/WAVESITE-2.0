@@ -99,7 +99,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     const safeCategory = getSafeCategory(data.category);
     console.log(`📁 Category validation: input="${data.category}" -> safe="${safeCategory}"`);
     
-    // List of valid categories from ReliableTrendSubmission service
+    // List of valid categories - simplified to match common database enum
     const validCategories = [
       'technology', 'fashion', 'food', 'travel', 'fitness', 'entertainment',
       'gaming', 'sports', 'music', 'art', 'education', 'business', 'health',
@@ -315,6 +315,15 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       code: error.code,
       details: error.details
     });
+    
+    // Check for timeout
+    if (error.message?.includes('timeout')) {
+      return {
+        success: false,
+        error: 'Submission timed out. Please check your connection and try again.'
+      };
+    }
+    
     return {
       success: false,
       error: error.message || 'Failed to submit trend'

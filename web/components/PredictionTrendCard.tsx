@@ -39,6 +39,7 @@ interface TrendCardProps {
     wave_score?: number;
     is_validated?: boolean;
     status?: 'submitted' | 'approved' | 'rejected';
+    hashtags?: string[];
   };
   userVote?: string;
   onVote: (trendId: string, voteType: string) => void;
@@ -206,11 +207,18 @@ export default function PredictionTrendCard({
           <div className="flex-1 space-y-4">
             <p className="text-gray-600 line-clamp-2">{trend.description}</p>
             
-            {/* Category & Stats */}
+            {/* Hashtags & Stats */}
             <div className="flex items-center gap-4 text-sm">
-              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">
-                {trend.category}
-              </span>
+              {/* Display hashtags if available */}
+              {trend.hashtags && trend.hashtags.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {trend.hashtags.slice(0, 3).map((tag, index) => (
+                    <span key={index} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
               {trend.url && (
                 <ExternalLink className="w-4 h-4 text-gray-400" />
               )}

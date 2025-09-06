@@ -160,9 +160,9 @@ export default function SPANavigation() {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/spot', label: 'Spot', icon: '👁️' },
-    { href: '/predictions', label: 'Predictions', icon: '🔮' },
-    { href: '/timeline', label: 'My Timeline', icon: '📈' },
+    { href: '/spot', label: 'Spot', icon: '➕' },
+    { href: '/predictions', label: 'Headlines', icon: '🌍' },
+    { href: '/timeline', label: 'My Timeline', icon: '📅' },
     // Hidden: { href: '/validate', label: 'Validate', icon: '✅' },
     { href: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
     { href: '/profile', label: 'Profile', icon: '👤' },

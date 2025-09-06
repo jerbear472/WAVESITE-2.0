@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
-import PastTrendsTimeline from '@/components/PastTrendsTimeline';
 import XPActivitySidebar from '@/components/XPActivitySidebar';
-import PendingValidations from '@/components/PendingValidations';
 import StreakDisplay from '@/components/StreakDisplay';
 import QuickStartGuide, { MiniQuickStart } from '@/components/QuickStartGuide';
 import { motion } from 'framer-motion';
@@ -31,8 +29,7 @@ import {
   Flame,
   Activity
 } from 'lucide-react';
-import SmartTrendSubmission from '@/components/SmartTrendSubmission';
-import { submitTrend } from '@/lib/submitTrend';
+import QuickTrendSubmit from '@/components/QuickTrendSubmit';
 
 interface XPStats {
   total_xp: number;
@@ -41,7 +38,6 @@ interface XPStats {
   todays_xp: number;
   weekly_xp: number;
   trends_submitted: number;
-  trends_validated: number;
   current_streak: number;
   global_rank: number | null;
 }
@@ -56,7 +52,6 @@ export default function Dashboard() {
     todays_xp: 0,
     weekly_xp: 0,
     trends_submitted: 0,
-    trends_validated: 0,
     current_streak: 0,
     global_rank: null
   });
@@ -98,7 +93,7 @@ export default function Dashboard() {
       // Get user profile for streak
       const { data: profileData } = await supabase
         .from('user_profiles')
-        .select('current_streak, total_submitted, total_validated')
+        .select('current_streak, total_submitted')
         .eq('id', user.id)
         .single();
 
@@ -125,7 +120,6 @@ export default function Dashboard() {
         todays_xp: todaysTotal,
         weekly_xp: 0, // TODO: Calculate weekly
         trends_submitted: profileData?.total_submitted || 0,
-        trends_validated: profileData?.total_validated || 0,
         current_streak: profileData?.current_streak || 0,
         global_rank: null
       });
@@ -176,25 +170,28 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Show mini quick start for users who haven't submitted yet */}
-        {stats.trends_submitted === 0 && !showQuickStart && (
+        {/* Mini quick start disabled - was too prominent */}
+        {/* {stats.trends_submitted === 0 && !showQuickStart && (
           <MiniQuickStart />
-        )}
+        )} */}
         
-        {/* Header - simplified */}
-        <div className="mb-4 sm:mb-6 flex items-center justify-between">
+        {/* Header - modern and clean */}
+        <div className="mb-6 sm:mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
-              Dashboard
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Your Dashboard
             </h1>
+            <p className="text-sm text-gray-500 mt-1">Level {stats.current_level} • {stats.level_title}</p>
           </div>
           <button
             onClick={() => setShowSubmissionForm(true)}
-            className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg 
-                     font-medium transition-colors text-sm"
+            className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 
+                     hover:from-blue-700 hover:to-purple-700 text-white px-5 py-2.5 rounded-full 
+                     font-medium transition-all duration-200 shadow-lg hover:shadow-xl 
+                     hover:scale-105 text-sm"
           >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Spot Trend</span>
+            <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+            <span>Spot Trend</span>
           </button>
         </div>
 
@@ -254,15 +251,56 @@ export default function Dashboard() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Main Column - Past Trends (2/3 width on desktop, full on mobile) */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
-            <PastTrendsTimeline />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Left Column - Quick Actions & Stats */}
+          <div className="space-y-4 sm:space-y-6">
+            {/* Quick Actions - moved to top */}
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <Link
+                  href="/spot"
+                  className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Spot Trends</p>
+                      <p className="text-xs text-gray-600">+10 XP per trend</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Link>
+                
+                <Link
+                  href="/predictions"
+                  className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Target className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Make Predictions</p>
+                      <p className="text-xs text-gray-600">+20 XP when correct</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Link>
 
-          {/* Sidebar - XP Activity (1/3 width on desktop, full on mobile) */}
-          <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
-            <XPActivitySidebar />
+                <Link
+                  href="/timeline"
+                  className="flex items-center justify-between p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">My Timeline</p>
+                      <p className="text-xs text-gray-600">View your history</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                </Link>
+              </div>
+            </div>
             
             {/* Level Progression */}
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6">
@@ -393,97 +431,23 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-            
-            {/* Quick Actions */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <Link
-                  href="/spot"
-                  className="flex items-center justify-between p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Spot Trends</p>
-                      <p className="text-xs text-gray-600">+10 XP per trend</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </Link>
-                
-                <Link
-                  href="/predictions"
-                  className="flex items-center justify-between p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Target className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Make Predictions</p>
-                      <p className="text-xs text-gray-600">+20 XP when correct</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </Link>
-
-                <Link
-                  href="/timeline"
-                  className="flex items-center justify-between p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">My Timeline</p>
-                      <p className="text-xs text-gray-600">View your history</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Pending Validations */}
-            <PendingValidations />
+          </div>
+          
+          {/* Right Column - XP Activity */}
+          <div className="space-y-4 sm:space-y-6">
+            <XPActivitySidebar />
           </div>
         </div>
       </div>
 
-      {/* Submission Form Modal */}
-      {showSubmissionForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <SmartTrendSubmission
-              onClose={() => setShowSubmissionForm(false)}
-              onSubmit={async (data) => {
-                if (!user?.id) {
-                  throw new Error('Please log in to submit trends');
-                }
-                
-                const result = await submitTrend(user.id, data);
-                
-                if (!result.success) {
-                  throw new Error(result.error || 'Failed to submit trend');
-                }
-                
-                if (result.earnings) {
-                  showXPNotification(
-                    result.earnings,
-                    'Trend spotted successfully!',
-                    'submission',
-                    'XP Earned',
-                    result.xpBreakdown ? result.xpBreakdown.join(', ') : undefined
-                  );
-                }
-                
-                setShowSubmissionForm(false);
-                loadDashboardData();
-                
-                return result;
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {/* Quick Trend Submit Modal - Simplified 2-tap */}
+      <QuickTrendSubmit
+        isOpen={showSubmissionForm}
+        onClose={() => setShowSubmissionForm(false)}
+        onSuccess={() => {
+          loadDashboardData();
+        }}
+      />
 
       {/* Quick Start Guide Modal for new users */}
       {showQuickStart && (

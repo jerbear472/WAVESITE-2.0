@@ -55,60 +55,40 @@ const PATTERN_TEMPLATES = [
     icon: '📉', 
     days: -7,  // Negative days means it peaked in the past
     intensity: 30,  // Current intensity is low
-    example: 'Harlem Shake',
-    description: 'Peak was in the past, now declining',
+    example: 'Last week\'s meme',
+    description: 'It\'s over, moving on',
     decayRate: 10.0,  // Very steep decline
     isPast: true
   },
   { 
-    id: 'flash', 
-    name: 'Flash', 
+    id: '48hrs', 
+    name: '48 Hours', 
     icon: '⚡', 
-    days: 3, 
+    days: 2, 
     intensity: 100,
-    example: 'Bernie mittens',
-    description: 'Instant viral, dies immediately',
-    decayRate: 8.0  // Very aggressive decay
+    example: 'Breaking news reaction',
+    description: 'Exploding right now',
+    decayRate: 6.0  // Fast decay after peak
   },
   { 
-    id: 'rocket', 
-    name: 'Rocket', 
+    id: '1week', 
+    name: '1 Week', 
     icon: '🚀', 
     days: 7, 
-    intensity: 95,
-    example: 'Ice Bucket Challenge',
-    description: 'Explodes fast, fades fast',
-    decayRate: 4.5  // Fast decay
+    intensity: 90,
+    example: 'Viral challenge',
+    description: 'Building momentum fast',
+    decayRate: 4.0  // Moderate decay
   },
   { 
-    id: 'wave', 
-    name: 'Wave', 
-    icon: '🌊', 
-    days: 30, 
-    intensity: 75,
-    example: 'Stanley Cup craze',
-    description: 'Steady rise and fall',
-    decayRate: 2.0  // Moderate decay
-  },
-  { 
-    id: 'grower', 
-    name: 'Grower', 
-    icon: '🌱', 
-    days: 60, 
-    intensity: 85,
-    example: 'Roman Empire thoughts',
-    description: 'Slow build, staying power',
-    decayRate: 1.0  // Slow decay
-  },
-  { 
-    id: 'longtail', 
-    name: 'Long tail', 
-    icon: '🦎', 
-    days: 45, 
+    id: 'here_to_stay', 
+    name: 'Here to Stay', 
+    icon: '♾️', 
+    days: 90, 
     intensity: 70,
-    example: 'Girl dinner',
-    description: 'Moderate peak, very slow fade',
-    decayRate: 0.5  // Very slow decay
+    example: 'New lifestyle trend',
+    description: 'Long-term cultural shift',
+    decayRate: 1.0  // Slow decay
   }
 ];
 
@@ -119,9 +99,9 @@ export default function TrendPredictionChartV7({
 }: TrendPredictionChartProps) {
   const [peakDays, setPeakDays] = useState(30);
   const [peakIntensity, setPeakIntensity] = useState(75);
-  const [confidence, setConfidence] = useState(50);
+  const confidence = 75; // Fixed confidence for simplified UX
   const [showOtherPredictions, setShowOtherPredictions] = useState(false);
-  const [selectedPattern, setSelectedPattern] = useState('wave');
+  const [selectedPattern, setSelectedPattern] = useState('1week');
   const [otherPredictions, setOtherPredictions] = useState<OtherPrediction[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
@@ -635,42 +615,20 @@ export default function TrendPredictionChartV7({
         </div>
       </div>
 
-      {/* Confidence Betting */}
+      {/* XP Stakes - Simplified */}
       <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl">
-        <div className="text-sm font-medium text-gray-700 mb-3">YOUR CONFIDENCE</div>
-        
-        <div className="flex items-center gap-4">
-          <input
-            type="range"
-            min="10"
-            max="100"
-            step="5"
-            value={confidence}
-            onChange={(e) => setConfidence(parseInt(e.target.value))}
-            className="flex-1 h-3 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className={`text-2xl font-bold px-3 py-1 rounded-lg ${
-            confidence < 40 ? 'text-green-600 bg-green-50' :
-            confidence < 70 ? 'text-yellow-600 bg-yellow-50' :
-            'text-red-600 bg-red-50'
-          }`}>
-            {confidence}%
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-lg p-3 text-center">
+            <div className="text-xs text-gray-500 uppercase">Stake</div>
+            <div className="text-xl font-bold text-purple-600">{xpBet} XP</div>
           </div>
-        </div>
-
-        {/* Stakes */}
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <div className="bg-white rounded-lg p-2 text-center">
-            <div className="text-xs text-gray-500">BET</div>
-            <div className="text-lg font-bold text-purple-600">{xpBet} XP</div>
+          <div className="bg-green-50 rounded-lg p-3 text-center">
+            <div className="text-xs text-green-600 uppercase">If Right</div>
+            <div className="text-xl font-bold text-green-600">+{potentialWin + crowdBonus}</div>
           </div>
-          <div className="bg-green-50 rounded-lg p-2 text-center">
-            <div className="text-xs text-green-600">WIN</div>
-            <div className="text-lg font-bold text-green-600">+{potentialWin + crowdBonus}</div>
-          </div>
-          <div className="bg-red-50 rounded-lg p-2 text-center">
-            <div className="text-xs text-red-600">LOSE</div>
-            <div className="text-lg font-bold text-red-600">-{potentialLoss}</div>
+          <div className="bg-red-50 rounded-lg p-3 text-center">
+            <div className="text-xs text-red-600 uppercase">If Wrong</div>
+            <div className="text-xl font-bold text-red-600">-{potentialLoss}</div>
           </div>
         </div>
       </div>
@@ -681,7 +639,6 @@ export default function TrendPredictionChartV7({
           onClick={() => {
             setPeakDays(30);
             setPeakIntensity(75);
-            setConfidence(50);
             setSelectedPattern('custom');
           }}
           className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
@@ -692,10 +649,10 @@ export default function TrendPredictionChartV7({
         
         <button
           onClick={handleSave}
-          className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 font-medium"
+          className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 font-semibold text-lg"
         >
-          <Lock className="w-4 h-4" />
-          Lock Prediction • {xpBet} XP
+          <Lock className="w-5 h-5" />
+          Lock in Prediction
         </button>
       </div>
 

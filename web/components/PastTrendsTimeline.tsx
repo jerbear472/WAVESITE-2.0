@@ -52,7 +52,11 @@ interface PastTrend {
   audience_demographic?: string;
 }
 
-export default function PastTrendsTimeline() {
+interface PastTrendsTimelineProps {
+  userId?: string;
+}
+
+export default function PastTrendsTimeline({ userId }: PastTrendsTimelineProps) {
   const [pastTrends, setPastTrends] = useState<PastTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTimeframe, setSelectedTimeframe] = useState<'week' | 'month' | 'all'>('week');
@@ -60,10 +64,14 @@ export default function PastTrendsTimeline() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    loadPastTrends();
-  }, [selectedTimeframe]);
+    if (userId) {
+      loadPastTrends();
+    }
+  }, [selectedTimeframe, userId]);
 
   const loadPastTrends = async () => {
+    if (!userId) return;
+    
     try {
       // Calculate date range based on timeframe
       const now = new Date();
@@ -77,11 +85,11 @@ export default function PastTrendsTimeline() {
         startDate.setFullYear(now.getFullYear() - 1);
       }
 
-      // Load validated trends from the selected timeframe with all fields
+      // Load only the current user's submissions
       const { data, error } = await supabase
         .from('trend_submissions')
         .select('*')
-        .in('status', ['validated', 'quality_approved', 'trending'])
+        .eq('spotter_id', userId)  // Only user's own submissions
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false })
         .limit(20);
@@ -110,17 +118,49 @@ export default function PastTrendsTimeline() {
     setTimeout(() => setSelectedTrend(null), 300);
   };
 
+  const formatCategory = (category: string): string => {
+    // Convert database enum values to display labels
+    const categoryMap: Record<string, string> = {
+      'meme_format': 'Meme/Humor',
+      'fashion': 'Fashion',
+      'food_drink': 'Food & Drink',
+      'audio_music': 'Music',
+      'lifestyle': 'Lifestyle',
+      'technology': 'Tech',
+      'finance': 'Finance',
+      'sports': 'Sports',
+      'political': 'Political',
+      'automotive': 'Cars',
+      'animals_pets': 'Animals',
+      'travel': 'Travel',
+      'education': 'Education',
+      'health': 'Health',
+      'entertainment': 'Entertainment',
+      'gaming': 'Gaming',
+      'art': 'Art',
+      'business': 'Business',
+      'celebrity': 'Celebrity',
+      'dance': 'Dance',
+      'diy_crafts': 'DIY',
+      'news_events': 'News',
+      'relationship': 'Relationship',
+      'product_brand': 'Product'
+    };
+    
+    return categoryMap[category] || category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  };
+
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      technology: 'from-blue-500 to-cyan-500',
-      fashion: 'from-purple-500 to-pink-500',
-      food: 'from-orange-500 to-red-500',
-      fitness: 'from-green-500 to-emerald-500',
-      entertainment: 'from-indigo-500 to-purple-500',
-      lifestyle: 'from-teal-500 to-green-500',
-      gaming: 'from-violet-500 to-purple-500',
-      music: 'from-pink-500 to-rose-500',
-      sports: 'from-red-500 to-orange-500',
+      'Tech': 'from-blue-500 to-cyan-500',
+      'Fashion': 'from-purple-500 to-pink-500',
+      'Food & Drink': 'from-orange-500 to-red-500',
+      'Sports': 'from-green-500 to-emerald-500',
+      'Entertainment': 'from-indigo-500 to-purple-500',
+      'Lifestyle': 'from-teal-500 to-green-500',
+      'Gaming': 'from-violet-500 to-purple-500',
+      'Music': 'from-pink-500 to-rose-500',
+      'Meme/Humor': 'from-yellow-500 to-orange-500',
       art: 'from-purple-500 to-blue-500',
       education: 'from-blue-500 to-green-500',
       business: 'from-gray-500 to-blue-500',
@@ -187,10 +227,10 @@ export default function PastTrendsTimeline() {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <Activity className="w-6 h-6 text-blue-500" />
-                Validated Trends
+                Your Recent Submissions
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                Successfully validated community trends
+                Track your trend spotting activity
               </p>
             </div>
             
@@ -218,9 +258,9 @@ export default function PastTrendsTimeline() {
           {pastTrends.length === 0 ? (
             <div className="p-12 text-center">
               <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No validated trends in this timeframe</p>
+              <p className="text-gray-500">No trends in this timeframe</p>
               <p className="text-sm text-gray-400 mt-2">
-                Submit and validate trends to see them here
+                Submit trends to see them here
               </p>
             </div>
           ) : (
@@ -233,14 +273,62 @@ export default function PastTrendsTimeline() {
                 className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => handleTrendClick(trend)}
               >
-                <div className="space-y-3">
-                  {/* Trend Info */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(trend.category)} text-white`}>
-                          {trend.category}
+                <div className="flex gap-4">
+                  {/* Thumbnail - Always show, with fallback */}
+                  <div className="flex-shrink-0">
+                    {trend.thumbnail_url ? (
+                      <img 
+                        src={trend.thumbnail_url} 
+                        alt={trend.title || 'Trend thumbnail'}
+                        className="w-24 h-24 object-cover rounded-lg bg-gray-100"
+                        onError={(e) => {
+                          // Show fallback on error
+                          const target = e.currentTarget as HTMLImageElement;
+                          target.onerror = null; // Prevent infinite loop
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `
+                              <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
+                                <span class="text-3xl">📈</span>
+                              </div>
+                            `;
+                          }
+                        }}
+                      />
+                    ) : (
+                      // Fallback for missing thumbnails
+                      <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-3xl">
+                          {trend.platform === 'tiktok' ? '🎵' : 
+                           trend.platform === 'instagram' ? '📸' :
+                           trend.platform === 'twitter' ? '🐦' :
+                           trend.platform === 'youtube' ? '📺' :
+                           '📈'}
                         </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Trend Info */}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                        {/* Status Badge */}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          trend.status === 'validated' || trend.status === 'quality_approved' ? 'bg-green-100 text-green-700' :
+                          trend.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          trend.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {trend.status === 'validated' || trend.status === 'quality_approved' ? '✓ Validated' :
+                           trend.status === 'rejected' ? '✗ Rejected' :
+                           trend.status === 'pending' ? '⏳ Pending' :
+                           trend.status === 'submitted' ? '📝 Submitted' :
+                           trend.status}
+                        </span>
+                        
                         {trend.platform && (
                           <span className="text-xs text-gray-500">
                             via {trend.platform}
@@ -310,6 +398,7 @@ export default function PastTrendsTimeline() {
                       </div>
                     )}
                   </div>
+                  </div>
                 </div>
               </motion.div>
             ))
@@ -355,9 +444,6 @@ export default function PastTrendsTimeline() {
                 
                 <div className="pr-10">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(selectedTrend.category)} text-white`}>
-                      {selectedTrend.category}
-                    </span>
                     {selectedTrend.platform && (
                       <span className="text-sm text-gray-500">
                         {selectedTrend.platform}

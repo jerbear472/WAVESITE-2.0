@@ -2,60 +2,73 @@
 export function getSafeCategory(displayCategory: string | undefined | null): string {
   console.log('[getSafeCategory] Input:', displayCategory);
   
-  // Map UI categories to actual category values
-  // We now use the actual category names instead of deprecated field names
+  // Map UI categories to database enum values
+  // These are the ACTUAL enum values from the database trend_category type
   const mapping: Record<string, string> = {
-    // Direct mappings from SmartTrendSubmission component IDs
-    'meme': 'meme',
+    // Direct mappings from UI to database enums
+    'meme': 'meme_format',
     'fashion': 'fashion',
-    'food': 'food',
+    'food': 'food_drink',
     'music': 'music',
-    'tech': 'tech',
-    'technology': 'tech',
+    'tech': 'technology',
+    'technology': 'technology',
     'finance': 'finance',
     'sports': 'sports',
     'political': 'political',
-    'cars': 'cars',
-    'animals': 'animals',
+    'cars': 'automotive',
+    'animals': 'animals_pets',
     'travel': 'travel',
     'education': 'education',
-    'science': 'science',
-    'entertainment': 'entertainment',
-    'art': 'art',
-    'relationships': 'relationships',
+    'science': 'education', // Map science to education
+    'entertainment': 'creator_technique', // Map entertainment to creator_technique
+    'art': 'visual_style',
+    'relationships': 'relationship',
     'health': 'health',
     
     // Label mappings (what user sees in the UI)
-    'Meme/Humor': 'meme',
+    'Meme/Humor': 'meme_format',
     'Fashion/Beauty': 'fashion',
-    'Food/Drink': 'food',
+    'Food/Drink': 'food_drink',
     'Music/Dance': 'music',
-    'Tech/Gaming': 'tech',
+    'Tech/Gaming': 'gaming',
     'Finance/Crypto': 'finance',
     'Sports/Fitness': 'sports',
     'Political/Social': 'political',
-    'Cars & Machines': 'cars',
-    'Animals & Pets': 'animals',
+    'Cars & Machines': 'automotive',
+    'Animals & Pets': 'animals_pets',
     'Travel & Places': 'travel',
     'Education & Learning': 'education',
-    'Science & Tech': 'science',
-    'Entertainment': 'entertainment',
-    'Art & Design': 'art',
-    'Relationships': 'relationships',
+    'Science & Tech': 'technology',
+    'Entertainment': 'creator_technique',
+    'Art & Design': 'visual_style',
+    'Relationships': 'relationship',
     'Health & Wellness': 'health',
     
-    // No legacy mappings - removed nonsensical categories
+    // Additional mappings for common terms
+    'gaming': 'gaming',
+    'dance': 'dance',
+    'diy': 'diy_crafts',
+    'pets': 'animals_pets',
+    'auto': 'automotive',
+    'crypto': 'finance',
+    'fitness': 'health',
+    'beauty': 'fashion',
+    'humor': 'meme_format',
+    'comedy': 'creator_technique',
+    'social': 'social_cause',
+    'brand': 'brand',
+    'product': 'product_brand',
     
     // Lowercase versions (for flexible input handling)
-    'cars & machines': 'cars',
-    'animals & pets': 'animals',
+    'cars & machines': 'automotive',
+    'animals & pets': 'animals_pets',
     'travel & places': 'travel',
     'education & learning': 'education',
     'health & wellness': 'health'
   };
   
   // Try to map the category
-  const mapped = displayCategory ? mapping[displayCategory] : null;
+  const mapped = displayCategory ? mapping[displayCategory.toLowerCase()] || mapping[displayCategory] : null;
   
   // If we got a valid mapping, use it
   if (mapped) {
@@ -63,20 +76,25 @@ export function getSafeCategory(displayCategory: string | undefined | null): str
     return mapped;
   }
   
-  // Check if it's already a valid category
+  // List of valid database enum values
   const validCategories = [
-    'meme', 'fashion', 'food', 'music', 'tech', 
-    'finance', 'sports', 'political', 'cars', 'animals', 'travel',
-    'education', 'science', 'entertainment', 'art', 'relationships', 'health'
+    'visual_style', 'audio_music', 'creator_technique', 'meme_format', 
+    'product_brand', 'behavior_pattern', 'political', 'finance', 
+    'news_events', 'education', 'relationship', 'animals_pets', 
+    'automotive', 'food_drink', 'technology', 'sports', 
+    'dance', 'travel', 'fashion', 'gaming', 'health', 
+    'diy_crafts', 'music', 'brand', 'social_cause'
   ];
+  
+  // Check if it's already a valid database category
   if (displayCategory && validCategories.includes(displayCategory)) {
     console.log('[getSafeCategory] Already valid:', displayCategory);
     return displayCategory;
   }
   
-  // Default fallback - use entertainment as more generic
-  console.log('[getSafeCategory] Fallback to: entertainment');
-  return 'entertainment';
+  // Default fallback - use creator_technique as generic content creation category
+  console.log('[getSafeCategory] Fallback to: creator_technique');
+  return 'creator_technique';
 }
 
 // Safe status function to ensure we NEVER use 'pending'

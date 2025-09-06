@@ -12,13 +12,14 @@ export default function Home() {
         <div className="text-center max-w-4xl mx-auto animate-fade-in">
           {/* Main Message */}
           <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6 leading-tight">
-            See The Wave<br/>
-            <span className="text-blue-500">Before It Breaks</span>
+            <span className="bg-gradient-to-r from-black to-blue-600 bg-clip-text text-transparent">
+              WaveSight
+            </span>
           </h1>
           
           {/* Subtitle */}
-          <p className="text-2xl md:text-3xl font-normal text-gray-600 dark:text-gray-400 mb-12">
-            The App for people who spot trends first
+          <p className="text-2xl md:text-3xl font-light text-gray-600 dark:text-gray-400 mb-12">
+            The stuff everyone's talking about but no one's writing down
           </p>
           
           {/* CTA Buttons */}
@@ -51,13 +52,13 @@ export default function Home() {
       <section className="py-20 bg-gray-50 dark:bg-neutral-900">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            <span className="text-gradient font-normal">How to Win at WaveSight</span>
+            <span className="text-gradient font-light">How to Win at WaveSight</span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
               <div className="text-4xl mb-4">👁️</div>
-              <h3 className="text-lg font-semibold mb-3">SPOT</h3>
+              <h3 className="text-lg font-medium mb-3">SPOT</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 See something catching on? Drop it here first.
               </p>
@@ -65,7 +66,7 @@ export default function Home() {
             
             <div className="text-center">
               <div className="text-4xl mb-4">📈</div>
-              <h3 className="text-lg font-semibold mb-3">PREDICT</h3>
+              <h3 className="text-lg font-medium mb-3">PREDICT</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Call when it peaks. 24 hours? 1 week? Place your bet.
               </p>
@@ -73,7 +74,7 @@ export default function Home() {
             
             <div className="text-center">
               <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-lg font-semibold mb-3">PROVE</h3>
+              <h3 className="text-lg font-medium mb-3">PROVE</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Time proves you right. Accuracy score goes up.
               </p>
@@ -81,7 +82,7 @@ export default function Home() {
             
             <div className="text-center">
               <div className="text-4xl mb-4">🏆</div>
-              <h3 className="text-lg font-semibold mb-3">WIN</h3>
+              <h3 className="text-lg font-medium mb-3">WIN</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Climb the leaderboard. Become a cultural oracle.
               </p>
@@ -94,7 +95,7 @@ export default function Home() {
       <section className="py-20">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            <span className="text-gradient font-normal">What You're Playing For</span>
+            <span className="text-gradient font-light">What You're Playing For</span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
@@ -137,7 +138,7 @@ export default function Home() {
       <section className="py-20 bg-gray-50 dark:bg-neutral-900">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-12">
-            <span className="text-gradient font-normal">Start Free Forever</span>
+            <span className="text-gradient font-light">Start Free Forever</span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -206,7 +207,7 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-light mb-6">
             The future has a leaderboard.
           </h2>
-          <p className="text-2xl md:text-3xl font-normal text-gray-800 dark:text-gray-200 mb-8">
+          <p className="text-2xl md:text-3xl font-light text-gray-800 dark:text-gray-200 mb-8">
             <span className="text-gradient">Where do you rank?</span>
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

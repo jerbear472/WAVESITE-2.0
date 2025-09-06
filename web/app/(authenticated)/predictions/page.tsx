@@ -427,13 +427,12 @@ interface TrendWithEngagement {
   controversy_score?: number; // How disputed the trend is
   age_hours?: number; // Age in hours
   
-  // Prediction breakdown
+  // Prediction breakdown - simplified
   prediction_breakdown: {
-    '24hrs': number;
-    '3days': number;
-    '1week': number;
-    '2weeks': number;
-    'peaked': number;
+    'already_peaked': number;
+    '48_hrs': number;
+    '1_week': number;
+    'here_to_stay': number;
   };
   
   // Comments
@@ -939,13 +938,12 @@ export default function EnhancedPredictionsPage() {
           // Calculate wave score (positive votes - negative votes)
           wave_score: ((voteCountsMap[trend.id]?.wave || 0) * 2 + (voteCountsMap[trend.id]?.fire || 0)) - ((voteCountsMap[trend.id]?.declining || 0) + (voteCountsMap[trend.id]?.dead || 0) * 2),
           
-          // Default prediction breakdown
+          // Default prediction breakdown - simplified
           prediction_breakdown: {
-            '24hrs': 0,
-            '3days': 0,
-            '1week': 0,
-            '2weeks': 0,
-            'peaked': 0
+            'already_peaked': 0,
+            '48_hrs': 0,
+            '1_week': 0,
+            'here_to_stay': 0
           },
           
           comments: []
@@ -1119,9 +1117,9 @@ export default function EnhancedPredictionsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                The Arena
+                Headlines
               </h1>
-              <p className="text-sm text-gray-600">Predict the next viral wave</p>
+              <p className="text-sm text-gray-600">Breaking stories from internet culture</p>
             </div>
             
             <div className="flex items-center gap-3">
@@ -2041,15 +2039,13 @@ export default function EnhancedPredictionsPage() {
                     const confidenceBonus = Math.round(prediction.confidence * 0.3);
                     const totalXP = baseXP + confidenceBonus;
 
-                    // Save prediction to database
+                    // Save prediction to database - simplified to 4 options
                     const peakTimeframe = (() => {
                       const daysUntilPeak = Math.round((prediction.peakDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                      if (daysUntilPeak <= 1) return '24_hours';
-                      if (daysUntilPeak <= 3) return '3_days';
+                      if (daysUntilPeak <= 0) return 'already_peaked';
+                      if (daysUntilPeak <= 2) return '48_hrs';
                       if (daysUntilPeak <= 7) return '1_week';
-                      if (daysUntilPeak <= 14) return '2_weeks';
-                      if (daysUntilPeak <= 30) return '1_month';
-                      return '3_months';
+                      return 'here_to_stay';
                     })();
 
                     // Save prediction curve data

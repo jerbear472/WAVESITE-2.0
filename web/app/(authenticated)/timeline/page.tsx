@@ -42,6 +42,24 @@ import {
   Zap as ZapIcon
 } from 'lucide-react';
 
+// Format relative time helper function
+const formatRelativeTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / 60000);
+  const diffInHours = Math.floor(diffInMs / 3600000);
+  const diffInDays = Math.floor(diffInMs / 86400000);
+
+  if (diffInMinutes < 1) return 'just now';
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  if (diffInDays < 7) return `${diffInDays}d ago`;
+  if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w ago`;
+  if (diffInDays < 365) return `${Math.floor(diffInDays / 30)}mo ago`;
+  return `${Math.floor(diffInDays / 365)}y ago`;
+};
+
 interface Trend {
   id: string;
   spotter_id: string;
@@ -141,12 +159,16 @@ export default function Timeline() {
         {/* Header with thumbnail */}
         <div className="relative">
           {/* Thumbnail Background */}
-          {(trend.screenshot_url || trend.thumbnail_url) && (
+          {((trend.screenshot_url && trend.screenshot_url !== null) || (trend.thumbnail_url && trend.thumbnail_url !== null)) && (
             <div className="relative h-48 bg-gray-100 overflow-hidden">
               <img 
-                src={trend.screenshot_url || trend.thumbnail_url} 
+                src={(trend.screenshot_url && trend.screenshot_url !== null ? trend.screenshot_url : trend.thumbnail_url) || ''} 
                 alt="Trend visual"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.log('TrendCard: Image failed to load:', e.currentTarget.src);
+                  e.currentTarget.style.display = 'none';
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             </div>
@@ -183,7 +205,7 @@ export default function Timeline() {
           </div>
           
           {/* Header for trends without thumbnails */}
-          {!(trend.screenshot_url || trend.thumbnail_url) && (
+          {!((trend.screenshot_url && trend.screenshot_url !== null) || (trend.thumbnail_url && trend.thumbnail_url !== null)) && (
             <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -696,10 +718,9 @@ export default function Timeline() {
       }
 
       const userId = user?.id || '';
-      console.log('Timeline: Fetching all trends from all users');
+      console.log('Timeline: Fetching user trends for:', userId);
       
-      // Fetch ALL trends (not just user's own) with status 'submitted' or 'approved'
-      // Similar to how predictions page fetches trends
+      // Fetch only the current user's trends (personal timeline)
       const { data, error } = await supabase
         .from('trend_submissions')
         .select(`
@@ -708,7 +729,7 @@ export default function Timeline() {
             username
           )
         `)
-        .in('status', ['submitted', 'approved'])
+        .eq('spotter_id', userId)  // Only get current user's trends
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -733,6 +754,21 @@ export default function Timeline() {
         console.log('Timeline: First trend screenshot_url:', data[0].screenshot_url);
         console.log('Timeline: First trend post_url:', data[0].post_url);
         console.log('Timeline: First trend wave_score:', data[0].wave_score);
+        
+        // Debug: Check all trends for image URLs
+        console.log('Timeline: Checking all trends for image URLs:');
+        data.forEach((trend, index) => {
+          const hasThumb = trend.thumbnail_url && trend.thumbnail_url !== '0' && trend.thumbnail_url !== 0;
+          const hasScreen = trend.screenshot_url && trend.screenshot_url !== '0' && trend.screenshot_url !== 0;
+          console.log(`Trend ${index}:`, {
+            id: trend.id,
+            has_thumbnail: hasThumb,
+            thumbnail_url: trend.thumbnail_url,
+            has_screenshot: hasScreen,
+            screenshot_url: trend.screenshot_url
+          });
+        });
+        
         // Debug: Check for any fields that might be "0"
         const firstTrend = data[0];
         Object.keys(firstTrend).forEach(key => {
@@ -849,6 +885,35 @@ export default function Timeline() {
       hour12: true
     };
     return date.toLocaleString('en-US', options);
+  };
+
+  // Helper function to extract thumbnail from URL
+  const getThumbnailUrl = (trend: Trend): string | null => {
+    // First check for direct thumbnail
+    if (trend.thumbnail_url && trend.thumbnail_url !== null && trend.thumbnail_url !== '0') {
+      return trend.thumbnail_url;
+    }
+    
+    // Then check screenshot
+    if (trend.screenshot_url && trend.screenshot_url !== null && trend.screenshot_url !== '0') {
+      return trend.screenshot_url;
+    }
+    
+    // Try to extract from post URL
+    if (trend.post_url && trend.post_url !== '0') {
+      // YouTube thumbnail extraction
+      if (trend.post_url.includes('youtube.com') || trend.post_url.includes('youtu.be')) {
+        const match = trend.post_url.match(/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (match && match[1]) {
+          return `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
+        }
+      }
+      
+      // TikTok - would need API or proxy for actual thumbnail
+      // For now, return null and show placeholder
+    }
+    
+    return null;
   };
 
   const formatEngagement = (count: number) => {
@@ -1127,9 +1192,9 @@ export default function Timeline() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Global Trend Timeline
+                  My Timeline
                 </h1>
-                <p className="text-gray-600 mt-1">Discover all trends spotted by the WaveSight community</p>
+                <p className="text-gray-600 mt-1">Track your trend spotting journey and performance</p>
               </div>
               
               <div className="flex items-center gap-3">
@@ -1370,10 +1435,10 @@ export default function Timeline() {
                       >
                         {/* Thumbnail */}
                         <div className="relative h-48 bg-gray-100 overflow-hidden">
-                          {(trend.thumbnail_url || trend.screenshot_url || trend.post_url) ? (
+                          {getThumbnailUrl(trend) ? (
                             <>
                               <img 
-                                src={trend.thumbnail_url || trend.screenshot_url || ''}
+                                src={getThumbnailUrl(trend) || ''}
                                 alt="Trend"
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 onError={(e) => {
@@ -1390,11 +1455,46 @@ export default function Timeline() {
                                   target.style.display = 'none';
                                 }}
                               />
-                              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 via-transparent to-transparent" />
+                              
+                              {/* Creator & Date Overlay - Always visible on thumbnail */}
+                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                                <div className="flex items-center justify-between text-white">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <UserIcon className="w-4 h-4 flex-shrink-0" />
+                                    <span className="text-sm font-medium truncate">
+                                      {(trend.creator_handle && trend.creator_handle !== '0') ? trend.creator_handle : 
+                                       (trend.creator_name && trend.creator_name !== '0') ? trend.creator_name : 
+                                       'Unknown'}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs opacity-90 flex-shrink-0">
+                                    {formatRelativeTime(trend.created_at)}
+                                  </span>
+                                </div>
+                              </div>
                             </>
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                              <TrendingUpIcon className="w-16 h-16 text-gray-400" />
+                            <div className="w-full h-full bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center">
+                              <span className="text-4xl mb-2">{getCategoryEmoji(trend.category)}</span>
+                              <p className="text-sm text-gray-500">No preview available</p>
+                              
+                              {/* Creator & Date for no thumbnail case */}
+                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-white/90 border-t border-gray-200">
+                                <div className="flex items-center justify-between text-gray-700">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <UserIcon className="w-4 h-4 flex-shrink-0" />
+                                    <span className="text-sm font-medium truncate">
+                                      {(trend.creator_handle && trend.creator_handle !== '0') ? trend.creator_handle : 
+                                       (trend.creator_name && trend.creator_name !== '0') ? trend.creator_name : 
+                                       'Unknown'}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs opacity-75 flex-shrink-0">
+                                    {formatRelativeTime(trend.created_at)}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           )}
                             
@@ -1429,12 +1529,6 @@ export default function Timeline() {
                             </div>
 
                             {/* Category Badge */}
-                            <div className="absolute bottom-3 left-3">
-                              <div className="flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-gray-700 text-xs border border-gray-200 hover:bg-white transition-colors duration-200">
-                                <span className="text-base">{getCategoryEmoji(trend.category)}</span>
-                                <span>{getCategoryLabel(trend.category)}</span>
-                              </div>
-                            </div>
 
                             {/* External Link */}
                             {trend.post_url && (
@@ -1451,39 +1545,23 @@ export default function Timeline() {
                           </div>
 
                         <div className="p-6">
-                          {/* Creator Info */}
-                          {(trend.creator_handle || trend.creator_name) && (
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center border border-blue-200">
-                                <UserIcon className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                {trend.creator_handle && trend.creator_handle !== '0' && trend.evidence?.platform ? (
-                                  <a 
-                                    href={getCreatorProfileUrl(trend.evidence.platform, trend.creator_handle)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm font-medium text-gray-700 hover:text-blue-600 truncate block transition-colors"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {trend.creator_handle}
-                                  </a>
-                                ) : (
-                                  <p className="text-sm font-medium text-gray-700 truncate">
-                                    {(trend.creator_handle && trend.creator_handle !== '0') ? trend.creator_handle : (trend.creator_name && trend.creator_name !== '0') ? trend.creator_name : ''}
-                                  </p>
-                                )}
-                                <p className="text-xs text-gray-400" title={formatFullDate(trend.created_at)}>
-                                  📅 {formatFullDate(trend.created_at)}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Title from description */}
-                          <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2">
-                            {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description.split('\n')[0] : 'Untitled Trend')}
-                          </h3>
+                          {/* Header with title and status */}
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 flex-1">
+                              {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description.split('\n')[0] : 'Untitled Trend')}
+                            </h3>
+                            {/* Approved Status Badge - Top Right */}
+                            {trend.validation_status && trend.validation_status !== 'pending' && (
+                              trend.validation_status === 'approved' || trend.validation_status === 'rejected' ? (
+                                <div className={`px-2 py-0.5 rounded-full text-xs font-medium border flex-shrink-0 ${
+                                  trend.validation_status === 'approved' ? 'bg-green-100 text-green-600 border-green-200' :
+                                  'bg-red-100 text-red-600 border-red-200'
+                                }`}>
+                                  {trend.validation_status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                                </div>
+                              ) : null
+                            )}
+                          </div>
 
                           {/* Caption */}
                           {trend.post_caption && trend.post_caption !== '0' && (
@@ -1666,29 +1744,6 @@ export default function Timeline() {
                             {/* Validation & Status Row */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
-                                  <div className="flex items-center gap-1.5 text-xs bg-white rounded-lg px-2 py-1 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                    {trend.approve_count && trend.approve_count > 0 && (
-                                      <span className="text-green-600 font-medium">👍 {trend.approve_count || 0}</span>
-                                    )}
-                                    {trend.approve_count && trend.approve_count > 0 && trend.reject_count && trend.reject_count > 0 && (
-                                      <span className="text-gray-400">·</span>
-                                    )}
-                                    {trend.reject_count && trend.reject_count > 0 && (
-                                      <span className="text-red-500 font-medium">👎 {trend.reject_count || 0}</span>
-                                    )}
-                                  </div>
-                                )}
-                                {trend.validation_status && trend.validation_status !== 'pending' && (
-                                  trend.validation_status === 'approved' || trend.validation_status === 'rejected' ? (
-                                    <div className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
-                                      trend.validation_status === 'approved' ? 'bg-green-100 text-green-600 border-green-200' :
-                                      'bg-red-100 text-red-600 border-red-200'
-                                    }`}>
-                                      {trend.validation_status === 'approved' ? '✅ Approved' : '❌ Rejected'}
-                                    </div>
-                                  ) : null
-                                )}
                               </div>
                               
                               {trend.xp_amount && trend.xp_amount > 0 && (
@@ -1703,38 +1758,20 @@ export default function Timeline() {
                               )}
                             </div>
                             
-                            {/* Enhanced Marketing Tags */}
-                            {((trend.evidence?.categories?.length || 0) > 0 || (trend.evidence?.moods?.length || 0) > 0) && (
-                              <div className="space-y-1">
-                                <div className="text-xs text-gray-600 font-medium">Marketing Tags</div>
-                                <div className="flex flex-wrap gap-1">
-                                  {trend.evidence?.categories?.map((cat: string, i: number) => (
-                                    <span key={`cat-${i}`} className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full border border-purple-200 font-medium">
-                                      📊 {cat}
-                                    </span>
-                                  ))}
-                                  {trend.evidence?.moods?.map((mood: string, i: number) => (
-                                    <span key={`mood-${i}`} className="text-xs px-2 py-1 bg-pink-100 text-pink-700 rounded-full border border-pink-200 font-medium">
-                                      🎭 {mood}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
                             {/* Vote Display */}
                             <div className="mt-3 pt-3 border-t border-gray-100">
                               <SimpleVoteDisplay 
                                 trendId={trend.id}
                                 initialVotes={{
-                                  wave: 0,
-                                  fire: 0,
-                                  declining: 0,
-                                  dead: 0
+                                  wave: trend.vote_wave_count || 0,
+                                  fire: trend.vote_fire_count || 0,
+                                  declining: trend.vote_declining_count || 0,
+                                  dead: trend.vote_dead_count || 0
                                 }}
                                 compact={true}
                               />
                             </div>
+                            
                           </div>
                         </div>
                       </div>
@@ -1764,12 +1801,16 @@ export default function Timeline() {
                       >
                         <div className="flex items-start gap-4">
                           {/* Thumbnail */}
-                          {(trend.thumbnail_url || trend.screenshot_url) && (
+                          {getThumbnailUrl(trend) && (
                             <div className="relative w-32 h-32 rounded-lg overflow-hidden flex-shrink-0">
                               <img 
-                                src={trend.thumbnail_url || trend.screenshot_url || ''} 
+                                src={getThumbnailUrl(trend) || ''} 
                                 alt="Trend"
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.currentTarget as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
                               />
                               {trend.post_url && (
                                 <a 
@@ -1796,29 +1837,45 @@ export default function Timeline() {
                                     <span>{getCategoryEmoji(trend.category)}</span>
                                     {getCategoryLabel(trend.category)}
                                   </span>
-                                  {(trend.creator_handle || trend.creator_name) && (
-                                    <span className="flex items-center gap-1">
-                                      <UserIcon className="w-3 h-3" />
-                                      {trend.creator_handle && trend.creator_handle !== '0' && trend.evidence?.platform ? (
-                                        <a 
-                                          href={getCreatorProfileUrl(trend.evidence.platform, trend.creator_handle)}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="hover:text-blue-600 transition-colors"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          {trend.creator_handle}
-                                        </a>
-                                      ) : (
-                                        (trend.creator_handle && trend.creator_handle !== '0') ? trend.creator_handle : (trend.creator_name && trend.creator_name !== '0') ? trend.creator_name : ''
-                                      )}
-                                    </span>
-                                  )}
-                                  <span title={formatFullDate(trend.created_at)}>📅 {formatFullDate(trend.created_at)}</span>
+                                  <span className="flex items-center gap-1">
+                                    <UserIcon className="w-3 h-3" />
+                                    {trend.creator_handle && trend.creator_handle !== '0' && trend.evidence?.platform ? (
+                                      <a 
+                                        href={getCreatorProfileUrl(trend.evidence.platform, trend.creator_handle)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:text-blue-600 transition-colors font-medium"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        {trend.creator_handle}
+                                      </a>
+                                    ) : (
+                                      <span className="font-medium">
+                                        {(trend.creator_handle && trend.creator_handle !== '0') ? trend.creator_handle : 
+                                         (trend.creator_name && trend.creator_name !== '0') ? trend.creator_name : 
+                                         'Unknown'}
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="text-gray-500">•</span>
+                                  <span title={formatFullDate(trend.created_at)}>
+                                    {formatRelativeTime(trend.created_at)}
+                                  </span>
                                 </div>
                               </div>
 
                               <div className="flex items-center gap-2">
+                                {/* Approved Status Badge - Top Right */}
+                                {trend.validation_status && trend.validation_status !== 'pending' && (
+                                  trend.validation_status === 'approved' || trend.validation_status === 'rejected' ? (
+                                    <div className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
+                                      trend.validation_status === 'approved' ? 'bg-green-100 text-green-600 border-green-200' :
+                                      'bg-red-100 text-red-600 border-red-200'
+                                    }`}>
+                                      {trend.validation_status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                                    </div>
+                                  ) : null
+                                )}
                                 <div className={`flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r ${getStatusColor(trend.status)} rounded-full text-white text-xs font-semibold`}>
                                   {getStatusIcon(trend.status)}
                                   <span className="capitalize">{trend.status}</span>
@@ -1908,30 +1965,6 @@ export default function Timeline() {
                             
                             {/* Voting and Status */}
                             <div className="flex flex-wrap items-center gap-3 mb-3">
-                              {((trend.approve_count && trend.approve_count > 0) || (trend.reject_count && trend.reject_count > 0)) && (
-                                <div className="flex items-center gap-2 bg-gray-50/60 rounded-lg px-3 py-1.5 border border-gray-200/50">
-                                  {trend.approve_count && trend.approve_count > 0 && (
-                                    <span className="text-sm text-gray-600 font-medium">👍 {trend.approve_count || 0}</span>
-                                  )}
-                                  {trend.approve_count && trend.approve_count > 0 && trend.reject_count && trend.reject_count > 0 && (
-                                    <span className="text-sm text-gray-300">·</span>
-                                  )}
-                                  {trend.reject_count && trend.reject_count > 0 && (
-                                    <span className="text-sm text-gray-500 font-medium">👎 {trend.reject_count || 0}</span>
-                                  )}
-                                </div>
-                              )}
-                              {trend.validation_status && trend.validation_status !== 'pending' && (
-                                <div className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${
-                                  trend.validation_status === 'approved' ? 'bg-blue-50/60 text-blue-600 border-blue-200/50' :
-                                  trend.validation_status === 'rejected' ? 'bg-gray-50/60 text-gray-500 border-gray-200/50' :
-                                  'bg-gray-50/60 text-gray-500 border-gray-200/50'
-                                }`}>
-                                  {trend.validation_status === 'approved' ? '✅ Approved' :
-                                   trend.validation_status === 'rejected' ? '❌ Rejected' :
-                                   ''}
-                                </div>
-                              )}
                               {trend.xp_amount && trend.xp_amount > 0 && (
                                 <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium border ${
                                   trend.xp_awarded 
@@ -1979,32 +2012,19 @@ export default function Timeline() {
                               return null;
                             })()}
 
-                            {/* Enhanced Marketing Tags and Hashtags */}
-                            {((trend.evidence?.categories?.length > 0) || (trend.evidence?.moods?.length > 0) || (trend.hashtags && trend.hashtags.length > 0)) && (
-                              <div className="space-y-2">
-                                <div className="text-sm text-gray-700 font-medium">🏷️ Tags & Keywords</div>
-                                <div className="flex flex-wrap gap-1">
-                                  {trend.evidence?.categories?.map((cat: string, i: number) => (
-                                    <span key={`cat-${i}`} className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full border border-purple-200 font-medium">
-                                      📊 {cat}
-                                    </span>
-                                  ))}
-                                  {trend.evidence?.moods?.map((mood: string, i: number) => (
-                                    <span key={`mood-${i}`} className="text-xs px-2 py-1 bg-pink-100 text-pink-700 rounded-full border border-pink-200 font-medium">
-                                      🎭 {mood}
-                                    </span>
-                                  ))}
-                                  {trend.hashtags?.slice(0, 5).map((tag, i) => (
-                                    <span key={`tag-${i}`} className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full border border-blue-200 font-medium">
-                                      #{tag}
-                                    </span>
-                                  ))}
-                                  {trend.hashtags && trend.hashtags.length > 5 && (
-                                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full border border-gray-200">
-                                      +{trend.hashtags.length - 5} more
-                                    </span>
-                                  )}
-                                </div>
+                            {/* Hashtags Only */}
+                            {trend.hashtags && trend.hashtags.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {trend.hashtags.slice(0, 5).map((tag, i) => (
+                                  <span key={`tag-${i}`} className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full border border-blue-200 font-medium">
+                                    #{tag}
+                                  </span>
+                                ))}
+                                {trend.hashtags.length > 5 && (
+                                  <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full border border-gray-200">
+                                    +{trend.hashtags.length - 5} more
+                                  </span>
+                                )}
                               </div>
                             )}
                             
@@ -2013,10 +2033,10 @@ export default function Timeline() {
                               <SimpleVoteDisplay 
                                 trendId={trend.id}
                                 initialVotes={{
-                                  wave: 0,
-                                  fire: 0,
-                                  declining: 0,
-                                  dead: 0
+                                  wave: trend.vote_wave_count || 0,
+                                  fire: trend.vote_fire_count || 0,
+                                  declining: trend.vote_declining_count || 0,
+                                  dead: trend.vote_dead_count || 0
                                 }}
                                 compact={false}
                               />
@@ -2137,12 +2157,16 @@ export default function Timeline() {
                                               </div>
 
                                               {/* Thumbnail */}
-                                              {(trend.thumbnail_url || trend.screenshot_url) ? (
+                                              {(trend.thumbnail_url && trend.thumbnail_url !== null) || (trend.screenshot_url && trend.screenshot_url !== null) ? (
                                                 <div className="relative h-32 overflow-hidden">
                                                   <img 
-                                                    src={trend.thumbnail_url || trend.screenshot_url || ''}
+                                                    src={(trend.thumbnail_url && trend.thumbnail_url !== null ? trend.thumbnail_url : trend.screenshot_url) || ''}
                                                     alt="Trend"
                                                     className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                      console.log('Timeline: Image failed to load:', e.currentTarget.src);
+                                                      e.currentTarget.style.display = 'none';
+                                                    }}
                                                   />
                                                   <div className="absolute inset-0 bg-gradient-to-t from-white/80 to-transparent" />
                                                   
