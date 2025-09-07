@@ -261,9 +261,12 @@ Format with clear sections and be specific with data.`;
     }
     
     // Add mock web context (would integrate with real search API)
-    fullAnalysis.web_context = await generateWebContext(data.title || data.description);
+    const webContext = await generateWebContext(data.title || data.description);
     
-    return NextResponse.json(fullAnalysis);
+    return NextResponse.json({
+      ...fullAnalysis,
+      web_context: webContext
+    });
     
   } catch (error: any) {
     console.error('Full analysis error:', error);
