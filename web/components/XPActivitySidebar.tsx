@@ -9,11 +9,13 @@ import {
   Target,
   Award,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Bell
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 interface XPActivity {
   id: string;
@@ -206,9 +208,21 @@ export default function XPActivitySidebar() {
         )}
       </div>
 
-      {/* View All Link */}
-      <div className="p-4 border-t border-gray-100">
-        <button className="w-full py-2 text-center text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center justify-center gap-2">
+      {/* Links */}
+      <div className="border-t border-gray-100">
+        <Link 
+          href="/notifications"
+          className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Bell className="w-4 h-4 text-blue-600" />
+            </div>
+            <span className="text-sm font-medium text-gray-700">View Notifications</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+        </Link>
+        <button className="w-full px-4 pb-4 pt-2 text-center text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center justify-center gap-2">
           View All Activity
           <ChevronRight className="w-4 h-4" />
         </button>

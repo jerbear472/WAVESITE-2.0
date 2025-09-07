@@ -117,12 +117,13 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       category: finalCategory,
       description: (data.description && data.description !== '0') ? data.description : 
                    (data.title && data.title !== '0') ? data.title : 'Untitled Trend',
+      trend_name: (data.title && data.title !== '0') ? data.title : 'Untitled Trend',
       status: 'submitted',
       payment_amount: paymentAmount
     };
 
     // Add optional fields if they exist and are not undefined
-    if (data.title && data.title !== '0') submissionData.title = data.title;
+    if (data.title && data.title !== '0') submissionData.trend_name = data.title;
     if (data.platform) submissionData.platform = data.platform;
     if (data.url) submissionData.post_url = data.url;
     if (data.screenshot_url) submissionData.screenshot_url = data.screenshot_url;
