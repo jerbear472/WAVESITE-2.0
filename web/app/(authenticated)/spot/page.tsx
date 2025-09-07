@@ -339,6 +339,11 @@ export default function SpotPage() {
         // Refresh stats after successful submission
         await loadTodaysStats();
         
+        // Navigate to AI analysis page if submission has an ID
+        if (result.submission?.id) {
+          router.push(`/analyze/${result.submission.id}`);
+        }
+        
         // Return success result
         return result;
       } else {

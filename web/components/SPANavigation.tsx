@@ -160,6 +160,7 @@ export default function SPANavigation() {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/daily', label: 'Daily', icon: '📸' },
     { href: '/spot', label: 'Spot', icon: '➕' },
     { href: '/predictions', label: 'Headlines', icon: '🌍' },
     { href: '/timeline', label: 'My Timeline', icon: '📅' },

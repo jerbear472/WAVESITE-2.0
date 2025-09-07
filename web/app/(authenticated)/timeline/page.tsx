@@ -1079,6 +1079,11 @@ export default function Timeline() {
         setShowSubmitForm(false);
         await fetchUserTrends();
         
+        // Navigate to AI analysis page if submission has an ID
+        if (result.submission?.id) {
+          router.push(`/analyze/${result.submission.id}`);
+        }
+        
         // Show XP notification with calculated amount
         const xpEarned = result.earnings || 10;
         const xpBreakdown = result.xpBreakdown || [];

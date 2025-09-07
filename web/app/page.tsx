@@ -28,7 +28,7 @@ export default function Home() {
               href="/register"
               className="btn-primary px-8 py-4 text-lg hover-lift inline-flex items-center gap-2"
             >
-              Start Competing Now
+              Start Spotting
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
@@ -43,7 +43,7 @@ export default function Home() {
           </div>
           
           <p className="mt-8 text-sm text-gray-500 dark:text-gray-500">
-            Join 1,000+ cultural journalists documenting what happens next
+            Join 1,000+ people who see the future before Twitter does
           </p>
         </div>
       </section>
@@ -52,39 +52,39 @@ export default function Home() {
       <section className="py-20 bg-gray-50 dark:bg-neutral-900">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            <span className="text-gradient font-light">How Cultural Journalism Works</span>
+            <span className="text-gradient font-light">How It Works</span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
               <div className="text-4xl mb-4">👁️</div>
-              <h3 className="text-lg font-medium mb-3">CAPTURE</h3>
+              <h3 className="text-lg font-medium mb-3">SPOT</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Screenshot the moment culture shifts. Be the primary source.
+                See it first. Screenshot it. Submit before anyone else.
               </p>
             </div>
             
             <div className="text-center">
               <div className="text-4xl mb-4">📈</div>
-              <h3 className="text-lg font-medium mb-3">HEADLINE</h3>
+              <h3 className="text-lg font-medium mb-3">PREDICT</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Write tomorrow's cultural story today. Call the timeline.
+                Call the peak. 48 hours? 1 week? Here to stay?
               </p>
             </div>
             
             <div className="text-center">
               <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-lg font-medium mb-3">VERIFY</h3>
+              <h3 className="text-lg font-medium mb-3">PROVE</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Reality validates your reporting. Build credibility.
+                Time proves you right. Your accuracy score climbs.
               </p>
             </div>
             
             <div className="text-center">
               <div className="text-4xl mb-4">🏆</div>
-              <h3 className="text-lg font-medium mb-3">EARN</h3>
+              <h3 className="text-lg font-medium mb-3">WIN</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Top journalists get paid. Best stories win monthly.
+                Stack XP. Climb ranks. Top spotters split the pot.
               </p>
             </div>
           </div>
@@ -95,39 +95,39 @@ export default function Home() {
       <section className="py-20">
         <div className="container-custom">
           <h2 className="text-3xl md:text-4xl font-light text-center mb-16">
-            <span className="text-gradient font-light">Why This Matters</span>
+            <span className="text-gradient font-light">What You Win</span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
             <div className="card card-hover p-6">
               <div className="text-3xl mb-3">🏆</div>
-              <h3 className="font-semibold mb-2">Monthly Prizes</h3>
+              <h3 className="font-semibold mb-2">Real Money</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Top spotters split $1,000 every month
+                Top 10 spotters split the monthly prize pool
               </p>
             </div>
             
             <div className="card card-hover p-6">
               <div className="text-3xl mb-3">⭐</div>
-              <h3 className="font-semibold mb-2">Cultural Credit</h3>
+              <h3 className="font-semibold mb-2">Timestamped Proof</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                "First to document Winter Arc" - timestamped forever
+                "Called it 3 weeks early" - verified forever
               </p>
             </div>
             
             <div className="card card-hover p-6">
               <div className="text-3xl mb-3">📊</div>
-              <h3 className="font-semibold mb-2">Journalist Score</h3>
+              <h3 className="font-semibold mb-2">Public Score</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Your cultural reporting accuracy, verified on-chain
+                Your prediction accuracy, tracked and visible
               </p>
             </div>
             
             <div className="card card-hover p-6">
               <div className="text-3xl mb-3">🎯</div>
-              <h3 className="font-semibold mb-2">First-Mover Proof</h3>
+              <h3 className="font-semibold mb-2">Cultural Clout</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Evidence you documented culture before it was news
+                Proof you're actually ahead of the curve
               </p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function Home() {
               href="/register"
               className="btn-primary px-8 py-4 text-lg hover-lift inline-flex items-center gap-2"
             >
-              Start Competing Now
+              Start Spotting
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
