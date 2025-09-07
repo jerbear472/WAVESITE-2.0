@@ -179,7 +179,7 @@ export default function Timeline() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h2 className="text-2xl font-bold mb-2">
-                  {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description : null) || 'Trend Analysis'}
+                  {trend.evidence?.title || 'Untitled Trend'}
                 </h2>
                 <div className="flex items-center gap-2 text-sm opacity-90">
                   <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -210,7 +210,7 @@ export default function Timeline() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">
-                    {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description : null) || 'Trend Analysis'}
+                    {trend.evidence?.title || 'Untitled Trend'}
                   </h2>
                   <div className="flex items-center gap-2 text-sm opacity-90">
                     <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -1553,7 +1553,7 @@ export default function Timeline() {
                           {/* Header with title and status */}
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 flex-1">
-                              {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description.split('\n')[0] : 'Untitled Trend')}
+                              {trend.evidence?.title || 'Untitled Trend'}
                             </h3>
                             {/* Approved Status Badge - Top Right */}
                             {trend.validation_status && trend.validation_status !== 'pending' && (
@@ -1835,7 +1835,7 @@ export default function Timeline() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                                  {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description.split('\n')[0] : 'Untitled Trend')}
+                                  {trend.evidence?.title || 'Untitled Trend'}
                                 </h3>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
@@ -2209,7 +2209,7 @@ export default function Timeline() {
                                               <div className="p-3">
                                                 {/* Title */}
                                                 <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-1">
-                                                  {trend.evidence?.title || (trend.description && trend.description !== '0' ? trend.description.split('\n')[0] : 'Untitled Trend')}
+                                                  {trend.evidence?.title || 'Untitled Trend'}
                                                 </h3>
 
                                                 {/* Creator & Time */}

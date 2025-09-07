@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   Eye,
   Zap,
-  CheckCircle
+  CheckCircle,
+  Brain
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -31,47 +32,47 @@ export default function QuickStartGuide({ onDismiss }: QuickStartGuideProps) {
   const steps = [
     {
       icon: <TrendingUp className="w-6 h-6" />,
-      title: "Spot trends early",
-      description: "You see what's about to blow up before everyone else. That's your edge.",
+      title: "Spot & Submit Trends",
+      description: "Screenshot what's next. Get AI analysis instantly. Beat everyone to the punch.",
       points: [
-        "Submit trends you spot in the wild",
-        "Predict when they'll peak",
-        "Build your accuracy score"
+        "📸 Submit screenshots from any platform",
+        "🤖 Claude analyzes viral potential",
+        "🎯 Get strategic recommendations"
       ],
-      action: null
+      action: { label: "Start spotting", href: "/spot" }
     },
     {
-      icon: <Eye className="w-6 h-6" />,
-      title: "Validate what's real",
-      description: "Vote on trends others submit. Get it right, earn XP. Simple.",
+      icon: <Brain className="w-6 h-6" />,
+      title: "AI-Powered Analysis",
+      description: "Every trend you submit gets deep analysis from Claude with web search context.",
       points: [
-        "Wave = this is going viral",
-        "Fire = it's heating up",
-        "Pass = not happening"
+        "📊 Virality score (0-100)",
+        "🌐 Real-time web context",
+        "💡 Strategic recommendations"
       ],
-      action: { label: "Start validating", href: "/predictions" }
+      action: { label: "See example", href: "/spot" }
     },
     {
       icon: <Target className="w-6 h-6" />,
-      title: "Track your instincts",
-      description: "Your predictions become your track record. Public proof you saw it coming.",
+      title: "Your Timeline vs Headlines",
+      description: "Track your submissions in Timeline. Discover validated trends in Headlines.",
       points: [
-        "Accuracy score shows your hit rate",
-        "Timeline shows your calls",
-        "Leaderboard shows who's best"
+        "📅 Timeline = Your personal trends",
+        "🌍 Headlines = Community's best finds",
+        "✅ Get validated = Earn more XP"
       ],
-      action: { label: "View predictions", href: "/predictions" }
+      action: { label: "View Headlines", href: "/predictions" }
     },
     {
       icon: <Zap className="w-6 h-6" />,
-      title: "Level up",
-      description: "15 levels from Observer to Oracle. Each level unlocks more influence.",
+      title: "Level Up & Earn",
+      description: "15 levels from Observer to Oracle. Top spotters split monthly prizes.",
       points: [
-        "XP for every action",
-        "Multipliers for streaks",
-        "Monthly competitions"
+        "💰 Real money prizes monthly",
+        "🔥 Streak bonuses multiply XP",
+        "🏆 Leaderboard tracks the best"
       ],
-      action: { label: "Check dashboard", href: "/dashboard" }
+      action: { label: "Check your stats", href: "/dashboard" }
     }
   ];
 
@@ -252,11 +253,14 @@ export default function QuickStartGuide({ onDismiss }: QuickStartGuideProps) {
 // Mini version for returning users
 export function MiniQuickStart() {
   const tips = [
-    "Trends typically peak 2-3 weeks after discovery",
-    "Asian markets often predict Western trends by 10-14 days",
-    "Morning submissions get 3x more validations",
-    "Look for <1000 uses growing 100% daily",
-    "Gen Z irony usually goes mainstream"
+    "🤖 Every trend gets AI analysis with viral potential scoring",
+    "📸 Screenshot → Submit → Get Claude's analysis in seconds",
+    "🌍 Headlines shows community's validated trends",
+    "📅 Timeline tracks your personal submission history",
+    "🔥 Daily streaks multiply your XP earnings",
+    "💰 Top 10 spotters split the monthly prize pool",
+    "⏰ Submit early morning for maximum visibility",
+    "🎯 Focus on emerging platforms for hidden gems"
   ];
 
   const [currentTip] = useState(() => Math.floor(Math.random() * tips.length));
