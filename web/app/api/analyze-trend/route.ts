@@ -59,22 +59,26 @@ async function callAnthropicAPI(data: any): Promise<string> {
     return generateSmartFallback(data);
   }
 
-  const prompt = `Analyze this trend and explain why it resonates with people. Be specific about the psychological and cultural factors. Keep it concise (2-3 sentences max).
+  const prompt = `You are an expert trend analyst. Analyze this trend with deep cultural understanding and internet literacy.
 
-Trend: ${data.title || 'Unknown trend'}
+Trend: "${data.title || data.description || 'Unknown trend'}"
 Platform: ${data.platform || 'social media'}
 Category: ${data.category || 'general'}
-Velocity: ${data.trendVelocity || 'unknown'}
-Size: ${data.trendSize || 'unknown'}
-Sentiment: ${data.sentiment || 50}%
-Description: ${data.description || 'No description provided'}
+Additional Context: ${data.description || 'No additional context'}
 
-Provide a brief, insightful analysis focusing on:
-1. Why this specific trend resonates now
-2. What psychological need it fulfills
-3. The cultural moment it captures
+Your analysis should:
+1. **Decode the trend**: What does this phrase/trend actually mean? Break down any slang, references, or cultural context needed to understand it.
+2. **Origin story**: Where did this likely come from? (Consider viral videos, celebrity moments, memes, songs, etc.)
+3. **Why it resonates**: What makes this catch on? Consider:
+   - The humor or emotion it captures
+   - Generational appeal (Gen Z humor, millennial nostalgia, etc.)
+   - Current events or cultural moments it reflects
+   - Psychological needs it fulfills (belonging, expression, humor, etc.)
+4. **Evolution potential**: How might this trend evolve or what variations are we seeing?
 
-Format your response with emojis and bold text for emphasis. Keep it punchy and insightful.`;
+If this involves internet slang, AAVE, or cultural references, explain them clearly. If it references a specific event or person, provide that context.
+
+Be specific and insightful - don't just say "it's relatable" but explain WHY and HOW. Use emojis strategically. Write 3-4 paragraphs that actually educate someone about this trend.`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -86,8 +90,8 @@ Format your response with emojis and bold text for emphasis. Keep it punchy and 
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 300,
-        temperature: 0.7,
+        max_tokens: 1000,
+        temperature: 0.8,
         messages: [
           {
             role: 'user',

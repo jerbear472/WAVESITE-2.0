@@ -134,9 +134,9 @@ Provide rich, specific insights. Reference data points, percentages, and concret
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1500, // Increased for more detailed analysis
-        temperature: 0.4, // Slightly higher for more creative insights
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 2000, // Increased for comprehensive analysis
+        temperature: 0.7, // Better balance for insightful analysis
         messages: [
           {
             role: 'user',
