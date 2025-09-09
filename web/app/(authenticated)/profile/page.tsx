@@ -217,7 +217,7 @@ export default function ProfilePage() {
                 </motion.div>
                 <motion.div 
                   whileHover={{ scale: 1.05 }}
-                  onHoverStart={() => setHoveredStat('accuracy')}
+                  onHoverStart={() => setHoveredStat('streak')}
                   onHoverEnd={() => setHoveredStat(null)}
                   className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-4 border border-green-200/50 cursor-pointer transition-all hover:shadow-md"
                 >
@@ -226,8 +226,8 @@ export default function ProfilePage() {
                       <AwardIcon className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-800">{user.accuracy_score || 0}%</p>
-                      <p className="text-sm text-gray-600">Accuracy</p>
+                      <p className="text-2xl font-bold text-gray-800">{user.daily_streak || 0}</p>
+                      <p className="text-sm text-gray-600">Day Streak</p>
                     </div>
                   </div>
                 </motion.div>

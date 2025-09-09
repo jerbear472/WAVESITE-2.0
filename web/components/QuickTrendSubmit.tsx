@@ -54,26 +54,29 @@ export default function QuickTrendSubmit({ isOpen, onClose, onSuccess, initialUr
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   // Main fields
   const [trendName, setTrendName] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('meme');
+  const [category, setCategory] = useState('');
   const [tags, setTags] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   
   // Additional advanced fields from old SmartTrendSubmission
-  const [trendVelocity, setTrendVelocity] = useState('picking_up');
-  const [trendSize, setTrendSize] = useState('niche');
+  const [trendVelocity, setTrendVelocity] = useState('');
+  const [trendSize, setTrendSize] = useState('');
   const [audienceAge, setAudienceAge] = useState<string[]>([]);
-  const [sentiment, setSentiment] = useState(50);
+  const [sentiment, setSentiment] = useState(50); // Keep 50 as neutral default for sentiment slider
   const [creatorHandle, setCreatorHandle] = useState('');
   const [viewsCount, setViewsCount] = useState(0);
   const [likesCount, setLikesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
   const [drivingGeneration, setDrivingGeneration] = useState('');
   const [trendOrigin, setTrendOrigin] = useState('');
+  const [aiAngle, setAiAngle] = useState('');
+  const [evolutionStatus, setEvolutionStatus] = useState('');
 
   const isValidUrl = (url: string): boolean => {
     try {
@@ -227,6 +230,11 @@ export default function QuickTrendSubmit({ isOpen, onClose, onSuccess, initialUr
       
       console.log('Trend submitted successfully:', result.submission);
       
+      // Store the submission ID for AI analysis
+      if (result.submission?.id) {
+        setSubmissionId(result.submission.id);
+      }
+      
       // XP notification
       if (result.earnings) {
         showXPNotification(result.earnings, `Trend submitted! +${result.earnings} XP`);
@@ -343,7 +351,7 @@ export default function QuickTrendSubmit({ isOpen, onClose, onSuccess, initialUr
               <div className="mt-8 space-y-3">
                 <button
                   onClick={() => {
-                    onSuccess?.({ continueToAnalysis: true, url, title: trendName });
+                    onSuccess?.({ continueToAnalysis: true, url, title: trendName, submissionId });
                     handleClose();
                   }}
                   className="w-full py-3 rounded-lg font-medium bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg transition-all flex items-center justify-center gap-2"

@@ -452,7 +452,6 @@ interface Comment {
 interface UserStats {
   total_predictions: number;
   correct_predictions: number;
-  accuracy_rate: number;
   current_streak: number;
   best_category: string;
   xp_earned_today: number;
@@ -520,7 +519,6 @@ export default function EnhancedPredictionsPage() {
   const [userStats, setUserStats] = useState<UserStats>({
     total_predictions: 0,
     correct_predictions: 0,
-    accuracy_rate: 0,
     current_streak: 0,
     best_category: 'Technology',
     xp_earned_today: 0,
@@ -532,7 +530,7 @@ export default function EnhancedPredictionsPage() {
   const [followerActivity, setFollowerActivity] = useState<FollowerActivity[]>([]);
   const [showActivityPanel, setShowActivityPanel] = useState(false);
   
-  // Top Predictors
+  // Top Trend Spotters
   const [topPredictors, setTopPredictors] = useState<any[]>([]);
   
   // Voting state
@@ -589,7 +587,7 @@ export default function EnhancedPredictionsPage() {
       
       // Get correct predictions (this would need a validation system)
       // For now, let's calculate based on predictions made
-      const correctPredictions = Math.floor((totalPredictions || 0) * 0.68); // Assuming 68% accuracy
+      const correctPredictions = Math.floor((totalPredictions || 0) * 0.68); // Temporary placeholder
       
       // Get today's XP from profiles
       const { data: profile, error: profileError } = await supabase
@@ -634,7 +632,6 @@ export default function EnhancedPredictionsPage() {
       setUserStats({
         total_predictions: totalSubmissions || totalPredictions || 0,
         correct_predictions: correctPredictions,
-        accuracy_rate: (totalSubmissions || totalPredictions) ? Math.round((correctPredictions / (totalSubmissions || totalPredictions || 1)) * 100) : 0,
         current_streak: profile?.streak_days || Math.floor(Math.random() * 7) + 1,
         best_category: bestCategory || 'Technology',
         xp_earned_today: profile?.daily_xp || Math.floor(Math.random() * 200) + 50,
@@ -647,7 +644,6 @@ export default function EnhancedPredictionsPage() {
       setUserStats({
         total_predictions: 0,
         correct_predictions: 0,
-        accuracy_rate: 0,
         current_streak: 0,
         best_category: 'Technology',
         xp_earned_today: 0,
@@ -766,71 +762,71 @@ export default function EnhancedPredictionsPage() {
     if (!user) return;
     
     try {
-      // Get all users who have made predictions
-      const { data: predictors, error } = await supabase
-        .from('user_predictions')
-        .select(`
-          user_id,
-          profiles!user_id (
-            id,
-            username,
-            avatar_url
-          )
-        `)
-        .not('profiles', 'is', null);
+      console.log('Loading top predictors from leaderboard...');
       
-      if (error) {
-        console.error('Error loading top predictors:', error);
+      // Fetch actual leaderboard data from xp_leaderboard view
+      const { data: leaderboardData, error: leaderboardError } = await supabase
+        .from('xp_leaderboard')
+        .select('*')
+        .order('total_xp', { ascending: false })
+        .limit(5);
+      
+      if (leaderboardError) {
+        console.error('Error loading leaderboard:', leaderboardError);
         setTopPredictors([]);
         return;
       }
       
-      // Get unique users
-      const uniqueUsers = new Map();
-      predictors?.forEach((p: any) => {
-        // profiles comes as an array from the join, get the first item
-        const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
-        if (profile && profile.username) {
-          uniqueUsers.set(p.user_id, profile);
-        }
-      });
+      if (!leaderboardData || leaderboardData.length === 0) {
+        console.log('No leaderboard data found');
+        setTopPredictors([]);
+        return;
+      }
       
-      // Calculate accuracy for each user (for now, using random data)
-      // In a real app, you'd calculate this based on actual prediction outcomes
-      const predictorsList = Array.from(uniqueUsers.values()).map((user: any, index) => {
-        // Mock accuracy calculation - replace with real logic when prediction outcomes are tracked
-        const mockAccuracy = Math.floor(Math.random() * 30) + 50; // 50-80% accuracy
-        const mockTrend = Math.random() > 0.5 ? `+${Math.floor(Math.random() * 15)}` : `-${Math.floor(Math.random() * 5)}`;
-        
-        return {
-          id: user.id,
-          username: user.username || 'Anonymous',
-          avatar_url: user.avatar_url,
-          accuracy: mockAccuracy,
-          trend: mockTrend,
-          rank: index + 1,
-          isCurrentUser: false
-        };
-      });
-      
-      // Sort by accuracy and take top 5
-      predictorsList.sort((a, b) => b.accuracy - a.accuracy);
-      
-      // Add rank badges
-      const topPredictorsWithBadges = predictorsList.slice(0, 5).map((p, index) => ({
-        ...p,
+      // Transform leaderboard data to predictor format
+      const topPredictorsWithBadges = leaderboardData.map((entry, index) => ({
+        id: entry.user_id,
+        username: entry.username || 'Anonymous',
+        avatar_url: entry.avatar_url,
+        totalXP: entry.total_xp || 0,
+        level: entry.current_level || 1,
+        levelTitle: entry.level_title || 'Observer',
+        waveCount: entry.waves_spotted || 0,
+        trend: entry.total_xp > 1000 ? `+${Math.floor(entry.total_xp / 100)}` : '+0',
         rank: index + 1,
         badge: index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '⭐',
-        isCurrentUser: p.id === user.id
+        isCurrentUser: entry.user_id === user.id
       }));
       
-      // If current user is not in top 5, add them at the end
+      // If current user is not in top 5, try to add them
       const currentUserInTop = topPredictorsWithBadges.find(p => p.id === user.id);
-      if (!currentUserInTop && predictorsList.length > 0) {
-        const currentUserData = predictorsList.find(p => p.id === user.id);
+      if (!currentUserInTop) {
+        // Fetch current user's data
+        const { data: currentUserData } = await supabase
+          .from('xp_leaderboard')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
         if (currentUserData) {
+          // Find user's actual rank
+          const { count } = await supabase
+            .from('xp_leaderboard')
+            .select('*', { count: 'exact', head: true })
+            .gt('total_xp', currentUserData.total_xp);
+          
+          const userRank = (count || 0) + 1;
+          
           topPredictorsWithBadges.push({
-            ...currentUserData,
+            id: currentUserData.user_id,
+            username: currentUserData.username || 'You',
+            avatar_url: currentUserData.avatar_url,
+            totalXP: currentUserData.total_xp || 0,
+            level: currentUserData.current_level || 1,
+            levelTitle: currentUserData.level_title || 'Observer',
+            waveCount: currentUserData.waves_spotted || 0,
+            trend: currentUserData.total_xp > 1000 ? `+${Math.floor(currentUserData.total_xp / 100)}` : '+0',
+            rank: userRank,
             badge: '⭐',
             isCurrentUser: true
           });
@@ -1227,28 +1223,10 @@ export default function EnhancedPredictionsPage() {
           {/* Main Content */}
           <div className="xl:col-span-3 space-y-6">
             {/* Metric Tiles - Improved alignment and visual hierarchy */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <Brain className="w-6 h-6 text-purple-600" />
-                  {userStats.rank_change > 0 && (
-                    <span className="text-xs text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full">
-                      +{userStats.rank_change}
-                    </span>
-                  )}
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900">{userStats.accuracy_rate}%</div>
-                <div className="text-xs sm:text-sm text-gray-600 font-medium mt-1">Accuracy</div>
-              </motion.div>
-
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
                 className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
                 <div className="flex items-center justify-between mb-3">
@@ -1264,7 +1242,7 @@ export default function EnhancedPredictionsPage() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.1 }}
                 className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
                 <div className="flex items-center justify-between mb-3">
@@ -1280,7 +1258,7 @@ export default function EnhancedPredictionsPage() {
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.2 }}
                 className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-md hover:shadow-xl transition-all border border-gray-100"
               >
                 <div className="flex items-center justify-between mb-3">
@@ -1709,12 +1687,12 @@ export default function EnhancedPredictionsPage() {
               )}
             </AnimatePresence>
 
-            {/* Top Predictors Leaderboard */}
+            {/* Top Trend Spotters Leaderboard */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-5">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Top Predictors
+                  Top Trend Spotters
                 </span>
               </h3>
                 <div className="space-y-2">
@@ -1748,17 +1726,18 @@ export default function EnhancedPredictionsPage() {
                               {predictor.isCurrentUser ? 'You' : predictor.username}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <span className="text-green-600 font-medium">{predictor.trend}</span>
-                            <span className="text-gray-500">vs yesterday</span>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="font-medium text-purple-600">{predictor.levelTitle || 'Observer'}</span>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-gray-600">{predictor.waveCount || 0} waves</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                          {predictor.accuracy}%
+                          {(predictor.totalXP || 0).toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-500">accuracy</div>
+                        <div className="text-xs text-gray-500">XP</div>
                       </div>
                     </motion.div>
                   ))
@@ -1773,6 +1752,7 @@ export default function EnhancedPredictionsPage() {
                 <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => window.location.href = '/leaderboard'}
                   className="w-full mt-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
                 >
                   View Full Leaderboard →

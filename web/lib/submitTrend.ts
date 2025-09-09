@@ -29,6 +29,7 @@ export interface TrendSubmissionData {
 export async function submitTrend(userId: string, data: TrendSubmissionData) {
   const startTime = Date.now();
   console.log('📤 [START] Submitting trend for user:', userId, 'at', new Date().toISOString());
+  console.log('📤 [START] Data received:', JSON.stringify(data, null, 2));
   
   try {
     // First, test database connection
@@ -95,9 +96,10 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       finalXP: paymentAmount
     });
     
-    // Validate and prepare category
-    const safeCategory = getSafeCategory(data.category);
-    console.log(`📁 Category validation: input="${data.category}" -> safe="${safeCategory}"`);
+    // Validate and prepare category - ensure we always have a valid category
+    const rawCategory = data.category || 'entertainment';
+    const safeCategory = getSafeCategory(rawCategory);
+    console.log(`📁 Category validation: input="${rawCategory}" -> safe="${safeCategory}"`);
     
     // List of valid categories - simplified to match common database enum
     const validCategories = [
@@ -111,6 +113,11 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     const finalCategory = validCategories.includes(safeCategory) ? safeCategory : 'entertainment';
     console.log(`📁 Final category: "${finalCategory}"`);
     
+    // Ensure we have required fields
+    if (!userId) {
+      throw new Error('User ID is required for submission');
+    }
+    
     // Prepare submission data - only include essential columns first
     const submissionData: any = {
       spotter_id: userId,  // Use spotter_id as that's what the table expects
@@ -123,7 +130,6 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     };
 
     // Add optional fields if they exist and are not undefined
-    if (data.title && data.title !== '0') submissionData.trend_name = data.title;
     if (data.platform) submissionData.platform = data.platform;
     if (data.url) submissionData.post_url = data.url;
     if (data.screenshot_url) submissionData.screenshot_url = data.screenshot_url;

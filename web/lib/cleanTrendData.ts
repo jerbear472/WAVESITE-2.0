@@ -12,6 +12,7 @@ export function cleanTrendData(trend: any): any {
   const fieldsToClean = [
     'description',
     'title',
+    'trend_name',
     'post_caption',
     'creator_handle',
     'creator_name',

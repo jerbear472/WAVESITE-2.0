@@ -24,7 +24,6 @@ interface XPStats {
   level_title: string;
   trends_submitted: number;
   trends_validated: number;
-  validation_accuracy: number;
 }
 
 // 15-level cultural anthropologist progression system
@@ -52,8 +51,7 @@ export const XPLevelDisplay: React.FC<Props> = ({ userId, compact = false }) => 
     current_level: 1,
     level_title: 'Observer',
     trends_submitted: 0,
-    trends_validated: 0,
-    validation_accuracy: 0
+    trends_validated: 0
   });
   const [loading, setLoading] = useState(true);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -124,18 +122,13 @@ export const XPLevelDisplay: React.FC<Props> = ({ userId, compact = false }) => 
 
       const totalTrends = trends?.length || 0;
       const validatedTrends = trends?.filter(t => t.validation_state === 'validated').length || 0;
-      const rejectedTrends = trends?.filter(t => t.validation_state === 'rejected').length || 0;
-      
-      const decidedTrends = validatedTrends + rejectedTrends;
-      const accuracy = decidedTrends > 0 ? Math.round((validatedTrends / decidedTrends) * 100) : 0;
 
       setStats({
         total_xp: finalXP,
         current_level: currentLevelData.level,
         level_title: currentLevelData.title,
         trends_submitted: totalTrends,
-        trends_validated: validatedTrends,
-        validation_accuracy: accuracy
+        trends_validated: validatedTrends
       });
 
     } catch (error) {
@@ -294,17 +287,17 @@ const XPDetailsTooltip: React.FC<{
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-gray-50 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-1">
-            <Target className="w-4 h-4 text-purple-500" />
-            <span className="text-xs text-gray-600">Accuracy</span>
-          </div>
-          <p className="text-lg font-bold text-gray-900">{stats.validation_accuracy}%</p>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
             <Trophy className="w-4 h-4 text-green-500" />
             <span className="text-xs text-gray-600">Validated</span>
           </div>
           <p className="text-lg font-bold text-gray-900">{stats.trends_validated}</p>
+        </div>
+        <div className="bg-gray-50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="w-4 h-4 text-blue-500" />
+            <span className="text-xs text-gray-600">Submitted</span>
+          </div>
+          <p className="text-lg font-bold text-gray-900">{stats.trends_submitted}</p>
         </div>
       </div>
 
@@ -346,14 +339,7 @@ const XPDetailsPanel: React.FC<{
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Target className="w-4 h-4 text-purple-500" />
-            <span className="text-sm text-gray-600">Accuracy</span>
-          </div>
-          <p className="text-xl font-bold text-gray-900">{stats.validation_accuracy}%</p>
-        </div>
+      <div className="grid grid-cols-2 gap-4">
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Trophy className="w-4 h-4 text-green-500" />

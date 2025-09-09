@@ -76,7 +76,7 @@ export default function Home() {
               <div className="text-4xl mb-4">✅</div>
               <h3 className="text-lg font-medium mb-3">PROVE</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Time proves you right. Your accuracy score climbs.
+                Time proves you right. Your reputation grows.
               </p>
             </div>
             
@@ -119,7 +119,7 @@ export default function Home() {
               <div className="text-3xl mb-3">📊</div>
               <h3 className="font-semibold mb-2">Public Score</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Your prediction accuracy, tracked and visible
+                Your XP and level, tracked and visible
               </p>
             </div>
             

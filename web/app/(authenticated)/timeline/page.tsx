@@ -179,7 +179,7 @@ export default function Timeline() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h2 className="text-2xl font-bold mb-2">
-                  {trend.evidence?.title || 'Untitled Trend'}
+                  {trend.description || trend.evidence?.title || 'New Trend'}
                 </h2>
                 <div className="flex items-center gap-2 text-sm opacity-90">
                   <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -210,7 +210,7 @@ export default function Timeline() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">
-                    {trend.evidence?.title || 'Untitled Trend'}
+                    {trend.description || trend.evidence?.title || 'New Trend'}
                   </h2>
                   <div className="flex items-center gap-2 text-sm opacity-90">
                     <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -1553,7 +1553,7 @@ export default function Timeline() {
                           {/* Header with title and status */}
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 flex-1">
-                              {trend.evidence?.title || 'Untitled Trend'}
+                              {trend.description || trend.evidence?.title || 'New Trend'}
                             </h3>
                             {/* Approved Status Badge - Top Right */}
                             {trend.validation_status && trend.validation_status !== 'pending' && (
@@ -1619,30 +1619,38 @@ export default function Timeline() {
                             </div>
                           )}
 
-                          {/* Enhanced Metadata Display */}
-                          <div className="pt-4 border-t border-gray-100 space-y-3">
-                            {/* Primary Analysis Row */}
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
-                                <span className={`text-xs font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
-                                  {getVelocityDisplay(getTrendVelocity(trend)).text}
-                                </span>
-                                <span className="text-xs text-gray-400">Velocity</span>
-                              </div>
-                              <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
-                                <span className="text-xs font-medium text-gray-600">
-                                  {(trend as any).trend_size === 'micro' ? '🔬 Micro' :
-                                   (trend as any).trend_size === 'niche' ? '🎯 Niche' :
-                                   (trend as any).trend_size === 'viral' ? '🔥 Viral' :
-                                   (trend as any).trend_size === 'medium' ? '🔥 Medium' :
-                                   (trend as any).trend_size === 'mega' ? '💥 Mega' :
-                                   (trend as any).trend_size === 'large' ? '💥 Large' :
-                                   (trend as any).trend_size === 'global' ? '🌍 Global' :
-                                   '📊 ' + ((trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown')}
-                                </span>
-                                <span className="text-xs text-gray-400">Size</span>
-                              </div>
-                            </div>
+                          {/* Enhanced Metadata Display - Only show if has data */}
+                          {(trend.trend_velocity || trend.trend_size || (trend as any).ai_angle || (trend as any).audience_age || 
+                            (trend as any).trend_origin || (trend as any).evolution_status || (trend as any).category_answers) && (
+                            <div className="pt-4 border-t border-gray-100 space-y-3">
+                              {/* Primary Analysis Row - Only show if has data */}
+                              {(trend.trend_velocity || trend.trend_size) && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  {trend.trend_velocity && (
+                                    <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
+                                      <span className={`text-xs font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                                        {getVelocityDisplay(getTrendVelocity(trend)).text}
+                                      </span>
+                                      <span className="text-xs text-gray-400">Velocity</span>
+                                    </div>
+                                  )}
+                                  {trend.trend_size && (
+                                    <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-2 py-1.5 border border-gray-200/50">
+                                      <span className="text-xs font-medium text-gray-600">
+                                        {(trend as any).trend_size === 'micro' ? '🔬 Micro' :
+                                         (trend as any).trend_size === 'niche' ? '🎯 Niche' :
+                                         (trend as any).trend_size === 'viral' ? '🔥 Viral' :
+                                         (trend as any).trend_size === 'medium' ? '🔥 Medium' :
+                                         (trend as any).trend_size === 'mega' ? '💥 Mega' :
+                                         (trend as any).trend_size === 'large' ? '💥 Large' :
+                                         (trend as any).trend_size === 'global' ? '🌍 Global' :
+                                         '📊 ' + ((trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown')}
+                                      </span>
+                                      <span className="text-xs text-gray-400">Size</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             
                             {/* AI & Audience Intelligence */}
                             {((trend as any).ai_angle || (trend as any).audience_age) && (
@@ -1763,21 +1771,21 @@ export default function Timeline() {
                               )}
                             </div>
                             
-                            {/* Vote Display */}
-                            <div className="mt-3 pt-3 border-t border-gray-100">
-                              <SimpleVoteDisplay 
-                                trendId={trend.id}
-                                initialVotes={{
-                                  wave: trend.wave_votes || 0,
-                                  fire: trend.fire_votes || 0,
-                                  declining: trend.declining_votes || 0,
-                                  dead: trend.dead_votes || 0
-                                }}
-                                compact={true}
-                              />
+                              {/* Vote Display */}
+                              <div className="mt-3 pt-3 border-t border-gray-100">
+                                <SimpleVoteDisplay 
+                                  trendId={trend.id}
+                                  initialVotes={{
+                                    wave: trend.wave_votes || 0,
+                                    fire: trend.fire_votes || 0,
+                                    declining: trend.declining_votes || 0,
+                                    dead: trend.dead_votes || 0
+                                  }}
+                                  compact={true}
+                                />
+                              </div>
                             </div>
-                            
-                          </div>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -1835,7 +1843,7 @@ export default function Timeline() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                                  {trend.evidence?.title || 'Untitled Trend'}
+                                  {trend.description || trend.evidence?.title || 'New Trend'}
                                 </h3>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
@@ -1928,45 +1936,53 @@ export default function Timeline() {
                               </div>
                             )}
 
-                            {/* Enhanced Metadata Grid for List View */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                              <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
-                                <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
-                                  {getVelocityDisplay(getTrendVelocity(trend)).text}
-                                </span>
-                                <span className="text-xs text-gray-400">Velocity</span>
+                            {/* Enhanced Metadata Grid for List View - Only show if has data */}
+                            {((trend.trend_velocity && trend.trend_velocity !== null) || 
+                              (trend.trend_size && trend.trend_size !== null) || 
+                              ((trend as any).ai_angle && (trend as any).ai_angle !== null)) && (
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                                {trend.trend_velocity && trend.trend_velocity !== null && (
+                                  <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
+                                    <span className={`text-sm font-medium ${getVelocityDisplay(getTrendVelocity(trend)).color}`}>
+                                      {getVelocityDisplay(getTrendVelocity(trend)).text}
+                                    </span>
+                                    <span className="text-xs text-gray-400">Velocity</span>
+                                  </div>
+                                )}
+                                {trend.trend_size && trend.trend_size !== null && (
+                                  <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
+                                    <span className="text-sm font-medium text-gray-600">
+                                      {(trend as any).trend_size === 'micro' ? '🔬 Micro' :
+                                       (trend as any).trend_size === 'niche' ? '🎯 Niche' :
+                                       (trend as any).trend_size === 'viral' ? '🔥 Viral' :
+                                       (trend as any).trend_size === 'medium' ? '🔥 Medium' :
+                                       (trend as any).trend_size === 'mega' ? '💥 Mega' :
+                                       (trend as any).trend_size === 'large' ? '💥 Large' :
+                                       (trend as any).trend_size === 'global' ? '🌍 Global' :
+                                       '📊 ' + ((trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown')}
+                                    </span>
+                                    <span className="text-xs text-gray-400">Size</span>
+                                  </div>
+                                )}
+                                {(trend as any).ai_angle && (trend as any).ai_angle !== null && (
+                                  <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
+                                    <span className="text-sm font-medium text-gray-600">
+                                      {(trend as any).ai_angle === 'not_ai' ? '👤' :
+                                       (trend as any).ai_angle === 'using_ai' ? '🎨' :
+                                       (trend as any).ai_angle === 'reacting_to_ai' ? '😮' :
+                                       (trend as any).ai_angle === 'ai_tool_viral' ? '🚀' :
+                                       (trend as any).ai_angle === 'ai_technique' ? '💡' :
+                                       (trend as any).ai_angle === 'anti_ai' ? '🚫' :
+                                       // Fallback for old values
+                                       (trend as any).ai_angle === 'ai_created' ? '🤖' :
+                                       (trend as any).ai_angle === 'ai_enhanced' ? '✨' :
+                                       (trend as any).ai_angle === 'about_ai' ? '💭' : '🔍'}
+                                    </span>
+                                    <span className="text-xs text-gray-400">AI Signal</span>
+                                  </div>
+                                )}
                               </div>
-                              <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
-                                <span className="text-sm font-medium text-gray-600">
-                                  {(trend as any).trend_size === 'micro' ? '🔬 Micro' :
-                                   (trend as any).trend_size === 'niche' ? '🎯 Niche' :
-                                   (trend as any).trend_size === 'viral' ? '🔥 Viral' :
-                                   (trend as any).trend_size === 'medium' ? '🔥 Medium' :
-                                   (trend as any).trend_size === 'mega' ? '💥 Mega' :
-                                   (trend as any).trend_size === 'large' ? '💥 Large' :
-                                   (trend as any).trend_size === 'global' ? '🌍 Global' :
-                                   '📊 ' + ((trend as any).trend_size ? (trend as any).trend_size.charAt(0).toUpperCase() + (trend as any).trend_size.slice(1) : 'Unknown')}
-                                </span>
-                                <span className="text-xs text-gray-400">Size</span>
-                              </div>
-                              {(trend as any).ai_angle && (
-                                <div className="flex flex-col items-center bg-gray-50/60 rounded-lg px-3 py-2 border border-gray-200/50">
-                                  <span className="text-sm font-medium text-gray-600">
-                                    {(trend as any).ai_angle === 'not_ai' ? '👤' :
-                                     (trend as any).ai_angle === 'using_ai' ? '🎨' :
-                                     (trend as any).ai_angle === 'reacting_to_ai' ? '😮' :
-                                     (trend as any).ai_angle === 'ai_tool_viral' ? '🚀' :
-                                     (trend as any).ai_angle === 'ai_technique' ? '💡' :
-                                     (trend as any).ai_angle === 'anti_ai' ? '🚫' :
-                                     // Fallback for old values
-                                     (trend as any).ai_angle === 'ai_created' ? '🤖' :
-                                     (trend as any).ai_angle === 'ai_enhanced' ? '✨' :
-                                     (trend as any).ai_angle === 'about_ai' ? '💭' : '🔍'}
-                                  </span>
-                                  <span className="text-xs text-gray-400">AI Signal</span>
-                                </div>
-                              )}
-                            </div>
+                            )}
                             
                             {/* Voting and Status */}
                             <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -2209,7 +2225,7 @@ export default function Timeline() {
                                               <div className="p-3">
                                                 {/* Title */}
                                                 <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-1">
-                                                  {trend.evidence?.title || 'Untitled Trend'}
+                                                  {trend.description || trend.evidence?.title || 'New Trend'}
                                                 </h3>
 
                                                 {/* Creator & Time */}

@@ -41,9 +41,6 @@ interface TrendPredictionChartProps {
     peakDate: Date;
     peakValue: number;
     confidence: number;
-    xpBet: number;
-    potentialWin: number;
-    potentialLoss: number;
     pattern?: string;
   }) => void;
 }
@@ -106,12 +103,8 @@ export default function TrendPredictionChartV7({
   const [isDragging, setIsDragging] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
-  // XP calculations
-  const xpBet = Math.round(confidence / 2);
-  const potentialWin = Math.round(xpBet * (confidence / 25));
-  const potentialLoss = Math.round(xpBet * 0.2);
+  // Calculate if prediction is different from crowd
   const isDifferentFromCrowd = peakDays < 14 || peakDays > 45;
-  const crowdBonus = isDifferentFromCrowd ? Math.round(xpBet * 0.5) : 0;
 
   // Load other users' predictions
   useEffect(() => {
@@ -349,9 +342,6 @@ export default function TrendPredictionChartV7({
       peakDate: peakDate.date,
       peakValue: peakIntensity,
       confidence,
-      xpBet,
-      potentialWin: potentialWin + crowdBonus,
-      potentialLoss,
       pattern: selectedPattern
     });
   };
@@ -615,20 +605,13 @@ export default function TrendPredictionChartV7({
         </div>
       </div>
 
-      {/* XP Stakes - Simplified */}
+      {/* Confidence Level */}
       <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-lg p-3 text-center">
-            <div className="text-xs text-gray-500 uppercase">Stake</div>
-            <div className="text-xl font-bold text-purple-600">{xpBet} XP</div>
-          </div>
-          <div className="bg-green-50 rounded-lg p-3 text-center">
-            <div className="text-xs text-green-600 uppercase">If Right</div>
-            <div className="text-xl font-bold text-green-600">+{potentialWin + crowdBonus}</div>
-          </div>
-          <div className="bg-red-50 rounded-lg p-3 text-center">
-            <div className="text-xs text-red-600 uppercase">If Wrong</div>
-            <div className="text-xl font-bold text-red-600">-{potentialLoss}</div>
+        <div className="text-center">
+          <div className="text-xs text-gray-500 uppercase mb-2">Your Confidence</div>
+          <div className="text-3xl font-bold text-purple-600">{confidence}%</div>
+          <div className="text-xs text-gray-600 mt-1">
+            {confidence >= 80 ? 'Very Confident' : confidence >= 60 ? 'Confident' : confidence >= 40 ? 'Somewhat Confident' : 'Low Confidence'}
           </div>
         </div>
       </div>

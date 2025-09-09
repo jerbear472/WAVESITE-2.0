@@ -624,6 +624,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
   // Clear any lingering states when component mounts and unmounts
   useEffect(() => {
+    console.log('📱 SmartTrendSubmission mounted');
     // Reset loading states on mount to prevent hanging
     setLoading(false);
     setExtracting(false);
@@ -632,6 +633,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
     
     // Cleanup on unmount
     return () => {
+      console.log('📱 SmartTrendSubmission unmounting - cleaning up');
       setLoading(false);
       setExtracting(false);
       setAiLoading(false);
@@ -922,6 +924,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
 
   const resetForm = () => {
+    console.log('🔄 Resetting form to initial state');
     // Reset all form state to initial values
     setFormData({
       url: initialUrl || '',
@@ -966,6 +969,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
   const handleSubmit = async () => {
     console.log('🚀 Submit clicked from SmartTrendSubmission');
+    console.log('Current loading state:', loading);
+    console.log('Current form data:', formData);
     
     // Prevent double submission
     if (loading) {
@@ -996,14 +1001,12 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       
       console.log('✅ customSubmit completed successfully');
       
-      // Success - clean up
+      // Success - clean up BEFORE closing
       clearSavedDraft();
-      resetForm();
       
-      // Small delay before closing to show success
-      setTimeout(() => {
-        onClose();
-      }, 500);
+      // Don't reset form here as the component will unmount
+      // Just close and let the parent handle cleanup
+      onClose();
       
     } catch (error: any) {
       console.error('❌ Error in handleSubmit:', error);

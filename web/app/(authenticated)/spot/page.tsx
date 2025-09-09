@@ -341,16 +341,26 @@ export default function SpotPage() {
         
         // Navigate to AI analysis page if submission has an ID
         if (result.submission?.id) {
-          router.push(`/analyze/${result.submission.id}`);
+          console.log('🚀 Navigating to analysis page:', `/analyze/${result.submission.id}`);
+          // Use a small delay to ensure state cleanup
+          setTimeout(() => {
+            router.push(`/analyze/${result.submission.id}`);
+          }, 100);
         }
         
-        // Return success result
+        // Return success result - IMPORTANT: Must return the result
         return result;
       } else {
-        throw new Error(result?.error || 'Failed to submit trend');
+        const errorMessage = result?.error || 'Failed to submit trend';
+        console.error('❌ Submission failed:', errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (error: any) {
-      console.error('Error submitting trend:', error);
+      console.error('❌ Error submitting trend:', error);
+      // Re-throw with better error message
+      if (error.message?.includes('timeout')) {
+        throw new Error('Submission timed out. Please check your connection and try again.');
+      }
       throw error;
     }
   };
@@ -722,9 +732,14 @@ export default function SpotPage() {
         onSuccess={(data?: any) => {
           setShowSubmissionForm(false);
           if (data?.continueToAnalysis) {
-            // Open SmartTrendSubmission for full AI analysis
-            setTrendData(data);
-            setShowSmartSubmission(true);
+            // If we have a submission ID, navigate directly to the analyze page
+            if (data.submissionId) {
+              router.push(`/analyze/${data.submissionId}`);
+            } else {
+              // Fallback: Open SmartTrendSubmission for full AI analysis
+              setTrendData(data);
+              setShowSmartSubmission(true);
+            }
           } else {
             setTrendUrl('');
             // Refresh stats after submission
@@ -736,8 +751,10 @@ export default function SpotPage() {
       {/* Smart Trend Submission for full AI analysis */}
       {showSmartSubmission && (
         <SmartTrendSubmission
+          key={`smart-submission-${Date.now()}`} // Force re-mount on each open
           initialUrl={trendData?.url || trendUrl}
           onClose={() => {
+            console.log('🔄 Closing SmartTrendSubmission');
             setShowSmartSubmission(false);
             setTrendData(null);
             setTrendUrl('');

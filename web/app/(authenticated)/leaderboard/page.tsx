@@ -195,8 +195,7 @@ export default function LeaderboardPage() {
             <div className="col-span-4 text-xs font-medium text-gray-500 uppercase tracking-wider">User</div>
             <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Level</div>
             <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Total XP</div>
-            <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Validated</div>
-            <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Accuracy</div>
+            <div className="col-span-2 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Validated</div>
             <div className="col-span-1 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Trend</div>
           </div>
 
@@ -297,21 +296,9 @@ export default function LeaderboardPage() {
                   </div>
 
                   {/* Validated Trends */}
-                  <div className="col-span-1 text-center">
+                  <div className="col-span-2 text-center">
                     <span className="font-medium text-gray-700">
                       {entry.trends_validated || entry.waves_spotted || 0}
-                    </span>
-                  </div>
-
-                  {/* Accuracy */}
-                  <div className="col-span-1 text-center">
-                    <span className={`
-                      inline-flex px-2 py-1 text-xs font-medium rounded-md
-                      ${entry.wave_accuracy >= 80 ? 'bg-emerald-100 text-emerald-700' :
-                        entry.wave_accuracy >= 60 ? 'bg-amber-100 text-amber-700' :
-                        'bg-red-100 text-red-700'}
-                    `}>
-                      {entry.wave_accuracy ? `${entry.wave_accuracy.toFixed(0)}%` : 'N/A'}
                     </span>
                   </div>
 

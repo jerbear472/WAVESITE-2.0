@@ -129,7 +129,7 @@ export default function Navigation() {
   // Navigation items with updated Headlines
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/spot', label: 'Spot', icon: '➕' },
+    { href: '/spot', label: 'Spot', icon: '👁' },
     { href: '/predictions', label: 'Headlines', icon: '🌍' },
     { href: '/timeline', label: 'My Timeline', icon: '📅' },
     // Hidden from nav but still accessible at /validate
