@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { useNavigationRefresh } from '@/hooks/useNavigationRefresh';
 import { supabaseCache } from '@/lib/supabaseCache';
 import { motion, AnimatePresence } from 'framer-motion';
 import SmartTrendSubmission from '@/components/SmartTrendSubmission';
@@ -613,95 +612,10 @@ export default function Timeline() {
     </div>
   );
 
-  // Use navigation refresh hook to reload data on route changes
-  useNavigationRefresh(() => {
-    if (user && !authLoading) {
-      supabaseCache.clearTable('trend_submissions');
-      fetchUserTrends();
-    }
-  }, [user, authLoading]);
+  // Removed navigation refresh to prevent excessive reloading
+  // Data will be fetched once when component mounts via useEffect
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-      return;
-    }
-
-    if (user) {
-      fetchUserTrends();
-      
-      // Set up real-time subscription for ALL trends, validations, and XP
-      const subscription = supabase
-        .channel('all-trends-updates')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'trend_submissions'
-            // No filter - listen for all trends
-          },
-          (payload) => {
-            console.log('Trend update:', payload);
-            // Only refresh if it's a submitted or approved trend
-            const newStatus = (payload.new as any)?.status;
-            if (newStatus === 'submitted' || newStatus === 'approved') {
-              fetchUserTrends();
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'trend_validations'
-            // Note: Can't filter by trend owner, so we'll refresh all trends
-          },
-          (payload) => {
-            console.log('Validation update:', payload);
-            // Only refresh if it's for one of our trends
-            if ((payload.new as any)?.trend_id || (payload.old as any)?.trend_id) {
-              fetchUserTrends();
-            }
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'xp_events',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            console.log('XP update:', payload);
-            // Just refresh the XP total, not all trends
-            fetchUserTrends(false);
-          }
-        )
-        .subscribe();
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
-  }, [user, authLoading, router]);
-
-  // Listen for XP events to refresh timeline XP display
-  useEffect(() => {
-    const handleXPEarned = () => {
-      if (user) {
-        // Just refresh the XP data, not all trends
-        fetchUserTrends(false);
-      }
-    };
-
-    window.addEventListener('xp-earned', handleXPEarned);
-    return () => window.removeEventListener('xp-earned', handleXPEarned);
-  }, [user]);
-
-  const fetchUserTrends = async (showRefreshAnimation = false) => {
+  const fetchUserTrends = useCallback(async (showRefreshAnimation = false) => {
     try {
       if (showRefreshAnimation) setRefreshing(true);
       setError(null);
@@ -778,61 +692,92 @@ export default function Timeline() {
         });
       }
       
-      // Clean and process trends to remove "0" values and set validation status
-      const cleanedTrends = (data || []).map(trend => cleanTrendData(trend));
-      const processedTrends = cleanedTrends.map(trend => ({
-        ...trend,
-        is_validated: (trend.wave_votes ?? 0) >= 3,
-        is_rejected: (trend.dead_votes ?? 0) >= 3
-      })).filter(trend => !trend.is_rejected); // Filter out rejected trends
+      // Clean the data
+      const cleanedData = data?.map(trend => cleanTrendData(trend)) || [];
+      setTrends(cleanedData);
       
-      setTrends(processedTrends);
-
-      // Fetch total XP from user_xp_summary view (same as Navigation)
-      const { data: xpSummary, error: xpError } = await supabase
-        .from('user_xp_summary')
-        .select('total_xp')
-        .eq('user_id', userId)
-        .single();
-
-      if (!xpError && xpSummary) {
-        setTotalXP(Math.max(0, xpSummary.total_xp || 0)); // Never show negative XP
-        console.log('Timeline: User total XP:', xpSummary.total_xp);
-      } else {
-        // Fallback: Try to get XP directly from user_xp table
-        const { data: directXP } = await supabase
-          .from('user_xp')
-          .select('total_xp')
-          .eq('user_id', userId)
-          .single();
-          
-        if (directXP) {
-          setTotalXP(Math.max(0, directXP.total_xp || 0));
-          console.log('Timeline: User XP from fallback:', directXP.total_xp);
-        } else {
-          // Final fallback: sum from xp_events
-          const { data: xpEvents } = await supabase
-            .from('xp_events')
-            .select('xp_change')
-            .eq('user_id', userId);
-            
-          if (xpEvents) {
-            const total = xpEvents.reduce((sum, xp) => sum + (xp.xp_change || 0), 0);
-            setTotalXP(Math.max(0, total));
-            console.log('Timeline: XP calculated from events:', total);
-          }
-        }
+      // Only show success if it was a manual refresh
+      if (showRefreshAnimation && cleanedData.length > 0) {
+        showSuccess('Trends refreshed');
       }
     } catch (error: any) {
-      showError('An unexpected error occurred', 'Please refresh the page');
-      setError('An unexpected error occurred');
+      const errorMessage = error.message || 'Failed to load trends';
+      setError(errorMessage);
+      showError('Error loading trends', errorMessage);
+      console.error('[Timeline] Error fetching trends:', error);
     } finally {
       setLoading(false);
       if (showRefreshAnimation) {
         setTimeout(() => setRefreshing(false), 500);
       }
     }
-  };
+  }, [user, router, showError, showSuccess]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+
+    if (user) {
+      fetchUserTrends();
+      
+      // Set up real-time subscription for only current user's trends and XP
+      const subscription = supabase
+        .channel(`user-trends-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'trend_submissions',
+            filter: `spotter_id=eq.${user.id}` // Only listen to current user's trends
+          },
+          (payload) => {
+            console.log('User trend update:', payload);
+            // Only refresh if it's a submitted or approved trend
+            const newStatus = (payload.new as any)?.status;
+            if (newStatus === 'submitted' || newStatus === 'approved') {
+              fetchUserTrends();
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'xp_events',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('XP update:', payload);
+            // Just refresh the XP total, not all trends
+            fetchUserTrends(false);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [user, authLoading, router, fetchUserTrends]);
+
+  // Listen for XP events to refresh timeline XP display
+  useEffect(() => {
+    const handleXPEarned = () => {
+      if (user) {
+        // Just refresh the XP data, not all trends
+        fetchUserTrends(false);
+      }
+    };
+
+    window.addEventListener('xp-earned', handleXPEarned);
+    return () => window.removeEventListener('xp-earned', handleXPEarned);
+  }, [user, fetchUserTrends]);
+
+  // fetchUserTrends is already defined above
 
   // Filter and sort trends
   const getFilteredAndSortedTrends = () => {
