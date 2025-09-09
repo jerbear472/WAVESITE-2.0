@@ -17,7 +17,7 @@ import {
   Check,
   X
 } from 'lucide-react';
-import { useAuth } from '@/lib/providers/auth-provider';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 interface Notification {
@@ -66,35 +66,7 @@ export default function NotificationsPage() {
         metadata: { amount: xp.amount, type: xp.type }
       }));
 
-      // Add some mock notifications for variety
-      const mockNotifications: Notification[] = [
-        {
-          id: 'mock-1',
-          type: 'trend_approved',
-          title: 'Trend Approved!',
-          message: 'Your trend "Winter Arc Challenge" has been approved',
-          read: false,
-          created_at: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          id: 'mock-2',
-          type: 'achievement',
-          title: 'Achievement Unlocked!',
-          message: 'You\'ve earned the "Trend Spotter" badge',
-          read: true,
-          created_at: new Date(Date.now() - 7200000).toISOString()
-        },
-        {
-          id: 'mock-3',
-          type: 'new_follower',
-          title: 'New Follower',
-          message: 'Sarah Chen started following you',
-          read: true,
-          created_at: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-
-      const allNotifications = [...xpNotifications, ...mockNotifications]
+      const allNotifications = xpNotifications
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       const filteredNotifications = filter === 'unread' 
