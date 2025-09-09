@@ -226,7 +226,7 @@ export default function ProfilePage() {
                       <AwardIcon className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-800">{user.daily_streak || 0}</p>
+                      <p className="text-2xl font-bold text-gray-800">{(user as any).daily_streak || 0}</p>
                       <p className="text-sm text-gray-600">Day Streak</p>
                     </div>
                   </div>
