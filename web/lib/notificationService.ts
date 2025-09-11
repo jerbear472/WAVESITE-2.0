@@ -121,7 +121,7 @@ export class NotificationService {
   private sendBrowserNotification(): void {
     if (Notification.permission !== 'granted') return;
 
-    const notification = new Notification('🔥 Daily Trend Alert!', {
+    const notificationOptions: NotificationOptions & { actions?: any[] } = {
       body: 'Spot today\'s trend for 500 XP! Limited time bonus available now.',
       icon: '/icon-192.png',
       badge: '/badge-72.png',
@@ -131,7 +131,9 @@ export class NotificationService {
         { action: 'spot', title: 'Spot Trend' },
         { action: 'dismiss', title: 'Later' }
       ]
-    });
+    };
+
+    const notification = new Notification('🔥 Daily Trend Alert!', notificationOptions);
 
     notification.onclick = () => {
       window.focus();
