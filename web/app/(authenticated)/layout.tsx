@@ -8,6 +8,7 @@ import XPLossNotification from '@/components/XPLossNotification';
 import PageTransition from '@/components/PageTransition';
 import ClientOnlyProvider from '@/components/ClientOnlyProvider';
 import StabilityMonitor from '@/components/StabilityMonitor';
+import DailyTrendSpotNotification from '@/components/DailyTrendSpotNotification';
 import '@/lib/errorRecovery'; // Initialize global error handlers
 
 export default function AuthenticatedLayout({
@@ -79,6 +80,7 @@ export default function AuthenticatedLayout({
           </PageTransition>
         </main>
         <XPLossNotification />
+        <DailyTrendSpotNotification />
         <StabilityMonitor />
       </div>
     </ClientOnlyProvider>

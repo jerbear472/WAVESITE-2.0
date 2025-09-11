@@ -24,6 +24,9 @@ export interface TrendSubmissionData {
   comments_count?: number;
   hashtags?: string[];
   wave_score?: number;
+  isDailyNotification?: boolean;
+  isOnTimeSubmission?: boolean;
+  dailyBonusMultiplier?: number;
 }
 
 export async function submitTrend(userId: string, data: TrendSubmissionData) {
@@ -67,7 +70,17 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     }
     
     // Calculate XP with all multipliers
-    const baseXP = XP_REWARDS.base.trendSubmission; // 10 XP
+    let baseXP = XP_REWARDS.base.trendSubmission; // 10 XP
+    
+    // Apply daily notification bonus if applicable
+    if (data.isDailyNotification) {
+      baseXP = 500; // Base XP for daily notification trends
+      
+      if (data.isOnTimeSubmission) {
+        console.log('🔥 Daily notification on-time bonus applied! 2x multiplier');
+      }
+    }
+    
     const totalXP = userXP?.total_xp || 0;
     const levelData = getCurrentLevel(totalXP);
     const currentLevel = levelData.level;
@@ -85,7 +98,12 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
       isWithinSessionWindow: withinSession
     });
     
-    const paymentAmount = xpCalculation.finalXP;
+    // Apply daily bonus multiplier if on-time
+    let paymentAmount = xpCalculation.finalXP;
+    if (data.isOnTimeSubmission && data.dailyBonusMultiplier) {
+      paymentAmount = Math.round(paymentAmount * data.dailyBonusMultiplier);
+      console.log(`💎 Daily bonus applied: ${xpCalculation.finalXP} x ${data.dailyBonusMultiplier} = ${paymentAmount} XP`);
+    }
     
     console.log('💎 XP Calculation:', {
       base: xpCalculation.baseXP,

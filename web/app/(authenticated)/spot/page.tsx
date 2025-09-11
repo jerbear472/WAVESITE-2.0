@@ -72,6 +72,10 @@ export default function SpotPage() {
   const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   
+  // Daily notification tracking
+  const [isDailyNotification, setIsDailyNotification] = useState(false);
+  const [notificationStartTime, setNotificationStartTime] = useState<number | null>(null);
+  
   // Stats
   const [todaysXP, setTodaysXP] = useState(0);
   const [pendingValidations, setPendingValidations] = useState(0);
@@ -79,11 +83,26 @@ export default function SpotPage() {
   const [trendsLoggedToday, setTrendsLoggedToday] = useState(0);
   const [recentTickers, setRecentTickers] = useState<string[]>([]);
 
-  // Load stats on mount
+  // Load stats on mount and check for daily notification
   useEffect(() => {
     if (user) {
       loadTodaysStats();
       loadRecentTickers();
+      
+      // Check if user came from daily notification
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('daily') === 'true' || localStorage.getItem('daily_notification_active')) {
+        setIsDailyNotification(true);
+        setNotificationStartTime(Date.now());
+        localStorage.setItem('daily_notification_active', 'true');
+        
+        // Clear after 2 minutes
+        setTimeout(() => {
+          setIsDailyNotification(false);
+          setNotificationStartTime(null);
+          localStorage.removeItem('daily_notification_active');
+        }, 120000);
+      }
     }
   }, [user]);
 
@@ -320,6 +339,18 @@ export default function SpotPage() {
       throw new Error('Please log in to submit trends');
     }
 
+    // Check if this is a daily notification submission
+    const isOnTime = isDailyNotification && notificationStartTime && 
+                     (Date.now() - notificationStartTime) < 120000; // Within 2 minutes
+    
+    // Add daily bonus metadata
+    const submissionData = {
+      ...trendData,
+      isDailyNotification,
+      isOnTimeSubmission: isOnTime,
+      dailyBonusMultiplier: isOnTime ? 2 : 1
+    };
+
     try {
       // Add timeout to prevent hanging (15 seconds)
       const timeoutPromise = new Promise((_, reject) => 
@@ -327,9 +358,9 @@ export default function SpotPage() {
       );
       
       // Use the submitTrend function with XP calculation
-      console.log('📊 Submitting trend with data:', trendData);
+      console.log('📊 Submitting trend with data:', submissionData);
       const result = await Promise.race([
-        submitTrend(user.id, trendData),
+        submitTrend(user.id, submissionData),
         timeoutPromise
       ]) as any;
       
@@ -368,6 +399,30 @@ export default function SpotPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 max-w-5xl">
+        {/* Daily Notification Banner */}
+        {isDailyNotification && notificationStartTime && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl p-4 shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Zap className="w-6 h-6 animate-pulse" />
+                <div>
+                  <h3 className="font-bold text-lg">🔥 Daily Trend Challenge Active!</h3>
+                  <p className="text-sm text-white/90">
+                    Submit within {Math.max(0, Math.floor((120000 - (Date.now() - notificationStartTime)) / 1000))}s for 2x XP bonus!
+                  </p>
+                </div>
+              </div>
+              <div className="text-2xl font-bold">
+                500+ XP
+              </div>
+            </div>
+          </motion.div>
+        )}
+        
         {/* Header */}
         <div className="mb-8 bg-white rounded-2xl shadow-sm p-4">
           <div className="flex items-center justify-between">
