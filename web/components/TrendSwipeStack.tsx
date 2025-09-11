@@ -210,18 +210,22 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
 
   const voteIndicatorColor = useTransform(x, (value) => getVoteColor(value));
   
-  // Get vote label
-  const getVoteLabel = (x: number) => {
-    if (Math.abs(x) < VOTE_THRESHOLD) return '';
+  // Get vote label - using state instead of transform for TypeScript compatibility
+  const [voteLabel, setVoteLabel] = useState('');
+  
+  useEffect(() => {
+    const unsubscribe = x.on('change', (value) => {
+      if (Math.abs(value) < VOTE_THRESHOLD) {
+        setVoteLabel('');
+      } else if (value > 0) {
+        setVoteLabel(value > SUPER_VOTE_THRESHOLD ? '🌊 WAVE' : '🔥 FIRE');
+      } else {
+        setVoteLabel(value < -SUPER_VOTE_THRESHOLD ? '💀 DEATH' : '📉 DECLINE');
+      }
+    });
     
-    if (x > 0) {
-      return x > SUPER_VOTE_THRESHOLD ? '🌊 WAVE' : '🔥 FIRE';
-    } else {
-      return x < -SUPER_VOTE_THRESHOLD ? '💀 DEATH' : '📉 DECLINE';
-    }
-  };
-
-  const voteLabel = useTransform(x, (value) => getVoteLabel(value));
+    return unsubscribe;
+  }, [x]);
 
   if (currentIndex >= trends.length) {
     return (
@@ -308,9 +312,9 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
                   opacity: useTransform(x, [-200, -100, 0, 100, 200], [1, 0, 0, 0, 1])
                 }}
               >
-                <motion.div className="text-4xl font-bold text-white drop-shadow-lg">
+                <div className="text-4xl font-bold text-white drop-shadow-lg">
                   {voteLabel}
-                </motion.div>
+                </div>
               </motion.div>
 
               {/* Card content */}
