@@ -20,7 +20,6 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import Image from 'next/image';
 
 interface Trend {
   id: string;
@@ -58,6 +57,7 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
   const [removedCards, setRemovedCards] = useState<Set<number>>(new Set());
   const [lastVote, setLastVote] = useState<{ trendId: string; vote: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [savedTrends, setSavedTrends] = useState<Set<string>>(new Set());
   
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -125,16 +125,6 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
       
       if (error) throw error;
       
-      // Automatically save to timeline with reaction
-      await supabase
-        .from('saved_trends')
-        .upsert({
-          user_id: user.id,
-          trend_id: currentTrend.id,
-          reaction: voteType,
-          saved_at: new Date().toISOString()
-        });
-      
       // Show feedback
       const emojis = {
         wave: '🌊',
@@ -143,7 +133,7 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
         death: '💀'
       };
       
-      showSuccess(`${emojis[voteType]} Voted & Saved!`);
+      showSuccess(`${emojis[voteType]} Voted!`);
       
       // Callback
       if (onVote) {
@@ -173,30 +163,53 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
   const handleSave = async () => {
     if (!currentTrend || !user || isSaving) return;
     
+    const isSaved = savedTrends.has(currentTrend.id);
     setIsSaving(true);
+    
     try {
-      // Save to user's saved trends
-      const { error } = await supabase
-        .from('saved_trends')
-        .insert({
-          user_id: user.id,
-          trend_id: currentTrend.id,
-          reaction: lastVote?.trendId === currentTrend.id ? lastVote.vote : null,
-          saved_at: new Date().toISOString()
+      if (isSaved) {
+        // Unsave the trend
+        const { error } = await supabase
+          .from('saved_trends')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('trend_id', currentTrend.id);
+        
+        if (error) throw error;
+        
+        setSavedTrends(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(currentTrend.id);
+          return newSet;
         });
-      
-      if (error) throw error;
-      
-      showSuccess('📌 Saved to your timeline!');
-      
-      // Callback
-      if (onSave) {
-        const reaction = lastVote?.trendId === currentTrend.id ? 
-          lastVote.vote as 'wave' | 'fire' | 'decline' | 'death' : null;
-        onSave(currentTrend, reaction);
+        
+        showSuccess('❌ Removed from timeline');
+      } else {
+        // Save to user's saved trends
+        const { error } = await supabase
+          .from('saved_trends')
+          .insert({
+            user_id: user.id,
+            trend_id: currentTrend.id,
+            reaction: lastVote?.trendId === currentTrend.id ? lastVote.vote : null,
+            saved_at: new Date().toISOString()
+          });
+        
+        if (error) throw error;
+        
+        setSavedTrends(prev => new Set([...prev, currentTrend.id]));
+        showSuccess('📌 Saved to your timeline!');
+        
+        // Callback
+        if (onSave) {
+          const reaction = lastVote?.trendId === currentTrend.id ? 
+            lastVote.vote as 'wave' | 'fire' | 'decline' | 'death' : null;
+          onSave(currentTrend, reaction);
+        }
       }
     } catch (error: any) {
       if (error.code === '23505') {
+        setSavedTrends(prev => new Set([...prev, currentTrend.id]));
         showError('Already saved to timeline');
       } else {
         console.error('Error saving trend:', error);
@@ -331,12 +344,15 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
               <div className="w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden">
                 {/* Image section */}
                 {(currentTrend.screenshot_url || currentTrend.thumbnail_url) && (
-                  <div className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200">
-                    <Image
+                  <div className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                    <img
                       src={currentTrend.screenshot_url || currentTrend.thumbnail_url || ''}
                       alt="Trend"
-                      fill
-                      className="object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('Image failed to load:', e.currentTarget.src);
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   </div>
@@ -431,11 +447,16 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
           className={`p-4 rounded-full transition-all hover:scale-110 ${
             isSaving 
               ? 'bg-gray-100 cursor-not-allowed' 
-              : 'bg-purple-100 hover:bg-purple-200'
+              : savedTrends.has(currentTrend?.id || '')
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-purple-100 hover:bg-purple-200'
           }`}
-          title="Save to Timeline"
+          title={savedTrends.has(currentTrend?.id || '') ? "Remove from Timeline" : "Save to Timeline"}
         >
-          <Bookmark className={`w-6 h-6 ${isSaving ? 'text-gray-400' : 'text-purple-600'}`} />
+          <Bookmark className={`w-6 h-6 ${
+            isSaving ? 'text-gray-400' : 
+            savedTrends.has(currentTrend?.id || '') ? 'text-white' : 'text-purple-600'
+          }`} />
         </button>
 
         <button
