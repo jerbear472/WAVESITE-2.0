@@ -183,7 +183,23 @@ export default function Timeline() {
                 <div className="flex items-center gap-2 text-sm opacity-90">
                   <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
                   <span>•</span>
-                  <span className="capitalize">{trend.status}</span>
+                  {trend.is_saved_trend ? (
+                    <>
+                      <span>📌 Saved</span>
+                      {trend.saved_reaction && (
+                        <>
+                          <span>•</span>
+                          <span>
+                            {trend.saved_reaction === 'wave' ? '🌊' : 
+                             trend.saved_reaction === 'fire' ? '🔥' :
+                             trend.saved_reaction === 'decline' ? '📉' : '💀'}
+                          </span>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <span>✨ Submitted</span>
+                  )}
                   {trend.stage && (
                     <>
                       <span>•</span>
@@ -634,8 +650,8 @@ export default function Timeline() {
       const userId = user?.id || '';
       console.log('Timeline: Fetching user trends for:', userId);
       
-      // Fetch only the current user's trends (personal timeline)
-      const { data, error } = await supabase
+      // Fetch user's submitted trends
+      const { data: submittedTrends, error: submittedError } = await supabase
         .from('trend_submissions')
         .select(`
           *,
@@ -643,9 +659,56 @@ export default function Timeline() {
             username
           )
         `)
-        .eq('spotter_id', userId)  // Only get current user's trends
-        .order('created_at', { ascending: false })
-        .limit(100);
+        .eq('spotter_id', userId)
+        .order('created_at', { ascending: false });
+
+      // Fetch user's saved trends
+      const { data: savedTrendsData, error: savedError } = await supabase
+        .from('saved_trends')
+        .select(`
+          reaction,
+          saved_at,
+          trend:trend_submissions (
+            *,
+            profiles:spotter_id (
+              username
+            )
+          )
+        `)
+        .eq('user_id', userId)
+        .order('saved_at', { ascending: false });
+
+      const error = submittedError || savedError;
+      
+      // Combine and mark trends
+      let allTrends = [];
+      
+      // Add submitted trends
+      if (submittedTrends) {
+        allTrends = submittedTrends.map(trend => ({
+          ...trend,
+          is_own_trend: true,
+          saved_reaction: null
+        }));
+      }
+      
+      // Add saved trends
+      if (savedTrendsData) {
+        const savedTrends = savedTrendsData.map(item => ({
+          ...item.trend,
+          is_saved_trend: true,
+          saved_reaction: item.reaction,
+          saved_at: item.saved_at
+        }));
+        allTrends = [...allTrends, ...savedTrends];
+      }
+      
+      // Sort by date (newest first)
+      const data = allTrends.sort((a, b) => {
+        const dateA = new Date(a.saved_at || a.created_at).getTime();
+        const dateB = new Date(b.saved_at || b.created_at).getTime();
+        return dateB - dateA;
+      });
 
       if (error) {
         showError('Failed to load trends', (error as any).message || 'Unknown error');
@@ -2123,10 +2186,10 @@ export default function Timeline() {
                                               </div>
 
                                               {/* Thumbnail */}
-                                              {(trend.thumbnail_url && trend.thumbnail_url !== null) || (trend.screenshot_url && trend.screenshot_url !== null) ? (
+                                              {(trend.thumbnail_url || trend.screenshot_url) ? (
                                                 <div className="relative h-32 overflow-hidden">
                                                   <img 
-                                                    src={(trend.thumbnail_url && trend.thumbnail_url !== null ? trend.thumbnail_url : trend.screenshot_url) || ''}
+                                                    src={trend.thumbnail_url || trend.screenshot_url || ''}
                                                     alt="Trend"
                                                     className="w-full h-full object-cover"
                                                     onError={(e) => {

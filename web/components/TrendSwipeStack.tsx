@@ -125,6 +125,16 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
       
       if (error) throw error;
       
+      // Automatically save to timeline with reaction
+      await supabase
+        .from('saved_trends')
+        .upsert({
+          user_id: user.id,
+          trend_id: currentTrend.id,
+          reaction: voteType,
+          saved_at: new Date().toISOString()
+        });
+      
       // Show feedback
       const emojis = {
         wave: '🌊',
@@ -133,7 +143,7 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
         death: '💀'
       };
       
-      showSuccess(`${emojis[voteType]} Voted!`);
+      showSuccess(`${emojis[voteType]} Voted & Saved!`);
       
       // Callback
       if (onVote) {
@@ -354,7 +364,7 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
                   {currentTrend.creator_handle && (
                     <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
                       <User className="w-4 h-4" />
-                      <span>@{currentTrend.creator_handle}</span>
+                      <span>{currentTrend.creator_handle.startsWith('@') ? currentTrend.creator_handle : `@${currentTrend.creator_handle}`}</span>
                     </div>
                   )}
 
