@@ -114,6 +114,11 @@ interface Trend {
   evolution_status?: string;
   // Optional trending explanation
   why_trending?: string;
+  // Properties for timeline display
+  is_saved_trend?: boolean;
+  is_own_trend?: boolean;
+  saved_reaction?: 'wave' | 'fire' | 'decline' | 'death' | null;
+  saved_at?: string;
 }
 
 // Add new types for filtering and sorting
