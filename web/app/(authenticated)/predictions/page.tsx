@@ -66,8 +66,12 @@ export default function PredictionsPage() {
           )
         `)
         .eq('status', 'approved')
-        .not('id', 'in', `(${Array.from(votedTrends).join(',')})`) // Exclude already voted trends
         .limit(50);
+      
+      // Only exclude voted trends if there are any
+      if (votedTrends.size > 0) {
+        query = query.not('id', 'in', `(${Array.from(votedTrends).join(',')})`);
+      }
 
       // Apply filters
       if (filter === 'trending') {
@@ -124,33 +128,37 @@ export default function PredictionsPage() {
     if (!user) return;
     
     try {
-      // Record user vote
-      await supabase
-        .from('trend_user_votes')
-        .upsert({
-          user_id: user.id,
-          trend_id: trendId,
-          vote_type: voteType,
-          voted_at: new Date().toISOString()
-        });
-      
-      // Add to voted set
+      // Add to voted set immediately for UI responsiveness
       setVotedTrends(prev => new Set([...prev, trendId]));
       
-      // Award XP for voting
-      const xpAmount = voteType === 'wave' ? 5 : 3;
-      await supabase
-        .from('xp_events')
-        .insert({
-          user_id: user.id,
-          xp_change: xpAmount,
-          event_type: 'trend_vote',
-          description: `Voted ${voteType} on trend`,
-          metadata: { trend_id: trendId, vote_type: voteType }
-        });
+      // Record user vote - already handled in TrendSwipeStack
+      // The TrendSwipeStack component handles the actual vote recording
+      
+      // Award XP for voting (optional, can fail silently)
+      try {
+        const xpAmount = voteType === 'wave' ? 5 : 3;
+        await supabase
+          .from('xp_events')
+          .insert({
+            user_id: user.id,
+            xp_change: xpAmount,
+            event_type: 'trend_vote',
+            description: `Voted ${voteType} on trend`,
+            metadata: { trend_id: trendId, vote_type: voteType }
+          });
+      } catch (xpError) {
+        console.log('XP recording failed (non-critical):', xpError);
+        // Don't throw - XP is not critical
+      }
       
     } catch (error) {
-      console.error('Error recording vote:', error);
+      console.error('Error in handleVote:', error);
+      // Remove from voted set if there was an error
+      setVotedTrends(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(trendId);
+        return newSet;
+      });
     }
   };
 

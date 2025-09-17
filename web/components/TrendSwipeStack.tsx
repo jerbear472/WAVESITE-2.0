@@ -122,7 +122,28 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
           voted_at: new Date().toISOString()
         });
       
-      if (voteError) throw voteError;
+      if (voteError) {
+        console.error('Vote upsert error:', voteError);
+        // Check if it's a duplicate vote error
+        if (voteError.code === '23505') {
+          // User already voted on this trend, update instead
+          const { error: updateVoteError } = await supabase
+            .from('trend_user_votes')
+            .update({
+              vote_type: voteType,
+              voted_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id)
+            .eq('trend_id', currentTrend.id);
+          
+          if (updateVoteError) {
+            console.error('Failed to update vote:', updateVoteError);
+            throw updateVoteError;
+          }
+        } else {
+          throw voteError;
+        }
+      }
       
       // Update vote count in trend_submissions
       const voteColumn = `${voteType}_votes`;
@@ -152,9 +173,17 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
       if (onVote) {
         onVote(currentTrend.id, voteType);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error voting:', error);
-      showError('Failed to record vote');
+      
+      // Provide more specific error messages
+      if (error.message?.includes('voted_at')) {
+        showError('Database error: Please refresh and try again');
+      } else if (error.message?.includes('authentication')) {
+        showError('Session expired: Please refresh the page');
+      } else {
+        showError('Failed to record vote');
+      }
     }
   };
 
