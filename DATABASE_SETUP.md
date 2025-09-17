@@ -1,8 +1,12 @@
 # Database Setup Instructions
 
-## Missing Tables Error Fix
+## Missing Tables or Column Errors Fix
 
-If you're seeing errors about missing tables like `public.saved_trends` or `public.trend_user_votes`, you need to run the SQL migration.
+If you're seeing errors about:
+- Missing tables like `public.saved_trends` or `public.trend_user_votes`
+- Column errors like "column 'voted_at' does not exist"
+
+You need to run the SQL migration.
 
 ### Steps to Fix:
 
@@ -15,7 +19,10 @@ If you're seeing errors about missing tables like `public.saved_trends` or `publ
    - Click "New query"
 
 3. **Run the Migration**
-   - Copy the entire contents of `CREATE_SAVED_TRENDS_TABLE.sql`
+   - If you get a "voted_at column does not exist" error:
+     - Copy the entire contents of `FIX_VOTED_AT_COLUMN.sql`
+   - Otherwise:
+     - Copy the entire contents of `CREATE_SAVED_TRENDS_TABLE.sql`
    - Paste it into the SQL editor
    - Click "Run" or press Cmd/Ctrl + Enter
 
