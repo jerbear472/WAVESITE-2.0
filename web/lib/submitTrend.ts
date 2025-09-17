@@ -70,7 +70,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     }
     
     // Calculate XP with all multipliers
-    let baseXP = XP_REWARDS.base.trendSubmission; // 10 XP
+    let baseXP: number = XP_REWARDS.base.trendSubmission; // 10 XP
     
     // Apply daily notification bonus if applicable
     if (data.isDailyNotification) {
