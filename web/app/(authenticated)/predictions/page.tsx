@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface Trend {
   id: string;
   spotter_id: string;
+  trend_name?: string;
   description: string;
   category: string;
   screenshot_url?: string;

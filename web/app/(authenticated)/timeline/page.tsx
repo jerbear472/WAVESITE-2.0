@@ -62,9 +62,11 @@ const formatRelativeTime = (dateString: string): string => {
 interface Trend {
   id: string;
   spotter_id: string;
+  trend_name?: string;
   category: string;
   description: string;
   screenshot_url?: string;
+  thumbnail_url?: string;
   evidence?: any;
   virality_prediction?: number;
   predicted_peak_date?: string;
@@ -163,27 +165,33 @@ export default function Timeline() {
         {/* Header with thumbnail */}
         <div className="relative">
           {/* Thumbnail Background */}
-          {(trend.screenshot_url || trend.thumbnail_url) && (
+          {(trend.thumbnail_url || trend.screenshot_url) ? (
             <div className="relative h-48 bg-gray-100 overflow-hidden">
               <img 
-                src={trend.screenshot_url || trend.thumbnail_url || ''} 
-                alt="Trend visual"
+                src={trend.thumbnail_url || trend.screenshot_url || ''} 
+                alt={trend.trend_name || "Trend visual"}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  console.log('TrendCard: Image failed to load:', e.currentTarget.src);
-                  e.currentTarget.style.display = 'none';
+                  console.log('Timeline: Image failed to load:', e.currentTarget.src);
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    parent.style.display = 'none';
+                  }
+                }}
+                onLoad={() => {
+                  console.log('Timeline: Image loaded successfully:', trend.thumbnail_url || trend.screenshot_url);
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
             </div>
-          )}
+          ) : null}
           
           {/* Header Content */}
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h2 className="text-2xl font-bold mb-2">
-                  {trend.description || trend.evidence?.title || 'New Trend'}
+                  {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
                 </h2>
                 <div className="flex items-center gap-2 text-sm opacity-90">
                   <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -230,7 +238,7 @@ export default function Timeline() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">
-                    {trend.description || trend.evidence?.title || 'New Trend'}
+                    {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
                   </h2>
                   <div className="flex items-center gap-2 text-sm opacity-90">
                     <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -1566,7 +1574,7 @@ export default function Timeline() {
                           {/* Header with title and status */}
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 flex-1">
-                              {trend.description || trend.evidence?.title || 'New Trend'}
+                              {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
                             </h3>
                             {/* Approved Status Badge - Top Right */}
                             {trend.validation_status && trend.validation_status !== 'pending' && (
@@ -1856,7 +1864,7 @@ export default function Timeline() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                                  {trend.description || trend.evidence?.title || 'New Trend'}
+                                  {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
                                 </h3>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
@@ -2238,7 +2246,7 @@ export default function Timeline() {
                                               <div className="p-3">
                                                 {/* Title */}
                                                 <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-1">
-                                                  {trend.description || trend.evidence?.title || 'New Trend'}
+                                                  {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
                                                 </h3>
 
                                                 {/* Creator & Time */}

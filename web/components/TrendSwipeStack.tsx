@@ -24,6 +24,7 @@ import { useToast } from '@/contexts/ToastContext';
 interface Trend {
   id: string;
   spotter_id: string;
+  trend_name?: string;
   description: string;
   category: string;
   screenshot_url?: string;
@@ -385,20 +386,26 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
               {/* Card content */}
               <div className="w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden">
                 {/* Image section */}
-                {(currentTrend.screenshot_url || currentTrend.thumbnail_url) && (
+                {(currentTrend.thumbnail_url || currentTrend.screenshot_url) ? (
                   <div className="relative h-64 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                     <img
-                      src={currentTrend.screenshot_url || currentTrend.thumbnail_url || ''}
-                      alt="Trend"
-                      className="absolute inset-0 w-full h-full object-cover"
+                      src={currentTrend.thumbnail_url || currentTrend.screenshot_url || ''}
+                      alt={currentTrend.trend_name || "Trend"}
+                      className="w-full h-full object-cover"
                       onError={(e) => {
-                        console.error('Image failed to load:', e.currentTarget.src);
-                        e.currentTarget.style.display = 'none';
+                        console.error('Headlines: Image failed to load:', e.currentTarget.src);
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          parent.style.display = 'none';
+                        }
+                      }}
+                      onLoad={() => {
+                        console.log('Headlines: Image loaded successfully:', currentTrend.thumbnail_url || currentTrend.screenshot_url);
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
                   </div>
-                )}
+                ) : null}
 
                 {/* Content */}
                 <div className="p-6">
@@ -413,9 +420,9 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
                     </span>
                   </div>
 
-                  {/* Description */}
+                  {/* Trend Title */}
                   <h3 className="text-xl font-bold mb-3 line-clamp-2">
-                    {currentTrend.description}
+                    {currentTrend.trend_name || currentTrend.description}
                   </h3>
 
                   {/* Creator info */}
