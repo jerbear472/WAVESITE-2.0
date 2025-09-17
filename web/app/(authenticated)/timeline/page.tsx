@@ -104,7 +104,6 @@ interface Trend {
   views_count?: number;
   hashtags?: string[];
   post_url?: string;
-  thumbnail_url?: string;
   posted_at?: string;
   wave_score?: number;
   trend_velocity?: 'just_starting' | 'picking_up' | 'viral' | 'saturated' | 'peaked' | 'declining';
