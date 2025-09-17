@@ -109,21 +109,34 @@ export default function TrendSwipeStack({ trends, onVote, onSave, onRefresh }: T
     if (!currentTrend || !user) return;
     
     try {
-      // Record the vote
-      const voteColumn = `${voteType}_votes`;
-      
       // Update local state immediately for responsiveness
       setLastVote({ trendId: currentTrend.id, vote: voteType });
       
-      // Update in database
-      const { error } = await supabase
+      // Record user vote in trend_user_votes table
+      const { error: voteError } = await supabase
+        .from('trend_user_votes')
+        .upsert({
+          user_id: user.id,
+          trend_id: currentTrend.id,
+          vote_type: voteType,
+          voted_at: new Date().toISOString()
+        });
+      
+      if (voteError) throw voteError;
+      
+      // Update vote count in trend_submissions
+      const voteColumn = `${voteType}_votes`;
+      const { error: updateError } = await supabase
         .from('trend_submissions')
         .update({ 
           [voteColumn]: (currentTrend[voteColumn as keyof Trend] as number || 0) + 1 
         })
         .eq('id', currentTrend.id);
       
-      if (error) throw error;
+      if (updateError) {
+        console.error('Failed to update vote count:', updateError);
+        // Don't throw here since the vote was recorded
+      }
       
       // Show feedback
       const emojis = {
