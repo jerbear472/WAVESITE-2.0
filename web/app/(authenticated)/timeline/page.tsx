@@ -163,10 +163,10 @@ export default function Timeline() {
         {/* Header with thumbnail */}
         <div className="relative">
           {/* Thumbnail Background */}
-          {((trend.screenshot_url && trend.screenshot_url !== null) || (trend.thumbnail_url && trend.thumbnail_url !== null)) && (
+          {(trend.screenshot_url || trend.thumbnail_url) && (
             <div className="relative h-48 bg-gray-100 overflow-hidden">
               <img 
-                src={(trend.screenshot_url && trend.screenshot_url !== null ? trend.screenshot_url : trend.thumbnail_url) || ''} 
+                src={trend.screenshot_url || trend.thumbnail_url || ''} 
                 alt="Trend visual"
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -225,7 +225,7 @@ export default function Timeline() {
           </div>
           
           {/* Header for trends without thumbnails */}
-          {!((trend.screenshot_url && trend.screenshot_url !== null) || (trend.thumbnail_url && trend.thumbnail_url !== null)) && (
+          {!(trend.screenshot_url || trend.thumbnail_url) && (
             <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
               <div className="flex items-start justify-between">
                 <div className="flex-1">

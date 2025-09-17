@@ -83,6 +83,12 @@ export default function PredictionsPage() {
 
       if (error) throw error;
 
+      // Debug: Log what we're getting
+      if (data && data.length > 0) {
+        console.log('Headlines: First trend thumbnail_url:', data[0].thumbnail_url);
+        console.log('Headlines: First trend screenshot_url:', data[0].screenshot_url);
+      }
+
       // Shuffle trends for variety (except when filtering by trending)
       const processedTrends = filter === 'trending' 
         ? data 
