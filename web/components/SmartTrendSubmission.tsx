@@ -842,7 +842,7 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       // Provide immediate fallback - don't block submission
       const fallbackInsight = `📱 This trend is gaining momentum as people discover new ways to express themselves.
 👥 **Who's in:** Early adopters are leading the charge, creating variations that keep it fresh.
-💡 **The insight:** Perfect timing meets genuine need for connection and self-expression.`);
+💡 **The insight:** Perfect timing meets genuine need for connection and self-expression.`;
       setAiAnalysis(fallbackInsight);
       setFormData(prev => ({
         ...prev,
