@@ -79,10 +79,10 @@ export default function TrendAnalysisPage() {
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (params.trendId && user) {
+    if (params?.trendId && user) {
       loadTrendData();
     }
-  }, [params.trendId, user]);
+  }, [params?.trendId, user]);
 
   const loadTrendData = async () => {
     try {
@@ -93,7 +93,7 @@ export default function TrendAnalysisPage() {
       const { data: trendData, error: trendError } = await supabase
         .from('trend_submissions')
         .select('*')
-        .eq('id', params.trendId)
+        .eq('id', params?.trendId)
         .single();
 
       if (trendError) throw trendError;
@@ -104,7 +104,7 @@ export default function TrendAnalysisPage() {
       const { data: cachedAnalysis } = await supabase
         .from('trend_ai_analysis')
         .select('*')
-        .eq('trend_id', params.trendId)
+        .eq('trend_id', params?.trendId)
         .single();
 
       if (cachedAnalysis) {
