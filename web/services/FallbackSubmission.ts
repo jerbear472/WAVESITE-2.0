@@ -18,7 +18,8 @@ export class FallbackSubmission {
           url: trendData.url || '',
           title: trendData.trendName || 'Untitled Trend',
           fallback_submission: true,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          ai_analysis: trendData.ai_analysis || null
         },
         status: 'submitted',
         quality_score: 0.5,

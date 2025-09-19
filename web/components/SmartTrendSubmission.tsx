@@ -234,6 +234,7 @@ interface TrendFormData {
   audience_demographic: string;
   behavior_insight: string;
   wave_score: number;
+  ai_analysis: string;
   
   // New origin and evolution fields
   drivingGeneration: 'gen_alpha' | 'gen_z' | 'millennials' | 'gen_x' | 'boomers' | '';
@@ -555,15 +556,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
 
   const [formData, setFormData] = useState<TrendFormData>(() => {
     const savedData = loadSavedData();
-    // If we loaded saved data, show a notification
-    if (savedData) {
-      setTimeout(() => {
-        setShowSavedNotification(true);
-        setLastSaved(new Date());
-        setTimeout(() => setShowSavedNotification(false), 3000);
-      }, 500);
-    }
-    return savedData || {
+
+    const blankForm: TrendFormData = {
       // URL & Metadata
       url: initialUrl || '',
       platform: '',
@@ -603,8 +597,25 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       whyTrending: '',
       
       // Calculated
-      wave_score: 50
+      wave_score: 50,
+      ai_analysis: ''
     };
+
+    if (savedData) {
+      setTimeout(() => {
+        setShowSavedNotification(true);
+        setLastSaved(new Date());
+        setTimeout(() => setShowSavedNotification(false), 3000);
+      }, 500);
+
+      return {
+        ...blankForm,
+        ...savedData,
+        ai_analysis: typeof savedData.ai_analysis === 'string' ? savedData.ai_analysis : ''
+      };
+    }
+
+    return blankForm;
   });
   
   // Metadata display state
@@ -812,8 +823,16 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       if (data.error) {
         setAiError('Using contextual analysis');
       }
-      
-      setAiAnalysis(data.analysis);
+
+      const insightText = typeof data.analysis === 'string'
+        ? data.analysis
+        : `📱 Cultural insight captured. Continue for full analysis.`;
+
+      setAiAnalysis(insightText);
+      setFormData(prev => ({
+        ...prev,
+        ai_analysis: insightText
+      }));
       
       // Quick display - no artificial delay
       setAiAnalysisReady(true);
@@ -821,9 +840,14 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
     } catch (err) {
       console.error('Error fetching analysis:', err);
       // Provide immediate fallback - don't block submission
-      setAiAnalysis(`📱 This trend is gaining momentum as people discover new ways to express themselves.
+      const fallbackInsight = `📱 This trend is gaining momentum as people discover new ways to express themselves.
 👥 **Who's in:** Early adopters are leading the charge, creating variations that keep it fresh.
 💡 **The insight:** Perfect timing meets genuine need for connection and self-expression.`);
+      setAiAnalysis(fallbackInsight);
+      setFormData(prev => ({
+        ...prev,
+        ai_analysis: fallbackInsight
+      }));
       setAiAnalysisReady(true);
     } finally {
       setAiLoading(false);
@@ -835,6 +859,12 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
+  };
+
+  const formatInsightHtml = (insight: string): string => {
+    return insight
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br />');
   };
 
 
@@ -953,7 +983,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
       posted_at: '',
       audience_demographic: '',
       behavior_insight: '',
-      whyTrending: ''
+      whyTrending: '',
+      ai_analysis: ''
     });
     setCurrentStep('url');
     setError('');
@@ -1563,9 +1594,14 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                 <TrendResonanceAnalysis 
                   formData={formData}
                   onAnalysisComplete={(analysis) => {
+                    const insight = analysis.keyInsight || 'Analysis complete';
                     // Store the key insight as the main analysis
-                    setAiAnalysis(analysis.keyInsight || 'Analysis complete');
+                    setAiAnalysis(insight);
                     setAiAnalysisReady(true);
+                    setFormData(prev => ({
+                      ...prev,
+                      ai_analysis: insight
+                    }));
                     // Don't block - user can continue even if analysis is still loading
                     setLoading(false);
                   }}
@@ -1679,6 +1715,19 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                     )}
                   </div>
 
+                  {/* AI Key Insight */}
+                  {formData.ai_analysis && (
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+                      <h4 className="text-sm font-medium text-blue-600 mb-2 flex items-center gap-2">
+                        <SparklesIcon className="w-4 h-4" />
+                        AI Cultural Insight
+                      </h4>
+                      <div
+                        className="text-sm text-gray-700 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: formatInsightHtml(formData.ai_analysis) }}
+                      />
+                    </div>
+                  )}
 
                   {/* AI Signal if selected */}
                   {formData.aiAngle && formData.aiAngle !== 'not_ai' && (

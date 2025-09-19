@@ -16,6 +16,7 @@ import { fetchUserTrends as fetchUserTrendsHelper } from '@/hooks/useAuthenticat
 import { useXPNotification } from '@/contexts/XPNotificationContext';
 import { WAVESIGHT_MESSAGES } from '@/lib/trendNotifications';
 import { cleanTrendData } from '@/lib/cleanTrendData';
+import { getTrendThumbnailUrl, getTrendTitle } from '@/utils/trendHelpers';
 // Removed formatCurrency import - using XP display instead
 import { 
   TrendingUp as TrendingUpIcon,
@@ -62,6 +63,7 @@ const formatRelativeTime = (dateString: string): string => {
 interface Trend {
   id: string;
   spotter_id: string;
+  title?: string;
   trend_name?: string;
   category: string;
   description: string;
@@ -146,8 +148,12 @@ export default function Timeline() {
   const router = useRouter();
 
   // Enhanced trend detail modal component with all metadata and AI analysis
-  const TrendDetailModal = ({ trend, onClose }: { trend: Trend, onClose: () => void }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  const TrendDetailModal = ({ trend, onClose }: { trend: Trend, onClose: () => void }) => {
+    const thumbnailSrc = getTrendThumbnailUrl(trend);
+    const trendTitle = getTrendTitle(trend);
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -164,11 +170,11 @@ export default function Timeline() {
         {/* Header with thumbnail */}
         <div className="relative">
           {/* Thumbnail Background */}
-          {(trend.thumbnail_url || trend.screenshot_url) ? (
+          {thumbnailSrc ? (
             <div className="relative h-48 bg-gray-100 overflow-hidden">
               <img 
-                src={trend.thumbnail_url || trend.screenshot_url || ''} 
-                alt={trend.trend_name || "Trend visual"}
+                src={thumbnailSrc} 
+                alt={trendTitle}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   console.log('Timeline: Image failed to load:', e.currentTarget.src);
@@ -178,7 +184,7 @@ export default function Timeline() {
                   }
                 }}
                 onLoad={() => {
-                  console.log('Timeline: Image loaded successfully:', trend.thumbnail_url || trend.screenshot_url);
+                  console.log('Timeline: Image loaded successfully:', thumbnailSrc);
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
@@ -190,7 +196,7 @@ export default function Timeline() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h2 className="text-2xl font-bold mb-2">
-                  {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
+                  {trendTitle}
                 </h2>
                 <div className="flex items-center gap-2 text-sm opacity-90">
                   <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -232,12 +238,12 @@ export default function Timeline() {
           </div>
           
           {/* Header for trends without thumbnails */}
-          {!(trend.screenshot_url || trend.thumbnail_url) && (
+          {!thumbnailSrc && (
             <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">
-                    {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
+                    {trendTitle}
                   </h2>
                   <div className="flex items-center gap-2 text-sm opacity-90">
                     <span>{getCategoryEmoji(trend.category)} {getCategoryLabel(trend.category)}</span>
@@ -639,6 +645,7 @@ export default function Timeline() {
       </motion.div>
     </div>
   );
+  };
 
   // Removed navigation refresh to prevent excessive reloading
   // Data will be fetched once when component mounts via useEffect
@@ -767,8 +774,19 @@ export default function Timeline() {
         });
       }
       
-      // Clean the data
-      const cleanedData = data?.map(trend => cleanTrendData(trend)) || [];
+      // Clean the data and derive reliable thumbnails
+      const cleanedData = (data || []).map((trend) => {
+        const cleanedTrend = cleanTrendData(trend);
+        const resolvedThumbnail = getTrendThumbnailUrl(cleanedTrend as Trend)
+          || getTrendThumbnailUrl(trend as Trend)
+          || null;
+
+        return {
+          ...cleanedTrend,
+          thumbnail_url: resolvedThumbnail,
+        } as Trend;
+      });
+
       setTrends(cleanedData);
       
       // Only show success if it was a manual refresh
@@ -905,35 +923,6 @@ export default function Timeline() {
       hour12: true
     };
     return date.toLocaleString('en-US', options);
-  };
-
-  // Helper function to extract thumbnail from URL
-  const getThumbnailUrl = (trend: Trend): string | null => {
-    // First check for direct thumbnail
-    if (trend.thumbnail_url && trend.thumbnail_url !== null && trend.thumbnail_url !== '0') {
-      return trend.thumbnail_url;
-    }
-    
-    // Then check screenshot
-    if (trend.screenshot_url && trend.screenshot_url !== null && trend.screenshot_url !== '0') {
-      return trend.screenshot_url;
-    }
-    
-    // Try to extract from post URL
-    if (trend.post_url && trend.post_url !== '0') {
-      // YouTube thumbnail extraction
-      if (trend.post_url.includes('youtube.com') || trend.post_url.includes('youtu.be')) {
-        const match = trend.post_url.match(/(?:v=|\/embed\/|\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-        if (match && match[1]) {
-          return `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
-        }
-      }
-      
-      // TikTok - would need API or proxy for actual thumbnail
-      // For now, return null and show placeholder
-    }
-    
-    return null;
   };
 
   const formatEngagement = (count: number) => {
@@ -1442,6 +1431,8 @@ export default function Timeline() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                   {filteredTrends.map((trend, index) => {
+                    const thumbnailSrc = getTrendThumbnailUrl(trend);
+                    const trendTitle = getTrendTitle(trend);
                     return (
                     <motion.div
                       key={trend.id}
@@ -1460,11 +1451,11 @@ export default function Timeline() {
                       >
                         {/* Thumbnail */}
                         <div className="relative h-48 bg-gray-100 overflow-hidden">
-                          {getThumbnailUrl(trend) ? (
+                          {thumbnailSrc ? (
                             <>
                               <img 
-                                src={getThumbnailUrl(trend) || ''}
-                                alt="Trend"
+                                src={thumbnailSrc}
+                                alt={trendTitle}
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 onError={(e) => {
                                   const target = e.currentTarget as HTMLImageElement;
@@ -1573,7 +1564,7 @@ export default function Timeline() {
                           {/* Header with title and status */}
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <h3 className="text-lg font-semibold text-gray-800 line-clamp-2 flex-1">
-                              {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
+                              {trendTitle}
                             </h3>
                             {/* Approved Status Badge - Top Right */}
                             {trend.validation_status && trend.validation_status !== 'pending' && (
@@ -1819,6 +1810,8 @@ export default function Timeline() {
               <div className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {filteredTrends.map((trend, index) => {
+                    const thumbnailSrc = getTrendThumbnailUrl(trend);
+                    const trendTitle = getTrendTitle(trend);
                     return (
                     <motion.div
                       key={trend.id}
@@ -1834,11 +1827,11 @@ export default function Timeline() {
                       >
                         <div className="flex items-start gap-4">
                           {/* Thumbnail */}
-                          {getThumbnailUrl(trend) && (
+                          {thumbnailSrc && (
                             <div className="relative w-32 h-32 rounded-lg overflow-hidden flex-shrink-0">
                               <img 
-                                src={getThumbnailUrl(trend) || ''} 
-                                alt="Trend"
+                                src={thumbnailSrc} 
+                                alt={trendTitle}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
                                   const target = e.currentTarget as HTMLImageElement;
@@ -1863,7 +1856,7 @@ export default function Timeline() {
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                                  {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
+                                  {trendTitle}
                                 </h3>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                   <span className="flex items-center gap-1">
@@ -2159,7 +2152,10 @@ export default function Timeline() {
 
                                     {/* Trends Stack for this date */}
                                     <div className="flex flex-col gap-4 pt-4">
-                                      {dateTrends.map((trend, trendIndex) => (
+                                      {dateTrends.map((trend, trendIndex) => {
+                                        const thumbnailSrc = getTrendThumbnailUrl(trend);
+                                        const trendTitle = getTrendTitle(trend);
+                                        return (
                                         <motion.div
                                           key={trend.id}
                                           initial={{ opacity: 0, y: 20 }}
@@ -2198,11 +2194,11 @@ export default function Timeline() {
                                               </div>
 
                                               {/* Thumbnail */}
-                                              {(trend.thumbnail_url || trend.screenshot_url) ? (
+                                              {thumbnailSrc ? (
                                                 <div className="relative h-32 overflow-hidden">
                                                   <img 
-                                                    src={trend.thumbnail_url || trend.screenshot_url || ''}
-                                                    alt="Trend"
+                                                    src={thumbnailSrc}
+                                                    alt={trendTitle}
                                                     className="w-full h-full object-cover"
                                                     onError={(e) => {
                                                       console.log('Timeline: Image failed to load:', e.currentTarget.src);
@@ -2245,7 +2241,7 @@ export default function Timeline() {
                                               <div className="p-3">
                                                 {/* Title */}
                                                 <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-1">
-                                                  {trend.trend_name || trend.description || trend.evidence?.title || 'New Trend'}
+                                                  {trendTitle}
                                                 </h3>
 
                                                 {/* Creator & Time */}

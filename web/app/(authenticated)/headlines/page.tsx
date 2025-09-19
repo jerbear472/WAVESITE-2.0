@@ -15,14 +15,15 @@ import {
   ThumbsUp,
   MessageSquare,
   Share2,
-  ExternalLink,
-  Hash
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getTrendThumbnailUrl, getTrendTitle } from '@/utils/trendHelpers';
 
 interface ValidatedTrend {
   id: string;
   title: string;
+  trend_name?: string;
   description: string;
   category: string;
   platform?: string;
@@ -88,7 +89,11 @@ export default function HeadlinesPage() {
       if (error) {
         console.error('Error loading trends:', error);
       } else {
-        setTrends(data || []);
+        const hydrated = (data || []).map((trend) => ({
+          ...trend,
+          thumbnail_url: getTrendThumbnailUrl(trend) || null,
+        }));
+        setTrends(hydrated);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -198,8 +203,12 @@ export default function HeadlinesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trends.map((trend, index) => (
-              <motion.div
+            {trends.map((trend, index) => {
+              const thumbnailSrc = getTrendThumbnailUrl(trend);
+              const trendTitle = getTrendTitle(trend);
+
+              return (
+                <motion.div
                 key={trend.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -208,10 +217,10 @@ export default function HeadlinesPage() {
               >
                 {/* Thumbnail or Category Icon */}
                 <div className="h-40 bg-gradient-to-br from-blue-50 to-purple-50 relative overflow-hidden">
-                  {trend.thumbnail_url ? (
+                  {thumbnailSrc ? (
                     <img 
-                      src={trend.thumbnail_url} 
-                      alt={trend.title}
+                      src={thumbnailSrc} 
+                      alt={trendTitle}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -230,7 +239,7 @@ export default function HeadlinesPage() {
                 <div className="p-4">
                   {/* Title and Description */}
                   <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                    {trend.title || trend.description || 'Untitled Trend'}
+                    {trendTitle}
                   </h3>
                   
                   {/* Metadata */}
@@ -288,8 +297,9 @@ export default function HeadlinesPage() {
                     </a>
                   )}
                 </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>

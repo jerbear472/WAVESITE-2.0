@@ -27,6 +27,7 @@ export interface TrendSubmissionData {
   isDailyNotification?: boolean;
   isOnTimeSubmission?: boolean;
   dailyBonusMultiplier?: number;
+  ai_analysis?: string;
 }
 
 export async function submitTrend(userId: string, data: TrendSubmissionData) {
@@ -153,6 +154,7 @@ export async function submitTrend(userId: string, data: TrendSubmissionData) {
     if (data.screenshot_url) submissionData.screenshot_url = data.screenshot_url;
     if (data.thumbnail_url) submissionData.thumbnail_url = data.thumbnail_url;
     if (data.creator_handle) submissionData.creator_handle = data.creator_handle;
+    if (data.ai_analysis) submissionData.ai_analysis = data.ai_analysis;
     
     // Add numeric fields with defaults
     submissionData.views_count = data.views_count || 0;
