@@ -2156,7 +2156,7 @@ export default function Timeline() {
                                         const thumbnailSrc = getTrendThumbnailUrl(trend);
                                         const trendTitle = getTrendTitle(trend);
                                         return (
-                                        <motion.div
+                                          <motion.div
                                           key={trend.id}
                                           initial={{ opacity: 0, y: 20 }}
                                           animate={{ opacity: 1, y: 0 }}
@@ -2313,7 +2313,8 @@ export default function Timeline() {
                                             </motion.div>
                                           </div>
                                         </motion.div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 </div>

@@ -1189,7 +1189,8 @@ export default function SmartTrendSubmission(props: SmartTrendSubmissionProps) {
                         wave_score: 50,
                         drivingGeneration: '',
                         trendOrigin: '',
-                        evolutionStatus: ''
+                        evolutionStatus: '',
+                        ai_analysis: ''
                       });
                       setCurrentStep('url');
                     }
