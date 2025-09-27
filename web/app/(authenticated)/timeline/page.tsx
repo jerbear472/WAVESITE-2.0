@@ -116,15 +116,18 @@ export default function Timeline() {
       }
 
       if (savedTrendsData) {
-        const savedTrends = savedTrendsData
-          .filter(item => item.trend && typeof item.trend === 'object' && !Array.isArray(item.trend))
-          .map(item => ({
-            ...(item.trend as Trend),
-            is_saved_trend: true,
-            is_own_trend: false,
-            saved_reaction: item.reaction,
-            saved_at: item.saved_at
-          })) as Trend[];
+        const savedTrends: Trend[] = [];
+        for (const item of savedTrendsData) {
+          if (item.trend && typeof item.trend === 'object' && !Array.isArray(item.trend)) {
+            savedTrends.push({
+              ...(item.trend as unknown as Trend),
+              is_saved_trend: true,
+              is_own_trend: false,
+              saved_reaction: item.reaction,
+              saved_at: item.saved_at
+            } as Trend);
+          }
+        }
         allTrends = [...allTrends, ...savedTrends];
       }
 
