@@ -119,12 +119,12 @@ export default function Timeline() {
         const savedTrends = savedTrendsData
           .filter(item => item.trend && typeof item.trend === 'object' && !Array.isArray(item.trend))
           .map(item => ({
-            ...item.trend,
+            ...(item.trend as Trend),
             is_saved_trend: true,
             is_own_trend: false,
             saved_reaction: item.reaction,
             saved_at: item.saved_at
-          }));
+          })) as Trend[];
         allTrends = [...allTrends, ...savedTrends];
       }
 
