@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginUser } from '@/lib/working-auth';
+import { supabase } from '@/lib/supabase';
 
 export default function WorkingLoginPage() {
   const router = useRouter();
@@ -16,15 +16,18 @@ export default function WorkingLoginPage() {
     setLoading(true);
     setMessage('Logging in...');
 
-    const result = await loginUser(email, password);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password
+    });
 
-    if (result.success) {
+    if (!error && data?.user) {
       setMessage('✅ Success! Redirecting...');
       setTimeout(() => {
         router.push('/dashboard');
       }, 1000);
     } else {
-      setMessage(`❌ Error: ${result.error}`);
+      setMessage(`❌ Error: ${error?.message || 'Login failed'}`);
       setLoading(false);
     }
   };

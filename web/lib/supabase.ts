@@ -4,8 +4,15 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://aicahushpcslwjwrlqbo.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpY2FodXNocGNzbHdqd3JscWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4ODc1NTQsImV4cCI6MjA3MDQ2MzU1NH0.rLPnouZXA1ejWG0tuurIb5sgo5CCHe15M4knaANrR2w';
 
-// Create client with minimal config
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create client with minimal config and better error handling
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  }
+});
 
 // Types for Supabase tables
 export interface UserProfile {
