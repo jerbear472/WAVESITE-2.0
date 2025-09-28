@@ -45,7 +45,7 @@ export default function TestLoginFix() {
             .eq('id', data.user.id)
             .single();
 
-          setResult(prev => ({
+          setResult((prev: any) => ({
             ...prev,
             profile: profile || profileError
           }));
