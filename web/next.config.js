@@ -13,7 +13,7 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', 'framer-motion'], // Optimize specific packages
   },
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production', // Remove console logs in production
+    removeConsole: false, // Keep console logs for debugging
   },
   typescript: {
     // Enable TypeScript checking during build

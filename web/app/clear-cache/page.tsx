@@ -8,29 +8,45 @@ export default function ClearCache() {
   const router = useRouter();
 
   useEffect(() => {
-    // Clear all localStorage items related to Supabase
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.includes('supabase') || key.includes('auth'))) {
-        keysToRemove.push(key);
+    const clearAll = async () => {
+      // Clear all localStorage
+      localStorage.clear();
+      console.log('Cleared localStorage');
+
+      // Clear sessionStorage too
+      sessionStorage.clear();
+      console.log('Cleared sessionStorage');
+
+      // Clear cookies if any
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      console.log('Cleared cookies');
+
+      // Unregister service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+          console.log('Unregistered service worker:', registration.scope);
+        }
       }
-    }
-    
-    keysToRemove.forEach(key => {
-      localStorage.removeItem(key);
-      console.log('Removed:', key);
-    });
-    
-    // Clear sessionStorage too
-    sessionStorage.clear();
-    
-    // Clear cookies if any
-    document.cookie.split(";").forEach((c) => {
-      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-    });
-    
-    setCleared(true);
+
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(name => {
+            console.log('Deleting cache:', name);
+            return caches.delete(name);
+          })
+        );
+      }
+
+      setCleared(true);
+    };
+
+    clearAll();
     
     // Redirect after 3 seconds
     setTimeout(() => {
