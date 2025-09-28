@@ -1,5 +1,6 @@
 // Re-export from the new client for backward compatibility
 export { supabase, signInWithEmail, signUpWithEmail, signOut, getSession, getUser } from './supabase-client';
+import { supabase } from './supabase-client';
 
 // Types for Supabase tables
 export interface UserProfile {
@@ -37,7 +38,7 @@ export interface TrendSubmission {
   mainstream_at?: string;
 }
 
-// Helper functions for auth
+// Additional helper functions (ones not in supabase-client)
 export const signUp = async (email: string, password: string, username: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -59,11 +60,6 @@ export const signIn = async (email: string, password: string) => {
   return { data, error }
 }
 
-export const signOut = async () => {
-  const { error } = await supabase.auth.signOut()
-  return { error }
-}
-
 export const getCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser()
   return user
@@ -75,6 +71,6 @@ export const getProfile = async (userId: string) => {
     .select('*')
     .eq('id', userId)
     .single()
-  
+
   return { data, error }
 }
