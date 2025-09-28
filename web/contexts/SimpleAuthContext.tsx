@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { supabase, signInWithEmail } from '@/lib/supabase-client';
+import { supabase, signInWithEmail } from '@/lib/supabase-fixed';
 import { useRouter } from 'next/navigation';
 
 interface User {

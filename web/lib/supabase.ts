@@ -1,6 +1,6 @@
-// Re-export from the new client for backward compatibility
-export { supabase, signInWithEmail, signUpWithEmail, signOut, getSession, getUser } from './supabase-client';
-import { supabase } from './supabase-client';
+// Use the fixed client that actually works
+export { supabase, signInWithEmail, signUpWithEmail, signOut, getSession, getUser } from './supabase-fixed';
+import { supabase } from './supabase-fixed';
 
 // Types for Supabase tables
 export interface UserProfile {
