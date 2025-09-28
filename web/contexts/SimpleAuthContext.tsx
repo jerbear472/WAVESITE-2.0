@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, signInWithEmail } from '@/lib/supabase-client';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -269,30 +269,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setError(null);
     setLoading(true);
-    
+
     try {
       console.log('[Auth] Attempting login...');
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      
+
+      const { data, error } = await signInWithEmail(email, password);
+
       if (error) {
         console.error('[Auth] Login error:', error);
         setError(error.message);
         throw error;
       }
-      
-      if (data.user) {
+
+      if (data?.user) {
         console.log('[Auth] Login successful, fetching user data...');
         await fetchUserData(data.user.id);
-        
+
         // Ensure navigation happens after user data is loaded
         setTimeout(() => {
           router.push('/predictions');
         }, 100);
+      } else {
+        throw new Error('Login failed - no user data returned');
       }
+    } catch (err: any) {
+      console.error('[Auth] Login failed:', err);
+      setError(err.message || 'Login failed. Please try again.');
+      throw err;
     } finally {
       setLoading(false);
     }
