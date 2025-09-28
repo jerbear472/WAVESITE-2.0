@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { supabase, signInWithEmail } from '@/lib/supabase';
+import { getSupabase, loginUser } from '@/lib/working-auth';
+const supabase = getSupabase();
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -273,17 +274,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[Auth] Attempting login...');
 
-      const { data, error } = await signInWithEmail(email, password);
+      const result = await loginUser(email, password);
 
-      if (error) {
-        console.error('[Auth] Login error:', error);
-        setError(error.message);
-        throw error;
+      if (!result.success) {
+        console.error('[Auth] Login error:', result.error);
+        setError(result.error || 'Login failed');
+        throw new Error(result.error || 'Login failed');
       }
 
-      if (data?.user) {
+      if (result.user) {
         console.log('[Auth] Login successful, fetching user data...');
-        await fetchUserData(data.user.id);
+        await fetchUserData(result.user.id);
 
         // Ensure navigation happens after user data is loaded
         setTimeout(() => {
