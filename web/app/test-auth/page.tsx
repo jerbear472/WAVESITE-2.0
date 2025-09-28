@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { env } from '@/lib/env';
+import { supabase } from '@/lib/supabase-client';
 
 export default function TestAuthPage() {
   const [status, setStatus] = useState<any>({});
@@ -21,10 +20,11 @@ export default function TestAuthPage() {
 
     // Check environment variables
     results.envVars = {
-      supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Missing',
-      supabaseAnonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing',
-      supabaseUrlValue: env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...',
-      supabaseAnonKeyLength: env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Missing',
+      supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing',
+      supabaseUrlValue: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...',
+      supabaseAnonKeyLength: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'Not set',
     };
 
     // Test Supabase connection
