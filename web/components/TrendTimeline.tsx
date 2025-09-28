@@ -378,13 +378,30 @@ export default function TrendTimeline({ trends, onTrendClick, onAddContent, sele
                   onMouseEnter={() => setHoveredTrend(trend.id)}
                   onMouseLeave={() => setHoveredTrend(null)}
                 >
-                  <div className={`h-full bg-white rounded-lg border-2 overflow-hidden transition-all relative ${
-                    hoveredTrend === trend.id 
-                      ? 'border-blue-400 shadow-lg scale-105' 
+                  <div className={`h-full rounded-xl overflow-hidden transition-all duration-300 relative group ${
+                    hoveredTrend === trend.id
+                      ? 'shadow-2xl scale-105 ring-2 ring-blue-400 ring-opacity-50'
                       : selectedTrends.includes(trend.id)
-                      ? 'border-purple-400 shadow-md'
-                      : 'border-gray-200 shadow-sm'
-                  }`}>
+                      ? 'shadow-xl ring-2 ring-purple-400'
+                      : 'shadow-lg hover:shadow-xl'
+                  }`}
+                  style={{
+                    background: `linear-gradient(135deg, ${
+                      categoryColors[trend.category as keyof typeof categoryColors] || categoryColors.default
+                    }15, white 50%)`,
+                    backdropFilter: 'blur(10px)',
+                    border: `1px solid ${
+                      categoryColors[trend.category as keyof typeof categoryColors] || categoryColors.default
+                    }30`
+                  }}>
+                    {/* Animated gradient overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${
+                      trend.status === 'emerging' ? 'from-blue-400/10 via-transparent to-blue-600/10' :
+                      trend.status === 'trending' ? 'from-green-400/10 via-transparent to-green-600/10' :
+                      trend.status === 'peak' ? 'from-yellow-400/10 via-transparent to-orange-600/10' :
+                      'from-red-400/10 via-transparent to-red-600/10'
+                    } opacity-60 group-hover:opacity-80 transition-opacity`} />
+
                     {/* Selection Checkbox */}
                     {onSelectTrend && (
                       <input
@@ -394,48 +411,60 @@ export default function TrendTimeline({ trends, onTrendClick, onAddContent, sele
                           e.stopPropagation()
                           onSelectTrend(trend.id)
                         }}
-                        className="absolute top-2 right-2 w-4 h-4 text-purple-600 rounded focus:ring-purple-500 z-10"
+                        className="absolute top-2 right-2 w-4 h-4 text-purple-600 rounded focus:ring-purple-500 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
                       />
                     )}
-                    {/* Gradient background based on status */}
-                    <div className={`absolute inset-0 bg-gradient-to-r ${statusGradients[trend.status]} opacity-50`} />
-                    
-                    {/* Category color bar */}
+
+                    {/* Category accent bar with gradient */}
                     <div
-                      className="absolute top-0 left-0 right-0 h-1"
-                      style={{ 
-                        backgroundColor: categoryColors[trend.category as keyof typeof categoryColors] || categoryColors.default 
+                      className="absolute top-0 left-0 right-0 h-1.5 opacity-90"
+                      style={{
+                        background: `linear-gradient(90deg, ${
+                          categoryColors[trend.category as keyof typeof categoryColors] || categoryColors.default
+                        }, ${categoryColors[trend.category as keyof typeof categoryColors] || categoryColors.default}80)`
                       }}
                     />
-                    
+
+                    {/* Status badge */}
+                    <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-sm ${
+                      trend.status === 'emerging' ? 'bg-blue-500/20 text-blue-700' :
+                      trend.status === 'trending' ? 'bg-green-500/20 text-green-700' :
+                      trend.status === 'peak' ? 'bg-yellow-500/20 text-yellow-700' :
+                      'bg-red-500/20 text-red-700'
+                    }`}>
+                      {trend.status.toUpperCase()}
+                    </div>
+
                     {/* Content */}
                     <div className="relative h-full p-3 flex flex-col">
                       <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm text-gray-900 truncate">
+                        <div className="flex-1 min-w-0 mt-4">
+                          <h4 className="font-bold text-sm text-gray-900 truncate mb-1">
                             {trend.title}
                           </h4>
-                          <div className="flex items-center space-x-2 text-xs text-gray-600">
-                            <span>{trend.category}</span>
-                            <span>•</span>
-                            <span>{trend.contentCount} items</span>
+                          <div className="flex items-center space-x-2 text-[10px] text-gray-500">
+                            <span className="bg-gray-100 px-1.5 py-0.5 rounded">{trend.category}</span>
+                            <span className="bg-gray-100 px-1.5 py-0.5 rounded">{trend.contentCount} items</span>
                           </div>
                         </div>
-                        
-                        {/* Wave Score */}
+
+                        {/* Wave Score with animated ring */}
                         <div className="flex-shrink-0 ml-2">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                            {trend.waveScore}
+                          <div className="relative">
+                            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-400 to-purple-600 opacity-20 blur animate-pulse" />
+                            <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                              {trend.waveScore}
+                            </div>
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Thumbnails */}
+
+                      {/* Thumbnails with enhanced styling */}
                       <div className="flex -space-x-2 mb-2">
                         {trend.thumbnailUrls.slice(0, 4).map((url, idx) => (
                           <div
                             key={idx}
-                            className="w-8 h-8 rounded border-2 border-white bg-gray-200 overflow-hidden"
+                            className="w-9 h-9 rounded-lg border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden shadow-sm hover:scale-110 transition-transform"
                             style={{ zIndex: 4 - idx }}
                           >
                             {url && (
@@ -448,16 +477,33 @@ export default function TrendTimeline({ trends, onTrendClick, onAddContent, sele
                           </div>
                         ))}
                         {trend.contentCount > 4 && (
-                          <div className="w-8 h-8 rounded border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                          <div className="w-9 h-9 rounded-lg border-2 border-white bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shadow-sm">
                             +{trend.contentCount - 4}
                           </div>
                         )}
                       </div>
-                      
-                      {/* Earnings */}
-                      <div className="mt-auto">
-                        <div className="text-sm font-semibold text-green-600">
-                          {formatCurrency(trend.totalEarnings)}
+
+                      {/* Earnings with icon */}
+                      <div className="mt-auto flex items-center justify-between">
+                        <div className="flex items-center space-x-1">
+                          <div className="w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <span className="text-green-600 text-[10px]">$</span>
+                          </div>
+                          <div className="text-sm font-bold bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+                            {formatCurrency(trend.totalEarnings)}
+                          </div>
+                        </div>
+                        {/* Platform icons */}
+                        <div className="flex -space-x-1">
+                          {Object.keys(trend.platformDistribution).slice(0, 3).map((platform) => (
+                            <div
+                              key={platform}
+                              className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
+                              style={{ backgroundColor: platformColors[platform as keyof typeof platformColors] }}
+                            >
+                              {platform[0].toUpperCase()}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
