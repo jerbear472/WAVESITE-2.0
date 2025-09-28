@@ -5,6 +5,9 @@ import TrendTile from './TrendTile'
 import TrendTimeline from './TrendTimeline'
 // UnassignedTrendsPool removed - deprecated feature
 import { PlusIcon, FunnelIcon, ViewColumnsIcon, Squares2X2Icon } from './icons/TrendIcons'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
+import { getTrendThumbnailUrl, getTrendTitle } from '@/utils/trendHelpers'
 
 interface TrendTileData {
   id: string
@@ -27,6 +30,7 @@ interface TrendTileData {
 }
 
 export default function TrendTilesGrid() {
+  const { userId } = useAuth()
   const [trends, setTrends] = useState<TrendTileData[]>([])
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'timeline'>('grid')
   const [sortBy, setSortBy] = useState<'wave_score' | 'earnings' | 'recent' | 'content_count'>('wave_score')
@@ -34,106 +38,103 @@ export default function TrendTilesGrid() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const categories = ['all', 'Technology', 'Fashion', 'Food', 'Entertainment', 'Lifestyle', 'Gaming', 'Education']
   const statuses = ['all', 'emerging', 'trending', 'peak', 'declining']
 
-  // Mock data for demonstration
+  // Fetch real trend data from database
   useEffect(() => {
-    setTrends([
-      {
-        id: '1',
-        title: 'AI-Generated Art Movement',
-        description: 'The rise of AI tools in creative content',
-        waveScore: 92,
-        category: 'Technology',
-        status: 'trending',
-        totalEarnings: 4580,
-        contentCount: 18,
-        thumbnailUrls: ['/api/placeholder/150/150', '/api/placeholder/150/150', '/api/placeholder/150/150'],
-        platformDistribution: { tiktok: 10, instagram: 5, twitter: 3 },
-        isCollaborative: true,
-        firstContentDate: '2025-01-15',
-        lastContentDate: '2025-01-26',
-        contentItems: [],
-        sentiment: 'positive',
-        moods: ['creative', 'inspiring', 'controversial'],
-        viralityPrediction: 9
-      },
-      {
-        id: '2',
-        title: 'Clean Girl Aesthetic',
-        description: 'Minimalist fashion and lifestyle trend',
-        waveScore: 78,
-        category: 'Fashion',
-        status: 'peak',
-        totalEarnings: 3200,
-        contentCount: 12,
-        thumbnailUrls: ['/api/placeholder/150/150', '/api/placeholder/150/150'],
-        platformDistribution: { instagram: 8, tiktok: 4 },
-        isCollaborative: false,
-        firstContentDate: '2025-01-10',
-        lastContentDate: '2025-01-25',
-        sentiment: 'positive',
-        moods: ['relaxing', 'inspiring'],
-        viralityPrediction: 7
-      },
-      {
-        id: '3',
-        title: 'Protein Coffee Recipes',
-        description: 'High-protein coffee drinks and alternatives',
-        waveScore: 65,
-        category: 'Food',
-        status: 'emerging',
-        totalEarnings: 1890,
-        contentCount: 8,
-        thumbnailUrls: ['/api/placeholder/150/150', '/api/placeholder/150/150', '/api/placeholder/150/150'],
-        platformDistribution: { tiktok: 5, youtube: 3 },
-        isCollaborative: false,
-        firstContentDate: '2025-01-20',
-        lastContentDate: '2025-01-26',
-        sentiment: 'neutral',
-        moods: ['informative', 'energetic'],
-        viralityPrediction: 6
-      },
-      {
-        id: '4',
-        title: 'Retro Gaming Renaissance',
-        description: 'Classic games making a comeback',
-        waveScore: 84,
-        category: 'Gaming',
-        status: 'trending',
-        totalEarnings: 5200,
-        contentCount: 22,
-        thumbnailUrls: ['/api/placeholder/150/150', '/api/placeholder/150/150'],
-        platformDistribution: { youtube: 12, tiktok: 10 },
-        isCollaborative: false,
-        firstContentDate: '2024-12-15',
-        lastContentDate: '2025-01-20',
-        sentiment: 'positive',
-        moods: ['nostalgic', 'excited', 'funny'],
-        viralityPrediction: 8
-      },
-      {
-        id: '5',
-        title: 'DIY Home Automation',
-        description: 'Smart home projects on a budget',
-        waveScore: 71,
-        category: 'Technology',
-        status: 'emerging',
-        totalEarnings: 2800,
-        contentCount: 9,
-        thumbnailUrls: ['/api/placeholder/150/150'],
-        platformDistribution: { youtube: 7, instagram: 2 },
-        isCollaborative: true,
-        firstContentDate: '2025-01-05',
-        lastContentDate: '2025-01-18',
-        sentiment: 'mixed',
-        moods: ['informative', 'creative'],
-        viralityPrediction: 7
-      }
-    ])
-  }, [])
+    fetchTrends()
+  }, [userId])
+
+  const fetchTrends = async () => {
+    try {
+      setLoading(true)
+
+      // Fetch trends from database
+      const { data, error } = await supabase
+        .from('trends')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (error) throw error
+
+      // Transform database trends to TrendTileData format
+      const transformedTrends = (data || []).map(trend => {
+        // Extract thumbnail URL properly
+        const thumbnailUrl = getTrendThumbnailUrl(trend)
+        const thumbnailUrls = thumbnailUrl ? [thumbnailUrl] : []
+
+        // Get clean title without hashtags
+        const title = trend.title || trend.trend_name || getTrendTitle(trend)
+        const cleanTitle = title.replace(/#\w+/g, '').trim()
+
+        // Determine status based on trend data
+        const getStatus = () => {
+          if (trend.stage === 'viral' || trend.stage === 'peaked') return 'peak'
+          if (trend.stage === 'trending') return 'trending'
+          if (trend.stage === 'declining') return 'declining'
+          return 'emerging'
+        }
+
+        // Parse platform from URL or metadata
+        const getPlatform = () => {
+          const url = trend.post_url || trend.url || ''
+          if (url.includes('tiktok')) return 'tiktok'
+          if (url.includes('instagram')) return 'instagram'
+          if (url.includes('youtube') || url.includes('youtu.be')) return 'youtube'
+          if (url.includes('twitter') || url.includes('x.com')) return 'twitter'
+          return trend.platform || 'tiktok'
+        }
+
+        // Extract moods from AI analysis or sentiment
+        const getMoods = () => {
+          const moods = []
+          if (trend.sentiment === 'positive') moods.push('inspiring')
+          if (trend.sentiment === 'negative') moods.push('controversial')
+          if (trend.virality_prediction > 7) moods.push('viral')
+          if (trend.category === 'Technology') moods.push('innovative')
+          if (trend.category === 'Entertainment') moods.push('funny')
+          return moods.length > 0 ? moods : ['trending']
+        }
+
+        return {
+          id: trend.id,
+          title: cleanTitle,
+          description: trend.description || trend.explanation || '',
+          waveScore: trend.wave_score || trend.quality_score || 50,
+          category: trend.category || 'General',
+          status: getStatus() as any,
+          totalEarnings: trend.xp_amount || 0,
+          contentCount: 1,
+          thumbnailUrls,
+          platformDistribution: { [getPlatform()]: 1 },
+          isCollaborative: false,
+          firstContentDate: trend.created_at,
+          lastContentDate: trend.validated_at || trend.created_at,
+          contentItems: [],
+          sentiment: trend.sentiment as any,
+          sentimentScore: trend.sentiment_score,
+          moods: getMoods(),
+          viralityPrediction: trend.virality_prediction,
+          audienceAge: trend.audience_age || [],
+          trendVelocity: trend.trend_velocity,
+          aiAngle: trend.ai_angle,
+          trendSize: trend.trend_size,
+          creator_handle: trend.creator_handle,
+          creator_name: trend.creator_name
+        }
+      })
+
+      setTrends(transformedTrends)
+    } catch (error) {
+      console.error('Error fetching trends:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleCreateNewTrend = () => {
     setIsCreatingNew(true)
@@ -305,6 +306,13 @@ export default function TrendTilesGrid() {
       
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        )}
+
+        {!loading && (
         {/* Stats Overview */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg p-4 border border-gray-200">
@@ -358,7 +366,7 @@ export default function TrendTilesGrid() {
         )}
         
         {/* Empty State */}
-        {sortedAndFilteredTrends.length === 0 && (
+        {!loading && sortedAndFilteredTrends.length === 0 && (
           <div className="text-center py-12">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -375,8 +383,9 @@ export default function TrendTilesGrid() {
             </button>
           </div>
         )}
-        
+
         {/* Unassigned Trends Pool - deprecated feature removed */}
+        )}
       </div>
     </div>
   )

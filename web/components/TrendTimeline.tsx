@@ -448,7 +448,7 @@ export default function TrendTimeline({ trends, onTrendClick, onAddContent, sele
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0 mt-4">
                           <h4 className="font-bold text-sm text-gray-900 truncate mb-1">
-                            {trend.title}
+                            {trend.title && trend.title !== '0' ? trend.title.replace(/#\w+/g, '').trim() : 'Untitled Trend'}
                           </h4>
                           <div className="flex items-center space-x-2 text-[10px] text-gray-500">
                             <span className="bg-gray-100 px-1.5 py-0.5 rounded">{trend.category}</span>
@@ -469,23 +469,34 @@ export default function TrendTimeline({ trends, onTrendClick, onAddContent, sele
 
                       {/* Thumbnails with enhanced styling */}
                       <div className="flex -space-x-2 mb-2">
-                        {trend.thumbnailUrls.slice(0, 4).map((url, idx) => (
-                          <div
-                            key={idx}
-                            className="w-9 h-9 rounded-lg border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden shadow-sm hover:scale-110 transition-transform"
-                            style={{ zIndex: 4 - idx }}
-                          >
-                            {url && (
+                        {trend.thumbnailUrls && trend.thumbnailUrls.length > 0 && trend.thumbnailUrls[0] && trend.thumbnailUrls[0] !== '/api/placeholder/150/150' ? (
+                          trend.thumbnailUrls.slice(0, 4).map((url, idx) => (
+                            <div
+                              key={idx}
+                              className="w-9 h-9 rounded-lg border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden shadow-sm hover:scale-110 transition-transform"
+                              style={{ zIndex: 4 - idx }}
+                            >
                               <img
                                 src={url}
-                                alt=""
+                                alt="Trend thumbnail"
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.parentElement!.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                                }}
                               />
-                            )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg border-2 border-white bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center shadow-sm">
+                            <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
                           </div>
-                        ))}
+                        )}
                         {trend.contentCount > 4 && (
-                          <div className="w-9 h-9 rounded-lg border-2 border-white bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-xs font-bold text-gray-600 shadow-sm">
+                          <div className="w-9 h-9 rounded-lg border-2 border-white bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center text-xs font-bold text-purple-600 shadow-sm">
                             +{trend.contentCount - 4}
                           </div>
                         )}
