@@ -43,6 +43,14 @@ const categoryColors = {
   default: '#6B7280'
 }
 
+const platformColors = {
+  tiktok: '#000000',
+  instagram: '#E1306C',
+  twitter: '#1DA1F2',
+  youtube: '#FF0000',
+  threads: '#000000'
+}
+
 const statusGradients = {
   emerging: 'from-blue-400/20 to-blue-600/30',
   trending: 'from-green-400/20 to-green-600/30',
