@@ -62,3 +62,7 @@ ios/
 *.tfstate
 *.tfstate.*
 .terraform/.env
+
+# Scratch / local
+mobile/_backup/
+/*.png
