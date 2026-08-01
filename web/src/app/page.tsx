@@ -10,6 +10,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { WaveScore } from "@/components/WaveScore";
 import { ScoreBar } from "@/components/ScoreBar";
+import { LandingField } from "@/components/LandingField";
 
 const FEATURES = [
   {
@@ -55,13 +56,13 @@ export default function LandingPage() {
         </div>
         <nav className="flex items-center gap-1">
           <Link
-            href="/daily"
+            href="/today"
             className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
             Daily
           </Link>
           <Link
-            href="/dashboard"
+            href="/board"
             className={buttonVariants({ variant: "secondary", size: "sm" })}
           >
             Dashboard
@@ -96,7 +97,7 @@ export default function LandingPage() {
                 <Radar className="size-4" /> Run a Live Scan
               </Link>
               <Link
-                href="/dashboard"
+                href="/board"
                 className={buttonVariants({ variant: "outline", size: "lg" })}
               >
                 Explore the terminal <ArrowRight className="size-4" />
@@ -159,6 +160,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* The 3D field — the wow moment lives here now, not in the workspace */}
+      <LandingField />
 
       {/* Features */}
       <section className="mx-auto max-w-6xl border-t border-border px-6 py-16">

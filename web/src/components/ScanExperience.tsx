@@ -366,10 +366,10 @@ function ResultsHeader({
             <SlidersHorizontal className="size-4" /> Tune &amp; re-scan
           </Button>
           <Link
-            href="/dashboard"
+            href="/board"
             className={buttonVariants({ variant: "ghost" })}
           >
-            <LayoutDashboard className="size-4" /> Dashboard
+            <LayoutDashboard className="size-4" /> Your Board
           </Link>
         </div>
       </CardContent>

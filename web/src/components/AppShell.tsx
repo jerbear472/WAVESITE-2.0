@@ -9,15 +9,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/pulse", label: "Pulse" },
-  { href: "/timeline", label: "Timeline" },
-  { href: "/waves", label: "Library" },
+  { href: "/today", label: "Today" },
+  { href: "/radar", label: "Radar" },
+  { href: "/board", label: "Your Board" },
   { href: "/track-record", label: "Track record" },
-  { href: "/brief", label: "Brief" },
-  { href: "/saved", label: "Saved" },
-  { href: "/daily", label: "Daily" },
-  { href: "/admin", label: "Import" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

@@ -68,7 +68,7 @@ export default async function TrendDetailPage({
     <div className="mx-auto max-w-[1200px]">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link href="/waves" className="hover:text-foreground">
+        <Link href="/radar" className="hover:text-foreground">
           Trend Library
         </Link>
         <ChevronRight className="size-4 text-faint" />
@@ -260,7 +260,7 @@ export default async function TrendDetailPage({
               ) : (
                 <p className="text-sm text-muted-foreground">
                   No signals attached yet. Add some on the{" "}
-                  <Link href="/admin" className="text-primary-strong underline">
+                  <Link href="/internal/import" className="text-primary-strong underline">
                     import page
                   </Link>
                   .

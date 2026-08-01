@@ -12,6 +12,18 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
+  // Old IA → consolidated four-screen IA (Today · Radar · Your Board · Track record).
+  async redirects() {
+    return [
+      { source: "/dashboard", destination: "/board", permanent: false },
+      { source: "/saved", destination: "/board", permanent: false },
+      { source: "/waves", destination: "/radar", permanent: false },
+      { source: "/pulse", destination: "/radar", permanent: false },
+      { source: "/timeline", destination: "/radar", permanent: false },
+      { source: "/daily", destination: "/today", permanent: false },
+      { source: "/admin", destination: "/internal/import", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;
