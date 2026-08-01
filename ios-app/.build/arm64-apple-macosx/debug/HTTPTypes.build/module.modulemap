@@ -1,4 +1,0 @@
-module HTTPTypes {
-    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/HTTPTypes.build/HTTPTypes-Swift.h"
-    requires objc
-}

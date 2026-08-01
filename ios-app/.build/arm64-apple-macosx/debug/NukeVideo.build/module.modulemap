@@ -1,4 +1,0 @@
-module NukeVideo {
-    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/NukeVideo.build/NukeVideo-Swift.h"
-    requires objc
-}

@@ -1,4 +1,0 @@
-module Auth {
-    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/Auth.build/Auth-Swift.h"
-    requires objc
-}

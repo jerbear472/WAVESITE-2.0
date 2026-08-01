@@ -1,4 +1,0 @@
-module Realtime {
-    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/Realtime.build/Realtime-Swift.h"
-    requires objc
-}

@@ -1,4 +1,0 @@
-module Supabase {
-    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/Supabase.build/Supabase-Swift.h"
-    requires objc
-}

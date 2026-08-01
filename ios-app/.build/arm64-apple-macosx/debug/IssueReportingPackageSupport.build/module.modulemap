@@ -1,4 +1,0 @@
-module IssueReportingPackageSupport {
-    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/IssueReportingPackageSupport.build/IssueReportingPackageSupport-Swift.h"
-    requires objc
-}

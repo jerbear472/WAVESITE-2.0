@@ -1,4 +1,0 @@
-module Helpers {
-    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/Helpers.build/Helpers-Swift.h"
-    requires objc
-}

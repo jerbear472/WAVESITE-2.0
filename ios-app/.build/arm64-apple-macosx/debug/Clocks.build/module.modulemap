@@ -1,4 +1,0 @@
-module Clocks {
-    header "/Users/JeremyUys_1/Desktop/FreeWaveSight/ios-app/.build/arm64-apple-macosx/debug/Clocks.build/Clocks-Swift.h"
-    requires objc
-}
