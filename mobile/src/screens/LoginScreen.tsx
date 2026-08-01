@@ -3,195 +3,234 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Image,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthNavigator';
-import { useAuth } from '../contexts/AuthContext';
-import { Logo } from '../components/Logo';
-import { SafeScreen } from '../components/SafeScreen';
-import { Button } from '../components/Button';
-import { theme } from '../styles/theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { designSystem } from '../styles/designSystem';
+import { useAuth } from '../contexts';
+import { Button, Input } from '../components';
 
-type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+const { colors, spacing, typography, borderRadius } = designSystem;
 
-export const LoginScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const { signIn } = useAuth();
+export default function LoginScreen() {
+  const { signIn, signUp, isLoading } = useAuth();
+
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [organizationName, setOrganizationName] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
+  const handleSubmit = async () => {
+    setError(null);
+
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
 
-    setLoading(true);
-    try {
-      await signIn(email, password);
-    } catch (error: any) {
-      Alert.alert('Login Failed', 'Invalid email or password');
-    } finally {
-      setLoading(false);
+    if (isSignUp) {
+      const result = await signUp(email, password, organizationName);
+      if (result.error) {
+        setError(result.error);
+      }
+    } else {
+      const result = await signIn(email, password);
+      if (result.error) {
+        setError(result.error);
+      }
     }
   };
 
   return (
-    <SafeScreen>
-      <View style={styles.content}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
+          {/* Header */}
+          <View style={styles.header}>
+            <Image
+              source={require('../assets/app-icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>WaveSight</Text>
+            <Text style={styles.subtitle}>Enterprise Signal Intelligence</Text>
+          </View>
 
-        <View style={styles.header}>
-          <Logo size="medium" showText={false} />
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Track trends, earn rewards</Text>
-        </View>
+          {/* Form */}
+          <View style={styles.form}>
+            <Text style={styles.formTitle}>
+              {isSignUp ? 'Create Account' : 'Welcome Back'}
+            </Text>
+            <Text style={styles.formSubtitle}>
+              {isSignUp
+                ? 'Start detecting early signals today'
+                : 'Sign in to access your dashboard'}
+            </Text>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
+            {isSignUp && (
+              <Input
+                value={organizationName}
+                onChangeText={setOrganizationName}
+                placeholder="Acme Inc."
+                label="Organization Name"
+                icon="domain"
+                autoCapitalize="words"
+              />
+            )}
+
+            <Input
               value={email}
               onChangeText={setEmail}
-              placeholder="you@example.com"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholder="you@company.com"
+              label="Email"
+              icon="email"
               keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="next"
+              autoComplete="email"
             />
-          </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
+            <Input
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholder="Enter your password"
+              label="Password"
+              icon="lock"
               secureTextEntry
-              autoCapitalize="none"
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
+              autoComplete="password"
             />
+
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <Button
+              title={isSignUp ? 'Create Account' : 'Sign In'}
+              onPress={handleSubmit}
+              loading={isLoading}
+              fullWidth
+              size="large"
+            />
+
+            <TouchableOpacity
+              onPress={() => {
+                setIsSignUp(!isSignUp);
+                setError(null);
+              }}
+              style={styles.toggleButton}
+            >
+              <Text style={styles.toggleText}>
+                {isSignUp
+                  ? 'Already have an account? '
+                  : "Don't have an account? "}
+                <Text style={styles.toggleTextHighlight}>
+                  {isSignUp ? 'Sign In' : 'Sign Up'}
+                </Text>
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          <Button
-            title="Sign In"
-            onPress={handleLogin}
-            loading={loading}
-            size="large"
-            style={styles.loginButton}
-          />
-
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => Alert.alert('Coming Soon', 'Password reset will be available soon')}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.signUpText}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </SafeScreen>
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  content: {
+  safeArea: {
     flex: 1,
-    paddingHorizontal: theme.spacing.lg,
+    backgroundColor: colors.background,
   },
-  backButton: {
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-    width: 40,
-    height: 40,
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: spacing.xl,
     justifyContent: 'center',
-  },
-  backButtonText: {
-    fontSize: 32,
-    color: theme.colors.primary,
   },
   header: {
     alignItems: 'center',
-    marginBottom: theme.spacing.xxl,
+    marginBottom: spacing.xxl,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    marginBottom: spacing.md,
   },
   title: {
-    ...theme.typography.h1,
-    color: theme.colors.primary,
-    marginTop: theme.spacing.lg,
+    ...typography.h1,
+    color: colors.text.primary,
   },
   subtitle: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
+    ...typography.body,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
   },
   form: {
-    marginTop: theme.spacing.lg,
-  },
-  inputContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  label: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
-  },
-  input: {
-    backgroundColor: theme.colors.backgroundLight,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    fontSize: theme.typography.body.fontSize,
-    color: theme.colors.text,
+    borderColor: colors.border,
   },
-  loginButton: {
-    marginTop: theme.spacing.xl,
+  formTitle: {
+    ...typography.h2,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
-  forgotPassword: {
+  formSubtitle: {
+    ...typography.body,
+    color: colors.text.tertiary,
+    marginBottom: spacing.xl,
+  },
+  errorContainer: {
+    backgroundColor: `${colors.danger}20`,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  errorText: {
+    ...typography.bodySmall,
+    color: colors.danger,
+    textAlign: 'center',
+  },
+  toggleButton: {
+    marginTop: spacing.lg,
     alignItems: 'center',
-    marginTop: theme.spacing.lg,
-    padding: theme.spacing.sm,
   },
-  forgotPasswordText: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
+  toggleText: {
+    ...typography.body,
+    color: colors.text.tertiary,
+  },
+  toggleTextHighlight: {
+    color: colors.primary,
+    fontWeight: '600',
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: theme.spacing.xl,
-    marginBottom: theme.spacing.xxl,
-    paddingTop: theme.spacing.lg,
+    marginTop: spacing.xl,
+    alignItems: 'center',
   },
   footerText: {
-    ...theme.typography.body,
-    color: theme.colors.textMuted,
-  },
-  signUpText: {
-    ...theme.typography.body,
-    color: theme.colors.primary,
-    fontWeight: '600',
+    ...typography.caption,
+    color: colors.text.tertiary,
+    textAlign: 'center',
   },
 });

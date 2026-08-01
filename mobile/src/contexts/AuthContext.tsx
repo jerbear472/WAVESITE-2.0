@@ -1,243 +1,113 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
-import { supabase } from '../config/supabase';
-import supabaseService from '../services/supabaseService';
-import { personaService, UserPersona } from '../services/personaService';
-import { UserProfile } from '../types/database';
-import { Session, User as AuthUser } from '@supabase/supabase-js';
-
-type User = AuthUser & UserProfile;
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { authService } from '../services';
+import type { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  persona: UserPersona | null;
-  loading: boolean;
-  needsCulturalAnalystOnboarding: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, username: string, birthday?: string) => Promise<void>;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, organizationName?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  updatePersona: (updates: Partial<UserPersona>) => Promise<void>;
-  completeCulturalAnalystOnboarding: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = React.useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [persona, setPersona] = useState<UserPersona | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [needsCulturalAnalystOnboarding, setNeedsCulturalAnalystOnboarding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize auth state
   useEffect(() => {
-    checkUser();
-    
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await loadUserProfile(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
+    const initAuth = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Auth init error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Subscribe to auth changes
+    const unsubscribe = authService.onAuthStateChange((event, user) => {
+      setUser(user);
+      if (event === 'SIGNED_OUT') {
         setUser(null);
       }
     });
 
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+    return unsubscribe;
   }, []);
 
-  const checkUser = async () => {
+  const signIn = useCallback(async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      if (session?.user) {
-        await loadUserProfile(session.user.id);
+      const { user, error } = await authService.signIn(email, password);
+      if (user) {
+        setUser(user);
       }
-    } catch (error) {
-      console.error('Error checking user:', error);
+      return { error };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const loadUserProfile = async (userId: string) => {
+  const signUp = useCallback(async (email: string, password: string, organizationName?: string) => {
+    setIsLoading(true);
     try {
-      const profile = await supabaseService.getUserProfile(userId);
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      
-      if (authUser && profile) {
-        setUser({ ...authUser, ...profile } as User);
-      } else if (authUser) {
-        // Profile might not exist yet, set basic user
-        setUser(authUser as any);
+      const { user, error } = await authService.signUp(email, password, organizationName);
+      if (user) {
+        setUser(user);
       }
-      
-      // Load persona data
-      const personaData = await personaService.loadPersona(userId);
-      if (personaData) {
-        setPersona(personaData);
-      }
-
-      // Check if user needs Cultural Analyst onboarding
-      const culturalAnalystOnboardingCompleted = await AsyncStorage.getItem('cultural_analyst_onboarding_completed');
-      setNeedsCulturalAnalystOnboarding(!culturalAnalystOnboardingCompleted);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabaseService.signIn(email, password);
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data?.user) {
-        await loadUserProfile(data.user.id);
-      }
-    } catch (error: any) {
-      console.error('Sign in error:', error);
-      Alert.alert(
-        'Sign In Failed',
-        error.message || 'Please check your credentials and try again.'
-      );
-      throw error;
+      return { error };
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string, username: string, birthday?: string) => {
+  const signOut = useCallback(async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const { data, error } = await supabaseService.signUp(email, password, username, birthday);
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data?.user) {
-        await loadUserProfile(data.user.id);
-        Alert.alert(
-          'Welcome to WaveSight!',
-          'Your account has been created successfully.'
-        );
-      }
-    } catch (error: any) {
-      console.error('Sign up error:', error);
-      Alert.alert(
-        'Sign Up Failed',
-        error.message || 'Please try again with different credentials.'
-      );
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabaseService.signOut();
-      
-      if (error) {
-        throw error;
-      }
-      
+      await authService.signOut();
       setUser(null);
-      setSession(null);
-      setPersona(null);
-      setNeedsCulturalAnalystOnboarding(false);
-      personaService.clearLocalPersona();
-      await AsyncStorage.clear();
-    } catch (error: any) {
-      console.error('Sign out error:', error);
-      Alert.alert('Sign Out Failed', error.message || 'Please try again.');
-      throw error;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const refreshUser = async () => {
-    if (user?.id) {
-      await loadUserProfile(user.id);
-    }
-  };
-  
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    try {
-      if (!user?.id) return;
-      
-      const { data, error } = await supabaseService.updateUserProfile(user.id, updates);
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data) {
-        setUser({ ...user, ...data });
-      }
-    } catch (error: any) {
-      console.error('Update profile error:', error);
-      Alert.alert('Update Failed', error.message || 'Could not update profile.');
-      throw error;
-    }
-  };
+  const refreshUser = useCallback(async () => {
+    const currentUser = await authService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
 
-  const updatePersona = async (updates: Partial<UserPersona>) => {
-    try {
-      if (!user?.id) return;
-      
-      await personaService.updatePersona(user.id, updates);
-      
-      // Reload persona to get the updated data
-      const updatedPersona = await personaService.loadPersona(user.id);
-      if (updatedPersona) {
-        setPersona(updatedPersona);
-      }
-    } catch (error: any) {
-      console.error('Update persona error:', error);
-      Alert.alert('Update Failed', error.message || 'Could not update persona.');
-      throw error;
-    }
-  };
-
-  const completeCulturalAnalystOnboarding = () => {
-    setNeedsCulturalAnalystOnboarding(false);
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    signIn,
+    signUp,
+    signOut,
+    refreshUser,
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      persona,
-      loading, 
-      needsCulturalAnalystOnboarding,
-      signIn, 
-      signUp, 
-      signOut, 
-      refreshUser, 
-      updateProfile,
-      updatePersona,
-      completeCulturalAnalystOnboarding
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export default AuthContext;

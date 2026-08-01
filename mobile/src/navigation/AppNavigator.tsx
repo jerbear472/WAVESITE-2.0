@@ -1,154 +1,183 @@
 import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { TrendCaptureScreen } from '../screens/TrendCaptureScreen';
-import { TrendsScreen } from '../screens/TrendsScreen';
-import { ProfileScreen } from '../screens/ProfileScreen';
-import { ValidationScreen } from '../screens/ValidationScreen';
-import { View, Text, Platform, Image } from 'react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { theme } from '../styles/theme';
-import { enhancedTheme } from '../styles/theme.enhanced';
+import { NavigationContainer } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import LinearGradient from 'react-native-linear-gradient';
-import { Logo } from '../components/Logo';
 
-export type AppTabParamList = {
-  Capture: undefined;
-  Validate: undefined;
-  Trends: undefined;
-  Profile: undefined;
+import { useAuth } from '../contexts';
+import { designSystem } from '../styles/designSystem';
+
+// Screens
+import LoginScreen from '../screens/LoginScreen';
+import SignalsScreen from '../screens/SignalsScreen';
+import SignalDetailScreen from '../screens/SignalDetailScreen';
+import AccuracyScreen from '../screens/AccuracyScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import AlertsScreen from '../screens/AlertsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import LoadingScreen from '../screens/LoadingScreen';
+
+// Types
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  SignalDetail: { signalId: string };
 };
 
-const Tab = createBottomTabNavigator<AppTabParamList>();
+export type AuthStackParamList = {
+  Login: undefined;
+};
 
-const TabIcon = ({ name, color, focused }: { name: string; color: string; focused: boolean }) => {
-  const iconMap: { [key: string]: string } = {
-    Capture: 'flag',
-    Validate: 'check-circle',
-    Trends: 'trending-up',
-    Profile: 'account',
-  };
-  
-  const emojiMap: { [key: string]: string } = {
-    Capture: '🚩',
-    Validate: '✅',
-    Trends: '📊',
-    Profile: '👤',
-  };
-  
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        scale: withSpring(focused ? 1.15 : 1, {
-          damping: 15,
-          stiffness: 150,
-        }),
-      },
-    ],
-  }));
-  
+export type MainTabParamList = {
+  Signals: undefined;
+  Accuracy: undefined;
+  History: undefined;
+  Alerts: undefined;
+  Settings: undefined;
+};
+
+const RootStack = createNativeStackNavigator<RootStackParamList>();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+const MainTab = createBottomTabNavigator<MainTabParamList>();
+
+// Auth Navigator
+function AuthNavigator() {
   return (
-    <Animated.View style={[{ alignItems: 'center' }, animatedStyle]}>
-      {focused ? (
-        <LinearGradient
-          colors={enhancedTheme.colors.primaryGradient}
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: 21,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ fontSize: 24 }}>{emojiMap[name]}</Text>
-        </LinearGradient>
-      ) : (
-        <View
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: 21,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'transparent',
-          }}
-        >
-          <Text style={{ fontSize: 24, opacity: 0.6 }}>{emojiMap[name]}</Text>
-        </View>
-      )}
-    </Animated.View>
+    <AuthStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: designSystem.colors.background },
+      }}
+    >
+      <AuthStack.Screen name="Login" component={LoginScreen} />
+    </AuthStack.Navigator>
   );
-};
+}
 
-export const AppNavigator: React.FC = () => {
+// Main Tab Navigator
+function MainNavigator() {
+  const { colors } = designSystem;
+
   return (
-    <Tab.Navigator
+    <MainTab.Navigator
       screenOptions={({ route }) => ({
-        headerShown: true,
-        headerStyle: {
-          backgroundColor: enhancedTheme.colors.background,
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: enhancedTheme.colors.glassBorder,
-        },
-        headerTintColor: enhancedTheme.colors.text,
-        headerTitle: () => (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Image
-              source={require('../assets/images/logo2.png')}
-              style={{ width: 32, height: 32, borderRadius: 10 }}
-              resizeMode="cover"
-            />
-            <Text style={{
-              fontSize: 20,
-              fontWeight: '800',
-              color: enhancedTheme.colors.text,
-              letterSpacing: 1,
-            }}>
-              WAVESIGHT
-            </Text>
-          </View>
-        ),
+        headerShown: false,
         tabBarStyle: {
-          backgroundColor: enhancedTheme.colors.backgroundSecondary,
-          borderTopColor: enhancedTheme.colors.glassBorder,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-          paddingTop: 10,
-          height: Platform.OS === 'ios' ? 85 : 70,
-          elevation: 0,
+          paddingTop: 8,
+          paddingBottom: 8,
+          height: 64,
         },
-        tabBarActiveTintColor: enhancedTheme.colors.primary,
-        tabBarInactiveTintColor: enhancedTheme.colors.textTertiary,
-        tabBarIcon: ({ color, focused }) => <TabIcon name={route.name} color={color} focused={focused} />,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.text.tertiary,
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: '500',
           marginTop: 4,
+        },
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: string;
+
+          switch (route.name) {
+            case 'Signals':
+              iconName = focused ? 'pulse' : 'pulse';
+              break;
+            case 'Accuracy':
+              iconName = focused ? 'target' : 'target';
+              break;
+            case 'History':
+              iconName = focused ? 'chart-timeline-variant' : 'chart-timeline-variant';
+              break;
+            case 'Alerts':
+              iconName = focused ? 'bell' : 'bell-outline';
+              break;
+            case 'Settings':
+              iconName = focused ? 'cog' : 'cog-outline';
+              break;
+            default:
+              iconName = 'circle';
+          }
+
+          return <Icon name={iconName} size={24} color={color} />;
         },
       })}
     >
-      <Tab.Screen 
-        name="Capture" 
-        component={TrendCaptureScreen}
-        options={{ title: 'Capture' }}
+      <MainTab.Screen
+        name="Signals"
+        component={SignalsScreen}
+        options={{ tabBarLabel: 'Signals' }}
       />
-      <Tab.Screen 
-        name="Validate" 
-        component={ValidationScreen}
-        options={{ title: 'Validate' }}
+      <MainTab.Screen
+        name="Accuracy"
+        component={AccuracyScreen}
+        options={{ tabBarLabel: 'Accuracy' }}
       />
-      <Tab.Screen 
-        name="Trends" 
-        component={TrendsScreen}
-        options={{ title: 'Trends' }}
+      <MainTab.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{ tabBarLabel: 'History' }}
       />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen}
-        options={{ title: 'Profile' }}
+      <MainTab.Screen
+        name="Alerts"
+        component={AlertsScreen}
+        options={{ tabBarLabel: 'Alerts' }}
       />
-    </Tab.Navigator>
+      <MainTab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ tabBarLabel: 'Settings' }}
+      />
+    </MainTab.Navigator>
   );
-};
+}
+
+// Root Navigator
+export default function AppNavigator() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { colors } = designSystem;
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <NavigationContainer
+      theme={{
+        dark: true,
+        colors: {
+          primary: colors.primary,
+          background: colors.background,
+          card: colors.surface,
+          text: colors.text.primary,
+          border: colors.border,
+          notification: colors.danger,
+        },
+      }}
+    >
+      <RootStack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        {isAuthenticated ? (
+          <>
+            <RootStack.Screen name="Main" component={MainNavigator} />
+            <RootStack.Screen
+              name="SignalDetail"
+              component={SignalDetailScreen}
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+              }}
+            />
+          </>
+        ) : (
+          <RootStack.Screen name="Auth" component={AuthNavigator} />
+        )}
+      </RootStack.Navigator>
+    </NavigationContainer>
+  );
+}

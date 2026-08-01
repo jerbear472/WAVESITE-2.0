@@ -1,89 +1,52 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  StatusBar,
-} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import { Logo } from '../components/Logo';
-import { SimpleLoader } from '../components/SimpleLoader';
+import React from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { designSystem } from '../styles/designSystem';
 
-const { width, height } = Dimensions.get('window');
+const { colors, spacing, typography } = designSystem;
 
-interface LoadingScreenProps {
-  onLoadingComplete?: () => void;
-}
-
-export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadingComplete }) => {
-  useEffect(() => {
-    if (onLoadingComplete) {
-      const timer = setTimeout(() => {
-        onLoadingComplete();
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-
+export default function LoadingScreen() {
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
-      
-      <LinearGradient
-        colors={['#0a0a0a', '#1a1a1a', '#0a0a0a']}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <Image
+        source={require('../assets/app-icon.png')}
+        style={styles.logo}
+        resizeMode="contain"
       />
-
-      {/* Logo */}
-      <View style={styles.logoContainer}>
-        <Logo size="large" showText={false} />
-      </View>
-
-      {/* Title */}
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>WAVESIGHT</Text>
-        <Text style={styles.subtitle}>Spot Trends, Earn Rewards</Text>
-      </View>
-
-      {/* Simple Loading Spinner */}
-      <SimpleLoader size="large" style={styles.loader} />
+      <Text style={styles.title}>WaveSight</Text>
+      <Text style={styles.subtitle}>Enterprise Signal Intelligence</Text>
+      <ActivityIndicator
+        size="large"
+        color={colors.primary}
+        style={styles.loader}
+      />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
-    alignItems: 'center',
+    backgroundColor: colors.background,
     justifyContent: 'center',
-  },
-  logoContainer: {
-    marginBottom: 40,
     alignItems: 'center',
+    padding: spacing.xl,
   },
-  titleContainer: {
-    alignItems: 'center',
-    marginBottom: 60,
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 3,
-    marginBottom: 8,
+    ...typography.h1,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#888',
-    letterSpacing: 1,
+    ...typography.body,
+    color: colors.text.tertiary,
+    marginBottom: spacing.xxl,
   },
   loader: {
-    marginTop: 20,
+    marginTop: spacing.xl,
   },
 });

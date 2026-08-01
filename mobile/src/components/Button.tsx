@@ -4,166 +4,177 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  ViewStyle,
-  TextStyle,
   View,
 } from 'react-native';
-import { theme } from '../styles/theme';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { designSystem } from '../styles/designSystem';
+
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
+type ButtonSize = 'small' | 'medium' | 'large';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'small' | 'medium' | 'large';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  icon?: string;
+  iconPosition?: 'left' | 'right';
   loading?: boolean;
   disabled?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
-  icon?: React.ReactNode;
   fullWidth?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+const { colors, spacing, borderRadius, typography } = designSystem;
+
+export default function Button({
   title,
   onPress,
   variant = 'primary',
   size = 'medium',
+  icon,
+  iconPosition = 'left',
   loading = false,
   disabled = false,
-  style,
-  textStyle,
-  icon,
   fullWidth = false,
-}) => {
-  const buttonStyles = [
-    styles.base,
-    styles[variant],
-    styles[size],
-    disabled && styles.disabled,
-    fullWidth && styles.fullWidth,
-    style,
-  ];
+}: ButtonProps) {
+  const getBackgroundColor = () => {
+    if (disabled) return colors.surfaceLight;
+    switch (variant) {
+      case 'primary':
+        return colors.primary;
+      case 'secondary':
+        return colors.surface;
+      case 'ghost':
+        return 'transparent';
+      case 'danger':
+        return colors.danger;
+      case 'outline':
+        return 'transparent';
+      default:
+        return colors.primary;
+    }
+  };
 
-  const textStyles = [
-    styles.text,
-    styles[`${variant}Text`],
-    styles[`${size}Text`],
-    disabled && styles.disabledText,
-    textStyle,
-  ];
+  const getTextColor = () => {
+    if (disabled) return colors.text.disabled;
+    switch (variant) {
+      case 'primary':
+      case 'danger':
+        return colors.text.primary;
+      case 'secondary':
+        return colors.primary;
+      case 'ghost':
+        return colors.primary;
+      case 'outline':
+        return colors.primary;
+      default:
+        return colors.text.primary;
+    }
+  };
+
+  const getBorderColor = () => {
+    if (disabled) return colors.border;
+    switch (variant) {
+      case 'outline':
+        return colors.primary;
+      case 'secondary':
+        return colors.border;
+      default:
+        return 'transparent';
+    }
+  };
+
+  const sizeStyles = {
+    small: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      fontSize: typography.buttonSmall.fontSize,
+      iconSize: 16,
+    },
+    medium: {
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      fontSize: typography.button.fontSize,
+      iconSize: 20,
+    },
+    large: {
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.xl,
+      fontSize: typography.buttonLarge.fontSize,
+      iconSize: 24,
+    },
+  };
+
+  const currentSize = sizeStyles[size];
+  const textColor = getTextColor();
 
   return (
     <TouchableOpacity
-      style={buttonStyles}
+      style={[
+        styles.container,
+        {
+          backgroundColor: getBackgroundColor(),
+          paddingVertical: currentSize.paddingVertical,
+          paddingHorizontal: currentSize.paddingHorizontal,
+          borderColor: getBorderColor(),
+          borderWidth: variant === 'outline' || variant === 'secondary' ? 1 : 0,
+        },
+        fullWidth && styles.fullWidth,
+      ]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator 
-          color={variant === 'primary' ? '#ffffff' : theme.colors.primary} 
-          size="small"
-        />
+        <ActivityIndicator size="small" color={textColor} />
       ) : (
         <View style={styles.content}>
-          {icon && <View style={styles.icon}>{icon}</View>}
-          <Text style={textStyles}>{title}</Text>
+          {icon && iconPosition === 'left' && (
+            <Icon
+              name={icon}
+              size={currentSize.iconSize}
+              color={textColor}
+              style={styles.iconLeft}
+            />
+          )}
+          <Text style={[styles.text, { color: textColor, fontSize: currentSize.fontSize }]}>
+            {title}
+          </Text>
+          {icon && iconPosition === 'right' && (
+            <Icon
+              name={icon}
+              size={currentSize.iconSize}
+              color={textColor}
+              style={styles.iconRight}
+            />
+          )}
         </View>
       )}
     </TouchableOpacity>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
+  container: {
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
-    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
   },
-  
+  fullWidth: {
+    width: '100%',
+  },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
-  icon: {
-    marginRight: theme.spacing.sm,
-  },
-  
-  // Variants - Clean and minimal
-  primary: {
-    backgroundColor: theme.colors.primary,
-    ...theme.shadows.md,
-  },
-  secondary: {
-    backgroundColor: theme.colors.wave[50],
-    ...theme.shadows.sm,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  
-  // Sizes
-  small: {
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    minHeight: 36,
-  },
-  medium: {
-    paddingVertical: theme.spacing.sm + 4,
-    paddingHorizontal: theme.spacing.lg,
-    minHeight: 44,
-  },
-  large: {
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.xl,
-    minHeight: 52,
-  },
-  
-  // States
-  disabled: {
-    opacity: 0.5,
-  },
-  
-  fullWidth: {
-    width: '100%',
-  },
-  
-  // Text styles - Clean typography
   text: {
-    fontFamily: 'System',
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  primaryText: {
-    color: '#ffffff',
+  iconLeft: {
+    marginRight: spacing.sm,
   },
-  secondaryText: {
-    color: theme.colors.primary,
-  },
-  outlineText: {
-    color: theme.colors.text,
-  },
-  ghostText: {
-    color: theme.colors.primary,
-  },
-  disabledText: {
-    color: theme.colors.textMuted,
-  },
-  
-  smallText: {
-    fontSize: theme.typography.bodySmall.fontSize,
-  },
-  mediumText: {
-    fontSize: theme.typography.button.fontSize,
-  },
-  largeText: {
-    fontSize: 18,
-    fontWeight: '500',
+  iconRight: {
+    marginLeft: spacing.sm,
   },
 });

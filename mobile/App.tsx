@@ -1,29 +1,31 @@
+/**
+ * WaveSight 2.0 - Enterprise Signal Intelligence
+ * The Early-Signal Layer
+ */
+
 import React, { useEffect } from 'react';
 import { LogBox, Platform, StatusBar } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { enableScreens } from 'react-native-screens';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MMKV } from 'react-native-mmkv';
-import { RootNavigatorEnhanced } from './src/navigation/RootNavigatorEnhanced';
-import ErrorBoundary from './src/components/ErrorBoundary';
-import { AuthProvider } from './src/contexts/AuthContext';
 
-// Enable screens for better performance
+import { AppNavigator } from './src/navigation';
+import { AuthProvider } from './src/contexts';
+import ErrorBoundary from './src/components/ErrorBoundary';
+import { designSystem } from './src/styles/designSystem';
+
+// Enable native screens for better performance
 enableScreens();
 
 // Initialize MMKV storage
 export const storage = new MMKV({
-  id: 'wavesight-storage',
-  encryptionKey: !__DEV__ ? 'wavesight-prod-key-2024' : undefined,
+  id: 'wavesight-enterprise-storage',
 });
 
-// Production environment check
-const isProduction = !__DEV__;
-
 // Configure LogBox
-if (isProduction) {
+if (!__DEV__) {
   LogBox.ignoreAllLogs();
 } else {
   LogBox.ignoreLogs([
@@ -32,34 +34,38 @@ if (isProduction) {
   ]);
 }
 
+// Configure React Query
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: isProduction ? 3 : 2,
-      staleTime: isProduction ? 10 * 60 * 1000 : 5 * 60 * 1000,
+      retry: __DEV__ ? 2 : 3,
+      staleTime: 5 * 60 * 1000, // 5 minutes
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
 
 function App(): React.JSX.Element {
   useEffect(() => {
-    StatusBar.setBarStyle('dark-content');
+    // Configure status bar for dark theme
+    StatusBar.setBarStyle('light-content');
     if (Platform.OS === 'android') {
-      StatusBar.setBackgroundColor('transparent');
+      StatusBar.setBackgroundColor(designSystem.colors.background);
       StatusBar.setTranslucent(true);
     }
   }, []);
 
   return (
     <ErrorBoundary>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: designSystem.colors.background }}>
         <SafeAreaProvider>
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
-              <NavigationContainer>
-                <RootNavigatorEnhanced />
-              </NavigationContainer>
+              <AppNavigator />
             </AuthProvider>
           </QueryClientProvider>
         </SafeAreaProvider>

@@ -1,12 +1,9 @@
-import React, { Component, ReactNode } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { designSystem } from '../styles/designSystem';
+
+const { colors, spacing, borderRadius, typography } = designSystem;
 
 interface Props {
   children: ReactNode;
@@ -14,55 +11,41 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error?: Error;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export default class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('Error caught by boundary:', error);
-    console.error('Error info:', errorInfo);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  handleReset = () => {
-    this.setState({ hasError: false, error: null });
+  handleRetry = () => {
+    this.setState({ hasError: false, error: undefined });
   };
 
   render() {
     if (this.state.hasError) {
       return (
-        <SafeAreaView style={styles.container}>
-          <ScrollView contentContainerStyle={styles.content}>
-            <Text style={styles.title}>Oops! Something went wrong</Text>
-            <Text style={styles.subtitle}>
-              The app encountered an error and needs to restart.
-            </Text>
-            
-            <View style={styles.errorBox}>
-              <Text style={styles.errorTitle}>Error Details:</Text>
-              <Text style={styles.errorText}>
-                {this.state.error?.message || 'Unknown error'}
-              </Text>
-              {this.state.error?.stack && (
-                <Text style={styles.stackTrace} numberOfLines={10}>
-                  {this.state.error.stack}
-                </Text>
-              )}
-            </View>
-
-            <TouchableOpacity style={styles.button} onPress={this.handleReset}>
-              <Text style={styles.buttonText}>Try Again</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </SafeAreaView>
+        <View style={styles.container}>
+          <Icon name="alert-circle-outline" size={64} color={colors.danger} />
+          <Text style={styles.title}>Something went wrong</Text>
+          <Text style={styles.message}>
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </Text>
+          <TouchableOpacity style={styles.button} onPress={this.handleRetry}>
+            <Icon name="refresh" size={20} color={colors.text.primary} />
+            <Text style={styles.buttonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
       );
     }
 
@@ -73,59 +56,34 @@ export class ErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F2027',
-  },
-  content: {
-    flex: 1,
-    padding: 24,
+    backgroundColor: colors.background,
     justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    ...typography.h2,
+    color: colors.text.primary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  message: {
+    ...typography.body,
+    color: colors.text.tertiary,
     textAlign: 'center',
-    marginBottom: 16,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#4da8ff',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  errorBox: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 32,
-  },
-  errorTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FF6B6B',
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  stackTrace: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
-    fontFamily: 'monospace',
+    marginBottom: spacing.xl,
   },
   button: {
-    backgroundColor: '#0080ff',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    gap: spacing.sm,
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    ...typography.button,
+    color: colors.text.primary,
   },
 });
-export default ErrorBoundary;
