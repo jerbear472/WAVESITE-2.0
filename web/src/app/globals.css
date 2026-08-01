@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+/*
+  WaveSight design system v4 — "premium light intelligence."
+  Bright, editorial, credible: warm off-white canvas, white analytical cards,
+  restrained blue as the single action/analytical color, semantic green/amber/
+  red reserved for meaning. Inter everywhere — tight-tracked at display sizes.
+  Bloomberg × Linear × culture desk, no serif.
+*/
+
+:root {
+  /* Light shell */
+  --ws-paper: #f5f7fa;
+  --ws-card: #ffffff;
+  --ws-ink: #152033;
+  --ws-muted: #667085;
+  --ws-faint: #8a94a6;
+  --ws-line: #dce2ea;
+  --ws-line-strong: #c7d0dc;
+  --ws-fill: #f0f3f7;
+
+  /* Blue — the action + analytical color */
+  --ws-accent: #3478f6;
+  --ws-accent-strong: #2865d8; /* hover / emphasis text */
+  --ws-accent-bright: #35bdf2; /* cyan, gradient partner only */
+  --ws-accent-tint: #eaf2ff;
+
+  /* Semantics (meaning, not decoration) */
+  --ws-success: #159a78;
+  --ws-success-tint: #e7f7f1;
+  --ws-danger: #d64d57;
+  --ws-danger-tint: #fdecee;
+  --ws-warning: #b77900;
+  --ws-warning-tint: #fff4d8;
+  --ws-violet: #6d5bd0;
+
+  /* Dark analytical module (3D field, terminal moments) — deep navy */
+  --ws-panel: #111a2c;
+  --ws-panel-2: #1a2740;
+  --ws-panel-ink: #f2f5fa;
+  --ws-panel-muted: #93a0b8;
+  --ws-panel-line: rgba(148, 174, 220, 0.16);
+
+  --background: var(--ws-paper);
+  --foreground: var(--ws-ink);
+}
+
+@theme inline {
+  --color-background: var(--ws-paper);
+  --color-foreground: var(--ws-ink);
+
+  --color-card: var(--ws-card);
+  --color-card-foreground: var(--ws-ink);
+  --color-surface-2: var(--ws-fill);
+
+  --color-border: var(--ws-line);
+  --color-border-strong: var(--ws-line-strong);
+
+  --color-muted: var(--ws-fill);
+  --color-muted-foreground: var(--ws-muted);
+  --color-faint: var(--ws-faint);
+
+  --color-primary: var(--ws-accent);
+  --color-primary-foreground: #ffffff;
+  --color-primary-strong: var(--ws-accent-strong);
+  --color-primary-tint: var(--ws-accent-tint);
+
+  --color-success: var(--ws-success);
+  --color-success-tint: var(--ws-success-tint);
+  --color-danger: var(--ws-danger);
+  --color-danger-tint: var(--ws-danger-tint);
+  --color-warning: var(--ws-warning);
+  --color-warning-tint: var(--ws-warning-tint);
+  --color-violet: var(--ws-violet);
+
+  /* Panel-context tokens (dark analytical modules) */
+  --color-panel: var(--ws-panel);
+  --color-panel-ink: var(--ws-panel-ink);
+  --color-panel-muted: var(--ws-panel-muted);
+
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-card: 16px;
+}
+
+* {
+  border-color: var(--ws-line);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+body {
+  /* Electric wash — faint cyan/blue light bleeding onto the paper so the
+     light shell reads alive, not sterile. Fixed so it doesn't scroll-band. */
+  background:
+    radial-gradient(1000px 520px at 88% -12%, rgba(53, 189, 242, 0.11), transparent 62%),
+    radial-gradient(820px 480px at -8% 18%, rgba(52, 120, 246, 0.075), transparent 58%),
+    var(--ws-paper);
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Sleek display type — tight-tracked Inter, no serif. Weight lives HERE only;
+   don't stack font-semibold/font-bold utilities on font-display elements. */
+.font-display {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.022em;
+  font-weight: 560;
+}
+
+/* Wordmark next to the logo — lighter than display copy. Defined after
+   .font-display so it wins the weight when both classes are applied. */
+.wordmark {
+  font-weight: 410;
+  letter-spacing: -0.01em;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ---- Electric gradient language ---- */
+.text-gradient {
+  background: linear-gradient(100deg, #35bdf2 0%, #3478f6 55%, #2865d8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bg-gradient-brand {
+  background-image: linear-gradient(120deg, #35bdf2, #3478f6);
+}
+.glow-primary {
+  box-shadow: 0 6px 22px rgba(52, 120, 246, 0.32);
+}
+.glow-primary:hover {
+  box-shadow: 0 8px 28px rgba(52, 120, 246, 0.42);
+}
+/* Soft ambient blob behind hero/feature moments. */
+.glow-blob {
+  background: radial-gradient(
+    closest-side,
+    rgba(53, 189, 242, 0.35),
+    rgba(52, 120, 246, 0.12) 60%,
+    transparent
+  );
+  filter: blur(28px);
+}
+
+/* Logo stroke draw-in (WaveMark animated). pathLength=1 on the path. */
+@keyframes ws-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.ws-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: ws-draw 1.4s cubic-bezier(0.6, 0, 0.2, 1) 0.15s forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keyboard-visible focus — 2px blue ring, offset from the element. */
+:focus-visible {
+  outline: 2px solid var(--ws-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- Eyebrow label ---- */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* ---- Dark analytical module (3D field, terminal panels) ---- */
+.panel {
+  background: var(--ws-panel);
+  color: var(--ws-panel-ink);
+  border: 1px solid var(--ws-panel-line);
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(20, 32, 51, 0.08);
+}
+.panel-2 {
+  background: rgba(148, 174, 220, 0.08);
+  border: 1px solid var(--ws-panel-line);
+}
+.text-panel-muted {
+  color: var(--ws-panel-muted);
+}
+.panel-track {
+  background: rgba(255, 255, 255, 0.12);
+}
+.panel-divide {
+  border-color: var(--ws-panel-line);
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ws-line-strong);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ws-faint);
+}
+::selection {
+  background: rgba(52, 120, 246, 0.18);
+  color: var(--ws-ink);
+}
+.panel ::selection {
+  background: rgba(53, 189, 242, 0.3);
+  color: #fff;
+}
+
+/* ---- Motion ---- */
+@keyframes ws-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.live-dot {
+  animation: ws-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ws-pop {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* In-sync harmony marker — quiet emerald ring for trends >= 90. */
+@keyframes ws-harmony {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(21, 154, 120, 0.35), 0 4px 18px rgba(21, 154, 120, 0.14); }
+  50% { box-shadow: 0 0 0 1px rgba(21, 154, 120, 0.55), 0 4px 24px rgba(21, 154, 120, 0.22); }
+}
+.harmony-glow {
+  animation: ws-harmony 2.8s ease-in-out infinite;
+}
+
+@keyframes ws-shimmer {
+  100% { transform: translateX(100%); }
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(20, 32, 51, 0.04),
+    transparent
+  );
+  animation: ws-shimmer 1.5s infinite;
+}
