@@ -23,6 +23,10 @@ import { ScanFunnel } from "@/components/ScanFunnel";
 import type { FunnelSnapshot } from "@/lib/terms/funnel";
 import { getLastScan, saveScan } from "@/lib/scan-store";
 import { cn } from "@/lib/utils";
+import {
+  classifyScanHit,
+  SCAN_CLASSIFICATION_LABEL,
+} from "@/lib/scan-classification";
 
 interface Hit {
   trend: Trend;
@@ -58,7 +62,7 @@ export function ScanExperience() {
   const [initialProfile, setInitialProfile] = useState<ScanProfile | null>(null);
   // Trend ids from the previous saved scan — null until a scan starts, and
   // stays null when there was no previous scan (first run marks nothing NEW).
-  const [prevTrendIds, setPrevTrendIds] = useState<Set<string> | null>(null);
+  const [previousFits, setPreviousFits] = useState<Map<string, number> | null>(null);
 
   const consoleEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -73,7 +77,9 @@ export function ScanExperience() {
 
   async function runScan(p: ScanProfile) {
     const last = getLastScan();
-    setPrevTrendIds(last ? new Set(last.hits.map((h) => h.trendId)) : null);
+    setPreviousFits(
+      last ? new Map(last.hits.map((h) => [h.trendId, h.fit])) : null
+    );
     setProfile(p);
     setPhase("scanning");
     setStatuses([]);
@@ -278,8 +284,8 @@ export function ScanExperience() {
         <ResultsHeader
           count={hits.length}
           newCount={
-            prevTrendIds
-              ? hits.filter((h) => !prevTrendIds.has(h.trend.id)).length
+            previousFits
+              ? hits.filter((h) => !previousFits.has(h.trend.id)).length
               : null
           }
           scanned={scanned}
@@ -308,9 +314,9 @@ export function ScanExperience() {
                 <span className="truncate font-medium text-white">
                   {h.trend.name}
                 </span>
-                {prevTrendIds && !prevTrendIds.has(h.trend.id) ? (
+                {previousFits && !previousFits.has(h.trend.id) ? (
                   <span className="shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                    New
+                    New to your scan
                   </span>
                 ) : null}
                 <span className="hidden truncate text-sm text-panel-muted sm:inline">
@@ -338,17 +344,20 @@ export function ScanExperience() {
             ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {hits.map((h) => {
-                const isNew = prevTrendIds && !prevTrendIds.has(h.trend.id);
+                const classification = classifyScanHit({
+                  lifecycle: h.trend.lifecycle_stage,
+                  fit: h.fit,
+                  previousFit: previousFits?.get(h.trend.id),
+                  hadPreviousScan: previousFits !== null,
+                });
                 return (
                   <div key={h.trend.id} className="relative">
-                    {isNew ? (
-                      <span
-                        className="absolute -top-2 left-4 z-10 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide shadow-sm"
-                        style={{ background: ACCENT, color: "#04252b" }}
-                      >
-                        New since last scan
-                      </span>
-                    ) : null}
+                    <span
+                      className="absolute -top-2 left-4 z-10 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide shadow-sm"
+                      style={{ background: ACCENT, color: "#04252b" }}
+                    >
+                      {SCAN_CLASSIFICATION_LABEL[classification]}
+                    </span>
                     <TrendCard
                       trend={h.trend}
                       fit={h.fit}

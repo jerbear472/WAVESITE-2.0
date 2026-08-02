@@ -297,6 +297,14 @@ function ActionRow({ action }: { action: DailyAction }) {
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
           {action.detail}
         </p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+          <span className="font-semibold text-foreground">{action.window}</span>
+          <span className="text-muted-foreground">{action.change}</span>
+          <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-faint">
+            {action.confidence} confidence
+          </span>
+          <span className="text-faint">{action.evidence}</span>
+        </div>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <Link
             href={action.href}

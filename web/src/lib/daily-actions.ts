@@ -1,6 +1,8 @@
 import type { Trend } from "@/types";
 import { getTrends } from "@/lib/data";
 import type { CompositeRow, TermRow } from "@/lib/terms/types";
+import { buildTrendHistories, type TrendHistory } from "@/lib/pipeline/backfill";
+import { decideTrend } from "@/lib/trend-decision";
 
 // ---------------------------------------------------------------------------
 // "Do this now" — the first thing a user sees. Exactly three calls computed
@@ -20,6 +22,10 @@ export interface DailyAction {
   href: string;
   cta: string;
   briefHref?: string;
+  window: string;
+  change: string;
+  confidence: "unverified" | "low" | "medium" | "high";
+  evidence: string;
 }
 
 const JOIN_STAGES = new Set(["emerging", "accelerating", "resurfacing"]);
@@ -59,11 +65,15 @@ function sourcesLabel(c: CompositeRow): string {
 }
 
 export async function buildDailyActions(): Promise<DailyAction[]> {
-  const [trends, { composites, terms }] = await Promise.all([
+  const [trends, { composites, terms }, histories] = await Promise.all([
     getTrends(),
     measuredState(),
+    buildTrendHistories(12).catch(() => [] as TrendHistory[]),
   ]);
   const actions: DailyAction[] = [];
+  const historyBySlug = new Map(histories.map((history) => [history.slug, history]));
+  const decisionFor = (trend: Trend) =>
+    decideTrend(trend, historyBySlug.get(trend.slug));
 
   // Composite for a trend, via its linked term.
   const byTrendId = new Map<string, CompositeRow>();
@@ -82,9 +92,10 @@ export async function buildDailyActions(): Promise<DailyAction[]> {
       if (bb !== ba) return bb - ba;
       return b.momentum_score - a.momentum_score;
     });
-  const join = joinPool[0];
+  const join = joinPool.find((trend) => decisionFor(trend).action === "Act");
   if (join) {
     const c = byTrendId.get(join.id);
+    const decision = decisionFor(join);
     actions.push({
       verb: "Join",
       headline: `Post on “${join.name}” this week`,
@@ -94,6 +105,10 @@ export async function buildDailyActions(): Promise<DailyAction[]> {
       href: `/trends/${join.slug}`,
       cta: "See the evidence",
       briefHref: `/brief?trend=${join.slug}`,
+      window: decision.window,
+      change: decision.change,
+      confidence: decision.confidence,
+      evidence: decision.evidence,
     });
   }
 
@@ -113,18 +128,27 @@ export async function buildDailyActions(): Promise<DailyAction[]> {
       detail: `Accelerating on ${sourcesLabel(watchRow)} but not yet a trend — if a second platform fires it gets promoted, and early movers win that window.`,
       href: "/signals",
       cta: "Open Signals",
+      window: watchRow.breadth >= 2 ? "Confirmation forming" : "Early signal",
+      change: `${cap(watchRow.cascade_state)} on ${watchRow.breadth} source${watchRow.breadth === 1 ? "" : "s"}`,
+      confidence: watchRow.breadth >= 2 ? "medium" : "low",
+      evidence: `${watchRow.sources_flagged.length} source${watchRow.sources_flagged.length === 1 ? "" : "s"} firing`,
     });
   } else {
     const fresh = trends
       .filter((t) => t.created_at)
       .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))[0];
     if (fresh && fresh.slug !== join?.slug) {
+      const decision = decisionFor(fresh);
       actions.push({
         verb: "Watch",
         headline: `New on the board: “${fresh.name}”`,
         detail: `Just entered the library as ${fresh.lifecycle_stage} — watch whether measurement confirms it before committing effort.`,
         href: `/trends/${fresh.slug}`,
         cta: "See the trend",
+        window: decision.window,
+        change: decision.change,
+        confidence: decision.confidence,
+        evidence: decision.evidence,
       });
     }
   }
@@ -138,12 +162,17 @@ export async function buildDailyActions(): Promise<DailyAction[]> {
     )
     .sort((a, b) => b.saturation_score - a.saturation_score)[0];
   if (skip) {
+    const decision = decisionFor(skip);
     actions.push({
       verb: "Skip",
       headline: `Don't start on “${skip.name}”`,
       detail: `${cap(skip.lifecycle_stage)} at saturation ${skip.saturation_score}% — the room is already full; put that effort into the join above.`,
       href: `/trends/${skip.slug}`,
       cta: "See why",
+      window: decision.window,
+      change: decision.change,
+      confidence: decision.confidence,
+      evidence: decision.evidence,
     });
   }
 
