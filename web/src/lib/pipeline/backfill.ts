@@ -10,8 +10,10 @@ import {
   searchYouTubeWindow,
 } from "@/lib/pipeline/connectors/youtube";
 import { fuzzyMatch, trendTerms } from "@/lib/pipeline/resolve";
-import { dedupeItems, normalizeText } from "@/lib/pipeline/dedup";
+import { normalizeText } from "@/lib/pipeline/dedup";
 import { bestImageFor } from "@/lib/pipeline/media";
+import { classifyItems } from "@/lib/pipeline/sentiment";
+import { aggregateHistory } from "@/lib/pipeline/history-series";
 import * as store from "@/lib/pipeline/store";
 
 // The history bot. For one trend it walks BACK in time across Reddit and
@@ -31,6 +33,7 @@ export interface BackfillReport {
   new_items: number;
   linked: number;
   span_days: number;
+  sentiment_classified: number;
 }
 
 export async function runTrendBackfill(
@@ -96,6 +99,20 @@ export async function runTrendBackfill(
   const linkedItems = links
     .map((l) => unique.find((i) => i.id === l.item_id))
     .filter((i): i is RawItem => Boolean(i));
+
+  // History sentiment is derived from per-post labels, never a model-authored
+  // curve. Classify only newly encountered linked items; annotations are
+  // durable and reused by every later timeline/history build.
+  let sentimentClassified = 0;
+  try {
+    const annotations = await store.getAnnotations();
+    const unlabeled = linkedItems.filter((item) => !annotations.has(item.id));
+    const classified = await classifyItems(unlabeled);
+    await store.insertAnnotations(classified);
+    sentimentClassified = classified.length;
+  } catch (err) {
+    console.error(`[backfill] sentiment classification failed:`, err);
+  }
   const hero = bestImageFor(linkedItems);
   if (hero) {
     try {
@@ -117,6 +134,7 @@ export async function runTrendBackfill(
     new_items: newItems,
     linked: links.length,
     span_days: spanDays,
+    sentiment_classified: sentimentClassified,
   };
 }
 
@@ -132,6 +150,9 @@ export interface HistoryBucket {
   volume: number;
   /** Σ log10(1 + engagement) over the bucket's items, rounded. */
   engagement: number;
+  /** Arithmetic net of post labels, -1..1; null means not enough evidence. */
+  sentiment: number | null;
+  labeled_items: number;
 }
 
 /** The real post that grounds a chart marker — title, link, true numbers. */
@@ -164,14 +185,10 @@ export interface TrendHistory {
   months: HistoryBucket[];
   markers: HistoryMarker[];
   total_items: number;
-}
-
-function rawEngagement(item: RawItem): number {
-  const e = item.engagement ?? {};
-  return (
-    (e["views"] ?? 0) + (e["score"] ?? 0) * 50 + (e["likes"] ?? 0) * 10 +
-    (e["comments"] ?? 0) * 20
-  );
+  labeled_items: number;
+  coverage_months: number;
+  source_counts: Partial<Record<RawItem["source"], number>>;
+  confidence: "low" | "medium" | "high";
 }
 
 export async function buildTrendHistories(
@@ -181,11 +198,12 @@ export async function buildTrendHistories(
   const start = new Date(now - months * 30.5 * DAY_MS).toISOString();
   const end = new Date(now).toISOString();
 
-  const [trends, targeted, swept, links] = await Promise.all([
+  const [trends, targeted, swept, links, annotations] = await Promise.all([
     getTrends(),
     store.getItemsInWindow("trend", start, end),
     store.getItemsInWindow("sweep", start, end),
     store.getLinks(),
+    store.getAnnotations(),
   ]);
   const itemsById = new Map(
     [...targeted, ...swept].map((i) => [i.id, i])
@@ -209,32 +227,14 @@ export async function buildTrendHistories(
 
   const out: TrendHistory[] = [];
   for (const trend of trends) {
-    const { canonical } = dedupeItems(byTrend.get(trend.id) ?? []);
-    if (canonical.length === 0) continue;
-    const buckets = new Map<string, { volume: number; engagement: number }>();
-    const topByPeriod = new Map<string, RawItem>();
-    for (const item of canonical) {
-      const period = item.posted_at.slice(0, 7);
-      const b = buckets.get(period) ?? { volume: 0, engagement: 0 };
-      b.volume++;
-      b.engagement += Math.log10(1 + rawEngagement(item));
-      buckets.set(period, b);
-      const top = topByPeriod.get(period);
-      if (!top || rawEngagement(item) > rawEngagement(top)) {
-        topByPeriod.set(period, item);
-      }
-    }
-    const months = periods.map((period) => ({
-      period,
-      volume: buckets.get(period)?.volume ?? 0,
-      engagement: Math.round((buckets.get(period)?.engagement ?? 0) * 10) / 10,
-    }));
+    const history = aggregateHistory(byTrend.get(trend.id) ?? [], annotations, periods);
+    if (history.total_items === 0) continue;
+    const { topByPeriod, ...summary } = history;
     out.push({
       trend_id: trend.id,
       slug: trend.slug,
-      total_items: canonical.length,
-      months,
-      markers: findMarkers(months, topByPeriod),
+      ...summary,
+      markers: findMarkers(history.months, topByPeriod),
     });
   }
   return out;

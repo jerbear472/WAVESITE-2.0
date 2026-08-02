@@ -35,7 +35,7 @@ const DEEP_SCAN_SYSTEM = `You are the deep-scan engine of WaveSight, a cultural-
 Rules of the appraisal:
 - Search widely before concluding: platform-native angles (TikTok/Reddit/X/Instagram chatter), press and trade coverage, and trend trackers. Vary your queries; do not stop at the first page of one search.
 - Be balanced and honest. Surface headwinds, backlash, and saturation — not just hype. If a trend is fading, say so and score it accordingly.
-- Return ONLY trends that genuinely earn a spot for THIS brief. That may be 3, it may be 10. Never pad to a fixed number.
+- Build a broad candidate set, then return 6-12 independently evidenced trends that genuinely earn a spot for THIS brief when the live evidence supports them. If fewer than 6 survive verification, return fewer and explain the evidence gap in field_notes. Never pad with guesses.
 - Every trend must cite 2-5 REAL sources you actually found via search — exact URLs from the results. Never invent or approximate a URL.
 - fit_score is an honest 0-100 read of how well the trend serves the user's specific brief, and fit_reasons must reference the brief, not generic praise.
 
@@ -115,7 +115,7 @@ function deepScanPrompt(profile: ScanProfile, measuredDigest: string) {
 - Risk appetite: ${profile.appetite}
 ${profile.focus ? `- Extra focus: ${profile.focus}` : ""}
 ${measuredDigest}
-Search the web from multiple angles (the niche itself, each priority platform, adjacent culture/fashion/press coverage, and at least one contrarian "is X over?" style query). Chase what the searches surface, not just what you already know — the point of a NEW scan is what changed since the last one. Then deliver your appraisal.
+Search the web from multiple angles (the niche itself, each priority platform, adjacent culture/fashion/press coverage, and at least one contrarian "is X over?" style query). Run explicit recency queries for the last 7-30 days and discovery queries such as "rising", "breakout", and "people are starting to". Chase what the searches surface, not just what you already know — the point of a NEW scan is what changed since the last one. Aim to verify 6-12 distinct results, while returning fewer when evidence genuinely does not support them. Then deliver your appraisal.
 
 After your research, respond with a SINGLE valid JSON object and nothing else — no prose before or after it, no markdown fences:
 {
@@ -171,8 +171,8 @@ async function runResearch(
   const progress = { searches: 0, signals: 0 };
 
   const tools = [
-    { type: "web_search_20260209", name: "web_search", max_uses: 12 },
-    { type: "web_fetch_20260209", name: "web_fetch", max_uses: 6 },
+    { type: "web_search_20260209", name: "web_search", max_uses: 18 },
+    { type: "web_fetch_20260209", name: "web_fetch", max_uses: 10 },
   ] as unknown as Anthropic.Messages.ToolUnion[];
 
   const messages: Anthropic.MessageParam[] = [
@@ -490,6 +490,9 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
   const ranked = trends
     .map((d) => ({ d, trend: toTrend(d) }))
     .sort((a, b) => b.d.fit_score - a.d.fit_score);
+  const youtubeHistorySlugs = new Set(
+    ranked.slice(0, 4).map(({ trend }) => trend.slug)
+  );
 
   emit({
     type: "narrow",
@@ -580,7 +583,12 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
       console.error("[deep-scan] evidence capture failed:", err);
     }
     try {
-      await runTrendBackfill(saved.slug, { includeYouTube: false, trend: saved });
+      await runTrendBackfill(saved.slug, {
+        // YouTube search is quota-expensive (~400 units per 12-month history),
+        // so automatically deepen only the strongest four scan results.
+        includeYouTube: youtubeHistorySlugs.has(trend.slug),
+        trend: saved,
+      });
     } catch (err) {
       console.error("[deep-scan] auto-backfill failed:", err);
     }

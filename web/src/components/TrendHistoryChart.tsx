@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
+  Line,
   ReferenceDot,
   ResponsiveContainer,
   Tooltip,
@@ -152,6 +153,13 @@ export function TrendHistoryChart({ slug }: { slug: string }) {
             12-month volume &amp; engagement
           </h2>
         </div>
+        <div className="flex items-center gap-2">
+          <span
+            className="rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+            title={`${history.total_items} posts across ${history.coverage_months} months; ${history.labeled_items} sentiment-labeled`}
+          >
+            {history.confidence} confidence
+          </span>
         <button
           onClick={gather}
           disabled={gathering}
@@ -168,6 +176,7 @@ export function TrendHistoryChart({ slug }: { slug: string }) {
             </>
           )}
         </button>
+        </div>
       </div>
 
       <div className="mt-5 h-56">
@@ -191,6 +200,7 @@ export function TrendHistoryChart({ slug }: { slug: string }) {
               interval="preserveStartEnd"
             />
             <YAxis hide domain={[0, "auto"]} />
+            <YAxis yAxisId="sentiment" hide domain={[-1, 1]} />
             <Tooltip
               cursor={{ stroke: "#d8dee9", strokeDasharray: "3 3" }}
               content={({ payload }) => {
@@ -202,6 +212,9 @@ export function TrendHistoryChart({ slug }: { slug: string }) {
                       {monthLabel(p.period, true)}
                     </span>
                     : {p.volume} posts · engagement {p.engagement}
+                    {p.sentiment !== null
+                      ? ` · sentiment ${p.sentiment > 0 ? "+" : ""}${Math.round(p.sentiment * 100)}`
+                      : " · sentiment unlabeled"}
                   </div>
                 );
               }}
@@ -212,6 +225,17 @@ export function TrendHistoryChart({ slug }: { slug: string }) {
               stroke={BLUE}
               strokeWidth={1.6}
               fill={`url(#arc-${slug})`}
+              isAnimationActive={false}
+            />
+            <Line
+              yAxisId="sentiment"
+              type="monotone"
+              dataKey="sentiment"
+              stroke="#b77900"
+              strokeWidth={1.4}
+              strokeDasharray="4 3"
+              dot={false}
+              connectNulls={false}
               isAnimationActive={false}
             />
             {markers.map((m) => {
@@ -242,6 +266,20 @@ export function TrendHistoryChart({ slug }: { slug: string }) {
             })}
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-faint">
+        <span>{history.total_items} verified posts</span>
+        <span>{history.coverage_months}/12 months observed</span>
+        <span>{history.labeled_items} sentiment-labeled</span>
+        <span>
+          {Object.entries(history.source_counts)
+            .map(([source, count]) => `${source} ${count}`)
+            .join(" · ")}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <i className="inline-block h-px w-4 border-t border-dashed border-[#b77900]" />
+          sentiment
+        </span>
       </div>
 
       <p className="mt-2 text-xs text-faint">
