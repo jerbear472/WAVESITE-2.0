@@ -101,6 +101,20 @@ export async function setTermStatus(
   await insertTermEvent(termId, event, detail);
 }
 
+/** Cache a resolved Wikipedia article title on the term so resolution runs
+ *  once, not daily. Only positive resolutions are persisted — a term with no
+ *  article today may earn one later, and that appearance is itself signal. */
+export async function updateTermWikiTitle(
+  termId: string,
+  wikiTitle: string
+): Promise<void> {
+  const { error } = await client()
+    .from("terms")
+    .update({ wiki_title: wikiTitle, updated_at: new Date().toISOString() })
+    .eq("term_id", termId);
+  if (error) throw new Error(`terms wiki_title update: ${error.message}`);
+}
+
 export async function insertTermEvent(
   termId: string,
   event: "created" | "promoted" | "retired" | "reactivated",

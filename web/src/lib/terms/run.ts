@@ -154,7 +154,7 @@ export async function runTermIngestion(
   // --- 2. BACKFILL — wikipedia seeds baselines for history-poor terms ------
   if (sourceStats.wikipedia?.status === "ok" && wikipediaOf()) {
     try {
-      const backfilled = await backfillWikipedia(terms, obsDate);
+      const backfilled = await backfillWikipedia(obsDate);
       if (backfilled > 0) notes.push(`wikipedia backfill: ${backfilled} terms`);
     } catch (err) {
       notes.push(`wikipedia backfill failed: ${msg(err)}`);
@@ -464,15 +464,18 @@ function wikipediaOf() {
   return ADAPTERS.find((a) => a.source === "wikipedia" && a.backfill);
 }
 
-async function backfillWikipedia(
-  terms: TermRow[],
-  obsDate: string
-): Promise<number> {
+async function backfillWikipedia(obsDate: string): Promise<number> {
   const adapter = wikipediaOf();
   if (!adapter?.backfill) return 0;
   const counts = await getObservationCounts("wikipedia");
-  const needy = terms
+  // Re-read terms: today's collection pass just wrote freshly resolved
+  // wiki_titles, and those terms — the ones with a real article — are the
+  // only ones a backfill can actually fill. They go first; unresolved terms
+  // use any remaining slots to attempt resolution.
+  const fresh = await getActiveTerms();
+  const needy = fresh
     .filter((t) => (counts.get(t.term_id) ?? 0) < 40)
+    .sort((a, b) => Number(Boolean(b.wiki_title)) - Number(Boolean(a.wiki_title)))
     .slice(0, BACKFILL_TERMS_PER_RUN);
   const from = new Date(
     Date.parse(`${obsDate}T00:00:00Z`) - BACKFILL_DAYS * 86_400_000
