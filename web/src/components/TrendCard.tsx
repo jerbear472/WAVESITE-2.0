@@ -4,6 +4,7 @@ import { ArrowRight, ExternalLink, Target } from "lucide-react";
 import type { Trend } from "@/types";
 import { Card } from "@/components/ui/card";
 import { WaveScoreChip } from "@/components/WaveScore";
+import { TrendSparkline } from "@/components/TrendSparkline";
 import { computeHarmony, harmonyTier, HARMONY_TIERS } from "@/lib/harmony";
 import { heroImageForTrend } from "@/lib/trend-images";
 import { cn } from "@/lib/utils";
@@ -78,12 +79,17 @@ export function TrendCard({
         className="relative block h-40 overflow-hidden bg-surface-2"
       >
         <Image
-          src={heroImageForTrend(trend)}
+          src={trend.hero_image_url || heroImageForTrend(trend)}
           alt=""
           fill
           sizes="(max-width: 640px) 100vw, 33vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
+        {trend.hero_image_url ? (
+          <span className="absolute bottom-2 right-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+            real post
+          </span>
+        ) : null}
       </Link>
 
       <div className="flex items-start justify-between gap-4 p-5 pb-4">
@@ -103,6 +109,9 @@ export function TrendCard({
       <p className="line-clamp-2 px-5 text-sm leading-relaxed text-muted-foreground">
         {trend.one_line_summary}
       </p>
+
+      {/* Measured 12-month arc — real posts, real engagement, real dates. */}
+      <TrendSparkline slug={trend.slug} />
 
       {trend.sources?.length ? (
         <div className="flex flex-wrap gap-x-3 gap-y-1 px-5 pt-2">

@@ -97,6 +97,8 @@ export function TimelineBoard() {
         ) : null}
       </div>
 
+      <DetectedStrip />
+
       {data.movers.length === 0 ? (
         <div className="rounded-xl border border-border bg-card px-5 py-8 text-center text-sm text-muted-foreground">
           No measured signal yet. Run the pipeline (POST /api/pipeline/run) to
@@ -158,6 +160,71 @@ export function TimelineBoard() {
   );
 }
 
+interface DetectedCluster {
+  id: string;
+  phrases: string[];
+  item_count: number;
+  author_count: number;
+  container_count: number;
+  novelty: number | null;
+  status: "new" | "named" | "dismissed";
+  trend_id: string | null;
+  trend_name: string | null;
+  detected_at?: string;
+}
+
+/** What the sweep found — trends being born, with their real numbers. */
+function DetectedStrip() {
+  const [clusters, setClusters] = useState<DetectedCluster[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/pipeline/clusters")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setClusters(d?.clusters ?? []))
+      .catch(() => setClusters([]));
+  }, []);
+
+  const visible = (clusters ?? []).filter((c) => c.status !== "dismissed");
+  if (!clusters || visible.length === 0) return null;
+
+  return (
+    <section className="rounded-xl border border-primary/25 bg-primary/[0.03] px-5 py-4">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-primary-strong">
+        Detected by the sweep — trends being born
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {visible.map((c) => (
+          <span
+            key={c.id}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs"
+            title={`phrases: ${c.phrases.join(", ")}`}
+          >
+            <span className="font-semibold">
+              {c.trend_name ?? c.phrases[0]}
+            </span>
+            <span className="text-muted-foreground">
+              {c.item_count} posts · {c.author_count} authors ·{" "}
+              {c.container_count} venues
+              {c.novelty ? ` · ${Math.round(c.novelty)}× normal` : ""}
+            </span>
+            {c.status === "named" ? (
+              <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-semibold text-success">
+                NAMED
+              </span>
+            ) : (
+              <span className="rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
+                CANDIDATE
+              </span>
+            )}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const NEW_TREND_MS = 7 * 86_400_000;
+
 function MoverCard({
   mover,
   expanded,
@@ -202,8 +269,14 @@ function MoverCard({
             <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-faint">
               {mover.trend.category}
             </p>
-            <h3 className="mt-0.5 truncate font-display text-lg leading-tight">
+            <h3 className="mt-0.5 flex items-center gap-2 truncate font-display text-lg leading-tight">
               {mover.trend.name}
+              {mover.trend.origin === "detected" &&
+              Date.now() - Date.parse(mover.trend.created_at) < NEW_TREND_MS ? (
+                <span className="rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-success">
+                  NEW
+                </span>
+              ) : null}
             </h3>
           </div>
           <div className="flex shrink-0 items-center gap-2">

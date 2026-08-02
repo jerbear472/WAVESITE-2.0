@@ -2,7 +2,7 @@
 // pipeline publishes must be recomputable from stored RawItems alone.
 
 export type ItemSource = "reddit" | "youtube";
-export type CorpusKind = "trend" | "baseline";
+export type CorpusKind = "trend" | "baseline" | "sweep";
 
 export interface RawItem {
   id: string;

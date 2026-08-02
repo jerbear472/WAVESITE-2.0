@@ -1,0 +1,324 @@
+import { getTrends } from "@/lib/data";
+import type { RawItem } from "@/lib/pipeline/types";
+import {
+  isRedditConfigured,
+  searchRedditHistory,
+} from "@/lib/pipeline/connectors/reddit";
+import {
+  isYouTubeConfigured,
+  searchYouTubeWindow,
+} from "@/lib/pipeline/connectors/youtube";
+import { fuzzyMatch, trendTerms } from "@/lib/pipeline/resolve";
+import { dedupeItems, normalizeText } from "@/lib/pipeline/dedup";
+import { bestImageFor } from "@/lib/pipeline/media";
+import * as store from "@/lib/pipeline/store";
+
+// The history bot. For one trend it walks BACK in time across Reddit and
+// YouTube, collects the era's biggest posts with their true publish dates and
+// engagement, and persists them into the same append-only corpus everything
+// else reads. One pass turns a trend card's empty chart into a 12-month
+// rise-and-fall curve. Items only link to the trend if they actually match
+// it (fuzzy gate) — a loose search hit is corpus, not evidence.
+
+const DAY_MS = 86_400_000;
+/** Quarterly windows keep the youtube quota bill at ~4 searches per trend. */
+const YT_QUARTERS = 4;
+
+export interface BackfillReport {
+  trend_id: string;
+  collected: number;
+  new_items: number;
+  linked: number;
+  span_days: number;
+}
+
+export async function runTrendBackfill(
+  slug: string,
+  opts: { includeYouTube?: boolean } = {}
+): Promise<BackfillReport> {
+  const includeYouTube = opts.includeYouTube ?? true;
+  const trends = await getTrends();
+  const trend = trends.find((t) => t.slug === slug);
+  if (!trend) throw new Error(`No trend with slug "${slug}"`);
+
+  const now = Date.now();
+  const capturedAt = new Date(now).toISOString();
+  const collected: RawItem[] = [];
+
+  if (isRedditConfigured()) {
+    try {
+      collected.push(...(await searchRedditHistory(trend.name, capturedAt)));
+    } catch (err) {
+      console.error(`[backfill] reddit history "${trend.name}" failed:`, err);
+    }
+  }
+  if (includeYouTube && isYouTubeConfigured()) {
+    const quarterMs = (365 / YT_QUARTERS) * DAY_MS;
+    for (let q = 0; q < YT_QUARTERS; q++) {
+      const before = new Date(now - q * quarterMs).toISOString();
+      const after = new Date(now - (q + 1) * quarterMs).toISOString();
+      try {
+        collected.push(
+          ...(await searchYouTubeWindow(trend.name, after, before, capturedAt))
+        );
+      } catch (err) {
+        console.error(
+          `[backfill] youtube window ${q} "${trend.name}" failed:`,
+          err
+        );
+        break; // quota errors will repeat — stop burning calls
+      }
+    }
+  }
+
+  const unique = [...new Map(collected.map((i) => [i.id, i])).values()];
+  const newItems = await store.insertRawItems(unique);
+
+  // Link only items that genuinely match the trend — search results are a
+  // net, the fuzzy gate is the sieve.
+  const links = unique
+    .filter((item) => {
+      const matches = fuzzyMatch(item, [trend]);
+      return matches.length > 0 && matches[0].confidence >= 0.5;
+    })
+    .map((item) => ({
+      item_id: item.id,
+      trend_id: trend.id,
+      matched_by: "fuzzy" as const,
+      confidence: 0.7,
+    }));
+  await store.upsertLinks(links);
+
+  // The trend's card should show its real content: highest-engagement linked
+  // item with renderable media becomes the hero image.
+  const linkedItems = links
+    .map((l) => unique.find((i) => i.id === l.item_id))
+    .filter((i): i is RawItem => Boolean(i));
+  const hero = bestImageFor(linkedItems);
+  if (hero) {
+    try {
+      await store.setTrendHeroImage(trend.id, hero);
+    } catch (err) {
+      console.error(`[backfill] hero image update failed:`, err);
+    }
+  }
+
+  const linkedTimes = linkedItems.map((i) => Date.parse(i.posted_at));
+  const spanDays =
+    linkedTimes.length >= 2
+      ? Math.round((Math.max(...linkedTimes) - Math.min(...linkedTimes)) / DAY_MS)
+      : 0;
+
+  return {
+    trend_id: trend.id,
+    collected: unique.length,
+    new_items: newItems,
+    linked: links.length,
+    span_days: spanDays,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// History series — what the trend-card chart renders. Monthly buckets of
+// deduplicated volume and log-scaled engagement (log so one viral post reads
+// as a strong month, not as the only month).
+// ---------------------------------------------------------------------------
+
+export interface HistoryBucket {
+  /** YYYY-MM */
+  period: string;
+  volume: number;
+  /** Σ log10(1 + engagement) over the bucket's items, rounded. */
+  engagement: number;
+}
+
+/** The real post that grounds a chart marker — title, link, true numbers. */
+export interface EvidenceRef {
+  title: string | null;
+  url: string;
+  source: "reddit" | "youtube";
+  container: string | null;
+  posted_at: string;
+  engagement: Record<string, number> | null;
+}
+
+/**
+ * A notable point on the arc. Peaks are the months the trend crested;
+ * troughs are the quiet valleys between crests. Each carries the month's
+ * highest-engagement item so the shape of the line is checkable against a
+ * real post, not just claimed.
+ */
+export interface HistoryMarker {
+  period: string;
+  kind: "peak" | "trough";
+  engagement: number;
+  volume: number;
+  evidence: EvidenceRef | null;
+}
+
+export interface TrendHistory {
+  trend_id: string;
+  slug: string;
+  months: HistoryBucket[];
+  markers: HistoryMarker[];
+  total_items: number;
+}
+
+function rawEngagement(item: RawItem): number {
+  const e = item.engagement ?? {};
+  return (
+    (e["views"] ?? 0) + (e["score"] ?? 0) * 50 + (e["likes"] ?? 0) * 10 +
+    (e["comments"] ?? 0) * 20
+  );
+}
+
+export async function buildTrendHistories(
+  months = 12
+): Promise<TrendHistory[]> {
+  const now = Date.now();
+  const start = new Date(now - months * 30.5 * DAY_MS).toISOString();
+  const end = new Date(now).toISOString();
+
+  const [trends, targeted, swept, links] = await Promise.all([
+    getTrends(),
+    store.getItemsInWindow("trend", start, end),
+    store.getItemsInWindow("sweep", start, end),
+    store.getLinks(),
+  ]);
+  const itemsById = new Map(
+    [...targeted, ...swept].map((i) => [i.id, i])
+  );
+  const byTrend = new Map<string, RawItem[]>();
+  for (const link of links) {
+    const item = itemsById.get(link.item_id);
+    if (!item) continue;
+    const list = byTrend.get(link.trend_id) ?? [];
+    list.push(item);
+    byTrend.set(link.trend_id, list);
+  }
+
+  // Shared month axis, oldest -> current.
+  const periods: string[] = [];
+  for (let m = months - 1; m >= 0; m--) {
+    const d = new Date(now);
+    d.setUTCMonth(d.getUTCMonth() - m);
+    periods.push(d.toISOString().slice(0, 7));
+  }
+
+  const out: TrendHistory[] = [];
+  for (const trend of trends) {
+    const { canonical } = dedupeItems(byTrend.get(trend.id) ?? []);
+    if (canonical.length === 0) continue;
+    const buckets = new Map<string, { volume: number; engagement: number }>();
+    const topByPeriod = new Map<string, RawItem>();
+    for (const item of canonical) {
+      const period = item.posted_at.slice(0, 7);
+      const b = buckets.get(period) ?? { volume: 0, engagement: 0 };
+      b.volume++;
+      b.engagement += Math.log10(1 + rawEngagement(item));
+      buckets.set(period, b);
+      const top = topByPeriod.get(period);
+      if (!top || rawEngagement(item) > rawEngagement(top)) {
+        topByPeriod.set(period, item);
+      }
+    }
+    const months = periods.map((period) => ({
+      period,
+      volume: buckets.get(period)?.volume ?? 0,
+      engagement: Math.round((buckets.get(period)?.engagement ?? 0) * 10) / 10,
+    }));
+    out.push({
+      trend_id: trend.id,
+      slug: trend.slug,
+      total_items: canonical.length,
+      months,
+      markers: findMarkers(months, topByPeriod),
+    });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Marker detection — where the arc crested and where it went quiet. Pure and
+// deterministic: same buckets in, same markers out.
+// ---------------------------------------------------------------------------
+
+const MAX_PEAKS = 2;
+/** A valley only counts if it dips to <= 60% of the smaller flanking crest —
+ *  shallower wobbles are noise, not story beats. */
+const TROUGH_RATIO = 0.6;
+
+function toEvidence(item: RawItem | undefined): EvidenceRef | null {
+  if (!item) return null;
+  return {
+    title: item.title,
+    url: item.source_url,
+    source: item.source,
+    container: item.container,
+    posted_at: item.posted_at,
+    engagement: item.engagement,
+  };
+}
+
+function findMarkers(
+  months: HistoryBucket[],
+  topByPeriod: Map<string, RawItem>
+): HistoryMarker[] {
+  const eng = months.map((m) => m.engagement);
+  const dataIdx = months.flatMap((m, i) => (m.volume > 0 ? [i] : []));
+  if (dataIdx.length < 2) return [];
+
+  // Local maxima (plateau-tolerant: >= both neighbors, > 0).
+  const candidates = dataIdx.filter((i) => {
+    const left = eng[i - 1] ?? 0;
+    const right = eng[i + 1] ?? 0;
+    return eng[i] > 0 && eng[i] >= left && eng[i] >= right;
+  });
+  // Greedy top-N by height, at least two months apart so twin peaks on
+  // adjacent months don't both claim a marker.
+  const peaks: number[] = [];
+  for (const i of [...candidates].sort((a, b) => eng[b] - eng[a])) {
+    if (peaks.every((p) => Math.abs(p - i) >= 2)) peaks.push(i);
+    if (peaks.length >= MAX_PEAKS) break;
+  }
+  peaks.sort((a, b) => a - b);
+
+  // Troughs: the deepest month strictly between consecutive peaks, and the
+  // valley after the last peak when the trend has visibly cooled since.
+  const troughs: number[] = [];
+  const spans: Array<[number, number]> = [];
+  for (let s = 0; s < peaks.length - 1; s++) spans.push([peaks[s], peaks[s + 1]]);
+  const lastData = dataIdx[dataIdx.length - 1];
+  if (peaks.length > 0 && lastData > peaks[peaks.length - 1] + 1) {
+    spans.push([peaks[peaks.length - 1], lastData]);
+  }
+  for (const [a, b] of spans) {
+    let low = -1;
+    for (let i = a + 1; i < b; i++) {
+      if (low === -1 || eng[i] < eng[low]) low = i;
+    }
+    if (low === -1) continue;
+    const flank = Math.min(eng[a], eng[b]);
+    if (flank > 0 && eng[low] <= flank * TROUGH_RATIO) troughs.push(low);
+  }
+
+  return [
+    ...peaks.map((i) => ({ kind: "peak" as const, i })),
+    ...troughs.map((i) => ({ kind: "trough" as const, i })),
+  ]
+    .sort((a, b) => a.i - b.i)
+    .map(({ kind, i }) => ({
+      period: months[i].period,
+      kind,
+      engagement: months[i].engagement,
+      volume: months[i].volume,
+      evidence: toEvidence(topByPeriod.get(months[i].period)),
+    }));
+}
+
+/** Terms sanity check used by the API layer (avoids backfilling ghosts of
+ *  one-word names like "Look" that would net the whole internet). */
+export function isBackfillableName(name: string): boolean {
+  return normalizeText(name).split(" ").filter(Boolean).length >= 2 ||
+    trendTerms({ name, slug: "" }).length > 1;
+}

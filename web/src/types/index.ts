@@ -123,8 +123,11 @@ export interface Trend {
   sample_hooks?: string[];
   /** Live links backing this trend — populated by deep scans. */
   sources?: TrendSource[];
+  /** Highest-engagement corpus media (YouTube thumbnail / Reddit image) —
+   *  the trend's actual content. Set by the pipeline; null = stock fallback. */
+  hero_image_url?: string | null;
   /** How this trend entered the library (absent on pre-pulse records = seed). */
-  origin?: "seed" | "pulse" | "import" | "scan";
+  origin?: "seed" | "pulse" | "import" | "scan" | "detected";
   created_at: string;
   updated_at: string;
 }

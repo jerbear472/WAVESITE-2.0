@@ -5,7 +5,7 @@
       "schedule": "0 13 * * *"
     },
     {
-      "path": "/api/pulse/cron",
+      "path": "/api/terms/run",
       "schedule": "0 12 * * *"
     }
   ]

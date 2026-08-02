@@ -112,11 +112,57 @@ export async function searchYouTubeItems(
     publishedAfter: publishedAfterIso,
     maxResults: String(Math.min(limit, 50)),
   });
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const ids = (data.items ?? [])
-    .map((i: any) => i.id?.videoId)
+    .map((i: { id?: { videoId?: string } }) => i.id?.videoId)
     .filter(Boolean) as string[];
   return hydrateVideos(ids, "trend", term, capturedAt);
+}
+
+/**
+ * Historical search inside a time window — the backfill bot's youtube leg.
+ * order=viewCount inside [after, before) surfaces the window's biggest
+ * videos. Each call costs ~100 quota units; callers budget accordingly.
+ */
+export async function searchYouTubeWindow(
+  term: string,
+  publishedAfterIso: string,
+  publishedBeforeIso: string,
+  capturedAt: string,
+  limit = 25
+): Promise<RawItem[]> {
+  const data = await ytGet("search", {
+    part: "id",
+    q: term,
+    type: "video",
+    order: "viewCount",
+    publishedAfter: publishedAfterIso,
+    publishedBefore: publishedBeforeIso,
+    maxResults: String(Math.min(limit, 50)),
+  });
+  const ids = (data.items ?? [])
+    .map((i: { id?: { videoId?: string } }) => i.id?.videoId)
+    .filter(Boolean) as string[];
+  return hydrateVideos(ids, "trend", term, capturedAt);
+}
+
+/**
+ * Sweep one trending category (mostPopular + videoCategoryId) — the
+ * discovery firehose. Cheap: ~2 units per category.
+ */
+export async function sweepYouTubeCategory(
+  categoryId: string,
+  capturedAt: string
+): Promise<RawItem[]> {
+  const data = await ytGet("videos", {
+    part: "id",
+    chart: "mostPopular",
+    regionCode: "US",
+    videoCategoryId: categoryId,
+    maxResults: "50",
+  });
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const ids = (data.items ?? []).map((i: any) => i.id).filter(Boolean) as string[];
+  return hydrateVideos(ids, "sweep", `yt-cat-${categoryId}`, capturedAt);
 }
 
 /**

@@ -214,13 +214,21 @@ export async function getTrends(filters: TrendFilters = {}): Promise<Trend[]> {
 export async function getTrendBySlug(
   slug: string
 ): Promise<TrendWithSignals | null> {
-  const trend = store.trends.find((t) => t.slug === slug);
+  // Memory first (covers seeds and this process's fresh writes), then
+  // Supabase — pipeline-discovered trends live only in the database, and
+  // missing this branch made every one of them 404 from the radar.
+  const trend =
+    store.trends.find((t) => t.slug === slug) ??
+    (await trySupabaseTrend("slug", slug));
   if (!trend) return null;
   return { ...trend, signals: getSignalsForTrendId(trend.id) };
 }
 
 export async function getTrendById(id: string): Promise<Trend | null> {
-  return store.trends.find((t) => t.id === id) ?? null;
+  return (
+    store.trends.find((t) => t.id === id) ??
+    (await trySupabaseTrend("id", id))
+  );
 }
 
 export function getSignalsForTrendId(trendId: string): Signal[] {
@@ -302,7 +310,9 @@ export interface DashboardStats {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const trends = store.trends;
+  // Derived from getTrends() so the stat tiles count the same trends the
+  // radar list renders (Supabase when configured, seeds otherwise).
+  const trends = await getTrends();
   return {
     totalTrends: trends.length,
     risingWaves: trends.filter(
@@ -326,8 +336,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 /** Distinct filter option values derived from the current dataset. */
 export async function getFilterOptions() {
-  const categories = unique(store.trends.map((t) => t.category));
-  const platforms = unique(store.trends.flatMap((t) => t.best_platforms));
+  const trends = await getTrends();
+  const categories = unique(trends.map((t) => t.category));
+  const platforms = unique(trends.flatMap((t) => t.best_platforms));
   return { categories, platforms };
 }
 
@@ -716,6 +727,28 @@ async function trySupabaseTrends(): Promise<Trend[] | null> {
     const { data, error } = await client.from("trends").select("*");
     if (error || !data || data.length === 0) return null;
     return data as Trend[];
+  } catch {
+    return null;
+  }
+}
+
+/** Single-trend Supabase lookup by slug or id, same defensive posture. */
+async function trySupabaseTrend(
+  column: "slug" | "id",
+  value: string
+): Promise<Trend | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const { getSupabaseClient } = await import("@/lib/supabase");
+    const client = getSupabaseClient();
+    if (!client) return null;
+    const { data, error } = await client
+      .from("trends")
+      .select("*")
+      .eq(column, value)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data as Trend;
   } catch {
     return null;
   }

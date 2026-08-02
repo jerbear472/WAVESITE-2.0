@@ -23,6 +23,7 @@ import { WaveScore } from "@/components/WaveScore";
 import { ScoreBar } from "@/components/ScoreBar";
 import { SignalCard } from "@/components/SignalCard";
 import { SaveTrendButton } from "@/components/SaveTrendButton";
+import { TrendHistoryChart } from "@/components/TrendHistoryChart";
 import {
   lifecycleBadge,
   riskBadge,
@@ -141,6 +142,11 @@ export default async function TrendDetailPage({
       <p className="mt-2.5 flex items-center gap-1.5 text-xs text-faint">
         <Camera className="size-3.5" /> Visual references for the {trend.category.toLowerCase()} wave
       </p>
+
+      {/* Measured history — the arc with its receipts */}
+      <div className="mt-10">
+        <TrendHistoryChart slug={trend.slug} />
+      </div>
 
       {/* Analytical body — 68 / 32 */}
       <div className="mt-12 grid items-start gap-6 lg:grid-cols-[68fr_32fr]">

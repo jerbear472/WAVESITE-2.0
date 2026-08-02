@@ -417,6 +417,14 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
     } catch (err) {
       console.error("[deep-scan] evidence capture failed:", err);
     }
+    // Scan discoveries arrive with measured history + a real hero image —
+    // reddit-only backfill (cheap); failures never sink the scan.
+    try {
+      const { runTrendBackfill } = await import("@/lib/pipeline/backfill");
+      await runTrendBackfill(trend.slug, { includeYouTube: false });
+    } catch (err) {
+      console.error("[deep-scan] auto-backfill failed:", err);
+    }
     stored.push(trend);
   }
 

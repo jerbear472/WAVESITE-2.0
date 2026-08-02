@@ -34,17 +34,31 @@ interface GenerateOptions<T> {
   maxTokens?: number;
 }
 
+export interface AIUsage {
+  input_tokens: number;
+  output_tokens: number;
+}
+
 /**
  * Ask Claude for a single JSON object and validate it against a Zod schema.
  * Throws AINotConfiguredError when no key is present so callers can fall back
  * to mock mode.
  */
-export async function generateStructured<T>({
+export async function generateStructured<T>(opts: GenerateOptions<T>): Promise<T> {
+  const { data } = await generateStructuredWithUsage(opts);
+  return data;
+}
+
+/**
+ * Same as generateStructured, but also returns token usage so callers with a
+ * spend ceiling (the term signals run) can meter every call.
+ */
+export async function generateStructuredWithUsage<T>({
   system,
   prompt,
   schema,
   maxTokens = 2000,
-}: GenerateOptions<T>): Promise<T> {
+}: GenerateOptions<T>): Promise<{ data: T; usage: AIUsage }> {
   const anthropic = getClient();
 
   // Cast keeps us forward-compatible with adaptive thinking even on SDK
@@ -68,7 +82,13 @@ export async function generateStructured<T>({
     .trim();
 
   const json = extractJson(text);
-  return schema.parse(json);
+  return {
+    data: schema.parse(json),
+    usage: {
+      input_tokens: response.usage?.input_tokens ?? 0,
+      output_tokens: response.usage?.output_tokens ?? 0,
+    },
+  };
 }
 
 /** Pull the first JSON object out of a model response, tolerating stray fences. */

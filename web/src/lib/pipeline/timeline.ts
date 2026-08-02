@@ -32,7 +32,10 @@ export interface ForecastMarker {
 }
 
 export interface TrendTimeline {
-  trend: Pick<Trend, "id" | "name" | "slug" | "category" | "one_line_summary">;
+  trend: Pick<
+    Trend,
+    "id" | "name" | "slug" | "category" | "one_line_summary" | "origin" | "created_at"
+  >;
   days: TimelineDay[];
   totals: { volume: number; unique_authors: number; sentiment_net: number | null };
   /** Velocity percentile from the latest measured run (null = not measured). */
@@ -63,13 +66,17 @@ export async function buildTimelines(
   const windowEnd = new Date(now).toISOString();
   const windowStart = new Date(now - windowDays * DAY_MS).toISOString();
 
-  const [trends, items, links, annotations, runId] = await Promise.all([
+  const [trends, targeted, swept, links, annotations, runId] = await Promise.all([
     getTrends(),
     store.getItemsInWindow("trend", windowStart, windowEnd),
+    store.getItemsInWindow("sweep", windowStart, windowEnd),
     store.getLinks(),
     store.getAnnotations(),
     store.getLatestMetricsRun(),
   ]);
+  const items = [
+    ...new Map([...targeted, ...swept].map((i) => [i.id, i])).values(),
+  ];
   const metricsRows = runId ? await store.getMetricsForRun(runId) : [];
   const metricsByTrend = new Map(metricsRows.map((r) => [r.trend_id, r]));
   const forecastsByTrend = await store.getForecastsForTrends(
@@ -129,6 +136,8 @@ export async function buildTimelines(
         slug: trend.slug,
         category: trend.category,
         one_line_summary: trend.one_line_summary,
+        origin: trend.origin,
+        created_at: trend.created_at,
       },
       days,
       totals: {

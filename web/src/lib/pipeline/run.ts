@@ -27,6 +27,9 @@ import {
   normalizeAgainstHistory,
 } from "@/lib/pipeline/normalize";
 import { DEFAULT_STATE_BANDS, assignState, type StateBands } from "@/lib/pipeline/states";
+import { runSweep } from "@/lib/pipeline/sweep";
+import { bestImageFor } from "@/lib/pipeline/media";
+import { detectAndName, type DetectionReport } from "@/lib/pipeline/detect";
 import * as store from "@/lib/pipeline/store";
 
 // The measured pulse — collection separated from scoring.
@@ -48,7 +51,11 @@ export interface MeasuredRunReport {
   run_id: string;
   window_start: string;
   window_end: string;
+  sweep: { items: number; reddit_venues: number; youtube_categories: number };
+  detection: DetectionReport;
   collected: { reddit: number; youtube: number; baseline: number; new_items: number };
+  /** Trends skipped by targeted collection (no organic volume, not new). */
+  ghosts_skipped: number;
   linked_items: number;
   classified: number;
   trends_measured: number;
@@ -66,14 +73,51 @@ export async function runMeasuredPulse(
   const windowStart = new Date(now.getTime() - windowDays * DAY_MS).toISOString();
   const runId = `mrun-${now.getTime()}`;
 
+  // -- 0. SWEEP + DETECT -------------------------------------------------
+  // The firehose first: broad venue sweep, then bottom-up detection names
+  // what is spiking BEFORE targeted collection — so a trend born this run
+  // is measured this run.
+  const sweep = await runSweep(nowIso);
+  await store.insertRawItems(sweep.items);
+
+  let detection: DetectionReport = {
+    clusters_found: 0,
+    trends_created: [],
+    dismissed: 0,
+  };
+  try {
+    detection = await detectAndName({
+      runId,
+      windowEndIso: nowIso,
+      knownTrends: (await getTrends()).map((t) => ({ id: t.id, name: t.name })),
+    });
+  } catch (err) {
+    console.error("[pipeline] detection failed — continuing without it:", err);
+  }
+
   const trends = (await getTrends()) as Trend[];
 
   // -- 1. COLLECT --------------------------------------------------------
+  // Targeted collection deepens coverage of trends that exist. Ghosts —
+  // no organic volume last run and not recently born — get no queries;
+  // quota goes to reality. (First run: no prior metrics, collect for all.)
+  const lastRunId = await store.getLatestMetricsRun();
+  const prevMetrics = lastRunId ? await store.getMetricsForRun(lastRunId) : [];
+  const activeIds = new Set(
+    prevMetrics.filter((r) => r.raw.volume > 0).map((r) => r.trend_id)
+  );
+  const isFreshTrend = (t: Trend) =>
+    Date.parse(t.created_at) > now.getTime() - 14 * DAY_MS;
+  const collectFor = trends.filter(
+    (t) => prevMetrics.length === 0 || activeIds.has(t.id) || isFreshTrend(t)
+  );
+  const ghostsSkipped = trends.length - collectFor.length;
+
   const collectedItems: RawItem[] = [];
   let redditCount = 0;
   let youtubeCount = 0;
 
-  for (const trend of trends) {
+  for (const trend of collectFor) {
     const term = trend.name;
     if (isRedditConfigured()) {
       try {
@@ -119,9 +163,17 @@ export async function runMeasuredPulse(
   ]);
 
   // -- Scoring reads from the corpus, not from what this run happened to
-  // fetch: the window may include items captured by earlier runs.
-  const corpusTrendItems = await store.getItemsInWindow("trend", windowStart, nowIso);
-  const corpusBaseline = await store.getItemsInWindow("baseline", windowStart, nowIso);
+  // fetch: the window may include items captured by earlier runs. Sweep
+  // items count as evidence too — an organic firehose mention of a trend is
+  // worth more than a query hit, not less.
+  const [targeted, sweptWindow, corpusBaseline] = await Promise.all([
+    store.getItemsInWindow("trend", windowStart, nowIso),
+    store.getItemsInWindow("sweep", windowStart, nowIso),
+    store.getItemsInWindow("baseline", windowStart, nowIso),
+  ]);
+  const corpusTrendItems = [
+    ...new Map([...targeted, ...sweptWindow].map((i) => [i.id, i])).values(),
+  ];
 
   // -- 2. RESOLVE --------------------------------------------------------
   const links = await resolveItems(corpusTrendItems, trends);
@@ -236,6 +288,22 @@ export async function runMeasuredPulse(
     )
   );
 
+  // -- 6.5 REAL IMAGERY --------------------------------------------------
+  // Refresh each measured trend's hero image from its best corpus media so
+  // cards show actual trend content, not stock art. Best-effort.
+  for (const trend of trends) {
+    const items = itemsByTrend.get(trend.id) ?? [];
+    if (items.length === 0) continue;
+    const hero = bestImageFor(items);
+    if (hero && hero !== trend.hero_image_url) {
+      try {
+        await store.setTrendHeroImage(trend.id, hero);
+      } catch (err) {
+        console.error(`[pipeline] hero image for ${trend.slug} failed:`, err);
+      }
+    }
+  }
+
   // -- 7. INSTRUMENT -----------------------------------------------------
   const distributions: Record<string, DistributionStats> = {};
   for (const metric of METRIC_NAMES) {
@@ -250,6 +318,13 @@ export async function runMeasuredPulse(
     run_id: runId,
     window_start: windowStart,
     window_end: nowIso,
+    sweep: {
+      items: sweep.items.length,
+      reddit_venues: sweep.reddit_venues,
+      youtube_categories: sweep.youtube_categories,
+    },
+    detection,
+    ghosts_skipped: ghostsSkipped,
     collected: {
       reddit: redditCount,
       youtube: youtubeCount,

@@ -55,7 +55,7 @@ async function fetchAllPages<T>(
 }
 
 export async function getItemsInWindow(
-  corpus: "trend" | "baseline",
+  corpus: "trend" | "baseline" | "sweep",
   windowStartIso: string,
   windowEndIso: string
 ): Promise<RawItem[]> {
@@ -220,6 +220,66 @@ export async function getMetricsForRun(runId: string): Promise<TrendMetricsRow[]
     .eq("run_id", runId);
   if (error) throw new Error(`trend_metrics read: ${error.message}`);
   return (data ?? []) as TrendMetricsRow[];
+}
+
+/** Set a trend's hero image to real corpus media (null clears to stock). */
+export async function setTrendHeroImage(
+  trendId: string,
+  url: string | null
+): Promise<void> {
+  const { error } = await client()
+    .from("trends")
+    .update({ hero_image_url: url })
+    .eq("id", trendId);
+  if (error) throw new Error(`trends hero image update: ${error.message}`);
+}
+
+export interface DetectedClusterRow {
+  id: string;
+  run_id: string | null;
+  phrases: string[];
+  item_ids: string[];
+  item_count: number;
+  author_count: number;
+  container_count: number;
+  novelty: number | null;
+  score: number | null;
+  status: "new" | "named" | "dismissed";
+  trend_id: string | null;
+  detected_at?: string;
+}
+
+export async function insertDetectedClusters(
+  rows: Omit<DetectedClusterRow, "detected_at">[]
+): Promise<void> {
+  if (rows.length === 0) return;
+  const { error } = await client()
+    .from("detected_clusters")
+    .upsert(rows, { onConflict: "id", ignoreDuplicates: true });
+  if (error) throw new Error(`detected_clusters insert: ${error.message}`);
+}
+
+export async function getDetectedClusters(
+  limit = 50
+): Promise<DetectedClusterRow[]> {
+  const { data, error } = await client()
+    .from("detected_clusters")
+    .select("*")
+    .order("detected_at", { ascending: false })
+    .limit(Math.min(limit, PAGE));
+  if (error) throw new Error(`detected_clusters read: ${error.message}`);
+  return (data ?? []) as DetectedClusterRow[];
+}
+
+export async function updateClusterStatus(
+  id: string,
+  status: "dismissed" | "new"
+): Promise<void> {
+  const { error } = await client()
+    .from("detected_clusters")
+    .update({ status })
+    .eq("id", id);
+  if (error) throw new Error(`detected_clusters update: ${error.message}`);
 }
 
 export async function getForecastsForTrends(

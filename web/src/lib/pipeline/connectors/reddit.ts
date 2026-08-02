@@ -108,6 +108,52 @@ export async function searchRedditItems(
 }
 
 /**
+ * Historical top posts for a term — the backfill bot's reddit leg. Reddit
+ * search can look back: top-of-year and top-of-all-time both return posts
+ * with their true created_utc, so one pass yields a multi-month series.
+ */
+export async function searchRedditHistory(
+  term: string,
+  capturedAt: string
+): Promise<RawItem[]> {
+  const q = encodeURIComponent(term);
+  const [year, all] = await Promise.all([
+    redditGet(`/search?q=${q}&sort=top&t=year&limit=100`),
+    redditGet(`/search?q=${q}&sort=top&t=all&limit=100`),
+  ]);
+  const posts = [
+    ...(year?.data?.children ?? []),
+    ...(all?.data?.children ?? []),
+  ].map((c) => c.data);
+  const items = posts
+    .map((p) => toItem(p, "trend", term, capturedAt))
+    .filter((i): i is RawItem => i !== null);
+  return [...new Map(items.map((i) => [i.id, i])).values()];
+}
+
+/**
+ * Sweep one subreddit's hot + rising listings — the discovery firehose.
+ * No query, no trend filter; the detector decides what matters.
+ */
+export async function sweepSubreddit(
+  subreddit: string,
+  capturedAt: string
+): Promise<RawItem[]> {
+  const [hot, rising] = await Promise.all([
+    redditGet(`/r/${subreddit}/hot?limit=50`),
+    redditGet(`/r/${subreddit}/rising?limit=25`),
+  ]);
+  const posts = [
+    ...(hot?.data?.children ?? []),
+    ...(rising?.data?.children ?? []),
+  ].map((c) => c.data);
+  const items = posts
+    .map((p) => toItem(p, "sweep", `r/${subreddit}`, capturedAt))
+    .filter((i): i is RawItem => i !== null);
+  return [...new Map(items.map((i) => [i.id, i])).values()];
+}
+
+/**
  * Baseline sample: r/all newest — content with NO trend filtering. This is
  * the control corpus every lift number is expressed against.
  */
