@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { WaveScoreChip } from "@/components/WaveScore";
 import { TrendSparkline } from "@/components/TrendSparkline";
 import { TrendVisual } from "@/components/TrendVisual";
+import { TrendDecisionStrip } from "@/components/TrendDecisionStrip";
 import { computeHarmony, harmonyTier, HARMONY_TIERS } from "@/lib/harmony";
 import { provenanceColors, provenanceForTrend } from "@/lib/provenance";
 import { cn } from "@/lib/utils";
@@ -100,6 +101,8 @@ export function TrendCard({
       <p className="line-clamp-2 px-5 text-sm leading-relaxed text-muted-foreground">
         {trend.one_line_summary}
       </p>
+
+      <TrendDecisionStrip trend={trend} />
 
       {/* Photo header cards still show the measured arc; trajectory-header
           cards already carry it up top. */}
