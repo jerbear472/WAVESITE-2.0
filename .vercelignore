@@ -1,6 +1,8 @@
 # Only web/ deploys to Vercel (project rootDirectory = web).
-mobile
-docs
-supabase
-*.png
+# Patterns are root-anchored — a bare "*.png" would also strip web/public
+# assets (logo etc.) from the build, which is exactly how the logo 404'd.
+/mobile
+/docs
+/supabase
+/*.png
 .DS_Store

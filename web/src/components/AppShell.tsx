@@ -25,14 +25,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-5 sm:px-8">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2.5">
-              <Image
-                src="/wavesight-mark-open.png"
-                alt="WaveSight"
-                width={36}
-                height={36}
-                className="size-9 shrink-0"
-                priority
-              />
+              {/* Navy chip: the ribbon mark is lit for the dark panel. */}
+              <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-[#111A2C]">
+                <Image
+                  src="/wavesight-mark-open.png"
+                  alt="WaveSight"
+                  width={26}
+                  height={26}
+                  className="size-[26px]"
+                  priority
+                />
+              </span>
               <span className="font-display wordmark text-[22px]">
                 Wave<span className="text-gradient">Sight</span>
               </span>

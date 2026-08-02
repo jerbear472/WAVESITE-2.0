@@ -42,14 +42,18 @@ export default function LandingPage() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <div className="flex items-center gap-2.5">
-          <Image
-            src="/wavesight-mark-open.png"
-            alt="WaveSight"
-            width={32}
-            height={32}
-            className="size-8"
-            priority
-          />
+          {/* The ribbon mark is lit for the navy panel — it needs that dark
+              surface behind it to read on the light theme. */}
+          <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-[#111A2C]">
+            <Image
+              src="/wavesight-mark-open.png"
+              alt="WaveSight"
+              width={26}
+              height={26}
+              className="size-[26px]"
+              priority
+            />
+          </span>
           <span className="font-display wordmark text-lg">
             Wave<span className="text-gradient">Sight</span>
           </span>
