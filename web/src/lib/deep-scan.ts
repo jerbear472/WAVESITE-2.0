@@ -404,32 +404,11 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
     scanned: progress.signals,
   });
 
-  // Fold discoveries into the library so the dashboard/pulse field sees them.
-  // Output-boundary hook: each trend's cited sources are retained as
-  // append-only trend_evidence, so every score stays traceable to the items
-  // that produced it ("says who"). Capped at EVIDENCE_CAP per trend per scan.
-  const stored: Trend[] = [];
-  for (const d of trends) {
-    const trend = toTrend(d);
-    await upsertTrendBySlug(trend);
-    try {
-      await recordEvidence(evidenceFromSources(trend.id, d));
-    } catch (err) {
-      console.error("[deep-scan] evidence capture failed:", err);
-    }
-    // Scan discoveries arrive with measured history + a real hero image —
-    // reddit-only backfill (cheap); failures never sink the scan.
-    try {
-      const { runTrendBackfill } = await import("@/lib/pipeline/backfill");
-      await runTrendBackfill(trend.slug, { includeYouTube: false });
-    } catch (err) {
-      console.error("[deep-scan] auto-backfill failed:", err);
-    }
-    stored.push(trend);
-  }
-
+  // Results are already known — surface them now. Persistence and market
+  // analysis run afterwards/concurrently so the user never waits on
+  // bookkeeping for hits that are already scored.
   const ranked = trends
-    .map((d, i) => ({ d, trend: stored[i] }))
+    .map((d) => ({ d, trend: toTrend(d) }))
     .sort((a, b) => b.d.fit_score - a.d.fit_score);
 
   emit({
@@ -453,20 +432,58 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
 
   emit({ type: "notes", fieldNotes });
 
-  // Prediction market pass — failure here never sinks the scan results.
-  let marketPayload: {
+  // Prediction market pass — runs concurrently with library persistence.
+  // Failure here never sinks the scan results.
+  const marketsPromise: Promise<{
     signals: MarketSignal[];
     notes: string;
     venues: string[];
-  } = { signals: [], notes: "", venues: [] };
-  try {
-    marketPayload = await analyzeMarkets(profile, trends, fieldNotes, emit);
-  } catch (err) {
+  }> = analyzeMarkets(profile, trends, fieldNotes, emit).catch((err) => {
     console.error("[deep-scan] market analysis failed:", err);
-    marketPayload.notes =
-      "Market analysis failed this run — trend results are unaffected.";
-  }
-  emit({ type: "markets", ...marketPayload });
+    return {
+      signals: [],
+      notes: "Market analysis failed this run — trend results are unaffected.",
+      venues: [],
+    };
+  });
+
+  // Fold discoveries into the library so the dashboard/pulse field sees them.
+  // Output-boundary hook: each trend's cited sources are retained as
+  // append-only trend_evidence, so every score stays traceable to the items
+  // that produced it ("says who"). Capped at EVIDENCE_CAP per trend per scan.
+  // Scan discoveries arrive with measured history + a real hero image —
+  // reddit-only backfill (cheap); failures never sink the scan.
+  const { runTrendBackfill } = await import("@/lib/pipeline/backfill");
+  const persistOne = async ({ d, trend }: (typeof ranked)[number]) => {
+    try {
+      await upsertTrendBySlug(trend);
+    } catch (err) {
+      console.error("[deep-scan] trend upsert failed:", err);
+      return; // evidence + backfill need the trend row
+    }
+    try {
+      await recordEvidence(evidenceFromSources(trend.id, d));
+    } catch (err) {
+      console.error("[deep-scan] evidence capture failed:", err);
+    }
+    try {
+      await runTrendBackfill(trend.slug, { includeYouTube: false, trend });
+    } catch (err) {
+      console.error("[deep-scan] auto-backfill failed:", err);
+    }
+  };
+  // Small worker pool: parallel enough to cut minutes off the tail, small
+  // enough to stay inside Reddit's app-only rate limits.
+  const queue = [...ranked];
+  await Promise.all(
+    Array.from({ length: Math.min(3, queue.length) }, async () => {
+      for (let job = queue.shift(); job; job = queue.shift()) {
+        await persistOne(job);
+      }
+    })
+  );
+
+  emit({ type: "markets", ...(await marketsPromise) });
 
   emit({
     type: "done",

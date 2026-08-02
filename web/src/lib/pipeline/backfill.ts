@@ -1,4 +1,5 @@
 import { getTrends } from "@/lib/data";
+import type { Trend } from "@/types";
 import type { RawItem } from "@/lib/pipeline/types";
 import {
   isRedditConfigured,
@@ -34,11 +35,12 @@ export interface BackfillReport {
 
 export async function runTrendBackfill(
   slug: string,
-  opts: { includeYouTube?: boolean } = {}
+  opts: { includeYouTube?: boolean; trend?: Trend } = {}
 ): Promise<BackfillReport> {
   const includeYouTube = opts.includeYouTube ?? true;
-  const trends = await getTrends();
-  const trend = trends.find((t) => t.slug === slug);
+  // Callers that already hold the trend can pass it to skip a full-table read.
+  const trend =
+    opts.trend ?? (await getTrends()).find((t) => t.slug === slug);
   if (!trend) throw new Error(`No trend with slug "${slug}"`);
 
   const now = Date.now();
