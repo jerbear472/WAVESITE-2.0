@@ -24,6 +24,7 @@ import { ScoreBar } from "@/components/ScoreBar";
 import { SignalCard } from "@/components/SignalCard";
 import { SaveTrendButton } from "@/components/SaveTrendButton";
 import { TrendHistoryChart } from "@/components/TrendHistoryChart";
+import { LifecyclePosition } from "@/components/LifecyclePosition";
 import {
   lifecycleBadge,
   riskBadge,
@@ -146,6 +147,11 @@ export default async function TrendDetailPage({
       {/* Measured history — the arc with its receipts */}
       <div className="mt-10">
         <TrendHistoryChart slug={trend.slug} />
+      </div>
+
+      {/* Where the trend sits on the wave, with the evidence behind the call */}
+      <div className="mt-6">
+        <LifecyclePosition trend={trend} />
       </div>
 
       {/* Analytical body — 68 / 32 */}

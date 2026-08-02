@@ -294,11 +294,36 @@ export async function createTrend(trend: Trend): Promise<Trend> {
 }
 
 export async function getLatestDailyReport(): Promise<DailyReport | null> {
+  const client = await adminClient();
+  if (client) {
+    const { data, error } = await client
+      .from("daily_reports")
+      .select("*")
+      .order("report_date", { ascending: false })
+      .limit(1);
+    if (!error && data && data.length > 0) return data[0] as DailyReport;
+  }
   return (
     [...store.reports].sort((a, b) =>
       b.report_date.localeCompare(a.report_date)
     )[0] ?? null
   );
+}
+
+/** Insert-or-refresh the day's issue, keyed by report_date. */
+export async function upsertDailyReport(report: DailyReport): Promise<void> {
+  const i = store.reports.findIndex(
+    (r) => r.report_date === report.report_date
+  );
+  if (i >= 0) store.reports[i] = report;
+  else store.reports.unshift(report);
+  const client = await adminClient();
+  if (client) {
+    const { error } = await client
+      .from("daily_reports")
+      .upsert(report, { onConflict: "report_date" });
+    if (error) console.error("[data] daily report upsert failed:", error.message);
+  }
 }
 
 export interface DashboardStats {

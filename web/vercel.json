@@ -7,6 +7,14 @@
     {
       "path": "/api/terms/run",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/trends/sync",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/daily/generate",
+      "schedule": "30 14 * * *"
     }
   ]
 }

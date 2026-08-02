@@ -42,18 +42,16 @@ export default function LandingPage() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <div className="flex items-center gap-2.5">
-          {/* The ribbon mark is lit for the navy panel — it needs that dark
-              surface behind it to read on the light theme. */}
-          <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-[#111A2C]">
-            <Image
-              src="/wavesight-mark-open.png"
-              alt="WaveSight"
-              width={26}
-              height={26}
-              className="size-[26px]"
-              priority
-            />
-          </span>
+          {/* The crisp mark carries enough saturation to sit directly on the
+              light shell — no navy chip, one less dark block on the page. */}
+          <Image
+            src="/wavesight-mark-crisp.png"
+            alt="WaveSight"
+            width={26}
+            height={26}
+            className="size-[26px]"
+            priority
+          />
           <span className="font-display wordmark text-lg">
             Wave<span className="text-gradient">Sight</span>
           </span>
@@ -117,49 +115,49 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* The mark glowing inside its terminal — the brand moment. */}
+          {/* The terminal read — one trend, one glance. Calm sells the
+              product better than glow: the mark stays small, the numbers
+              carry the panel. */}
           <div className="relative">
-            <div className="panel overflow-hidden">
-              <div className="relative -mx-px -mt-px h-48 sm:h-56">
-                <Image
-                  src="/wavesight-hero-3d.jpg"
-                  alt=""
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 40vw"
-                  className="pointer-events-none select-none object-cover"
-                  priority
-                />
-                {/* vignette the render into the panel so it reads as one surface */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(115% 100% at 50% 34%, transparent 46%, #111a2c 94%)",
-                  }}
-                />
-              </div>
-              <div className="p-6 pt-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.14em] text-panel-muted">
-                  Quiet Luxury Workspace
+            <div className="panel p-7">
+              <div className="flex items-center justify-between">
+                <p className="flex items-center gap-2.5 text-[11px] font-medium uppercase tracking-[0.16em] text-panel-muted">
+                  <Image
+                    src="/wavesight-mark-open.png"
+                    alt=""
+                    width={18}
+                    height={18}
+                    className="size-[18px]"
+                    priority
+                  />
+                  Live read
                 </p>
-                <p className="mt-1 font-display text-xl text-white">
-                  Accelerating · low risk
-                </p>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#35bdf2]">
+                  <span className="live-dot inline-block size-1.5 rounded-full bg-[#35bdf2]" />
+                  Tracking
+                </span>
               </div>
-              <WaveScore score={87} size={72} onDark />
-            </div>
-            <div className="mt-6 space-y-3.5">
-              <ScoreBar label="Momentum" value={88} onDark />
-              <ScoreBar label="Sentiment" value={82} onDark />
-              <ScoreBar label="Brand safety" value={91} onDark />
-              <ScoreBar label="Saturation" value={42} inverse onDark />
-            </div>
-                <p className="mt-6 border-t border-[var(--ws-panel-line)] pt-4 text-sm text-panel-muted">
-                  “The flex is no longer the gear count — it&apos;s the calm.”
-                </p>
+
+              <div className="mt-8 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-panel-muted">
+                    Quiet Luxury Workspace
+                  </p>
+                  <p className="mt-1.5 font-display text-2xl text-white">
+                    Accelerating · low risk
+                  </p>
+                </div>
+                <WaveScore score={87} size={76} onDark />
               </div>
+              <div className="mt-8 space-y-4">
+                <ScoreBar label="Momentum" value={88} onDark />
+                <ScoreBar label="Sentiment" value={82} onDark />
+                <ScoreBar label="Brand safety" value={91} onDark />
+                <ScoreBar label="Saturation" value={42} inverse onDark />
+              </div>
+              <p className="mt-7 border-t border-[var(--ws-panel-line)] pt-5 text-sm leading-relaxed text-panel-muted">
+                “The flex is no longer the gear count — it&apos;s the calm.”
+              </p>
             </div>
           </div>
         </div>
