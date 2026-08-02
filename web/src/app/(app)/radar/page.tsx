@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import { TrendingUp, Smile, ShieldCheck, Flame } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, Smile, ShieldCheck, Flame, Radio } from "lucide-react";
 import { getDashboardStats, getTrends, getFilterOptions } from "@/lib/data";
 import { getPulseState } from "@/lib/pulse";
 import { isAIConfigured } from "@/lib/ai/provider";
 import { StatCard } from "@/components/StatCard";
 import { HarmonyBoard } from "@/components/HarmonyBoard";
 import { RadarTabs } from "@/components/RadarTabs";
+import { buttonVariants } from "@/components/ui/button";
+import { lifecycleBadge } from "@/lib/trend-format";
+import type { LifecycleStage } from "@/types";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -48,19 +52,38 @@ export default async function RadarPage() {
             </span>
           </div>
           <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
-            The whole culture market on one screen. The pulse runs on a
-            schedule — no button to press.
+            The whole culture market on one screen — lifecycles set by daily
+            measurement across five platforms, not vibes.
             {lastRun
-              ? ` Last pulse ${new Date(lastRun.ran_at).toLocaleString([], {
+              ? ` Last run ${new Date(lastRun.ran_at).toLocaleString([], {
                   month: "short",
                   day: "numeric",
                   hour: "numeric",
                   minute: "2-digit",
                 })}.`
-              : " No pulse recorded yet — the field is loaded from the library."}
+              : " No run recorded yet — the field is loaded from the library."}
           </p>
         </div>
+        <Link
+          href="/signals"
+          className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+        >
+          <Radio className="size-4" /> Signals Desk
+        </Link>
       </header>
+
+      {/* Where the field sits on the wave — measured stage distribution */}
+      <section className="flex flex-wrap items-center gap-2">
+        {stageCounts(trends).map(({ stage, label, count }) => (
+          <span
+            key={stage}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm"
+          >
+            <span className="text-muted-foreground">{label}</span>
+            <span className="font-mono font-semibold tabular-nums">{count}</span>
+          </span>
+        ))}
+      </section>
 
       {/* Market aggregate — the glance layer */}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -120,4 +143,21 @@ export default async function RadarPage() {
       />
     </div>
   );
+}
+
+const STAGE_ORDER: LifecycleStage[] = [
+  "emerging",
+  "accelerating",
+  "peaking",
+  "resurfacing",
+  "saturated",
+  "declining",
+];
+
+function stageCounts(trends: { lifecycle_stage: LifecycleStage }[]) {
+  return STAGE_ORDER.map((stage) => ({
+    stage,
+    label: lifecycleBadge(stage).label,
+    count: trends.filter((t) => t.lifecycle_stage === stage).length,
+  })).filter((s) => s.count > 0);
 }

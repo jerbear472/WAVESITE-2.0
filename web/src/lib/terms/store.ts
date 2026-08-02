@@ -101,6 +101,19 @@ export async function setTermStatus(
   await insertTermEvent(termId, event, detail);
 }
 
+/** Link a term to the trend record it produced (or was seeded from), so the
+ *  daily sync can find the pairing without re-deriving slugs. */
+export async function linkTermToTrend(
+  termId: string,
+  trendId: string
+): Promise<void> {
+  const { error } = await client()
+    .from("terms")
+    .update({ trend_id: trendId, updated_at: new Date().toISOString() })
+    .eq("term_id", termId);
+  if (error) throw new Error(`terms trend link: ${error.message}`);
+}
+
 /** Cache a resolved Wikipedia article title on the term so resolution runs
  *  once, not daily. Only positive resolutions are persisted — a term with no
  *  article today may earn one later, and that appearance is itself signal. */
@@ -269,6 +282,30 @@ export async function getCompositesForDate(date: string): Promise<CompositeRow[]
     "term_composites read"
   );
   return rows;
+}
+
+/** Latest composite row per term captured on or after `sinceDate` — the daily
+ *  sync's read path. Adapter outages shift score dates around, so "latest
+ *  within a few days" is the honest join, not "exactly yesterday". */
+export async function getLatestComposites(
+  sinceDate: string
+): Promise<Map<string, CompositeRow>> {
+  const rows = await fetchAllPages<CompositeRow>(
+    (from, to) =>
+      client()
+        .from("term_composites")
+        .select("*")
+        .gte("score_date", sinceDate)
+        .order("id")
+        .range(from, to),
+    "term_composites latest read"
+  );
+  const latest = new Map<string, CompositeRow>();
+  for (const r of rows) {
+    const prev = latest.get(r.term_id);
+    if (!prev || r.score_date > prev.score_date) latest.set(r.term_id, r);
+  }
+  return latest;
 }
 
 // --- runs & quota -----------------------------------------------------------

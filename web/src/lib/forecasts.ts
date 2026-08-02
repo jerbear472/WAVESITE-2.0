@@ -22,6 +22,17 @@ import {
 /** Claim window for a peak_within forecast emitted on a "rising" flag. */
 export const DEFAULT_PEAK_HORIZON_DAYS = 30;
 
+/** sustains_above claim emitted on an "in_sync" flag: harmony stays at or
+ *  above the rising-tier floor for the whole window. */
+export const SUSTAIN_HORIZON_DAYS = 21;
+export const SUSTAIN_TARGET = 74;
+
+/** fades_below claim emitted when the measured lifecycle says peaking or
+ *  saturated while harmony still sits above the fading line: the claim is
+ *  that it crosses below within the window. */
+export const FADE_HORIZON_DAYS = 30;
+export const FADE_TARGET = 55;
+
 /** Below this sample size the calibration surface says "not enough data". */
 export const MIN_SAMPLE = 10;
 
@@ -41,56 +52,108 @@ export function deriveConfidence(trend: HarmonizedTrend): number {
   return Math.round(Math.min(0.95, Math.max(0.05, c)) * 100) / 100;
 }
 
+/** Confidence for a fades_below claim: the more worn out the trend measures
+ *  (low harmony, high saturation), the more confident the fade call. Same
+ *  seam discipline as deriveConfidence — replace when a calibrated model
+ *  exists. */
+export function deriveFadeConfidence(trend: HarmonizedTrend): number {
+  const c = (100 - trend.harmony) / 100 * 0.6 + trend.saturation_score / 100 * 0.4;
+  return Math.round(Math.min(0.95, Math.max(0.05, c)) * 100) / 100;
+}
+
 /**
- * Emission rule: every trend the loop just flagged "rising" gets a
- * peak_within forecast — a falsifiable claim that the trend will reach its
- * (14-day-confirmed) peak within the horizon. One open peak_within claim per
- * trend at a time; mock runs never emit (random-walk drift is not a forecast).
+ * Emission rules — every flag the loop raises becomes a falsifiable claim.
+ * One open claim per (trend, claim_type) at a time; mock runs never emit
+ * (random-walk drift is not a forecast).
+ *
+ *   rising            → peak_within: reaches its (14-day-confirmed) peak
+ *                       within 30 days.
+ *   in_sync           → sustains_above: harmony holds ≥ 74 (the rising-tier
+ *                       floor) for 21 straight days.
+ *   peaking/saturated → fades_below: harmony crosses below 55 (the fading
+ *                       line) within 30 days — only while it still sits
+ *                       above that line, so the claim is genuinely at risk.
  */
 export async function emitForecastsForRun(
   run: PulseRun,
   trends: HarmonizedTrend[]
 ): Promise<Forecast[]> {
   if (run.mode !== "live") return [];
-  const rising = trends.filter((t) => t.tier === "rising");
-  if (rising.length === 0) return [];
 
   const pending = await getForecasts({ status: "pending" });
-  const openPeakClaim = new Set(
-    pending.filter((f) => f.claim_type === "peak_within").map((f) => f.trend_id)
-  );
-
+  const open = new Set(pending.map((f) => `${f.claim_type}:${f.trend_id}`));
   const createdMs = Date.parse(run.ran_at);
-  const resolvesAt = new Date(
-    createdMs + (DEFAULT_PEAK_HORIZON_DAYS + PEAK_CONFIRMATION_LAG_DAYS) * DAY_MS
-  ).toISOString();
+  const at = (days: number) => new Date(createdMs + days * DAY_MS).toISOString();
 
-  const fresh: Forecast[] = rising
-    .filter((t) => !openPeakClaim.has(t.id))
-    .map((t) => ({
-      // Deterministic id: re-running emission for the same run is a no-op.
+  const base = (t: HarmonizedTrend) => ({
+    trend_id: t.id,
+    created_at: run.ran_at,
+    created_in_run_id: run.id,
+    status: "pending" as const,
+    resolved_at: null,
+    observed_value: null,
+    resolution_note: null,
+  });
+
+  const fresh: Forecast[] = [];
+
+  for (const t of trends.filter((x) => x.tier === "rising")) {
+    if (open.has(`peak_within:${t.id}`)) continue;
+    fresh.push({
+      // Deterministic ids: re-running emission for the same run is a no-op.
       forecast_id: `fc-${run.id}-${t.slug}-peak`,
-      trend_id: t.id,
-      created_at: run.ran_at,
-      created_in_run_id: run.id,
+      ...base(t),
       claim_type: "peak_within",
       horizon_days: DEFAULT_PEAK_HORIZON_DAYS,
       target_value: null,
       confidence: deriveConfidence(t),
       // Claim-window end + confirmation lag: peaks are only confirmable
       // 14 days in arrears, and resolves_at owns that lag.
-      resolves_at: resolvesAt,
-      status: "pending",
-      resolved_at: null,
-      observed_value: null,
-      resolution_note: null,
-    }));
+      resolves_at: at(DEFAULT_PEAK_HORIZON_DAYS + PEAK_CONFIRMATION_LAG_DAYS),
+    });
+  }
+
+  for (const t of trends.filter((x) => x.tier === "in_sync")) {
+    if (open.has(`sustains_above:${t.id}`)) continue;
+    fresh.push({
+      forecast_id: `fc-${run.id}-${t.slug}-sustain`,
+      ...base(t),
+      claim_type: "sustains_above",
+      horizon_days: SUSTAIN_HORIZON_DAYS,
+      target_value: SUSTAIN_TARGET,
+      confidence: deriveConfidence(t),
+      resolves_at: at(SUSTAIN_HORIZON_DAYS),
+    });
+  }
+
+  for (const t of trends.filter(
+    (x) =>
+      (x.lifecycle_stage === "peaking" || x.lifecycle_stage === "saturated") &&
+      x.harmony >= FADE_TARGET
+  )) {
+    if (open.has(`fades_below:${t.id}`)) continue;
+    fresh.push({
+      forecast_id: `fc-${run.id}-${t.slug}-fade`,
+      ...base(t),
+      claim_type: "fades_below",
+      horizon_days: FADE_HORIZON_DAYS,
+      target_value: FADE_TARGET,
+      confidence: deriveFadeConfidence(t),
+      resolves_at: at(FADE_HORIZON_DAYS),
+    });
+  }
 
   await insertForecasts(fresh);
   if (fresh.length > 0) {
+    const byType = fresh.reduce<Record<string, number>>((acc, f) => {
+      acc[f.claim_type] = (acc[f.claim_type] ?? 0) + 1;
+      return acc;
+    }, {});
     console.log(
-      `[forecasts] run ${run.id}: emitted ${fresh.length} peak_within claim(s) — ` +
-        fresh.map((f) => f.trend_id).join(", ")
+      `[forecasts] run ${run.id}: emitted ${fresh.length} claim(s) — ` +
+        Object.entries(byType)
+          .map(([k, n]) => `${k}×${n}`)
+          .join(", ")
     );
   }
   return fresh;

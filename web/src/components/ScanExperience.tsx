@@ -56,6 +56,9 @@ export function ScanExperience() {
   const [error, setError] = useState<string | null>(null);
   const [funnel, setFunnel] = useState<FunnelSnapshot | null>(null);
   const [initialProfile, setInitialProfile] = useState<ScanProfile | null>(null);
+  // Trend ids from the previous saved scan — null until a scan starts, and
+  // stays null when there was no previous scan (first run marks nothing NEW).
+  const [prevTrendIds, setPrevTrendIds] = useState<Set<string> | null>(null);
 
   const consoleEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -69,6 +72,8 @@ export function ScanExperience() {
   }, [statuses]);
 
   async function runScan(p: ScanProfile) {
+    const last = getLastScan();
+    setPrevTrendIds(last ? new Set(last.hits.map((h) => h.trendId)) : null);
     setProfile(p);
     setPhase("scanning");
     setStatuses([]);
@@ -272,6 +277,11 @@ export function ScanExperience() {
       ) : (
         <ResultsHeader
           count={hits.length}
+          newCount={
+            prevTrendIds
+              ? hits.filter((h) => !prevTrendIds.has(h.trend.id)).length
+              : null
+          }
           scanned={scanned}
           exploratory={exploratory}
           onTune={() => setPhase("intake")}
@@ -298,6 +308,11 @@ export function ScanExperience() {
                 <span className="truncate font-medium text-white">
                   {h.trend.name}
                 </span>
+                {prevTrendIds && !prevTrendIds.has(h.trend.id) ? (
+                  <span className="shrink-0 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                    New
+                  </span>
+                ) : null}
                 <span className="hidden truncate text-sm text-panel-muted sm:inline">
                   · {h.reasons[0]}
                 </span>
@@ -322,14 +337,26 @@ export function ScanExperience() {
               </Card>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {hits.map((h) => (
-                <TrendCard
-                  key={h.trend.id}
-                  trend={h.trend}
-                  fit={h.fit}
-                  reason={h.reasons[0]}
-                />
-              ))}
+              {hits.map((h) => {
+                const isNew = prevTrendIds && !prevTrendIds.has(h.trend.id);
+                return (
+                  <div key={h.trend.id} className="relative">
+                    {isNew ? (
+                      <span
+                        className="absolute -top-2 left-4 z-10 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide shadow-sm"
+                        style={{ background: ACCENT, color: "#04252b" }}
+                      >
+                        New since last scan
+                      </span>
+                    ) : null}
+                    <TrendCard
+                      trend={h.trend}
+                      fit={h.fit}
+                      reason={h.reasons[0]}
+                    />
+                  </div>
+                );
+              })}
             </div>
             {markets ? (
               <MarketSignalsPanel
@@ -347,11 +374,14 @@ export function ScanExperience() {
 
 function ResultsHeader({
   count,
+  newCount,
   scanned,
   exploratory,
   onTune,
 }: {
   count: number;
+  /** Trends not present in the previous saved scan; null = no previous scan. */
+  newCount: number | null;
   scanned: number;
   exploratory: boolean;
   onTune: () => void;
@@ -364,6 +394,13 @@ function ResultsHeader({
             <Badge variant="success">
               <CheckCircle2 className="size-3" /> Scan complete
             </Badge>
+            {newCount !== null ? (
+              <Badge variant="primary">
+                {newCount === 0
+                  ? "No new trends vs last scan"
+                  : `${newCount} new since last scan`}
+              </Badge>
+            ) : null}
             {exploratory ? (
               <Badge variant="warning">Loose matches</Badge>
             ) : null}

@@ -14,7 +14,7 @@ import {
 } from "@/lib/ai/schemas";
 import { fetchAllMarkets, filterRelevantMarkets } from "@/lib/markets";
 import { computeWaveScore } from "@/lib/wavescore";
-import { recordEvidence, upsertTrendBySlug } from "@/lib/data";
+import { getTrends, recordEvidence, upsertTrendBySlug } from "@/lib/data";
 import type { TrendEvidence } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -40,7 +40,68 @@ Scoring guidance (all 0-100 integers): momentum_score = energy gained right now;
 
 best_platforms must use these names where applicable: TikTok, Instagram, YouTube, X, Reddit, Pinterest, Threads, Twitch, Discord.`;
 
-function deepScanPrompt(profile: ScanProfile) {
+/**
+ * Compact digest of what WaveSight already measures and tracks, injected into
+ * the scan prompt. Two jobs: (1) hand Claude measured, non-guessed leads to
+ * verify with fresh searches, and (2) show the known library so re-discovered
+ * trends reuse their slug and everything else skews genuinely NEW.
+ * Failure-safe: measurement tables need Supabase; without it we degrade to
+ * the in-memory library list only.
+ */
+async function buildMeasuredDigest(): Promise<string> {
+  const parts: string[] = [];
+  try {
+    const trends = await getTrends();
+    const known = trends
+      .slice(0, 30)
+      .map(
+        (t) =>
+          `- ${t.name} (slug: ${t.slug}, ${t.lifecycle_stage}, momentum ${t.momentum_score})`
+      )
+      .join("\n");
+    if (known) {
+      parts.push(
+        `Already in the WaveSight library — if one of these genuinely earns a spot for THIS brief, return it with the SAME slug and refreshed scores; otherwise strongly prefer trends NOT on this list:\n${known}`
+      );
+    }
+  } catch {
+    // library unavailable — proceed without it
+  }
+  try {
+    const { getLatestComposites } = await import("@/lib/terms/store");
+    const { getActiveTerms } = await import("@/lib/terms/store");
+    const sinceDate = new Date(Date.now() - 3 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const [composites, terms] = await Promise.all([
+      getLatestComposites(sinceDate),
+      getActiveTerms(),
+    ]);
+    const nameById = new Map(terms.map((t) => [t.term_id, t.canonical]));
+    const accelerating = [...composites.values()]
+      .filter((c) => c.breadth >= 1 && c.cascade_state !== "dormant")
+      .sort((a, b) => b.composite_score - a.composite_score)
+      .slice(0, 15)
+      .map((c) => {
+        const name = nameById.get(c.term_id);
+        return name
+          ? `- "${name}" — ${c.cascade_state}, firing on ${c.sources_flagged.join(" + ")} (breadth ${c.breadth})`
+          : null;
+      })
+      .filter(Boolean)
+      .join("\n");
+    if (accelerating) {
+      parts.push(
+        `WaveSight's measurement layer (real daily counts from Bluesky, Reddit, Google Trends, YouTube, Wikipedia) shows these terms accelerating RIGHT NOW. These are measured leads, not guesses — verify the promising ones with fresh searches and include any that fit the brief:\n${accelerating}`
+      );
+    }
+  } catch {
+    // measurement layer unavailable (no Supabase) — the scan still works
+  }
+  return parts.length ? `\n${parts.join("\n\n")}\n` : "";
+}
+
+function deepScanPrompt(profile: ScanProfile, measuredDigest: string) {
   return `Today is ${new Date().toDateString()}. Run a deep trend appraisal of the live internet for this brief:
 
 - Who: ${profile.userType}
@@ -50,8 +111,8 @@ function deepScanPrompt(profile: ScanProfile) {
 - Audience: ${profile.audience || "not specified"}
 - Risk appetite: ${profile.appetite}
 ${profile.focus ? `- Extra focus: ${profile.focus}` : ""}
-
-Search the web from multiple angles (the niche itself, each priority platform, adjacent culture/fashion/press coverage, and at least one contrarian "is X over?" style query). Then deliver your appraisal.
+${measuredDigest}
+Search the web from multiple angles (the niche itself, each priority platform, adjacent culture/fashion/press coverage, and at least one contrarian "is X over?" style query). Chase what the searches surface, not just what you already know — the point of a NEW scan is what changed since the last one. Then deliver your appraisal.
 
 After your research, respond with a SINGLE valid JSON object and nothing else — no prose before or after it, no markdown fences:
 {
@@ -100,6 +161,7 @@ interface StreamProgress {
  */
 async function runResearch(
   profile: ScanProfile,
+  measuredDigest: string,
   emit: ScanEmit
 ): Promise<{ trends: DeepScanTrendResult[]; fieldNotes: string; progress: StreamProgress }> {
   const client = getClient();
@@ -111,7 +173,7 @@ async function runResearch(
   ] as unknown as Anthropic.Messages.ToolUnion[];
 
   const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: deepScanPrompt(profile) },
+    { role: "user", content: deepScanPrompt(profile, measuredDigest) },
   ];
 
   let finalText = "";
@@ -394,7 +456,22 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
     scanned: 0,
   });
 
-  const { trends, fieldNotes, progress } = await runResearch(profile, emit);
+  const measuredDigest = await buildMeasuredDigest();
+  if (measuredDigest) {
+    emit({
+      type: "status",
+      phase: "connect",
+      message: "Loaded measured intelligence — library state + accelerating terms…",
+      progress: 5,
+      scanned: 0,
+    });
+  }
+
+  const { trends, fieldNotes, progress } = await runResearch(
+    profile,
+    measuredDigest,
+    emit
+  );
 
   emit({
     type: "status",
