@@ -12,6 +12,7 @@ export interface FunnelSnapshot {
   as_of: string | null; // latest scored day, if any
   signals_collected: number; // raw_items corpus rows (measured pipeline)
   term_measurements: number; // term_observations rows (counts, all sources)
+  terms_measured_today: number; // distinct terms with an observation on as_of
   terms_tracked: number; // active registry terms
   accelerating: number; // term_scores flagged on the latest day
   persistent: number; // persistent (3-of-5) on the latest day
@@ -58,6 +59,7 @@ export async function getFunnelSnapshot(): Promise<FunnelSnapshot | null> {
   let accelerating = 0;
   let persistent = 0;
   let crossSource = 0;
+  let termsMeasuredToday = 0;
   const bySource: Partial<Record<SourceId, number>> = {};
 
   if (asOf) {
@@ -75,20 +77,24 @@ export async function getFunnelSnapshot(): Promise<FunnelSnapshot | null> {
 
     const { data: obs, error: obsErr } = await c
       .from("term_observations")
-      .select("source")
+      .select("source, term_id")
       .eq("obs_date", asOf)
       .limit(2000);
     if (obsErr) throw new Error(obsErr.message);
+    const measuredTerms = new Set<string>();
     for (const row of obs ?? []) {
       const s = row.source as SourceId;
       bySource[s] = (bySource[s] ?? 0) + 1;
+      measuredTerms.add(row.term_id as string);
     }
+    termsMeasuredToday = measuredTerms.size;
   }
 
   return {
     as_of: asOf,
     signals_collected: signals,
     term_measurements: measurements,
+    terms_measured_today: termsMeasuredToday,
     terms_tracked: terms,
     accelerating,
     persistent,
