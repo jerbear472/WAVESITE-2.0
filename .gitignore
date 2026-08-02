@@ -66,3 +66,4 @@ ios/
 # Scratch / local
 mobile/_backup/
 /*.png
+.vercel
