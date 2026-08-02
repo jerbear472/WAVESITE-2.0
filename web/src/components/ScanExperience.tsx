@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { TrendCard } from "@/components/TrendCard";
 import { MarketSignalsPanel } from "@/components/MarketSignalsPanel";
 import { ScanIntake } from "@/components/ScanIntake";
+import { ScanFunnel } from "@/components/ScanFunnel";
+import type { FunnelSnapshot } from "@/lib/terms/funnel";
 import { getLastScan, saveScan } from "@/lib/scan-store";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +54,7 @@ export function ScanExperience() {
     venues: string[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [funnel, setFunnel] = useState<FunnelSnapshot | null>(null);
   const [initialProfile, setInitialProfile] = useState<ScanProfile | null>(null);
 
   const consoleEndRef = useRef<HTMLDivElement | null>(null);
@@ -76,6 +79,7 @@ export function ScanExperience() {
     setFieldNotes(null);
     setMarkets(null);
     setError(null);
+    setFunnel(null);
 
     const collected: Hit[] = [];
     let finalScanned = 0;
@@ -102,6 +106,13 @@ export function ScanExperience() {
           if (!line.trim()) continue;
           const ev = JSON.parse(line);
           switch (ev.type) {
+            case "funnel":
+              setFunnel(ev.funnel ?? null);
+              if (typeof ev.scanned === "number") {
+                setScanned(ev.scanned);
+                finalScanned = ev.scanned;
+              }
+              break;
             case "status":
             case "narrow":
               setStatuses((s) => [
@@ -109,7 +120,9 @@ export function ScanExperience() {
                 { message: ev.message, phase: ev.phase ?? "narrow" },
               ]);
               if (typeof ev.progress === "number") setProgress(ev.progress);
-              if (typeof ev.scanned === "number") {
+              // Never let a later phase's counter regress below the funnel's
+              // real collected-signals figure.
+              if (typeof ev.scanned === "number" && ev.scanned > finalScanned) {
                 setScanned(ev.scanned);
                 finalScanned = ev.scanned;
               }
@@ -210,6 +223,11 @@ export function ScanExperience() {
               style={{ width: `${progress}%`, background: ACCENT }}
             />
           </div>
+
+          {/* The funnel — real counts from the measurement layer */}
+          {funnel ? (
+            <ScanFunnel snapshot={funnel} hits={hits.length} scanning />
+          ) : null}
 
           {/* Console */}
           <div className="panel-2 mt-4 max-h-44 space-y-1.5 overflow-y-auto rounded-lg p-3 font-mono text-xs">

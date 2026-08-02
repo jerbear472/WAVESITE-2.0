@@ -2,6 +2,7 @@ import { getTrends } from "@/lib/data";
 import { rankAndNarrow, type ScanProfile } from "@/lib/fit";
 import { isAIConfigured } from "@/lib/ai/provider";
 import { runDeepScan, type ScanEmit } from "@/lib/deep-scan";
+import { getFunnelSnapshot } from "@/lib/terms/funnel";
 
 // Streams a live scan as newline-delimited JSON. With ANTHROPIC_API_KEY set
 // this is a real deep scan: Claude researches the live web (server-side web
@@ -33,6 +34,18 @@ export async function POST(req: Request) {
         controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
 
       try {
+        // Real funnel numbers from the measurement layer, sent before the
+        // research starts so the console shows measured data, not a mock
+        // counter. Best-effort: a missing store just omits the funnel.
+        try {
+          const funnel = await getFunnelSnapshot();
+          if (funnel) {
+            send({ type: "funnel", funnel, scanned: funnel.signals_collected });
+          }
+        } catch (err) {
+          console.error("/api/scan funnel snapshot failed:", err);
+        }
+
         if (isAIConfigured()) {
           try {
             await runDeepScan(profile, send);
