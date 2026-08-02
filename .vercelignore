@@ -1,0 +1,6 @@
+# Only web/ deploys to Vercel (project rootDirectory = web).
+mobile
+docs
+supabase
+*.png
+.DS_Store
