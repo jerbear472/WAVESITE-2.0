@@ -14,6 +14,7 @@ import {
   getActiveTerms,
   getObservationCounts,
   getObservationSeries,
+  getObservedTermIds,
   getQuotaSpent,
   insertIngestRun,
   upsertComposites,
@@ -74,6 +75,8 @@ interface SourceRunStats {
   reason?: string;
   terms_queried: number;
   terms_skipped: number;
+  /** Terms skipped because a same-day run already observed them (no spend). */
+  terms_cached?: number;
   observations: number;
   failures: number;
   first_error?: string;
@@ -111,6 +114,22 @@ const statusRank: Record<TermRow["status"], number> = {
   candidate: 2,
   retired: 3,
 };
+
+/** Deterministic daily rotation within each status group. Promoted/tracked
+ *  terms still outrank candidates, but within a group the starting point
+ *  advances with the date — so a budget that only covers 50 of 110 terms
+ *  covers a DIFFERENT 50 tomorrow instead of the same head-of-list forever. */
+function rotateWithinStatus(terms: TermRow[], obsDate: string): TermRow[] {
+  const day = Math.floor(Date.parse(`${obsDate}T00:00:00Z`) / 86_400_000);
+  const out: TermRow[] = [];
+  for (const status of Object.keys(statusRank) as TermRow["status"][]) {
+    const group = terms.filter((t) => t.status === status);
+    if (group.length === 0) continue;
+    const offset = day % group.length;
+    out.push(...group.slice(offset), ...group.slice(0, offset));
+  }
+  return out;
+}
 
 export async function runTermIngestion(
   opts: { date?: string } = {}
@@ -154,12 +173,33 @@ export async function runTermIngestion(
       continue;
     }
     const cap = TERM_CAPS[adapter.source];
-    sourceStats[adapter.source] = await collectFromAdapter(
+    const budgeted = (adapter.rateLimit.dailyUnits ?? 0) > 0;
+    let list = terms;
+    let cached = 0;
+    if (cap || budgeted) {
+      // Scarce adapters (unit budget or per-run cap) can't visit every term
+      // every day. Two rules make the scarcity fair instead of starving the
+      // tail of the list forever: (1) skip terms a same-day run already
+      // observed, so reruns extend coverage instead of re-buying it, and
+      // (2) rotate the order by date, so the covered slice moves daily.
+      try {
+        const observed = await getObservedTermIds(adapter.source, obsDate);
+        cached = terms.filter((t) => observed.has(t.term_id)).length;
+        list = terms.filter((t) => !observed.has(t.term_id));
+      } catch {
+        // Read failure just means no skip optimization this run.
+      }
+      list = rotateWithinStatus(list, obsDate);
+      if (cap) list = list.slice(0, cap);
+    }
+    const stats = await collectFromAdapter(
       adapter,
-      cap ? terms.slice(0, cap) : terms,
+      list,
       obsDate,
       contextsBySource
     );
+    if (cached > 0) stats.terms_cached = cached;
+    sourceStats[adapter.source] = stats;
   }
 
   // --- 2. BACKFILL — wikipedia seeds baselines for history-poor terms ------

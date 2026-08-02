@@ -564,19 +564,23 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
     } catch {
       // mirror down — model scores stand until the next measured sync
     }
+    // The upsert may resolve this trend to an existing near-duplicate row
+    // (different id/slug) — evidence and backfill must target the row that
+    // actually survived, not the identity the model minted.
+    let saved: Trend;
     try {
-      await upsertTrendBySlug(trend);
+      saved = (await upsertTrendBySlug(trend)).trend;
     } catch (err) {
       console.error("[deep-scan] trend upsert failed:", err);
       return; // evidence + backfill need the trend row
     }
     try {
-      await recordEvidence(evidenceFromSources(trend.id, d));
+      await recordEvidence(evidenceFromSources(saved.id, d));
     } catch (err) {
       console.error("[deep-scan] evidence capture failed:", err);
     }
     try {
-      await runTrendBackfill(trend.slug, { includeYouTube: false, trend });
+      await runTrendBackfill(saved.slug, { includeYouTube: false, trend: saved });
     } catch (err) {
       console.error("[deep-scan] auto-backfill failed:", err);
     }

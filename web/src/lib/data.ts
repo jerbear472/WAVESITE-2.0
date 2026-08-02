@@ -20,6 +20,7 @@ import {
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { sentimentBucket, type SentimentBucket } from "@/lib/scores";
 import { computeHarmony, harmonyTier } from "@/lib/harmony";
+import { findDuplicateTrend } from "@/lib/trend-dedup";
 
 export { sentimentBucket };
 export type { SentimentBucket };
@@ -387,23 +388,66 @@ async function adminClient() {
  * scores and summaries instead of duplicating the trend. Writes go to the
  * in-memory store (immediate consistency) and best-effort to Supabase
  * (durability across restarts/deploys).
+ *
+ * Identity is resolved before writing: an exact slug match, or a near-
+ * duplicate by name tokens (see lib/trend-dedup) — models re-discover the
+ * same phenomenon under lightly reworded names, and slug-only conflict let
+ * those pile up as separate rows. On a match the incoming trend adopts the
+ * existing id/slug, so callers MUST use the returned trend for follow-up
+ * writes (evidence, backfill), not the object they passed in.
  */
 export async function upsertTrendBySlug(
   trend: Trend
 ): Promise<{ trend: Trend; created: boolean }> {
-  const existing = store.trends.find((t) => t.slug === trend.slug);
+  // Match pool: this process's store plus the durable library — on a fresh
+  // serverless instance the store only has seeds, and every real trend
+  // lives in Supabase.
+  const remote = await trySupabaseTrends();
+  // Build the pool after the remote read resolves. Deep scans persist several
+  // trends concurrently; another worker may have added a trend to the shared
+  // store while this one was awaiting Supabase.
+  const pool = [...store.trends];
+  if (remote) {
+    const seen = new Set(pool.map((t) => t.slug));
+    pool.push(...remote.filter((t) => !seen.has(t.slug)));
+  }
+  const match = findDuplicateTrend(trend, pool);
+  if (match && match.slug !== trend.slug) {
+    console.log(
+      `[data] trend "${trend.slug}" resolved to existing "${match.slug}" (near-duplicate)`
+    );
+  }
+
   let result: { trend: Trend; created: boolean };
-  if (existing) {
-    Object.assign(existing, {
+  if (match) {
+    const merged: Trend = {
       ...trend,
-      id: existing.id,
-      created_at: existing.created_at,
+      id: match.id,
+      slug: match.slug,
+      created_at: match.created_at,
       // Keep the STRONGEST origin: a model-suggested trend later found by a
       // web scan or the measurement layer graduates (drives provenance).
-      origin: strongerOrigin(existing.origin, trend.origin),
+      origin: strongerOrigin(match.origin, trend.origin),
+      // A sparse rediscovery should not erase richer presentation data that
+      // the surviving row already accumulated.
+      hero_image_url: trend.hero_image_url ?? match.hero_image_url,
+      creative_angles: trend.creative_angles?.length
+        ? trend.creative_angles
+        : match.creative_angles,
+      sample_hooks: trend.sample_hooks?.length
+        ? trend.sample_hooks
+        : match.sample_hooks,
+      sources: trend.sources?.length ? trend.sources : match.sources,
       updated_at: new Date().toISOString(),
-    });
-    result = { trend: existing, created: false };
+    };
+    const inStore = store.trends.find((t) => t.slug === match.slug);
+    if (inStore) {
+      Object.assign(inStore, merged);
+      result = { trend: inStore, created: false };
+    } else {
+      store.trends.unshift(merged);
+      result = { trend: merged, created: false };
+    }
   } else {
     store.trends.unshift(trend);
     result = { trend, created: true };

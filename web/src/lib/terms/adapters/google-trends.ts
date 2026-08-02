@@ -19,14 +19,33 @@ let cachedCookie: string | null = null;
 
 async function getCookie(): Promise<string> {
   if (cachedCookie) return cachedCookie;
-  const res = await fetch("https://trends.google.com/", {
+  // Must be /trends/ — the bare origin 301s WITHOUT setting NID, and a
+  // cookieless explore call is a guaranteed 429. (Broke 2026-08 when the
+  // root redirect stopped carrying the cookie.)
+  const res = await fetch("https://trends.google.com/trends/", {
     headers: { "User-Agent": UA },
-    redirect: "manual",
   });
   const setCookie = res.headers.get("set-cookie") ?? "";
   const nid = setCookie.match(/NID=[^;]+/)?.[0];
   cachedCookie = nid ?? "";
   return cachedCookie;
+}
+
+/** One bounded retry on 429: refresh the cookie, wait, try again. Keeps a
+ *  transient rate-limit from tripping the run's circuit breaker while never
+ *  spending more than ~6s extra per term. */
+async function fetchTrends(url: string): Promise<Response> {
+  let res = await fetch(url, {
+    headers: { "User-Agent": UA, Cookie: await getCookie() },
+  });
+  if (res.status === 429) {
+    cachedCookie = null;
+    await new Promise((r) => setTimeout(r, 5000));
+    res = await fetch(url, {
+      headers: { "User-Agent": UA, Cookie: await getCookie() },
+    });
+  }
+  return res;
 }
 
 /** Google prefixes JSON bodies with `)]}'` (or `)]}',`) as an XSSI guard. */
@@ -38,16 +57,13 @@ function stripPrefix(text: string): string {
 async function interestSeries(
   keyword: string
 ): Promise<{ date: string; value: number }[]> {
-  const cookie = await getCookie();
   const exploreReq = {
     comparisonItem: [{ keyword, geo: "", time: "today 3-m" }],
     category: 0,
     property: "",
   };
   const exploreUrl = `${EXPLORE}?hl=en-US&tz=0&req=${encodeURIComponent(JSON.stringify(exploreReq))}`;
-  const exploreRes = await fetch(exploreUrl, {
-    headers: { "User-Agent": UA, Cookie: cookie },
-  });
+  const exploreRes = await fetchTrends(exploreUrl);
   if (!exploreRes.ok) {
     cachedCookie = null; // stale cookie is the most common failure — reset
     throw new Error(`trends explore failed: ${exploreRes.status}`);
@@ -61,9 +77,7 @@ async function interestSeries(
   }
 
   const widgetUrl = `${WIDGET}?hl=en-US&tz=0&req=${encodeURIComponent(JSON.stringify(widget.request))}&token=${widget.token}`;
-  const widgetRes = await fetch(widgetUrl, {
-    headers: { "User-Agent": UA, Cookie: cookie },
-  });
+  const widgetRes = await fetchTrends(widgetUrl);
   if (!widgetRes.ok) throw new Error(`trends widget failed: ${widgetRes.status}`);
   const series = JSON.parse(stripPrefix(await widgetRes.text()));
   const points = series?.default?.timelineData ?? [];

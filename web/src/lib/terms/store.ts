@@ -210,6 +210,27 @@ export async function getLatestObservationBefore(
   return data ?? null;
 }
 
+/** Term ids that already have an observation for (source, date) — lets
+ *  budgeted/capped adapters skip terms a same-day run already covered instead
+ *  of re-spending quota on them. */
+export async function getObservedTermIds(
+  source: SourceId,
+  date: string
+): Promise<Set<string>> {
+  const rows = await fetchAllPages<{ term_id: string }>(
+    (from, to) =>
+      client()
+        .from("term_observations")
+        .select("term_id")
+        .eq("source", source)
+        .eq("obs_date", date)
+        .order("id")
+        .range(from, to),
+    "term_observations observed read"
+  );
+  return new Set(rows.map((r) => r.term_id));
+}
+
 /** Per-term observation counts for one source — used to decide who still
  *  needs a baseline backfill. */
 export async function getObservationCounts(
