@@ -153,6 +153,7 @@ export interface HistoryBucket {
   /** Arithmetic net of post labels, -1..1; null means not enough evidence. */
   sentiment: number | null;
   labeled_items: number;
+  sentiment_counts: Record<import("@/lib/pipeline/types").SentimentLabel, number>;
 }
 
 /** The real post that grounds a chart marker — title, link, true numbers. */
@@ -186,8 +187,10 @@ export interface TrendHistory {
   markers: HistoryMarker[];
   total_items: number;
   labeled_items: number;
+  sentiment_counts: Record<import("@/lib/pipeline/types").SentimentLabel, number>;
   coverage_months: number;
   source_counts: Partial<Record<RawItem["source"], number>>;
+  source_first_seen: Partial<Record<RawItem["source"], string>>;
   confidence: "low" | "medium" | "high";
 }
 

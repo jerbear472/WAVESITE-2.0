@@ -48,6 +48,13 @@ test("history aggregates measured volume, engagement, and post-level sentiment",
   assert.deepEqual(result.source_counts, { reddit: 2, youtube: 1 });
   assert.equal(result.months[1].sentiment, 0);
   assert.equal(result.months[2].sentiment, -0.25);
+  assert.deepEqual(result.sentiment_counts, {
+    positive: 1,
+    neutral: 0,
+    negative: 1,
+    ironic: 1,
+  });
+  assert.equal(result.source_first_seen.reddit, "2026-06-15T12:00:00.000Z");
   assert.equal(result.topByPeriod.get("2026-06")?.id, "a");
 });
 

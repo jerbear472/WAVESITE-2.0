@@ -7,6 +7,7 @@ export interface MeasuredHistoryBucket {
   engagement: number;
   sentiment: number | null;
   labeled_items: number;
+  sentiment_counts: Record<SentimentLabel, number>;
 }
 
 export function rawEngagement(item: RawItem): number {
@@ -41,6 +42,7 @@ export function aggregateHistory(
   >();
   const topByPeriod = new Map<string, RawItem>();
   const sourceCounts: Partial<Record<RawItem["source"], number>> = {};
+  const sourceFirstSeen: Partial<Record<RawItem["source"], string>> = {};
   for (const item of canonical) {
     const period = item.posted_at.slice(0, 7);
     if (!allowed.has(period)) continue;
@@ -51,6 +53,8 @@ export function aggregateHistory(
     if (label) b.labels.push(label);
     buckets.set(period, b);
     sourceCounts[item.source] = (sourceCounts[item.source] ?? 0) + 1;
+    const first = sourceFirstSeen[item.source];
+    if (!first || item.posted_at < first) sourceFirstSeen[item.source] = item.posted_at;
     const top = topByPeriod.get(period);
     if (!top || rawEngagement(item) > rawEngagement(top)) topByPeriod.set(period, item);
   }
@@ -62,12 +66,27 @@ export function aggregateHistory(
       engagement: Math.round((b?.engagement ?? 0) * 10) / 10,
       sentiment: sentimentNet(b?.labels ?? []),
       labeled_items: b?.labels.length ?? 0,
+      sentiment_counts: {
+        positive: b?.labels.filter((label) => label === "positive").length ?? 0,
+        neutral: b?.labels.filter((label) => label === "neutral").length ?? 0,
+        negative: b?.labels.filter((label) => label === "negative").length ?? 0,
+        ironic: b?.labels.filter((label) => label === "ironic").length ?? 0,
+      },
     };
   });
   const totalItems = months.reduce((n, m) => n + m.volume, 0);
   const labeledItems = months.reduce((n, m) => n + m.labeled_items, 0);
   const coverageMonths = months.filter((m) => m.volume > 0).length;
   const labelCoverage = totalItems ? labeledItems / totalItems : 0;
+  const sentimentCounts = months.reduce(
+    (total, month) => {
+      for (const label of Object.keys(total) as SentimentLabel[]) {
+        total[label] += month.sentiment_counts[label];
+      }
+      return total;
+    },
+    { positive: 0, neutral: 0, negative: 0, ironic: 0 }
+  );
   const confidence =
     totalItems >= 20 && coverageMonths >= 4 && Object.keys(sourceCounts).length >= 2 && labelCoverage >= 0.5
       ? "high" as const
@@ -80,6 +99,8 @@ export function aggregateHistory(
     labeled_items: labeledItems,
     coverage_months: coverageMonths,
     source_counts: sourceCounts,
+    source_first_seen: sourceFirstSeen,
+    sentiment_counts: sentimentCounts,
     confidence,
     topByPeriod,
   };

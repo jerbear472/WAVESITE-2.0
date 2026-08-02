@@ -7,12 +7,13 @@ import {
   Users,
   UserX,
   Lightbulb,
-  Quote,
   Radio,
   Info,
   Camera,
 } from "lucide-react";
-import { getTrendBySlug } from "@/lib/data";
+import { getForecasts, getTrendBySlug } from "@/lib/data";
+import { buildTrendHistories } from "@/lib/pipeline/backfill";
+import { buildTrendNarrative } from "@/lib/trend-narrative";
 import { TrendVisual } from "@/components/TrendVisual";
 import type { Trend } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import { SignalCard } from "@/components/SignalCard";
 import { SaveTrendButton } from "@/components/SaveTrendButton";
 import { TrendHistoryChart } from "@/components/TrendHistoryChart";
 import { TrendExamples } from "@/components/TrendExamples";
+import { TrendIntelligenceBrief } from "@/components/TrendIntelligenceBrief";
 import { LifecyclePosition } from "@/components/LifecyclePosition";
 import {
   lifecycleBadge,
@@ -60,6 +62,17 @@ export default async function TrendDetailPage({
   const { slug } = await params;
   const trend = await getTrendBySlug(slug);
   if (!trend) notFound();
+
+  const [histories, allForecasts] = await Promise.all([
+    buildTrendHistories(12).catch(() => []),
+    getForecasts().catch(() => []),
+  ]);
+  const history = histories.find((item) => item.slug === trend.slug) ?? null;
+  const narrative = buildTrendNarrative(
+    trend,
+    history,
+    allForecasts.filter((forecast) => forecast.trend_id === trend.id)
+  );
 
   const lifecycle = lifecycleBadge(trend.lifecycle_stage);
   const risk = riskBadge(trend.risk_level);
@@ -123,6 +136,8 @@ export default async function TrendDetailPage({
           ? "Media from a real source behind this trend."
           : "No real media captured yet — the visual appears when the measurement layer finds actual posts."}
       </p>
+
+      <TrendIntelligenceBrief narrative={narrative} />
 
       {/* Measured history — the arc with its receipts */}
       <div className="mt-10">
