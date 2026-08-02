@@ -4,25 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts";
 import { History, Loader2 } from "lucide-react";
 import type { TrendHistory } from "@/lib/pipeline/backfill";
+import { fetchHistories } from "@/lib/history-client";
 
-// 12-month engagement sparkline for a trend card. All cards share ONE bulk
-// fetch of /api/trends/history (module-level promise); a card whose trend has
-// no corpus history yet offers the "Gather history" bot instead.
-
-let historyPromise: Promise<Map<string, TrendHistory>> | null = null;
-
-function fetchHistories(force = false): Promise<Map<string, TrendHistory>> {
-  if (!historyPromise || force) {
-    historyPromise = fetch("/api/trends/history")
-      .then((r) => (r.ok ? r.json() : { histories: [] }))
-      .then(
-        (d: { histories?: TrendHistory[] }) =>
-          new Map((d.histories ?? []).map((h) => [h.slug, h]))
-      )
-      .catch(() => new Map());
-  }
-  return historyPromise;
-}
+// 12-month engagement sparkline for a trend card with a photo header (cards
+// without one render the full TrendTrajectory instead). Shares the bulk
+// /api/trends/history fetch via lib/history-client.
 
 export function TrendSparkline({ slug }: { slug: string }) {
   const [history, setHistory] = useState<TrendHistory | null | undefined>(

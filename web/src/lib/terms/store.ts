@@ -189,6 +189,27 @@ export async function getObservationSeries(
   return out;
 }
 
+/** Most recent observation for one term on one source strictly before a
+ *  date — used by adapters over cumulative platform totals (tiktok) to turn
+ *  a lifetime count into a daily delta. */
+export async function getLatestObservationBefore(
+  termId: string,
+  source: SourceId,
+  beforeDate: string
+): Promise<Pick<ObservationRow, "obs_date" | "raw_count" | "meta"> | null> {
+  const { data, error } = await client()
+    .from("term_observations")
+    .select("obs_date, raw_count, meta")
+    .eq("term_id", termId)
+    .eq("source", source)
+    .lt("obs_date", beforeDate)
+    .order("obs_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`term_observations latest read: ${error.message}`);
+  return data ?? null;
+}
+
 /** Per-term observation counts for one source — used to decide who still
  *  needs a baseline backfill. */
 export async function getObservationCounts(

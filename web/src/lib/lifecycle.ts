@@ -6,12 +6,12 @@
 // arithmetic over real cross-platform counts.
 //
 // Cascade ladder (earliest → latest):  bluesky/reddit → google_trends →
-// youtube → wikipedia. Library ladder: emerging → accelerating → peaking →
-// saturated → declining (+ resurfacing). The two ladders align 1:1:
+// tiktok/youtube → wikipedia. Library ladder: emerging → accelerating →
+// peaking → saturated → declining (+ resurfacing). The two ladders align 1:1:
 //
 //   embryonic  → emerging      (early social only — new signal, unproven)
 //   emerging   → accelerating  (search interest firing — gaining steam)
-//   breaking   → peaking       (YouTube firing — breaking into mass reach)
+//   breaking   → peaking       (TikTok/YouTube firing — into mass reach)
 //   mainstream → saturated     (Wikipedia lookups — everyone knows)
 //   decaying   → declining     (previously fired, everything quiet now)
 //   dormant    → (no update — nothing measured, keep the editorial stage)

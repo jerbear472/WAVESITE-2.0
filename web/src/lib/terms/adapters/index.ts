@@ -2,6 +2,7 @@ import type { SourceAdapter } from "@/lib/terms/types";
 import { blueskyAdapter } from "@/lib/terms/adapters/bluesky";
 import { redditAdapter } from "@/lib/terms/adapters/reddit";
 import { googleTrendsAdapter } from "@/lib/terms/adapters/google-trends";
+import { tiktokAdapter } from "@/lib/terms/adapters/tiktok";
 import { youtubeAdapter } from "@/lib/terms/adapters/youtube";
 import { wikipediaAdapter } from "@/lib/terms/adapters/wikipedia";
 
@@ -13,6 +14,7 @@ export const ADAPTERS: SourceAdapter[] = [
   blueskyAdapter,
   redditAdapter,
   googleTrendsAdapter,
+  tiktokAdapter,
   youtubeAdapter,
   wikipediaAdapter,
 ];

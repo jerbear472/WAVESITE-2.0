@@ -63,6 +63,14 @@ test("search plus youtube -> breaking", () => {
   assert.equal(cascadeState(s), "breaking");
 });
 
+test("tiktok firing -> breaking, same mass-reach rung as youtube", () => {
+  const s = signals({
+    reddit: { flagged: true, first_fired: "2026-07-25" },
+    tiktok: { flagged: true, first_fired: "2026-07-31" },
+  });
+  assert.equal(cascadeState(s), "breaking");
+});
+
 test("wikipedia firing -> mainstream, regardless of what else is lit", () => {
   const s = signals({
     bluesky: { flagged: true, first_fired: "2026-07-01" },
@@ -133,7 +141,10 @@ test("breadth counts only AVAILABLE sources — a lost adapter shrinks the panel
     })
   );
   assert.equal(r.breadth, 2);
-  assert.deepEqual(r.sources_available.sort(), ["bluesky", "google_trends", "reddit"].sort());
+  assert.deepEqual(
+    r.sources_available.sort(),
+    ["bluesky", "google_trends", "reddit", "tiktok"].sort()
+  );
   assert.ok(r.composite_score >= 2 * BREADTH_WEIGHT);
 });
 

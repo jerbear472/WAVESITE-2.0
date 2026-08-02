@@ -23,6 +23,7 @@ import { ScoreBar } from "@/components/ScoreBar";
 import { SignalCard } from "@/components/SignalCard";
 import { SaveTrendButton } from "@/components/SaveTrendButton";
 import { TrendHistoryChart } from "@/components/TrendHistoryChart";
+import { TrendExamples } from "@/components/TrendExamples";
 import { LifecyclePosition } from "@/components/LifecyclePosition";
 import {
   lifecycleBadge,
@@ -188,38 +189,9 @@ export default async function TrendDetailPage({
             </Card>
           ) : null}
 
-          {trend.sample_hooks && trend.sample_hooks.length ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-[15px]">
-                  <Quote className="size-[18px] text-primary" /> In the wild —
-                  example content
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {trend.sample_hooks.slice(0, 3).map((h, i) => (
-                    <figure
-                      key={i}
-                      className="flex flex-col justify-between rounded-xl border-l-2 border-primary bg-primary-tint/40 px-4 py-4"
-                    >
-                      <figcaption className="text-[15px] font-medium leading-snug text-foreground">
-                        “{h}”
-                      </figcaption>
-                      {trend.best_platforms[i % trend.best_platforms.length] ? (
-                        <span className="mt-3 w-fit rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                          {trend.best_platforms[i % trend.best_platforms.length]}
-                        </span>
-                      ) : null}
-                    </figure>
-                  ))}
-                </div>
-                <p className="mt-3 text-xs text-faint">
-                  Example hooks — the kind of line this trend rewards.
-                </p>
-              </CardContent>
-            </Card>
-          ) : null}
+          {/* Real linked posts — live TikTok + captured evidence. Falls back
+              to clearly-labeled AI hooks only when nothing real exists. */}
+          <TrendExamples trend={trend} />
 
           <Card>
             <CardHeader>

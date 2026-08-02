@@ -43,6 +43,7 @@ const SOURCE_LABELS: Record<string, string> = {
   bluesky: "Bluesky",
   reddit: "Reddit",
   google_trends: "Google Trends",
+  tiktok: "TikTok",
   youtube: "YouTube",
   wikipedia: "Wikipedia",
 };

@@ -13,6 +13,7 @@ export const SOURCE_IDS = [
   "bluesky",
   "reddit",
   "google_trends",
+  "tiktok",
   "youtube",
   "wikipedia",
 ] as const;
@@ -43,7 +44,9 @@ export interface ObservationRow {
   obs_date: string; // YYYY-MM-DD, UTC calendar day
   raw_count: number;
   approximate: boolean;
-  meta: { link?: string; excerpt?: string } | null;
+  /** cumulative: lifetime platform total (e.g. tiktok hashtag views) kept so
+   *  the next run can derive a daily delta — state, not provenance. */
+  meta: { link?: string; excerpt?: string; cumulative?: number } | null;
   captured_at: string;
 }
 
@@ -93,7 +96,7 @@ export interface CompositeRow {
 export interface AdapterFetchResult {
   raw_count: number | null;
   approximate?: boolean;
-  meta?: { link?: string; excerpt?: string } | null;
+  meta?: { link?: string; excerpt?: string; cumulative?: number } | null;
   context_texts?: string[];
   units?: number; // platform quota units this query consumed
 }
@@ -141,6 +144,7 @@ export const DEFAULT_SCORING_CONFIG: TermScoringConfig = {
     wikipedia: 100, // pageviews/day below this are statistical fog
     bluesky: 3,
     google_trends: 5, // interest index 0-100
+    tiktok: 10_000, // hashtag views/day — anything under is background noise
     youtube: 3,
     reddit: 3,
   },

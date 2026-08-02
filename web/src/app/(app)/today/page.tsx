@@ -10,6 +10,7 @@ import {
   Target,
 } from "lucide-react";
 import { buildDailyDigest, type DigestStory } from "@/lib/daily-digest";
+import { buildDailyActions, type DailyAction } from "@/lib/daily-actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { TrendCard } from "@/components/TrendCard";
@@ -39,7 +40,10 @@ function issueDateLabel(isoDate: string): string {
 }
 
 export default async function TodayPage() {
-  const digest = await buildDailyDigest();
+  const [digest, actions] = await Promise.all([
+    buildDailyDigest(),
+    buildDailyActions(),
+  ]);
 
   return (
     <div className="mx-auto max-w-[860px]">
@@ -82,8 +86,23 @@ export default async function TodayPage() {
         </div>
       </header>
 
+      {/* Do this now — the answer to "I logged on, what do I do?" First
+          thing on the page, three measured calls with their receipts. */}
+      {actions.length ? (
+        <section className="mt-8">
+          <SectionRule label="Do this now" />
+          <Card className="mt-4">
+            <CardContent className="divide-y divide-border p-0">
+              {actions.map((a) => (
+                <ActionRow key={a.verb} action={a} />
+              ))}
+            </CardContent>
+          </Card>
+        </section>
+      ) : null}
+
       {/* Lede */}
-      <section className="mt-8">
+      <section className="mt-10">
         <h1 className="font-display text-[2.5rem] leading-[1.08] tracking-tight text-balance sm:text-[3rem]">
           {digest.title}
         </h1>
@@ -248,6 +267,53 @@ export default async function TodayPage() {
           and paste it into your ESP, or wire it to a send API.
         </p>
       </footer>
+    </div>
+  );
+}
+
+const ACTION_STYLE: Record<
+  DailyAction["verb"],
+  { color: string; bg: string }
+> = {
+  Join: { color: "#159a78", bg: "#e7f5f1" },
+  Watch: { color: "#b77900", bg: "#fbf3e3" },
+  Skip: { color: "#d64d57", bg: "#fdeef0" },
+};
+
+function ActionRow({ action }: { action: DailyAction }) {
+  const s = ACTION_STYLE[action.verb];
+  return (
+    <div className="flex items-start gap-4 px-5 py-4">
+      <span
+        className="mt-0.5 w-14 shrink-0 rounded-full px-2 py-0.5 text-center text-[11px] font-bold uppercase tracking-wide"
+        style={{ color: s.color, background: s.bg }}
+      >
+        {action.verb}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-display text-[16px] leading-tight text-foreground">
+          {action.headline}
+        </p>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          {action.detail}
+        </p>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <Link
+            href={action.href}
+            className="inline-flex items-center gap-1 font-medium text-primary-strong hover:underline"
+          >
+            {action.cta} <ArrowRight className="size-3.5" />
+          </Link>
+          {action.briefHref ? (
+            <Link
+              href={action.briefHref}
+              className="text-muted-foreground hover:text-primary-strong"
+            >
+              Generate the brief
+            </Link>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

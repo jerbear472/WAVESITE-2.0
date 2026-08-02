@@ -58,6 +58,16 @@ const BACKFILL_TERMS_PER_RUN = 25;
 /** The unofficial Google Trends path is slow (1.5s/term) and fragile; cap
  *  how many terms it visits so it can never eat the 300s function budget. */
 const GTRENDS_MAX_TERMS = Number(process.env.TERMS_GTRENDS_MAX || 60);
+/** tiktok (tikwm mirror) is the same shape, and a term whose name isn't a
+ *  real hashtag costs up to 2 lookups (~3s with throttle). Adapters run
+ *  sequentially, so this shares the 300s budget with the gtrends pass —
+ *  hence the lower default. */
+const TIKTOK_MAX_TERMS = Number(process.env.TERMS_TIKTOK_MAX || 40);
+
+const TERM_CAPS: Partial<Record<SourceId, number>> = {
+  google_trends: GTRENDS_MAX_TERMS,
+  tiktok: TIKTOK_MAX_TERMS,
+};
 
 interface SourceRunStats {
   status: "ok" | "failed" | "disabled" | "budget_exhausted";
@@ -143,9 +153,10 @@ export async function runTermIngestion(
       };
       continue;
     }
+    const cap = TERM_CAPS[adapter.source];
     sourceStats[adapter.source] = await collectFromAdapter(
       adapter,
-      adapter.source === "google_trends" ? terms.slice(0, GTRENDS_MAX_TERMS) : terms,
+      cap ? terms.slice(0, cap) : terms,
       obsDate,
       contextsBySource
     );

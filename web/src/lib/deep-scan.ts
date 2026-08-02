@@ -14,6 +14,9 @@ import {
 } from "@/lib/ai/schemas";
 import { fetchAllMarkets, filterRelevantMarkets } from "@/lib/markets";
 import { computeWaveScore } from "@/lib/wavescore";
+import { rescoreTrend } from "@/lib/measured-scores";
+import { hashtagCandidates } from "@/lib/terms/hashtag";
+import { fetchHashtagStats } from "@/lib/tiktok-stats";
 import { getTrends, recordEvidence, upsertTrendBySlug } from "@/lib/data";
 import type { TrendEvidence } from "@/types";
 
@@ -543,6 +546,23 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
       } catch {
         // no image is honest; the waveform card takes over
       }
+    }
+    // Ground creator adoption in real TikTok numbers at birth: distinct
+    // creators on the trend's hashtag replaces the model's guess as a
+    // WaveScore input, so freshly scanned trends stop sharing one default.
+    try {
+      for (const tag of hashtagCandidates(trend.name, [])) {
+        const stats = await fetchHashtagStats(tag);
+        if (stats && stats.users > 0) {
+          Object.assign(
+            trend,
+            rescoreTrend(trend, { uniqueAuthors: stats.users })
+          );
+          break;
+        }
+      }
+    } catch {
+      // mirror down — model scores stand until the next measured sync
     }
     try {
       await upsertTrendBySlug(trend);

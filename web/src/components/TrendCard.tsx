@@ -101,8 +101,9 @@ export function TrendCard({
         {trend.one_line_summary}
       </p>
 
-      {/* Measured 12-month arc — real posts, real engagement, real dates. */}
-      <TrendSparkline slug={trend.slug} />
+      {/* Photo header cards still show the measured arc; trajectory-header
+          cards already carry it up top. */}
+      {trend.hero_image_url ? <TrendSparkline slug={trend.slug} /> : null}
 
       {trend.sources?.length ? (
         <div className="flex flex-wrap gap-x-3 gap-y-1 px-5 pt-2">

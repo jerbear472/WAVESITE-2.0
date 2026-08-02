@@ -20,6 +20,11 @@ import {
   linkTermToTrend,
 } from "@/lib/terms/store";
 import type { CompositeRow, TermRow } from "@/lib/terms/types";
+import { getLatestMetricsRun, getMetricsForRun } from "@/lib/pipeline/store";
+import type { TrendMetricsRow } from "@/lib/pipeline/types";
+import { rescoreTrend } from "@/lib/measured-scores";
+import { hashtagCandidates } from "@/lib/terms/hashtag";
+import { fetchHashtagStats } from "@/lib/tiktok-stats";
 import { generateStructured, isAIConfigured } from "@/lib/ai/provider";
 import { pulseDiscoverySchema } from "@/lib/ai/schemas";
 
@@ -99,6 +104,20 @@ export async function runMeasuredSync(): Promise<MeasuredSyncReport> {
     getTrends(),
   ]);
 
+  // Corpus metrics feed sentiment/spread/adoption into WaveScore so measured
+  // trends stop sharing the model's compressed default numbers.
+  let metricsByTrendId = new Map<string, TrendMetricsRow>();
+  try {
+    const metricsRun = await getLatestMetricsRun();
+    if (metricsRun) {
+      metricsByTrendId = new Map(
+        (await getMetricsForRun(metricsRun)).map((r) => [r.trend_id, r])
+      );
+    }
+  } catch (err) {
+    notes.push(`corpus metrics unavailable: ${msg(err)}`);
+  }
+
   const termById = new Map(terms.map((t) => [t.term_id, t]));
   // A term maps to a trend via its stored trend_id, or by the deterministic
   // slug both seeding paths share (`term-${slugifyTerm(trend.name)}`).
@@ -115,6 +134,7 @@ export async function runMeasuredSync(): Promise<MeasuredSyncReport> {
   let refreshed = 0;
   let skippedDormant = 0;
   const breadthByTrendId = new Map<string, number>();
+  const rescoredIds = new Set<string>();
   const newcomers: { term: TermRow; composite: CompositeRow }[] = [];
 
   for (const [termId, composite] of composites) {
@@ -148,27 +168,108 @@ export async function runMeasuredSync(): Promise<MeasuredSyncReport> {
       saturationFloor(composite.cascade_state)
     );
 
+    const mrow = metricsByTrendId.get(trend.id);
+    rescoredIds.add(trend.id);
+    const next = rescoreTrend(
+      {
+        ...trend,
+        lifecycle_stage: stage,
+        momentum_score: momentum,
+        saturation_score: saturation,
+      },
+      {
+        breadth: composite.breadth,
+        corpusBreadth: mrow?.raw.breadth,
+        uniqueAuthors: mrow?.raw.unique_authors,
+        sentimentNet: mrow?.raw.sentiment_net,
+      }
+    );
+
     if (
       stage === trend.lifecycle_stage &&
       momentum === trend.momentum_score &&
-      saturation === trend.saturation_score
+      saturation === trend.saturation_score &&
+      next.sentiment_score === trend.sentiment_score &&
+      next.wavescore === trend.wavescore
     ) {
       continue; // nothing moved — don't churn updated_at
     }
-
-    const next: Trend = {
-      ...trend,
-      lifecycle_stage: stage,
-      momentum_score: momentum,
-      saturation_score: saturation,
-    };
-    next.wavescore = computeWaveScore(next);
     try {
       await upsertTrendBySlug(next);
       refreshed++;
     } catch (err) {
       notes.push(`refresh failed for ${trend.slug}: ${msg(err)}`);
     }
+  }
+
+  // --- 1b. RESCORE corpus-measured trends without a firing term ------------
+  // Backfilled/scanned trends have real posts, authors, and sentiment labels
+  // even before any term composite fires — use them so their scores separate
+  // from the model defaults.
+  let rescoredFromCorpus = 0;
+  for (const [trendId, mrow] of metricsByTrendId) {
+    if (rescoredIds.has(trendId)) continue;
+    const trend = trendById.get(trendId);
+    if (!trend) continue;
+    const next = rescoreTrend(trend, {
+      corpusBreadth: mrow.raw.breadth,
+      uniqueAuthors: mrow.raw.unique_authors,
+      sentimentNet: mrow.raw.sentiment_net,
+    });
+    if (
+      next.wavescore === trend.wavescore &&
+      next.sentiment_score === trend.sentiment_score
+    ) {
+      continue;
+    }
+    try {
+      await upsertTrendBySlug(next);
+      rescoredFromCorpus++;
+    } catch (err) {
+      notes.push(`corpus rescore failed for ${trend.slug}: ${msg(err)}`);
+    }
+  }
+  if (rescoredFromCorpus > 0) {
+    notes.push(`rescored ${rescoredFromCorpus} trends from corpus metrics`);
+  }
+
+  // --- 1c. GROUND still-unmeasured trends via TikTok hashtag adoption ------
+  // Trends with neither a firing term nor corpus metrics keep the model's
+  // compressed defaults forever unless something real touches them. Distinct
+  // creator counts on the trend's hashtag are that something. Capped per run
+  // (unofficial mirror, sequential cron budget); newest trends first so scan
+  // discoveries ground quickly.
+  const TIKTOK_GROUND_CAP = 12;
+  let grounded = 0;
+  let groundAttempts = 0;
+  const ungrounded = trends
+    .filter((t) => !rescoredIds.has(t.id) && !metricsByTrendId.has(t.id))
+    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+  for (const trend of ungrounded) {
+    if (groundAttempts >= TIKTOK_GROUND_CAP) break;
+    groundAttempts++;
+    try {
+      for (const tag of hashtagCandidates(trend.name, [])) {
+        const stats = await fetchHashtagStats(tag);
+        if (stats && stats.users > 0) {
+          const next = rescoreTrend(trend, { uniqueAuthors: stats.users });
+          if (next.wavescore !== trend.wavescore) {
+            await upsertTrendBySlug(next);
+            grounded++;
+          }
+          break;
+        }
+      }
+      await new Promise((r) => setTimeout(r, 1200));
+    } catch (err) {
+      notes.push(`tiktok grounding stopped: ${msg(err)}`);
+      break; // mirror down — don't burn the rest of the cap this run
+    }
+  }
+  if (grounded > 0) {
+    notes.push(
+      `grounded ${grounded}/${groundAttempts} trends via TikTok hashtag adoption`
+    );
   }
 
   // --- 2. PROMOTE measured newcomers into the library -----------------------
@@ -526,8 +627,9 @@ function measuredTrend(
     created_at: now,
     updated_at: now,
   };
-  trend.wavescore = computeWaveScore(trend);
-  return trend;
+  // Spread comes from the measured breadth, so two newcomers with different
+  // cross-platform reach never share a wavescore by default.
+  return rescoreTrend(trend, { breadth: composite.breadth });
 }
 
 /** Honest minimal record when no AI key is configured (or the call failed):
@@ -562,6 +664,8 @@ function platformName(source: string): string {
       return "Reddit";
     case "youtube":
       return "YouTube";
+    case "tiktok":
+      return "TikTok";
     case "google_trends":
       return "Google Trends";
     case "wikipedia":

@@ -10,7 +10,7 @@
 //
 // cascade_state: derived from WHICH sources have fired and in what order,
 // using the lifecycle ordering (earliest to latest):
-//     bluesky + reddit  ->  google_trends  ->  youtube  ->  wikipedia
+//     bluesky + reddit  ->  google_trends  ->  tiktok/youtube  ->  wikipedia
 // Precedence: the latest-stage source firing today names the state. That
 // encodes the spec's ladder (early only = embryonic, search = emerging,
 // youtube = breaking, wikipedia = mainstream) and resolves mixed cases in
@@ -81,7 +81,9 @@ export function cascadeState(signals: SourceSignal[]): CascadeState {
   const everFired = signals.some((s) => s.first_fired !== null);
 
   if (firing.has("wikipedia")) return "mainstream";
-  if (firing.has("youtube")) return "breaking";
+  // tiktok and youtube share the mass-reach rung: hashtag views accelerating
+  // on TikTok means the same thing as YouTube uploads firing.
+  if (firing.has("youtube") || firing.has("tiktok")) return "breaking";
   if (firing.has("google_trends")) return "emerging";
   if (EARLY_SOURCES.some((s) => firing.has(s))) return "embryonic";
   // Previously fired somewhere, nothing above threshold now — the early
