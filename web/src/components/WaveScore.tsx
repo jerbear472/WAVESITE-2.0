@@ -1,4 +1,3 @@
-import { scoreColorDark } from "@/lib/trend-format";
 import { cn } from "@/lib/utils";
 
 interface WaveScoreProps {
@@ -87,20 +86,8 @@ export function WaveScore({
   );
 }
 
-/** Compact WaveScore chip for trend cards — quiet tinted square, no chrome. */
+/** Compact WaveScore for trend cards — the same blue→cyan gauge as the trend
+ *  page's Signal Readout, scaled down. One score, one look, everywhere. */
 export function WaveScoreChip({ score }: { score: number }) {
-  const color = scoreColorDark(score);
-  return (
-    <div className="flex flex-col items-center justify-center rounded-[10px] border border-[var(--ws-panel-line)] bg-[var(--ws-panel)] px-3 py-1.5 leading-none">
-      <span
-        className="font-semibold tabular-nums text-lg"
-        style={{ color }}
-      >
-        {score}
-      </span>
-      <span className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.18em] text-panel-muted">
-        Wave
-      </span>
-    </div>
-  );
+  return <WaveScore score={score} size={54} strokeWidth={5} />;
 }

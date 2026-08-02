@@ -28,8 +28,12 @@ export default async function BoardPage() {
             Your Board
           </h1>
           <p className="mt-1 text-muted-foreground">
-            The waves that fit you — scan matches and your watchlist, in one
-            place.
+            What fits <em>you</em> — your latest scan&apos;s matches and your
+            watchlist, in one place. The full field lives on the{" "}
+            <Link href="/market" className="text-primary-strong underline underline-offset-2">
+              Market
+            </Link>
+            .
           </p>
         </div>
         <Link

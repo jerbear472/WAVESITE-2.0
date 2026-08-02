@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   ChevronRight,
@@ -14,7 +13,7 @@ import {
   Camera,
 } from "lucide-react";
 import { getTrendBySlug } from "@/lib/data";
-import { imagesForTrend } from "@/lib/trend-images";
+import { TrendVisual } from "@/components/TrendVisual";
 import type { Trend } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,13 +63,12 @@ export default async function TrendDetailPage({
   const lifecycle = lifecycleBadge(trend.lifecycle_stage);
   const risk = riskBadge(trend.risk_level);
   const sentiment = sentimentBadge(trend.sentiment_score);
-  const images = imagesForTrend(trend, 3);
 
   return (
     <div className="mx-auto max-w-[1200px]">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link href="/radar" className="hover:text-foreground">
+        <Link href="/market" className="hover:text-foreground">
           Trend Library
         </Link>
         <ChevronRight className="size-4 text-faint" />
@@ -111,37 +109,18 @@ export default async function TrendDetailPage({
         </div>
       </header>
 
-      {/* Visual read — the trend in imagery */}
-      <div className="mt-10 grid gap-3 sm:grid-cols-[2fr_1fr]">
-        <div className="relative h-64 overflow-hidden rounded-2xl bg-surface-2 sm:h-80">
-          <Image
-            src={images[0]}
-            alt={`${trend.name} — visual reference`}
-            fill
-            priority
-            sizes="(max-width: 640px) 100vw, 66vw"
-            className="object-cover"
-          />
-        </div>
-        <div className="hidden grid-rows-2 gap-3 sm:grid">
-          {images.slice(1, 3).map((src, i) => (
-            <div
-              key={i}
-              className="relative overflow-hidden rounded-2xl bg-surface-2"
-            >
-              <Image
-                src={src}
-                alt=""
-                fill
-                sizes="33vw"
-                className="object-cover"
-              />
-            </div>
-          ))}
-        </div>
+      {/* Visual read — real source media, or the honest waveform */}
+      <div className="group relative mt-10 h-64 overflow-hidden rounded-2xl bg-surface-2 sm:h-80">
+        <TrendVisual
+          trend={trend}
+          sizes="(max-width: 1200px) 100vw, 1200px"
+        />
       </div>
       <p className="mt-2.5 flex items-center gap-1.5 text-xs text-faint">
-        <Camera className="size-3.5" /> Visual references for the {trend.category.toLowerCase()} wave
+        <Camera className="size-3.5" />
+        {trend.hero_image_url
+          ? "Media from a real source behind this trend."
+          : "No real media captured yet — the visual appears when the measurement layer finds actual posts."}
       </p>
 
       {/* Measured history — the arc with its receipts */}
@@ -222,31 +201,21 @@ export default async function TrendDetailPage({
                   {trend.sample_hooks.slice(0, 3).map((h, i) => (
                     <figure
                       key={i}
-                      className="overflow-hidden rounded-xl border border-border bg-card"
+                      className="flex flex-col justify-between rounded-xl border-l-2 border-primary bg-primary-tint/40 px-4 py-4"
                     >
-                      <div className="relative h-32 bg-surface-2">
-                        <Image
-                          src={images[i % images.length]}
-                          alt=""
-                          fill
-                          sizes="(max-width: 640px) 100vw, 25vw"
-                          className="object-cover"
-                        />
-                        {trend.best_platforms[i % trend.best_platforms.length] ? (
-                          <span className="absolute left-2.5 top-2.5 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-medium text-foreground backdrop-blur">
-                            {trend.best_platforms[i % trend.best_platforms.length]}
-                          </span>
-                        ) : null}
-                      </div>
-                      <figcaption className="px-3.5 py-3 text-sm font-medium leading-snug text-foreground">
+                      <figcaption className="text-[15px] font-medium leading-snug text-foreground">
                         “{h}”
                       </figcaption>
+                      {trend.best_platforms[i % trend.best_platforms.length] ? (
+                        <span className="mt-3 w-fit rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                          {trend.best_platforms[i % trend.best_platforms.length]}
+                        </span>
+                      ) : null}
                     </figure>
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-faint">
-                  Example hooks paired with visual references — how this trend
-                  shows up in the feed.
+                  Example hooks — the kind of line this trend rewards.
                 </p>
               </CardContent>
             </Card>

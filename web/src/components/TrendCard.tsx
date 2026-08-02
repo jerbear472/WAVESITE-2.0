@@ -1,12 +1,12 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, ExternalLink, Target } from "lucide-react";
 import type { Trend } from "@/types";
 import { Card } from "@/components/ui/card";
 import { WaveScoreChip } from "@/components/WaveScore";
 import { TrendSparkline } from "@/components/TrendSparkline";
+import { TrendVisual } from "@/components/TrendVisual";
 import { computeHarmony, harmonyTier, HARMONY_TIERS } from "@/lib/harmony";
-import { heroImageForTrend } from "@/lib/trend-images";
+import { provenanceColors, provenanceForTrend } from "@/lib/provenance";
 import { cn } from "@/lib/utils";
 import {
   lifecycleBadge,
@@ -51,6 +51,8 @@ export function TrendCard({
   const harmony = computeHarmony(trend);
   const tier = harmonyTier(harmony, trend);
   const inSync = tier.tier === "in_sync";
+  const provenance = provenanceForTrend(trend);
+  const provColors = provenanceColors(provenance.tone);
 
   return (
     <Card
@@ -78,18 +80,7 @@ export function TrendCard({
         href={`/trends/${trend.slug}`}
         className="relative block h-40 overflow-hidden bg-surface-2"
       >
-        <Image
-          src={trend.hero_image_url || heroImageForTrend(trend)}
-          alt=""
-          fill
-          sizes="(max-width: 640px) 100vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-        />
-        {trend.hero_image_url ? (
-          <span className="absolute bottom-2 right-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
-            real post
-          </span>
-        ) : null}
+        <TrendVisual trend={trend} showLabel={false} />
       </Link>
 
       <div className="flex items-start justify-between gap-4 p-5 pb-4">
@@ -136,7 +127,14 @@ export function TrendCard({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pb-4 pt-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-5 pb-4 pt-3">
+        <span
+          className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+          style={{ color: provColors.color, background: provColors.bg }}
+          title={provenance.detail}
+        >
+          {provenance.label}
+        </span>
         <span
           className="inline-flex items-center gap-1.5 text-xs font-medium"
           style={{ color: tier.color }}
@@ -148,7 +146,7 @@ export function TrendCard({
               boxShadow: inSync ? `0 0 6px ${HARMONY_TIERS.in_sync.glow}` : undefined,
             }}
           />
-          {harmony}% {tier.label.toLowerCase()}
+          {tier.label}
         </span>
         <Meta variant={lifecycle.variant}>{lifecycle.label}</Meta>
         <Meta variant={sentiment.variant}>{sentiment.label}</Meta>

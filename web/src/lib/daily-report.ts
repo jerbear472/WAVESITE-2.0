@@ -93,11 +93,11 @@ export async function generateDailyReport(
           ...top.map(trendLine),
           "",
           tape.entries.length
-            ? `${tape.kind === "movers" ? "Movers since yesterday" : "Current standings"} (harmony = alignment of momentum & sentiment):\n` +
+            ? `${tape.kind === "movers" ? "Movers since yesterday" : "Current standings"} (WaveScore = the master 0-100 opportunity score):\n` +
               tape.entries
                 .map(
                   (m) =>
-                    `- ${m.name}: ${m.harmony}% in sync${m.delta ? ` (${m.delta > 0 ? "+" : ""}${m.delta})` : ""}`
+                    `- ${m.name}: WaveScore ${m.wavescore}${m.delta ? ` (${m.delta > 0 ? "+" : ""}${m.delta})` : ""}`
                 )
                 .join("\n")
             : "No tape data today.",

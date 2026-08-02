@@ -51,7 +51,7 @@ export function SavedTrends({ trends }: { trends: Trend[] }) {
             keep private notes.
           </p>
           <Link
-            href="/radar"
+            href="/market"
             className={`mt-4 ${buttonVariants({ variant: "secondary", size: "sm" })}`}
           >
             Browse Today&apos;s Waves

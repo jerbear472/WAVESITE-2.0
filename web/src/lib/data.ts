@@ -398,7 +398,9 @@ export async function upsertTrendBySlug(
       ...trend,
       id: existing.id,
       created_at: existing.created_at,
-      origin: existing.origin ?? trend.origin,
+      // Keep the STRONGEST origin: a model-suggested trend later found by a
+      // web scan or the measurement layer graduates (drives provenance).
+      origin: strongerOrigin(existing.origin, trend.origin),
       updated_at: new Date().toISOString(),
     });
     result = { trend: existing, created: false };
@@ -419,6 +421,24 @@ export async function upsertTrendBySlug(
     if (error) console.error("[data] trend upsert failed:", error.message);
   }
   return result;
+}
+
+/** Evidence strength of a trend origin — higher wins on upsert. */
+const ORIGIN_RANK: Record<string, number> = {
+  detected: 4,
+  scan: 3,
+  import: 2,
+  pulse: 1,
+  seed: 0,
+};
+
+function strongerOrigin(
+  a: Trend["origin"],
+  b: Trend["origin"]
+): Trend["origin"] {
+  if (!a) return b;
+  if (!b) return a;
+  return (ORIGIN_RANK[b] ?? 0) > (ORIGIN_RANK[a] ?? 0) ? b : a;
 }
 
 export async function recordPulseRun(run: PulseRun): Promise<PulseRun> {

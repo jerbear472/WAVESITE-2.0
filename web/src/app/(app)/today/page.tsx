@@ -120,7 +120,7 @@ export default async function TodayPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <span className="font-mono text-[13px] tnum text-muted-foreground">
-                      {m.harmony}% in sync
+                      Wave {m.wavescore}
                     </span>
                     <Delta value={m.delta} />
                   </div>
@@ -149,8 +149,8 @@ export default async function TodayPage() {
           <div className="px-6 py-16 text-center text-muted-foreground">
             No report has been generated yet today. The pulse keeps running on
             schedule — check back after the next run, or{" "}
-            <Link href="/radar" className="text-primary-strong underline">
-              explore the radar
+            <Link href="/market" className="text-primary-strong underline">
+              explore the market
             </Link>{" "}
             in the meantime.
           </div>

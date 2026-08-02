@@ -531,7 +531,19 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
   // Scan discoveries arrive with measured history + a real hero image —
   // reddit-only backfill (cheap); failures never sink the scan.
   const { runTrendBackfill } = await import("@/lib/pipeline/backfill");
+  const { harvestOgImage } = await import("@/lib/og-image");
   const persistOne = async ({ d, trend }: (typeof ranked)[number]) => {
+    // Real imagery from the pages Claude actually cited — never stock. The
+    // corpus backfill below may upgrade it to actual post media later.
+    if (!trend.hero_image_url && d.sources?.length) {
+      try {
+        trend.hero_image_url = await harvestOgImage(
+          d.sources.map((s) => s.url)
+        );
+      } catch {
+        // no image is honest; the waveform card takes over
+      }
+    }
     try {
       await upsertTrendBySlug(trend);
     } catch (err) {

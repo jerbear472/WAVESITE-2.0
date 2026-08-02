@@ -413,7 +413,12 @@ function ResultsHeader({
             <span className="font-mono text-foreground">
               {scanned.toLocaleString()}
             </span>{" "}
-            signals across platforms — ranked by fit to your brief.
+            signals across platforms — ranked by fit to your brief. These
+            results now live on{" "}
+            <Link href="/board" className="text-primary-strong underline underline-offset-2">
+              Your Board
+            </Link>
+            , and anything new here is already queued for daily measurement.
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
@@ -422,9 +427,9 @@ function ResultsHeader({
           </Button>
           <Link
             href="/board"
-            className={buttonVariants({ variant: "ghost" })}
+            className={buttonVariants({ variant: "primary" })}
           >
-            <LayoutDashboard className="size-4" /> Your Board
+            <LayoutDashboard className="size-4" /> View Your Board
           </Link>
         </div>
       </CardContent>

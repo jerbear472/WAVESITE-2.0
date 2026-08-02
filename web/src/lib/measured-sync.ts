@@ -62,12 +62,20 @@ best_platforms must use these names where applicable: TikTok, Instagram, YouTube
 
 export interface MeasuredSyncReport {
   run_id: string;
+  /** Terms with a fresh composite this run — what was actually measured. */
+  terms_measured: number;
+  /** Terms persistently firing on ≥1 platform right now. */
+  firing: number;
   refreshed: number;
   promoted_new: number;
   skipped_dormant: number;
+  /** Trends snapshotted into history this run. */
+  snapshotted: number;
   enrichment: "ai" | "fallback" | "none";
   forecast_emitted: number;
   forecast_resolved: number;
+  /** Claims still open after this run — context for emitted=0. */
+  forecasts_open: number;
   notes: string[];
 }
 
@@ -195,6 +203,27 @@ export async function runMeasuredSync(): Promise<MeasuredSyncReport> {
     }
   }
 
+  // --- 2b. IMAGE REPAIR — real og:images for scan trends still on the
+  // waveform fallback, harvested from their recorded evidence URLs ----------
+  try {
+    const { getEvidenceForTrend } = await import("@/lib/data");
+    const { harvestOgImage } = await import("@/lib/og-image");
+    const needsImage = trends
+      .filter((t) => !t.hero_image_url && t.origin === "scan")
+      .slice(0, 8);
+    for (const t of needsImage) {
+      const evidence = await getEvidenceForTrend(t.id, 5);
+      if (evidence.length === 0) continue;
+      const image = await harvestOgImage(evidence.map((e) => e.source_url));
+      if (image) {
+        await upsertTrendBySlug({ ...t, hero_image_url: image });
+        notes.push(`harvested source image for ${t.slug}`);
+      }
+    }
+  } catch (err) {
+    notes.push(`image repair failed: ${msg(err)}`);
+  }
+
   // --- 3. RUN RECORD + SNAPSHOT the whole field -----------------------------
   const run: PulseRun = {
     id: runId,
@@ -239,15 +268,30 @@ export async function runMeasuredSync(): Promise<MeasuredSyncReport> {
   } catch (err) {
     notes.push(`forecast resolution failed: ${msg(err)}`);
   }
+  let forecastsOpen = 0;
+  try {
+    const { getForecasts } = await import("@/lib/data");
+    forecastsOpen = (await getForecasts({ status: "pending" })).length;
+  } catch {
+    // count is advisory only
+  }
+
+  const firing = [...composites.values()].filter(
+    (c) => c.sources_flagged.length > 0
+  ).length;
 
   return {
     run_id: runId,
+    terms_measured: composites.size,
+    firing,
     refreshed,
     promoted_new: promotedNew,
     skipped_dormant: skippedDormant,
+    snapshotted: snapshots.length,
     enrichment,
     forecast_emitted: emitted,
     forecast_resolved: resolved,
+    forecasts_open: forecastsOpen,
     notes,
   };
 }

@@ -28,7 +28,9 @@ export interface DigestMover {
   slug: string;
   name: string;
   category: string;
-  harmony: number;
+  /** Current WaveScore — the product's one number. */
+  wavescore: number;
+  /** WaveScore change vs the baseline run (0 in standings mode). */
   delta: number;
 }
 
@@ -91,13 +93,13 @@ export function buildTape(
     entries: history.series
       .map((s) => ({ series: s, point: s.points.at(-1) }))
       .filter((x) => x.point)
-      .sort((a, b) => b.point!.harmony - a.point!.harmony)
+      .sort((a, b) => b.point!.wavescore - a.point!.wavescore)
       .slice(0, limit)
       .map(({ series, point }) => ({
         slug: series.trend.slug,
         name: series.trend.name,
         category: series.trend.category,
-        harmony: point!.harmony,
+        wavescore: point!.wavescore,
         delta: 0,
       })),
   });
@@ -116,13 +118,13 @@ export function buildTape(
     const now = s.points.find((p) => p.run_id === last.id);
     const then = s.points.find((p) => p.run_id === baseline.id);
     if (!now || !then) continue;
-    const delta = now.harmony - then.harmony;
+    const delta = now.wavescore - then.wavescore;
     if (delta === 0) continue;
     movers.push({
       slug: s.trend.slug,
       name: s.trend.name,
       category: s.trend.category,
-      harmony: now.harmony,
+      wavescore: now.wavescore,
       delta,
     });
   }
@@ -339,7 +341,7 @@ function tapeHtml(tape: DigestTape): string {
           <span style="font-family:${FONT};font-size:11px;color:${FAINT};text-transform:uppercase;letter-spacing:0.1em;">&nbsp; ${esc(m.category)}</span>
         </td>
         <td align="right" style="padding:9px 0;border-top:${i === 0 ? "none" : `1px solid ${LINE}`};white-space:nowrap;">
-          <span style="font-family:${FONT};font-size:13px;color:${MUTED};">${m.harmony}%&nbsp;in&nbsp;sync&nbsp;&nbsp;</span>${deltaCell(m.delta)}
+          <span style="font-family:${FONT};font-size:13px;color:${MUTED};">Wave&nbsp;${m.wavescore}&nbsp;&nbsp;</span>${deltaCell(m.delta)}
         </td>
       </tr>`
     )
@@ -416,7 +418,7 @@ export function renderNewsletterHtml(digest: DailyDigest): string {
               <!-- CTA -->
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:30px auto 4px;">
                 <tr><td align="center" style="background:${BLUE};border-radius:999px;">
-                  <a href="${SITE_URL}/radar" style="display:inline-block;padding:11px 26px;font-family:${FONT};font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">Open today&rsquo;s radar &rarr;</a>
+                  <a href="${SITE_URL}/market" style="display:inline-block;padding:11px 26px;font-family:${FONT};font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">Open today&rsquo;s market &rarr;</a>
                 </td></tr>
               </table>
 

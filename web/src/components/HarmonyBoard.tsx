@@ -1,8 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
-import { heroImageForTrend } from "@/lib/trend-images";
 import { HARMONY_TIERS, type HarmonizedTrend } from "@/lib/harmony";
+import { WaveScore } from "@/components/WaveScore";
+import { TrendVisual } from "@/components/TrendVisual";
 import { cn } from "@/lib/utils";
 
 export function HarmonyBoard({
@@ -12,9 +12,12 @@ export function HarmonyBoard({
   trends: HarmonizedTrend[];
   limit?: number;
 }) {
+  // Ranked by WaveScore — the number the tiles lead with. Harmony still
+  // drives each tile's tier color; it just no longer competes as a number.
+  const ranked = [...trends].sort((a, b) => b.wavescore - a.wavescore);
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {trends.slice(0, limit).map((t) => (
+      {ranked.slice(0, limit).map((t) => (
         <HarmonyTile key={t.id} trend={t} />
       ))}
     </div>
@@ -36,13 +39,7 @@ export function HarmonyTile({ trend }: { trend: HarmonizedTrend }) {
       style={{ borderTopColor: spec.color, borderTopWidth: 3 }}
     >
       <div className="relative h-28 overflow-hidden bg-surface-2">
-        <Image
-          src={heroImageForTrend(trend)}
-          alt=""
-          fill
-          sizes="(max-width: 640px) 100vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-        />
+        <TrendVisual trend={trend} showLabel={false} />
       </div>
       <div className="p-5 pt-4">
         <div className="flex items-start justify-between gap-3">
@@ -57,35 +54,20 @@ export function HarmonyTile({ trend }: { trend: HarmonizedTrend }) {
           <Delta value={trend.delta} />
         </div>
 
-        <div className="mt-4 flex items-end justify-between">
-          <div>
+        {/* WaveScore is the number; the tier is the cultural read. */}
+        <div className="mt-4 flex items-center justify-between">
+          <WaveScore score={trend.wavescore} size={58} strokeWidth={5} />
+          <div className="flex flex-col items-end gap-1">
             <span
-              className="font-mono text-3xl font-semibold tnum"
-              style={{ color: spec.color }}
+              className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+              style={{ background: `${spec.color}1a`, color: spec.color }}
             >
-              {trend.harmony}
-              <span className="text-base font-normal">%</span>
+              {spec.label}
             </span>
-            <span className="ml-2 text-xs text-muted-foreground">in sync</span>
+            <span className="max-w-[16ch] text-right text-[11px] leading-snug text-faint">
+              {spec.description}
+            </span>
           </div>
-          <span
-            className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-            style={{ background: `${spec.color}1a`, color: spec.color }}
-          >
-            {spec.label}
-          </span>
-        </div>
-
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{
-              width: `${trend.harmony}%`,
-              background: inSync
-                ? `linear-gradient(90deg, ${spec.color}, ${spec.glow})`
-                : spec.color,
-            }}
-          />
         </div>
       </div>
     </Link>
