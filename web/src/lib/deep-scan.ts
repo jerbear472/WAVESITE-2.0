@@ -2,7 +2,6 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { Trend } from "@/types";
 import type { ScanProfile } from "@/lib/fit";
 import {
-  MODEL,
   extractJson,
   getClient,
 } from "@/lib/ai/provider";
@@ -16,6 +15,11 @@ import { hashtagCandidates } from "@/lib/terms/hashtag";
 import { fetchHashtagStats } from "@/lib/tiktok-stats";
 import { getTrends, recordEvidence, upsertTrendBySlug } from "@/lib/data";
 import type { TrendEvidence } from "@/types";
+
+// Scans are an interactive product path, so use the faster model independently
+// from slower editorial/analysis jobs that may intentionally use MODEL (Opus).
+const SCAN_MODEL = process.env.SCAN_MODEL || "claude-sonnet-4-20250514";
+const SCAN_DEADLINE_MS = 45_000;
 
 // ---------------------------------------------------------------------------
 // Deep scan — a real appraisal of the live internet, not a library lookup.
@@ -172,8 +176,8 @@ async function runResearch(
   const progress = { searches: 0, signals: 0 };
 
   const tools = [
-    { type: "web_search_20260209", name: "web_search", max_uses: 12 },
-    { type: "web_fetch_20260209", name: "web_fetch", max_uses: 6 },
+    { type: "web_search_20260209", name: "web_search", max_uses: 6 },
+    { type: "web_fetch_20260209", name: "web_fetch", max_uses: 2 },
   ] as unknown as Anthropic.Messages.ToolUnion[];
 
   const messages: Anthropic.MessageParam[] = [
@@ -181,23 +185,29 @@ async function runResearch(
   ];
 
   let finalText = "";
-  for (let turn = 0; turn < 8; turn++) {
-    const stream = client.messages.stream({
-      model: MODEL,
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
-      system: DEEP_SCAN_SYSTEM,
-      tools,
-      messages,
-    } as unknown as Anthropic.MessageCreateParamsStreaming);
+  const abort = new AbortController();
+  const deadline = setTimeout(() => abort.abort(), SCAN_DEADLINE_MS);
 
-    // Track server tool-use blocks so we can surface the actual query/url.
-    const pendingInputs = new Map<
-      number,
-      { name: string; json: string; initial?: Record<string, unknown> }
-    >();
+  try {
+    for (let turn = 0; turn < 3; turn++) {
+      const stream = client.messages.stream(
+        {
+          model: SCAN_MODEL,
+          max_tokens: 8000,
+          system: DEEP_SCAN_SYSTEM,
+          tools,
+          messages,
+        } as unknown as Anthropic.MessageCreateParamsStreaming,
+        { signal: abort.signal }
+      );
 
-    for await (const event of stream) {
+      // Track server tool-use blocks so we can surface the actual query/url.
+      const pendingInputs = new Map<
+        number,
+        { name: string; json: string; initial?: Record<string, unknown> }
+      >();
+
+      for await (const event of stream) {
       /* eslint-disable @typescript-eslint/no-explicit-any */
       const ev = event as any;
       if (ev.type === "content_block_start") {
@@ -255,19 +265,22 @@ async function runResearch(
         }
       }
       /* eslint-enable @typescript-eslint/no-explicit-any */
-    }
+      }
 
-    const response = await stream.finalMessage();
-    if (response.stop_reason === "pause_turn") {
-      messages.push({ role: "assistant", content: response.content });
-      continue;
+      const response = await stream.finalMessage();
+      if (response.stop_reason === "pause_turn") {
+        messages.push({ role: "assistant", content: response.content });
+        continue;
+      }
+      finalText = response.content
+        .filter((b): b is Anthropic.TextBlock => b.type === "text")
+        .map((b) => b.text)
+        .join("")
+        .trim();
+      break;
     }
-    finalText = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
-    break;
+  } finally {
+    clearTimeout(deadline);
   }
 
   const parsed = deepScanSchema.parse(extractJson(finalText));
