@@ -3,6 +3,7 @@ import { rankAndNarrow, type ScanProfile } from "@/lib/fit";
 import { isAIConfigured } from "@/lib/ai/provider";
 import { runDeepScan, type ScanEmit } from "@/lib/deep-scan";
 import { getFunnelSnapshot } from "@/lib/terms/funnel";
+import { after } from "next/server";
 
 // Streams a live scan as newline-delimited JSON. With ANTHROPIC_API_KEY set
 // this is a real deep scan: Claude researches the live web (server-side web
@@ -47,7 +48,8 @@ export async function POST(req: Request) {
 
         if (isAIConfigured()) {
           try {
-            await runDeepScan(profile, send);
+            const persistScan = await runDeepScan(profile, send);
+            after(persistScan);
           } catch (err) {
             console.error("/api/scan deep scan failed:", err);
             send({

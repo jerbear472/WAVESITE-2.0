@@ -1,4 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { Trend } from "@/types";
 import type { ScanProfile } from "@/lib/fit";
 import {
@@ -19,8 +20,8 @@ import type { TrendEvidence } from "@/types";
 // Scans are an interactive product path, so use the faster model independently
 // from slower editorial/analysis jobs that may intentionally use MODEL (Opus).
 const SCAN_MODEL =
-  process.env.SCAN_MODEL || "claude-haiku-4-5-20251001";
-const SCAN_DEADLINE_MS = 30_000;
+  process.env.SCAN_MODEL || "claude-sonnet-4-5-20250929";
+const SCAN_DEADLINE_MS = 45_000;
 
 // ---------------------------------------------------------------------------
 // Deep scan — a real appraisal of the live internet, not a library lookup.
@@ -34,13 +35,13 @@ export type ScanEmit = (event: Record<string, unknown>) => void;
 const DEEP_SCAN_SYSTEM = `You are the deep-scan engine of WaveSight, a cultural-intelligence terminal used by marketers and creators. You research the LIVE internet with web search before saying anything.
 
 Rules of the appraisal:
-- Run exactly 1 focused web search for current creator formats and behaviors on the user's platforms. Search the broader format landscape, not news about the user's niche: the niche is the adaptation lens applied after discovery. Include recent participation and saturation language. Do not run a second query and do not fetch individual pages; search-result evidence is sufficient for this fast scan.
+- Run exactly 2 focused web searches. Search 1 discovers current creator formats and behaviors on the user's priority platforms. Search 2 validates the strongest candidates in the user's niche and looks for real participation plus saturation/backlash. Keep both queries current (roughly the last 7-30 days). Do not fetch individual pages; search-result evidence is sufficient for this interactive scan.
 - Be balanced and honest. Surface headwinds, backlash, and saturation — not just hype. If a trend is fading, say so and score it accordingly.
 - Build a candidate set, then return 2-3 independently evidenced trends that genuinely earn a spot for THIS brief. If fewer survive verification, return fewer and explain the evidence gap in field_notes. Never pad with guesses.
 - A result must be a specific, nameable content opportunity: a format, behavior, aesthetic, phrase, product behavior, sound, or recurring conversation. Broad subjects such as "camping", "hiking", "outdoors", "wellness", or "travel" are search territory, not valid trend names.
 - Prefer evidence that shows people actually participating, copying, discussing, or searching for the behavior. A generic forecast/listicle that merely mentions a category is weak evidence and cannot carry a result by itself.
 - Make the output immediately usable by a creator. The summary must say what is happening now; creative_angles and sample_hooks must describe concrete posts they could make this week.
-- Every trend must cite 2-5 REAL sources you actually found via search — exact URLs from the results. Never invent or approximate a URL.
+- Every trend must cite 2-5 REAL sources you actually found via search — exact URLs from the results, with at least one source that demonstrates participation or adoption. Never invent or approximate a URL.
 - fit_score is an honest 0-100 read of how well the trend serves the user's specific brief, and fit_reasons must reference the brief, not generic praise.
 
 Scoring guidance (all 0-100 integers): momentum_score = energy gained right now; sentiment_score = how positively culture feels (78+ = genuinely loved); brand_safety_score; saturation_score (high = worn out); commercial_relevance_score. Be discriminating — most trends should NOT score above 85 on sentiment or momentum.
@@ -119,7 +120,10 @@ function deepScanPrompt(profile: ScanProfile, measuredDigest: string) {
 - Risk appetite: ${profile.appetite}
 ${profile.focus ? `- Extra focus: ${profile.focus}` : ""}
 ${measuredDigest}
-Run exactly 1 compound web search for creator formats currently spreading on the user's priority platforms. The query must cover a 7-30 day recency term, participation/format language, and a saturation or backlash term. Do NOT limit the query to "${profile.niche}" or search for ${profile.niche} news; discover broader native formats first, then judge and explain how each can be authentically adapted to ${profile.niche}. Do not perform any additional searches or page fetches. The point of a NEW scan is what changed since the last one.
+Run exactly 2 searches, in this order:
+1. Discover creator-native formats currently spreading on ${profile.platforms.join(", ") || "major social platforms"}. Cover a 7-30 day recency term plus participation/format and saturation/backlash language. Do not constrain this first query to "${profile.niche}".
+2. Validate only the best candidate formats for "${profile.niche}" and "${profile.audience || profile.userType}". Look for concrete examples of people using the format, not niche news or generic trend forecasts.
+Do not perform additional searches or page fetches. The point of a NEW scan is what changed, what has evidence of participation, and what this user can credibly make now.
 
 First form a candidate list, then discard anything that is merely a broad topic, a perennial activity, an unsupported prediction, or a renamed version of another result. Return 2-3 distinct opportunities only when each has at least two independent sources and a concrete creator action. Rank for this user's stated platforms and goal, not for general popularity.
 
@@ -173,7 +177,7 @@ async function runResearch(
     {
       type: "web_search_20260209",
       name: "web_search",
-      max_uses: 1,
+      max_uses: 2,
       allowed_callers: ["direct"],
     },
   ] as unknown as Anthropic.Messages.ToolUnion[];
@@ -194,6 +198,9 @@ async function runResearch(
           max_tokens: 2500,
           system: DEEP_SCAN_SYSTEM,
           tools,
+          output_config: {
+            format: zodOutputFormat(deepScanSchema),
+          },
           messages,
         } as unknown as Anthropic.MessageCreateParamsStreaming,
         { signal: abort.signal }
@@ -382,7 +389,10 @@ function toTrend(d: DeepScanTrendResult): Trend {
  * Full deep-scan pipeline. Emits the same NDJSON event vocabulary the scan UI
  * already speaks (status / narrow / hit / notes / done).
  */
-export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
+export async function runDeepScan(
+  profile: ScanProfile,
+  emit: ScanEmit
+): Promise<() => Promise<void>> {
   emit({
     type: "status",
     phase: "connect",
@@ -456,6 +466,10 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
     scanned: progress.signals,
     exploratory: false,
   });
+
+  // The route schedules this after the response closes. Supabase writes,
+  // image harvesting and corpus backfills must never extend time-to-answer.
+  return async () => {
 
   // Fold discoveries into the library so the dashboard/pulse field sees them.
   // Output-boundary hook: each trend's cited sources are retained as
@@ -536,4 +550,5 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
     // never turn a successful scan into an error or trigger a fallback scan.
     console.error("[deep-scan] post-result enrichment failed:", err);
   }
+  };
 }
