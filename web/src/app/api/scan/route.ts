@@ -6,9 +6,8 @@ import { getFunnelSnapshot } from "@/lib/terms/funnel";
 
 // Streams a live scan as newline-delimited JSON. With ANTHROPIC_API_KEY set
 // this is a real deep scan: Claude researches the live web (server-side web
-// search), returns a variable number of source-linked trends appraised against
-// the brief, then matches live Kalshi/Polymarket odds against public
-// sentiment. Without a key it falls back to ranking the local library.
+// search) and returns a variable number of source-linked trends appraised
+// against the brief. Without a key it falls back to the local library.
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;

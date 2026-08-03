@@ -11,13 +11,12 @@ import {
   LayoutDashboard,
   Target,
 } from "lucide-react";
-import type { MarketSignal, Trend } from "@/types";
+import type { Trend } from "@/types";
 import type { ScanProfile } from "@/lib/fit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendCard } from "@/components/TrendCard";
-import { MarketSignalsPanel } from "@/components/MarketSignalsPanel";
 import { ScanIntake } from "@/components/ScanIntake";
 import { ScanFunnel } from "@/components/ScanFunnel";
 import type { FunnelSnapshot } from "@/lib/terms/funnel";
@@ -52,11 +51,6 @@ export function ScanExperience() {
   const [hits, setHits] = useState<Hit[]>([]);
   const [exploratory, setExploratory] = useState(false);
   const [fieldNotes, setFieldNotes] = useState<string | null>(null);
-  const [markets, setMarkets] = useState<{
-    signals: MarketSignal[];
-    notes: string;
-    venues: string[];
-  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [funnel, setFunnel] = useState<FunnelSnapshot | null>(null);
   const [initialProfile, setInitialProfile] = useState<ScanProfile | null>(null);
@@ -88,7 +82,6 @@ export function ScanExperience() {
     setScanned(0);
     setExploratory(false);
     setFieldNotes(null);
-    setMarkets(null);
     setError(null);
     setFunnel(null);
 
@@ -153,13 +146,6 @@ export function ScanExperience() {
             case "notes":
               setFieldNotes(ev.fieldNotes || null);
               break;
-            case "markets":
-              setMarkets({
-                signals: ev.signals ?? [],
-                notes: ev.notes ?? "",
-                venues: ev.venues ?? [],
-              });
-              break;
             case "done":
               setProgress(100);
               setPhase("results");
@@ -210,7 +196,7 @@ export function ScanExperience() {
                 <p className="text-sm text-panel-muted">
                   {error
                     ? error
-                    : "Researching the live web, appraising fit to your brief, and checking prediction markets."}
+                    : "Researching the live web and appraising each opportunity against your brief."}
                 </p>
               </div>
             </div>
@@ -367,13 +353,6 @@ export function ScanExperience() {
                 );
               })}
             </div>
-            {markets ? (
-              <MarketSignalsPanel
-                signals={markets.signals}
-                notes={markets.notes}
-                venues={markets.venues}
-              />
-            ) : null}
           </>
         )
       ) : null}

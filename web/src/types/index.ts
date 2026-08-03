@@ -282,27 +282,3 @@ export interface ForecastResolutionLog {
 
 /** How a trend entered the library. */
 export type TrendOrigin = "seed" | "pulse" | "import" | "scan";
-
-// ---------------------------------------------------------------------------
-// Prediction market aggregation — live Kalshi/Polymarket markets matched to
-// scanned trends, with a sentiment-vs-odds read to inform bets.
-// ---------------------------------------------------------------------------
-
-export type MarketVenue = "kalshi" | "polymarket";
-
-/** A live prediction market relevant to the scanned cultural field. */
-export interface MarketSignal {
-  /** Slug of the scanned trend this market relates to, if any. */
-  trend_slug: string | null;
-  venue: MarketVenue;
-  market_title: string;
-  url: string;
-  /** Market-implied probability of YES, 0-100. */
-  implied_probability: number;
-  /** What public sentiment across the internet suggests, 0-100. */
-  sentiment_probability: number;
-  /** Direction of the divergence between sentiment and market odds. */
-  edge: "sentiment_ahead" | "market_ahead" | "aligned";
-  /** 1-2 sentence read on why, citing the sentiment evidence. */
-  rationale: string;
-}

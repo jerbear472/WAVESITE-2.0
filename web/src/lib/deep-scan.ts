@@ -1,18 +1,15 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import type { MarketSignal, Trend } from "@/types";
+import type { Trend } from "@/types";
 import type { ScanProfile } from "@/lib/fit";
 import {
   MODEL,
   extractJson,
-  generateStructured,
   getClient,
 } from "@/lib/ai/provider";
 import {
   deepScanSchema,
-  marketAnalysisSchema,
   type DeepScanTrendResult,
 } from "@/lib/ai/schemas";
-import { fetchAllMarkets, filterRelevantMarkets } from "@/lib/markets";
 import { computeWaveScore } from "@/lib/wavescore";
 import { rescoreTrend } from "@/lib/measured-scores";
 import { hashtagCandidates } from "@/lib/terms/hashtag";
@@ -24,8 +21,7 @@ import type { TrendEvidence } from "@/types";
 // Deep scan — a real appraisal of the live internet, not a library lookup.
 // Claude runs multi-angle web searches (server-side web_search/web_fetch),
 // returns only the trends that genuinely earn a spot (variable count), each
-// grounded in real source links, then a second pass matches live Kalshi and
-// Polymarket markets against the field and reads sentiment vs. odds.
+// grounded in real source links.
 // ---------------------------------------------------------------------------
 
 export type ScanEmit = (event: Record<string, unknown>) => void;
@@ -35,7 +31,10 @@ const DEEP_SCAN_SYSTEM = `You are the deep-scan engine of WaveSight, a cultural-
 Rules of the appraisal:
 - Search widely before concluding: platform-native angles (TikTok/Reddit/X/Instagram chatter), press and trade coverage, and trend trackers. Vary your queries; do not stop at the first page of one search.
 - Be balanced and honest. Surface headwinds, backlash, and saturation — not just hype. If a trend is fading, say so and score it accordingly.
-- Build a broad candidate set, then return 6-12 independently evidenced trends that genuinely earn a spot for THIS brief when the live evidence supports them. If fewer than 6 survive verification, return fewer and explain the evidence gap in field_notes. Never pad with guesses.
+- Build a broad candidate set, then return 5-8 independently evidenced trends that genuinely earn a spot for THIS brief. If fewer survive verification, return fewer and explain the evidence gap in field_notes. Never pad with guesses.
+- A result must be a specific, nameable content opportunity: a format, behavior, aesthetic, phrase, product behavior, sound, or recurring conversation. Broad subjects such as "camping", "hiking", "outdoors", "wellness", or "travel" are search territory, not valid trend names.
+- Prefer evidence that shows people actually participating, copying, discussing, or searching for the behavior. A generic forecast/listicle that merely mentions a category is weak evidence and cannot carry a result by itself.
+- Make the output immediately usable by a creator. The summary must say what is happening now; creative_angles and sample_hooks must describe concrete posts they could make this week.
 - Every trend must cite 2-5 REAL sources you actually found via search — exact URLs from the results. Never invent or approximate a URL.
 - fit_score is an honest 0-100 read of how well the trend serves the user's specific brief, and fit_reasons must reference the brief, not generic praise.
 
@@ -115,7 +114,9 @@ function deepScanPrompt(profile: ScanProfile, measuredDigest: string) {
 - Risk appetite: ${profile.appetite}
 ${profile.focus ? `- Extra focus: ${profile.focus}` : ""}
 ${measuredDigest}
-Search the web from multiple angles (the niche itself, each priority platform, adjacent culture/fashion/press coverage, and at least one contrarian "is X over?" style query). Run explicit recency queries for the last 7-30 days and discovery queries such as "rising", "breakout", and "people are starting to". Chase what the searches surface, not just what you already know — the point of a NEW scan is what changed since the last one. Aim to verify 6-12 distinct results, while returning fewer when evidence genuinely does not support them. Then deliver your appraisal.
+Search the web from multiple angles (the niche itself, each priority platform, adjacent culture/fashion/press coverage, and at least one contrarian "is X over?" style query). Run explicit recency queries for the last 7-30 days and discovery queries such as "rising", "breakout", and "people are starting to". Chase what the searches surface, not just what you already know — the point of a NEW scan is what changed since the last one.
+
+First form a candidate list, then discard anything that is merely a broad topic, a perennial activity, an unsupported prediction, or a renamed version of another result. Return 5-8 distinct opportunities only when each has at least two independent sources and a concrete creator action. Rank for this user's stated platforms and goal, not for general popularity.
 
 After your research, respond with a SINGLE valid JSON object and nothing else — no prose before or after it, no markdown fences:
 {
@@ -171,8 +172,8 @@ async function runResearch(
   const progress = { searches: 0, signals: 0 };
 
   const tools = [
-    { type: "web_search_20260209", name: "web_search", max_uses: 18 },
-    { type: "web_fetch_20260209", name: "web_fetch", max_uses: 10 },
+    { type: "web_search_20260209", name: "web_search", max_uses: 12 },
+    { type: "web_fetch_20260209", name: "web_fetch", max_uses: 6 },
   ] as unknown as Anthropic.Messages.ToolUnion[];
 
   const messages: Anthropic.MessageParam[] = [
@@ -183,7 +184,7 @@ async function runResearch(
   for (let turn = 0; turn < 8; turn++) {
     const stream = client.messages.stream({
       model: MODEL,
-      max_tokens: 32000,
+      max_tokens: 16000,
       thinking: { type: "adaptive" },
       system: DEEP_SCAN_SYSTEM,
       tools,
@@ -366,89 +367,9 @@ function toTrend(d: DeepScanTrendResult): Trend {
   };
 }
 
-const MARKET_SYSTEM = `You are the prediction-market analyst of WaveSight. You compare public sentiment across the internet (from a just-completed deep trend scan) against live market-implied odds on Kalshi and Polymarket, to surface where sentiment and money disagree.
-
-Rules:
-- Only include markets with a genuine connection to the scanned cultural field or the user's niche. It is fine to return zero signals if nothing relates.
-- implied_probability is the market's number (given to you). sentiment_probability is YOUR honest read of what public sentiment implies for the same question, grounded in the scan evidence.
-- edge: "sentiment_ahead" when sentiment suggests the market underprices YES, "market_ahead" when the market is pricing in something sentiment hasn't caught up to, "aligned" when they agree within ~5 points.
-- rationale must cite the sentiment evidence in one or two sentences. This informs bets — be honest, never promotional.`;
-
-async function analyzeMarkets(
-  profile: ScanProfile,
-  trends: DeepScanTrendResult[],
-  fieldNotes: string,
-  emit: ScanEmit
-): Promise<{ signals: MarketSignal[]; notes: string; venues: string[] }> {
-  emit({
-    type: "status",
-    phase: "markets",
-    message: "Pulling live markets from Kalshi & Polymarket…",
-    progress: 88,
-  });
-
-  const { markets, venuesReached } = await fetchAllMarkets();
-  if (!markets.length) {
-    return {
-      signals: [],
-      notes: "Prediction market venues were unreachable — no odds to compare.",
-      venues: venuesReached,
-    };
-  }
-
-  const keywords = [
-    profile.niche,
-    profile.focus ?? "",
-    ...trends.map((t) => `${t.trend_name} ${t.category}`),
-  ];
-  const relevant = filterRelevantMarkets(markets, keywords);
-
-  emit({
-    type: "status",
-    phase: "markets",
-    message: `Comparing sentiment vs odds across ${relevant.length} live markets…`,
-    progress: 93,
-  });
-
-  const marketList = relevant
-    .map(
-      (m) =>
-        `- [${m.venue}] "${m.title}" | yes=${m.impliedProbability}% | 24h vol≈$${Math.round(m.volume24h).toLocaleString()} | ${m.url}`
-    )
-    .join("\n");
-  const trendList = trends
-    .map(
-      (t) =>
-        `- ${t.trend_name} (slug: ${t.slug}, ${t.lifecycle_stage}, momentum ${t.momentum_score}, sentiment ${t.sentiment_score}): ${t.summary}`
-    )
-    .join("\n");
-
-  const result = await generateStructured({
-    system: MARKET_SYSTEM,
-    prompt: `User niche: ${profile.niche}. Field notes from the scan: ${fieldNotes}
-
-Scanned trends (public sentiment evidence):
-${trendList}
-
-Live markets (use the exact url and implied probability given):
-${marketList}
-
-Return JSON: { "signals": [{ "trend_slug": string|null (a slug from above or null), "venue": "kalshi"|"polymarket", "market_title": string, "url": string (exact url from the list), "implied_probability": int 0-100 (exact number from the list), "sentiment_probability": int 0-100, "edge": "sentiment_ahead"|"market_ahead"|"aligned", "rationale": string }], "market_notes": string (1-2 sentences on the overall sentiment-vs-money picture) }
-Include at most 8 signals, ranked by how interesting the divergence is.`,
-    schema: marketAnalysisSchema,
-    maxTokens: 4000,
-  });
-
-  return {
-    signals: result.signals,
-    notes: result.market_notes,
-    venues: venuesReached,
-  };
-}
-
 /**
  * Full deep-scan pipeline. Emits the same NDJSON event vocabulary the scan UI
- * already speaks (status / narrow / hit / done) plus `markets` and `notes`.
+ * already speaks (status / narrow / hit / notes / done).
  */
 export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
   emit({
@@ -515,19 +436,14 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
 
   emit({ type: "notes", fieldNotes });
 
-  // Prediction market pass — runs concurrently with library persistence.
-  // Failure here never sinks the scan results.
-  const marketsPromise: Promise<{
-    signals: MarketSignal[];
-    notes: string;
-    venues: string[];
-  }> = analyzeMarkets(profile, trends, fieldNotes, emit).catch((err) => {
-    console.error("[deep-scan] market analysis failed:", err);
-    return {
-      signals: [],
-      notes: "Market analysis failed this run — trend results are unaffected.",
-      venues: [],
-    };
+  // The user's requested work is complete once sourced, ranked trends and
+  // field notes are available. Do not hold the results screen hostage to
+  // optional database enrichment, corpus backfills, or market APIs.
+  emit({
+    type: "done",
+    total: ranked.length,
+    scanned: progress.signals,
+    exploratory: false,
   });
 
   // Fold discoveries into the library so the dashboard/pulse field sees them.
@@ -536,9 +452,10 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
   // that produced it ("says who"). Capped at EVIDENCE_CAP per trend per scan.
   // Scan discoveries arrive with measured history + a real hero image —
   // reddit-only backfill (cheap); failures never sink the scan.
-  const { runTrendBackfill } = await import("@/lib/pipeline/backfill");
-  const { harvestOgImage } = await import("@/lib/og-image");
-  const persistOne = async ({ d, trend }: (typeof ranked)[number]) => {
+  try {
+    const { runTrendBackfill } = await import("@/lib/pipeline/backfill");
+    const { harvestOgImage } = await import("@/lib/og-image");
+    const persistOne = async ({ d, trend }: (typeof ranked)[number]) => {
     // Real imagery from the pages Claude actually cited — never stock. The
     // corpus backfill below may upgrade it to actual post media later.
     if (!trend.hero_image_url && d.sources?.length) {
@@ -592,24 +509,20 @@ export async function runDeepScan(profile: ScanProfile, emit: ScanEmit) {
     } catch (err) {
       console.error("[deep-scan] auto-backfill failed:", err);
     }
-  };
-  // Small worker pool: parallel enough to cut minutes off the tail, small
-  // enough to stay inside Reddit's app-only rate limits.
-  const queue = [...ranked];
-  await Promise.all(
-    Array.from({ length: Math.min(3, queue.length) }, async () => {
-      for (let job = queue.shift(); job; job = queue.shift()) {
-        await persistOne(job);
-      }
-    })
-  );
-
-  emit({ type: "markets", ...(await marketsPromise) });
-
-  emit({
-    type: "done",
-    total: ranked.length,
-    scanned: progress.signals,
-    exploratory: false,
-  });
+    };
+    // Small worker pool: parallel enough to cut minutes off the tail, small
+    // enough to stay inside Reddit's app-only rate limits.
+    const queue = [...ranked];
+    await Promise.all(
+      Array.from({ length: Math.min(3, queue.length) }, async () => {
+        for (let job = queue.shift(); job; job = queue.shift()) {
+          await persistOne(job);
+        }
+      })
+    );
+  } catch (err) {
+    // Results were already delivered. Enrichment is best-effort and must
+    // never turn a successful scan into an error or trigger a fallback scan.
+    console.error("[deep-scan] post-result enrichment failed:", err);
+  }
 }

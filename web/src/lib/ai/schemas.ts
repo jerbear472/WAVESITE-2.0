@@ -132,7 +132,7 @@ export const trendSourceSchema = z.object({
 });
 
 export const deepScanTrendSchema = pulseTrendSchema.extend({
-  sources: z.array(trendSourceSchema).min(1),
+  sources: z.array(trendSourceSchema).min(2).max(5),
   fit_score: score,
   fit_reasons: z.array(z.string()).min(1).max(3),
 });
@@ -143,23 +143,6 @@ export const deepScanSchema = z.object({
   field_notes: z.string(),
 });
 export type DeepScanResult = z.infer<typeof deepScanSchema>;
-
-export const marketSignalSchema = z.object({
-  trend_slug: z.string().nullable(),
-  venue: z.enum(["kalshi", "polymarket"]),
-  market_title: z.string(),
-  url: z.string().url(),
-  implied_probability: score,
-  sentiment_probability: score,
-  edge: z.enum(["sentiment_ahead", "market_ahead", "aligned"]),
-  rationale: z.string(),
-});
-
-export const marketAnalysisSchema = z.object({
-  signals: z.array(marketSignalSchema),
-  market_notes: z.string(),
-});
-export type MarketAnalysisResult = z.infer<typeof marketAnalysisSchema>;
 
 // The brief is a HOW-TO for hopping on one specific trend — anchored to its
 // real mechanics, with a shootable storyboard. Never a fresh campaign concept.
