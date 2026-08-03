@@ -112,10 +112,6 @@ export function ScanExperience() {
           switch (ev.type) {
             case "funnel":
               setFunnel(ev.funnel ?? null);
-              if (typeof ev.scanned === "number") {
-                setScanned(ev.scanned);
-                finalScanned = ev.scanned;
-              }
               break;
             case "status":
             case "narrow":
@@ -124,8 +120,8 @@ export function ScanExperience() {
                 { message: ev.message, phase: ev.phase ?? "narrow" },
               ]);
               if (typeof ev.progress === "number") setProgress(ev.progress);
-              // Never let a later phase's counter regress below the funnel's
-              // real collected-signals figure.
+              // This counter is scoped to the current live research pass. The
+              // much larger stored-corpus count belongs only in the funnel.
               if (typeof ev.scanned === "number" && ev.scanned > finalScanned) {
                 setScanned(ev.scanned);
                 finalScanned = ev.scanned;

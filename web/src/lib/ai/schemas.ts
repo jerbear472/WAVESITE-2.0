@@ -132,6 +132,15 @@ export const trendSourceSchema = z.object({
 });
 
 export const deepScanTrendSchema = pulseTrendSchema.extend({
+  detailed_summary: z.string().default(""),
+  emotional_tone: z.string().default("mixed"),
+  audience: z.string().default(""),
+  participation_difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+  why_spreading: z.string().default(""),
+  who_should_join: z.string().default(""),
+  who_should_avoid: z.string().default(""),
+  creative_angles: z.array(z.string()).default([]),
+  sample_hooks: z.array(z.string()).default([]),
   sources: z.array(trendSourceSchema).min(2).max(5),
   fit_score: score,
   fit_reasons: z.array(z.string()).min(1).max(3),

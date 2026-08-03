@@ -18,8 +18,9 @@ import type { TrendEvidence } from "@/types";
 
 // Scans are an interactive product path, so use the faster model independently
 // from slower editorial/analysis jobs that may intentionally use MODEL (Opus).
-const SCAN_MODEL = process.env.SCAN_MODEL || "claude-sonnet-4-20250514";
-const SCAN_DEADLINE_MS = 45_000;
+const SCAN_MODEL =
+  process.env.SCAN_MODEL || "claude-haiku-4-5-20251001";
+const SCAN_DEADLINE_MS = 30_000;
 
 // ---------------------------------------------------------------------------
 // Deep scan — a real appraisal of the live internet, not a library lookup.
@@ -33,9 +34,9 @@ export type ScanEmit = (event: Record<string, unknown>) => void;
 const DEEP_SCAN_SYSTEM = `You are the deep-scan engine of WaveSight, a cultural-intelligence terminal used by marketers and creators. You research the LIVE internet with web search before saying anything.
 
 Rules of the appraisal:
-- Search widely before concluding: platform-native angles (TikTok/Reddit/X/Instagram chatter), press and trade coverage, and trend trackers. Vary your queries; do not stop at the first page of one search.
+- Run exactly 1 focused web search for current creator formats and behaviors on the user's platforms. Search the broader format landscape, not news about the user's niche: the niche is the adaptation lens applied after discovery. Include recent participation and saturation language. Do not run a second query and do not fetch individual pages; search-result evidence is sufficient for this fast scan.
 - Be balanced and honest. Surface headwinds, backlash, and saturation — not just hype. If a trend is fading, say so and score it accordingly.
-- Build a broad candidate set, then return 5-8 independently evidenced trends that genuinely earn a spot for THIS brief. If fewer survive verification, return fewer and explain the evidence gap in field_notes. Never pad with guesses.
+- Build a candidate set, then return 2-3 independently evidenced trends that genuinely earn a spot for THIS brief. If fewer survive verification, return fewer and explain the evidence gap in field_notes. Never pad with guesses.
 - A result must be a specific, nameable content opportunity: a format, behavior, aesthetic, phrase, product behavior, sound, or recurring conversation. Broad subjects such as "camping", "hiking", "outdoors", "wellness", or "travel" are search territory, not valid trend names.
 - Prefer evidence that shows people actually participating, copying, discussing, or searching for the behavior. A generic forecast/listicle that merely mentions a category is weak evidence and cannot carry a result by itself.
 - Make the output immediately usable by a creator. The summary must say what is happening now; creative_angles and sample_hooks must describe concrete posts they could make this week.
@@ -118,9 +119,9 @@ function deepScanPrompt(profile: ScanProfile, measuredDigest: string) {
 - Risk appetite: ${profile.appetite}
 ${profile.focus ? `- Extra focus: ${profile.focus}` : ""}
 ${measuredDigest}
-Search the web from multiple angles (the niche itself, each priority platform, adjacent culture/fashion/press coverage, and at least one contrarian "is X over?" style query). Run explicit recency queries for the last 7-30 days and discovery queries such as "rising", "breakout", and "people are starting to". Chase what the searches surface, not just what you already know — the point of a NEW scan is what changed since the last one.
+Run exactly 1 compound web search for creator formats currently spreading on the user's priority platforms. The query must cover a 7-30 day recency term, participation/format language, and a saturation or backlash term. Do NOT limit the query to "${profile.niche}" or search for ${profile.niche} news; discover broader native formats first, then judge and explain how each can be authentically adapted to ${profile.niche}. Do not perform any additional searches or page fetches. The point of a NEW scan is what changed since the last one.
 
-First form a candidate list, then discard anything that is merely a broad topic, a perennial activity, an unsupported prediction, or a renamed version of another result. Return 5-8 distinct opportunities only when each has at least two independent sources and a concrete creator action. Rank for this user's stated platforms and goal, not for general popularity.
+First form a candidate list, then discard anything that is merely a broad topic, a perennial activity, an unsupported prediction, or a renamed version of another result. Return 2-3 distinct opportunities only when each has at least two independent sources and a concrete creator action. Rank for this user's stated platforms and goal, not for general popularity.
 
 After your research, respond with a SINGLE valid JSON object and nothing else — no prose before or after it, no markdown fences:
 {
@@ -128,11 +129,8 @@ After your research, respond with a SINGLE valid JSON object and nothing else �
     {
       "trend_name": string,
       "slug": string (kebab-case),
-      "summary": string (one sharp line),
-      "detailed_summary": string (2-4 sentences, grounded in what you found),
+      "summary": string (one sharp line explaining the format and how this niche can use it),
       "category": string,
-      "emotional_tone": string,
-      "audience": string,
       "lifecycle_stage": "emerging" | "accelerating" | "peaking" | "saturated" | "declining" | "resurfacing",
       "virality_type": "meme" | "aesthetic" | "challenge" | "phrase" | "product_behavior" | "sound" | "format" | "backlash" | "recommendation_loop" | "identity_signal" | "other",
       "momentum_score": int 0-100,
@@ -140,14 +138,10 @@ After your research, respond with a SINGLE valid JSON object and nothing else �
       "brand_safety_score": int 0-100,
       "saturation_score": int 0-100,
       "commercial_relevance_score": int 0-100,
-      "participation_difficulty": "easy" | "medium" | "hard",
       "risk_level": "low" | "medium" | "high",
-      "why_spreading": string,
-      "who_should_join": string,
-      "who_should_avoid": string,
       "best_platforms": [string, ...],
-      "creative_angles": [2-3 strings],
-      "sample_hooks": [2-3 strings],
+      "creative_angles": [2 concrete posts this user could make this week],
+      "sample_hooks": [2 ready-to-use opening lines],
       "sources": [{ "title": string, "url": string (a REAL url from your searches), "outlet": string }, ... 2-5 items],
       "fit_score": int 0-100,
       "fit_reasons": [1-3 short strings tied to the brief]
@@ -176,8 +170,12 @@ async function runResearch(
   const progress = { searches: 0, signals: 0 };
 
   const tools = [
-    { type: "web_search_20260209", name: "web_search", max_uses: 6 },
-    { type: "web_fetch_20260209", name: "web_fetch", max_uses: 2 },
+    {
+      type: "web_search_20260209",
+      name: "web_search",
+      max_uses: 1,
+      allowed_callers: ["direct"],
+    },
   ] as unknown as Anthropic.Messages.ToolUnion[];
 
   const messages: Anthropic.MessageParam[] = [
@@ -193,7 +191,7 @@ async function runResearch(
       const stream = client.messages.stream(
         {
           model: SCAN_MODEL,
-          max_tokens: 8000,
+          max_tokens: 2500,
           system: DEEP_SCAN_SYSTEM,
           tools,
           messages,
@@ -353,7 +351,7 @@ function toTrend(d: DeepScanTrendResult): Trend {
     name: d.trend_name,
     slug,
     one_line_summary: d.summary,
-    detailed_summary: d.detailed_summary,
+    detailed_summary: d.detailed_summary || d.summary,
     category: d.category,
     emotional_tone: d.emotional_tone,
     audience: d.audience,

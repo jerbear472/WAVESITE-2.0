@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         try {
           const funnel = await getFunnelSnapshot();
           if (funnel) {
-            send({ type: "funnel", funnel, scanned: funnel.signals_collected });
+            send({ type: "funnel", funnel });
           }
         } catch (err) {
           console.error("/api/scan funnel snapshot failed:", err);
@@ -49,15 +49,14 @@ export async function POST(req: Request) {
           try {
             await runDeepScan(profile, send);
           } catch (err) {
-            console.error("/api/scan deep scan failed, falling back:", err);
+            console.error("/api/scan deep scan failed:", err);
             send({
-              type: "status",
-              phase: "analyze",
+              type: "error",
               message:
-                "Live web research hit an error — falling back to the local intelligence set.",
-              progress: 40,
+                process.env.NODE_ENV === "development" && err instanceof Error
+                  ? `Live research failed: ${err.message}`
+                  : "Live research did not complete. Nothing has been presented as a fresh scan — please retry.",
             });
-            await libraryScan(profile, send);
           }
         } else {
           send({
